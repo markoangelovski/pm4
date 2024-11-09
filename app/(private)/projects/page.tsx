@@ -97,7 +97,7 @@ export default function Component() {
   });
 
   const handleSort = (sortType: string) => {
-    let sortedProjects = [...projects];
+    const sortedProjects = [...projects];
     switch (sortType) {
       case "name":
         sortedProjects.sort((a, b) => a.name.localeCompare(b.name));
