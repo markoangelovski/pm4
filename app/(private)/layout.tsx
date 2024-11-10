@@ -6,6 +6,14 @@ import {
   BreadcrumbList,
   BreadcrumbPage
 } from "@/components/ui/breadcrumb";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle
+} from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import {
   SidebarInset,
@@ -44,9 +52,7 @@ export default function Layout({
           </div>
         </header>
         <div className="flex flex-1 flex-col gap-4 p-4">
-          <div className="mx-auto h-[100vh] w-full max-w-3xl rounded-xl bg-muted/50">
-            {children}
-          </div>
+          <div className="mx-auto h-[100vh] w-full ">{children}</div>
         </div>
       </SidebarInset>
       <SidebarRight />

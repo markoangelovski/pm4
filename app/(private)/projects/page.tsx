@@ -38,6 +38,14 @@ import {
   TableRow
 } from "@/components/ui/table";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle
+} from "@/components/ui/card";
+import ProjectDetail from "./project.detail";
 
 // Mock data for existing projects
 const mockProjects = [
@@ -133,133 +141,144 @@ export default function Component() {
     form.reset();
   };
 
-  if (projectId) return <div>Project {projectId}</div>;
+  if (projectId) return <ProjectDetail />;
 
   return (
-    <div className="container mx-auto p-4">
-      <div className="flex flex-col md:flex-row justify-between items-center mb-6 space-y-4 md:space-y-0">
-        <div className="w-full md:w-1/2 flex items-center">
-          <div className="flex items-center border border-gray-200 px-2 py-1 rounded-md">
-            <Search className="text-gray-400" />
-            <Input
-              type="text"
-              placeholder="Find project"
-              className=" w-full border-none"
-            />
-          </div>
-        </div>
-        <div className="flex space-x-2">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline">
-                Sort <ChevronDown className="ml-2 h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuItem onSelect={() => handleSort("name")}>
-                By Name
-              </DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => handleSort("newest")}>
-                Newest
-              </DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => handleSort("updated")}>
-                Last Updated
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <Dialog open={isNewProjectOpen} onOpenChange={setIsNewProjectOpen}>
-            <DialogTrigger asChild>
-              <Button>New</Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Create New Project</DialogTitle>
-              </DialogHeader>
-              <Form {...form}>
-                <form
-                  onSubmit={form.handleSubmit(handleNewProject)}
-                  className="space-y-4"
-                >
-                  <FormField
-                    control={form.control}
-                    name="name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Project Name</FormLabel>
-                        <FormControl>
-                          <Input {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
+    <>
+      <Card>
+        <CardHeader>
+          <CardDescription>
+            <div className="flex flex-col md:flex-row justify-between items-center mb-6 space-y-4 md:space-y-0">
+              <div className="w-full md:w-1/2 flex items-center">
+                <div className="flex items-center border border-gray-200 px-2 py-1 rounded-md">
+                  <Search className="text-gray-400" />
+                  <Input
+                    type="text"
+                    placeholder="Find project"
+                    className=" w-full border-none"
                   />
-                  <FormField
-                    control={form.control}
-                    name="description"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Description</FormLabel>
-                        <FormControl>
-                          <Textarea {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="lead"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Program Lead</FormLabel>
-                        <FormControl>
-                          <Input {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <div className="flex justify-end space-x-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => setIsNewProjectOpen(false)}
-                    >
-                      Cancel
+                </div>
+              </div>
+              <div className="flex space-x-2">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline">
+                      Sort <ChevronDown className="ml-2 h-4 w-4" />
                     </Button>
-                    <Button type="submit">Submit</Button>
-                  </div>
-                </form>
-              </Form>
-            </DialogContent>
-          </Dialog>
-        </div>
-      </div>
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Project Name</TableHead>
-            <TableHead>Program Lead</TableHead>
-            <TableHead>Tasks</TableHead>
-            <TableHead>Created</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {projects.map((project) => (
-            <TableRow key={project.id}>
-              <TableCell
-                className="font-medium cursor-pointer"
-                onClick={() => router.push(`/projects?id=${project.id}`)}
-              >
-                {project.name}
-              </TableCell>
-              <TableCell>{project.lead}</TableCell>
-              <TableCell>{project.tasks}</TableCell>
-              <TableCell>{project.created}</TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </div>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent>
+                    <DropdownMenuItem onSelect={() => handleSort("name")}>
+                      By Name
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onSelect={() => handleSort("newest")}>
+                      Newest
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onSelect={() => handleSort("updated")}>
+                      Last Updated
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                <Dialog
+                  open={isNewProjectOpen}
+                  onOpenChange={setIsNewProjectOpen}
+                >
+                  <DialogTrigger asChild>
+                    <Button>New</Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Create New Project</DialogTitle>
+                    </DialogHeader>
+                    <Form {...form}>
+                      <form
+                        onSubmit={form.handleSubmit(handleNewProject)}
+                        className="space-y-4"
+                      >
+                        <FormField
+                          control={form.control}
+                          name="name"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Project Name</FormLabel>
+                              <FormControl>
+                                <Input {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="description"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Description</FormLabel>
+                              <FormControl>
+                                <Textarea {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="lead"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Program Lead</FormLabel>
+                              <FormControl>
+                                <Input {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <div className="flex justify-end space-x-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => setIsNewProjectOpen(false)}
+                          >
+                            Cancel
+                          </Button>
+                          <Button type="submit">Submit</Button>
+                        </div>
+                      </form>
+                    </Form>
+                  </DialogContent>
+                </Dialog>
+              </div>
+            </div>
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Project Name</TableHead>
+                <TableHead>Program Lead</TableHead>
+                <TableHead>Tasks</TableHead>
+                <TableHead>Created</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {projects.map((project) => (
+                <TableRow key={project.id}>
+                  <TableCell
+                    className="font-medium cursor-pointer"
+                    onClick={() => router.push(`/projects?id=${project.id}`)}
+                  >
+                    {project.name}
+                  </TableCell>
+                  <TableCell>{project.lead}</TableCell>
+                  <TableCell>{project.tasks}</TableCell>
+                  <TableCell>{project.created}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    </>
   );
 }
