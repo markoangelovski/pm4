@@ -55,6 +55,11 @@ const data = {
       icon: Search
     },
     {
+      title: "Home",
+      url: "/",
+      icon: Home
+    },
+    {
       title: "Projects",
       url: "/projects",
       icon: SquareChartGantt
@@ -69,12 +74,7 @@ const data = {
       url: "#",
       icon: Sparkles
     },
-    {
-      title: "Home",
-      url: "#",
-      icon: Home,
-      isActive: true
-    },
+
     {
       title: "Inbox",
       url: "#",
