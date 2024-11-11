@@ -86,6 +86,7 @@ import {
   PopoverTrigger
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
+import Header from "@/components/pm/Header/Header";
 
 // Types for our data structures
 type Project = {
@@ -511,723 +512,739 @@ export default function ProjectDetail() {
   const taskCounts = getTaskCounts();
 
   return (
-    <div className="container mx-auto p-4 space-y-6">
-      <Button
-        variant="ghost"
-        onClick={() => router.push("/projects")}
-        className=""
-      >
-        <ArrowLeft className="mr-2 h-4 w-4" />
-        Back
-      </Button>
+    <>
+      <Header breadcrumbs={["Projects", project.title]} />
+      <div className="container mx-auto p-4 space-y-6">
+        <Button
+          variant="ghost"
+          onClick={() => router.push("/projects")}
+          className=""
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back
+        </Button>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>{project.title}</CardTitle>
-          <CardDescription>Project Details</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            <p>
-              <strong>Description:</strong> {project.description}
-            </p>
-            <p>
-              <strong>Program Lead:</strong> {project.programLead}
-            </p>
-            <div className="mt-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>{project.title}</CardTitle>
+            <CardDescription>Project Details</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
               <p>
-                <strong>Task Counts:</strong>
+                <strong>Description:</strong> {project.description}
               </p>
-              <ul className="list-disc list-inside">
-                <li>Upcoming: {taskCounts.Upcoming}</li>
-                <li>In Progress: {taskCounts["In Progress"]}</li>
-                <li>Done: {taskCounts.Done}</li>
-              </ul>
-            </div>
-            <div className="flex space-x-2 mt-4">
-              <Button onClick={() => setIsEditProjectOpen(true)}>
-                Edit Project
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={() => setIsDeleteProjectOpen(true)}
-              >
-                Delete Project
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Tasks</CardTitle>
-          <CardDescription>
-            All tasks associated with this project
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col md:flex-row justify-between items-center mb-6 space-y-4 md:space-y-0">
-            <div className="w-full md:w-1/2 flex items-center">
-              <div className="flex items-center border border-gray-200 px-2 py-1 rounded-md w-full">
-                <Search className="text-gray-400" />
-                <Input
-                  type="text"
-                  placeholder="Find task"
-                  className="w-full border-none"
-                  value={searchParams.get("q") || ""}
-                  onChange={(e) => handleSearch(e.target.value)}
-                />
+              <p>
+                <strong>Program Lead:</strong> {project.programLead}
+              </p>
+              <div className="mt-2">
+                <p>
+                  <strong>Task Counts:</strong>
+                </p>
+                <ul className="list-disc list-inside">
+                  <li>Upcoming: {taskCounts.Upcoming}</li>
+                  <li>In Progress: {taskCounts["In Progress"]}</li>
+                  <li>Done: {taskCounts.Done}</li>
+                </ul>
+              </div>
+              <div className="flex space-x-2 mt-4">
+                <Button onClick={() => setIsEditProjectOpen(true)}>
+                  Edit Project
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={() => setIsDeleteProjectOpen(true)}
+                >
+                  Delete Project
+                </Button>
               </div>
             </div>
-            <div className="flex space-x-2">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline">
-                    Sort <ChevronDown className="ml-2 h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent>
-                  <DropdownMenuItem onSelect={() => handleSort("name")}>
-                    By Name
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onSelect={() => handleSort("due-date")}>
-                    By Due Date
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onSelect={() => handleSort("status")}>
-                    By Status
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onSelect={() => handleSort("pl")}>
-                    By Program Lead
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-              <Dialog open={isNewTaskOpen} onOpenChange={setIsNewTaskOpen}>
-                <DialogTrigger asChild>
-                  <Button>New Task</Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Create New Task</DialogTitle>
-                  </DialogHeader>
-                  <Form {...taskForm}>
-                    <form
-                      onSubmit={taskForm.handleSubmit(handleNewTask)}
-                      className="space-y-4"
-                    >
-                      <FormField
-                        control={taskForm.control}
-                        name="title"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Task Title</FormLabel>
-                            <FormControl>
-                              <Input {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={taskForm.control}
-                        name="description"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Description</FormLabel>
-                            <FormControl>
-                              <Textarea {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={taskForm.control}
-                        name="programLead"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Program Lead</FormLabel>
-                            <FormControl>
-                              <Input {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={taskForm.control}
-                        name="jiraLink"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Jira Link</FormLabel>
-                            <FormControl>
-                              <Input {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={taskForm.control}
-                        name="dueDate"
-                        render={({ field }) => (
-                          <FormItem className="flex flex-col">
-                            <FormLabel>Due Date</FormLabel>
-                            <Popover>
-                              <PopoverTrigger asChild>
-                                <FormControl>
-                                  <Button
-                                    variant={"outline"}
-                                    className={cn(
-                                      "w-[240px] pl-3 text-left font-normal",
-                                      !field.value && "text-muted-foreground"
-                                    )}
-                                  >
-                                    {field.value ? (
-                                      format(new Date(field.value), "PPP")
-                                    ) : (
-                                      <span>Pick a date</span>
-                                    )}
-                                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                  </Button>
-                                </FormControl>
-                              </PopoverTrigger>
-                              <PopoverContent
-                                className="w-auto p-0"
-                                align="start"
-                              >
-                                <Calendar
-                                  mode="single"
-                                  selected={
-                                    field.value
-                                      ? new Date(field.value)
-                                      : undefined
-                                  }
-                                  onSelect={(date) =>
-                                    field.onChange(
-                                      date?.toISOString().split("T")[0]
-                                    )
-                                  }
-                                  disabled={(date) =>
-                                    date < new Date() ||
-                                    date < new Date("1900-01-01")
-                                  }
-                                  initialFocus
-                                />
-                              </PopoverContent>
-                            </Popover>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={taskForm.control}
-                        name="status"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Status</FormLabel>
-                            <Select
-                              onValueChange={field.onChange}
-                              defaultValue={field.value}
-                            >
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Tasks</CardTitle>
+            <CardDescription>
+              All tasks associated with this project
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col md:flex-row justify-between items-center mb-6 space-y-4 md:space-y-0">
+              <div className="w-full md:w-1/2 flex items-center">
+                <div className="flex items-center border border-gray-200 px-2 py-1 rounded-md w-full">
+                  <Search className="text-gray-400" />
+                  <Input
+                    type="text"
+                    placeholder="Find task"
+                    className="w-full border-none"
+                    value={searchParams.get("q") || ""}
+                    onChange={(e) => handleSearch(e.target.value)}
+                  />
+                </div>
+              </div>
+              <div className="flex space-x-2">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline">
+                      Sort <ChevronDown className="ml-2 h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent>
+                    <DropdownMenuItem onSelect={() => handleSort("name")}>
+                      By Name
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onSelect={() => handleSort("due-date")}>
+                      By Due Date
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onSelect={() => handleSort("status")}>
+                      By Status
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onSelect={() => handleSort("pl")}>
+                      By Program Lead
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                <Dialog open={isNewTaskOpen} onOpenChange={setIsNewTaskOpen}>
+                  <DialogTrigger asChild>
+                    <Button>New Task</Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Create New Task</DialogTitle>
+                    </DialogHeader>
+                    <Form {...taskForm}>
+                      <form
+                        onSubmit={taskForm.handleSubmit(handleNewTask)}
+                        className="space-y-4"
+                      >
+                        <FormField
+                          control={taskForm.control}
+                          name="title"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Task Title</FormLabel>
                               <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Select a status" />
-                                </SelectTrigger>
+                                <Input {...field} />
                               </FormControl>
-                              <SelectContent>
-                                <SelectItem value="Upcoming">
-                                  Upcoming
-                                </SelectItem>
-                                <SelectItem value="In Progress">
-                                  In Progress
-                                </SelectItem>
-                                <SelectItem value="Done">Done</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <div className="flex justify-end space-x-2">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={() => setIsNewTaskOpen(false)}
-                        >
-                          Cancel
-                        </Button>
-                        <Button type="submit">Submit</Button>
-                      </div>
-                    </form>
-                  </Form>
-                </DialogContent>
-              </Dialog>
-            </div>
-          </div>
-          <div className="flex space-x-4 mb-4">
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="upcoming"
-                checked={
-                  searchParams.get("status")?.includes("Upcoming") || false
-                }
-                onCheckedChange={() => handleStatusToggle("Upcoming")}
-                className="scale-75"
-              />
-              <label htmlFor="upcoming" className="text-sm">
-                Upcoming
-              </label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="in-progress"
-                checked={
-                  searchParams.get("status")?.includes("In Progress") || false
-                }
-                onCheckedChange={() => handleStatusToggle("In Progress")}
-                className="scale-75"
-              />
-              <label htmlFor="in-progress" className="text-sm">
-                In Progress
-              </label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="done"
-                checked={searchParams.get("status")?.includes("Done") || false}
-                onCheckedChange={() => handleStatusToggle("Done")}
-                className="scale-75"
-              />
-              <label htmlFor="done" className="text-sm">
-                Done
-              </label>
-            </div>
-          </div>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Title</TableHead>
-                <TableHead>Program Lead</TableHead>
-                <TableHead>Due Date</TableHead>
-                <TableHead>Date Created</TableHead>
-                <TableHead>Date Modified</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredTasks.map((task, i) => (
-                <Fragment key={task.id}>
-                  <TableRow>
-                    <TableCell className="font-medium">
-                      <div className="flex items-center space-x-2">
-                        <NextLink
-                          href={`/tasks?id=${task.id}`}
-                          className="font-bold hover:underline"
-                        >
-                          {task.title}
-                        </NextLink>
-                        <button
-                          onClick={() =>
-                            setExpandedTaskId(
-                              expandedTaskId === task.id ? null : task.id
-                            )
-                          }
-                          className="focus:outline-none"
-                          title="View details"
-                        >
-                          <ChevronDown
-                            className={`w-4 h-4 transition-transform ${
-                              expandedTaskId === task.id
-                                ? "transform rotate-180"
-                                : ""
-                            }`}
-                          />
-                        </button>
-                      </div>
-                    </TableCell>
-                    <TableCell>{task.programLead}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center space-x-2">
-                        <div
-                          className={`w-2 h-2 rounded-full ${getDateColor(
-                            task.dueDate
-                          )}`}
-                        ></div>
-                        <span
-                          title={format(parseISO(task.dueDate), "dd.MM.yy")}
-                        >
-                          {formatDueDate(task.dueDate)}
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {format(parseISO(task.dateCreated), "dd.MM.yy")}
-                    </TableCell>
-                    <TableCell>
-                      {format(parseISO(task.dateModified), "dd.MM.yy")}
-                    </TableCell>
-                    <TableCell>{task.status}</TableCell>
-                    <TableCell>
-                      <div className="flex space-x-2">
-                        <button
-                          onClick={() => openExternalLink(task.jiraLink)}
-                          className="text-gray-500 hover:text-gray-700"
-                          title="Open Jira Link"
-                        >
-                          <ExternalLink className="w-5 h-5" />
-                        </button>
-                        <button
-                          onClick={() => setNewNoteTaskId(task.id)}
-                          className="text-gray-500 hover:text-gray-700"
-                          title="Add Note"
-                        >
-                          <PlusCircle className="w-5 h-5" />
-                        </button>
-                        <button
-                          onClick={() => {
-                            setSelectedTask(task);
-                            setIsMarkCompletedOpen(true);
-                          }}
-                          className="text-gray-500 hover:text-gray-700"
-                          title="Mark as Done"
-                        >
-                          <CheckCircle className="w-5 h-5" />
-                        </button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell colSpan={7}>
-                      {getLatestNote(task.id) && (
-                        <div className="p-2 bg-gray-50 rounded">
-                          <p className="text-sm text-gray-600">
-                            {getLatestNote(task.id).text}
-                          </p>
-                        </div>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                  {expandedTaskId === task.id && (
-                    <TableRow>
-                      <TableCell colSpan={7}>
-                        <div className="p-4 bg-gray-50">
-                          <p className="mb-2">
-                            <strong>Description:</strong> {task.description}
-                          </p>
-                          <h4 className="font-semibold mt-4 mb-2">Notes:</h4>
-                          {notes
-                            .filter((note) => note.taskId === task.id)
-                            .map((note) => (
-                              <div
-                                key={note.id}
-                                className="mb-2 p-2 bg-white rounded shadow"
-                              >
-                                <div className="flex justify-between items-start">
-                                  <div
-                                    className="prose prose-sm"
-                                    dangerouslySetInnerHTML={{
-                                      __html: note.text
-                                    }}
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={taskForm.control}
+                          name="description"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Description</FormLabel>
+                              <FormControl>
+                                <Textarea {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={taskForm.control}
+                          name="programLead"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Program Lead</FormLabel>
+                              <FormControl>
+                                <Input {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={taskForm.control}
+                          name="jiraLink"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Jira Link</FormLabel>
+                              <FormControl>
+                                <Input {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={taskForm.control}
+                          name="dueDate"
+                          render={({ field }) => (
+                            <FormItem className="flex flex-col">
+                              <FormLabel>Due Date</FormLabel>
+                              <Popover>
+                                <PopoverTrigger asChild>
+                                  <FormControl>
+                                    <Button
+                                      variant={"outline"}
+                                      className={cn(
+                                        "w-[240px] pl-3 text-left font-normal",
+                                        !field.value && "text-muted-foreground"
+                                      )}
+                                    >
+                                      {field.value ? (
+                                        format(new Date(field.value), "PPP")
+                                      ) : (
+                                        <span>Pick a date</span>
+                                      )}
+                                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                    </Button>
+                                  </FormControl>
+                                </PopoverTrigger>
+                                <PopoverContent
+                                  className="w-auto p-0"
+                                  align="start"
+                                >
+                                  <Calendar
+                                    mode="single"
+                                    selected={
+                                      field.value
+                                        ? new Date(field.value)
+                                        : undefined
+                                    }
+                                    onSelect={(date) =>
+                                      field.onChange(
+                                        date?.toISOString().split("T")[0]
+                                      )
+                                    }
+                                    disabled={(date) =>
+                                      date < new Date() ||
+                                      date < new Date("1900-01-01")
+                                    }
+                                    initialFocus
                                   />
-                                  <div className="flex space-x-2">
-                                    <button
-                                      onClick={() => {
-                                        setEditingNoteId(note.id);
-                                        noteForm.reset({ text: note.text });
-                                        editor?.commands.setContent(note.text);
-                                      }}
-                                      className="text-gray-500 hover:text-gray-700"
-                                    >
-                                      <Edit className="w-4 h-4" />
-                                    </button>
-                                    <button
-                                      onClick={() =>
-                                        setIsDeletingNoteId(note.id)
-                                      }
-                                      className="text-gray-500 hover:text-gray-700"
-                                    >
-                                      <Trash2 className="w-4 h-4" />
-                                    </button>
-                                  </div>
-                                </div>
-                                <p className="text-xs text-gray-500">
-                                  Created:{" "}
-                                  {format(
-                                    parseISO(note.dateCreated),
-                                    "dd.MM.yy HH:mm"
-                                  )}
-                                </p>
-                              </div>
-                            ))}
+                                </PopoverContent>
+                              </Popover>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={taskForm.control}
+                          name="status"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Status</FormLabel>
+                              <Select
+                                onValueChange={field.onChange}
+                                defaultValue={field.value}
+                              >
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select a status" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value="Upcoming">
+                                    Upcoming
+                                  </SelectItem>
+                                  <SelectItem value="In Progress">
+                                    In Progress
+                                  </SelectItem>
+                                  <SelectItem value="Done">Done</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <div className="flex justify-end space-x-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => setIsNewTaskOpen(false)}
+                          >
+                            Cancel
+                          </Button>
+                          <Button type="submit">Submit</Button>
+                        </div>
+                      </form>
+                    </Form>
+                  </DialogContent>
+                </Dialog>
+              </div>
+            </div>
+            <div className="flex space-x-4 mb-4">
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="upcoming"
+                  checked={
+                    searchParams.get("status")?.includes("Upcoming") || false
+                  }
+                  onCheckedChange={() => handleStatusToggle("Upcoming")}
+                  className="scale-75"
+                />
+                <label htmlFor="upcoming" className="text-sm">
+                  Upcoming
+                </label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="in-progress"
+                  checked={
+                    searchParams.get("status")?.includes("In Progress") || false
+                  }
+                  onCheckedChange={() => handleStatusToggle("In Progress")}
+                  className="scale-75"
+                />
+                <label htmlFor="in-progress" className="text-sm">
+                  In Progress
+                </label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="done"
+                  checked={
+                    searchParams.get("status")?.includes("Done") || false
+                  }
+                  onCheckedChange={() => handleStatusToggle("Done")}
+                  className="scale-75"
+                />
+                <label htmlFor="done" className="text-sm">
+                  Done
+                </label>
+              </div>
+            </div>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Title</TableHead>
+                  <TableHead>Program Lead</TableHead>
+                  <TableHead>Due Date</TableHead>
+                  <TableHead>Date Created</TableHead>
+                  <TableHead>Date Modified</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredTasks.map((task, i) => (
+                  <Fragment key={task.id}>
+                    <TableRow>
+                      <TableCell className="font-medium">
+                        <div className="flex items-center space-x-2">
+                          <NextLink
+                            href={`/tasks?id=${task.id}`}
+                            className="font-bold hover:underline"
+                          >
+                            {task.title}
+                          </NextLink>
+                          <button
+                            onClick={() =>
+                              setExpandedTaskId(
+                                expandedTaskId === task.id ? null : task.id
+                              )
+                            }
+                            className="focus:outline-none"
+                            title="View details"
+                          >
+                            <ChevronDown
+                              className={`w-4 h-4 transition-transform ${
+                                expandedTaskId === task.id
+                                  ? "transform rotate-180"
+                                  : ""
+                              }`}
+                            />
+                          </button>
+                        </div>
+                      </TableCell>
+                      <TableCell>{task.programLead}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center space-x-2">
+                          <div
+                            className={`w-2 h-2 rounded-full ${getDateColor(
+                              task.dueDate
+                            )}`}
+                          ></div>
+                          <span
+                            title={format(parseISO(task.dueDate), "dd.MM.yy")}
+                          >
+                            {formatDueDate(task.dueDate)}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {format(parseISO(task.dateCreated), "dd.MM.yy")}
+                      </TableCell>
+                      <TableCell>
+                        {format(parseISO(task.dateModified), "dd.MM.yy")}
+                      </TableCell>
+                      <TableCell>{task.status}</TableCell>
+                      <TableCell>
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() => openExternalLink(task.jiraLink)}
+                            className="text-gray-500 hover:text-gray-700"
+                            title="Open Jira Link"
+                          >
+                            <ExternalLink className="w-5 h-5" />
+                          </button>
+                          <button
+                            onClick={() => setNewNoteTaskId(task.id)}
+                            className="text-gray-500 hover:text-gray-700"
+                            title="Add Note"
+                          >
+                            <PlusCircle className="w-5 h-5" />
+                          </button>
+                          <button
+                            onClick={() => {
+                              setSelectedTask(task);
+                              setIsMarkCompletedOpen(true);
+                            }}
+                            className="text-gray-500 hover:text-gray-700"
+                            title="Mark as Done"
+                          >
+                            <CheckCircle className="w-5 h-5" />
+                          </button>
                         </div>
                       </TableCell>
                     </TableRow>
-                  )}
-                  {(newNoteTaskId === task.id || editingNoteId) && (
                     <TableRow>
                       <TableCell colSpan={7}>
-                        <Form {...noteForm}>
-                          <form
-                            onSubmit={noteForm.handleSubmit(
-                              editingNoteId ? handleEditNote : handleNewNote
-                            )}
-                            className="space-y-4 p-4 bg-gray-100"
-                          >
-                            <FormField
-                              control={noteForm.control}
-                              name="text"
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>
-                                    {editingNoteId ? "Edit Note" : "New Note"}
-                                  </FormLabel>
-                                  <FormControl>
-                                    <div className="border rounded-md p-2">
-                                      <div className="flex space-x-2 mb-2">
-                                        <Button
-                                          size="sm"
-                                          variant="outline"
-                                          onClick={() =>
-                                            editor
-                                              ?.chain()
-                                              .focus()
-                                              .toggleBold()
-                                              .run()
-                                          }
-                                          className={
-                                            editor?.isActive("bold")
-                                              ? "bg-muted"
-                                              : ""
-                                          }
-                                        >
-                                          <Bold className="w-4 h-4" />
-                                        </Button>
-                                        <Button
-                                          size="sm"
-                                          variant="outline"
-                                          onClick={() =>
-                                            editor
-                                              ?.chain()
-                                              .focus()
-                                              .toggleItalic()
-                                              .run()
-                                          }
-                                          className={
-                                            editor?.isActive("italic")
-                                              ? "bg-muted"
-                                              : ""
-                                          }
-                                        >
-                                          <Italic className="w-4 h-4" />
-                                        </Button>
-                                        <Button
-                                          size="sm"
-                                          variant="outline"
-                                          onClick={() =>
-                                            editor
-                                              ?.chain()
-                                              .focus()
-                                              .toggleBulletList()
-                                              .run()
-                                          }
-                                          className={
-                                            editor?.isActive("bulletList")
-                                              ? "bg-muted"
-                                              : ""
-                                          }
-                                        >
-                                          <List className="w-4 h-4" />
-                                        </Button>
-                                        <Button
-                                          size="sm"
-                                          variant="outline"
-                                          onClick={() => {
-                                            const url =
-                                              window.prompt("Enter the URL");
-                                            if (url) {
+                        {getLatestNote(task.id) && (
+                          <div className="p-2 bg-gray-50 rounded">
+                            <p className="text-sm text-gray-600">
+                              {getLatestNote(task.id).text}
+                            </p>
+                          </div>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                    {expandedTaskId === task.id && (
+                      <TableRow>
+                        <TableCell colSpan={7}>
+                          <div className="p-4 bg-gray-50">
+                            <p className="mb-2">
+                              <strong>Description:</strong> {task.description}
+                            </p>
+                            <h4 className="font-semibold mt-4 mb-2">Notes:</h4>
+                            {notes
+                              .filter((note) => note.taskId === task.id)
+                              .map((note) => (
+                                <div
+                                  key={note.id}
+                                  className="mb-2 p-2 bg-white rounded shadow"
+                                >
+                                  <div className="flex justify-between items-start">
+                                    <div
+                                      className="prose prose-sm"
+                                      dangerouslySetInnerHTML={{
+                                        __html: note.text
+                                      }}
+                                    />
+                                    <div className="flex space-x-2">
+                                      <button
+                                        onClick={() => {
+                                          setEditingNoteId(note.id);
+                                          noteForm.reset({ text: note.text });
+                                          editor?.commands.setContent(
+                                            note.text
+                                          );
+                                        }}
+                                        className="text-gray-500 hover:text-gray-700"
+                                      >
+                                        <Edit className="w-4 h-4" />
+                                      </button>
+                                      <button
+                                        onClick={() =>
+                                          setIsDeletingNoteId(note.id)
+                                        }
+                                        className="text-gray-500 hover:text-gray-700"
+                                      >
+                                        <Trash2 className="w-4 h-4" />
+                                      </button>
+                                    </div>
+                                  </div>
+                                  <p className="text-xs text-gray-500">
+                                    Created:{" "}
+                                    {format(
+                                      parseISO(note.dateCreated),
+                                      "dd.MM.yy HH:mm"
+                                    )}
+                                  </p>
+                                </div>
+                              ))}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                    {(newNoteTaskId === task.id || editingNoteId) && (
+                      <TableRow>
+                        <TableCell colSpan={7}>
+                          <Form {...noteForm}>
+                            <form
+                              onSubmit={noteForm.handleSubmit(
+                                editingNoteId ? handleEditNote : handleNewNote
+                              )}
+                              className="space-y-4 p-4 bg-gray-100"
+                            >
+                              <FormField
+                                control={noteForm.control}
+                                name="text"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>
+                                      {editingNoteId ? "Edit Note" : "New Note"}
+                                    </FormLabel>
+                                    <FormControl>
+                                      <div className="border rounded-md p-2">
+                                        <div className="flex space-x-2 mb-2">
+                                          <Button
+                                            size="sm"
+                                            variant="outline"
+                                            onClick={() =>
                                               editor
                                                 ?.chain()
                                                 .focus()
-                                                .setLink({ href: url })
-                                                .run();
+                                                .toggleBold()
+                                                .run()
                                             }
-                                          }}
-                                          className={
-                                            editor?.isActive("link")
-                                              ? "bg-muted"
-                                              : ""
-                                          }
-                                        >
-                                          <LinkIcon className="w-4 h-4" />
-                                        </Button>
+                                            className={
+                                              editor?.isActive("bold")
+                                                ? "bg-muted"
+                                                : ""
+                                            }
+                                          >
+                                            <Bold className="w-4 h-4" />
+                                          </Button>
+                                          <Button
+                                            size="sm"
+                                            variant="outline"
+                                            onClick={() =>
+                                              editor
+                                                ?.chain()
+                                                .focus()
+                                                .toggleItalic()
+                                                .run()
+                                            }
+                                            className={
+                                              editor?.isActive("italic")
+                                                ? "bg-muted"
+                                                : ""
+                                            }
+                                          >
+                                            <Italic className="w-4 h-4" />
+                                          </Button>
+                                          <Button
+                                            size="sm"
+                                            variant="outline"
+                                            onClick={() =>
+                                              editor
+                                                ?.chain()
+                                                .focus()
+                                                .toggleBulletList()
+                                                .run()
+                                            }
+                                            className={
+                                              editor?.isActive("bulletList")
+                                                ? "bg-muted"
+                                                : ""
+                                            }
+                                          >
+                                            <List className="w-4 h-4" />
+                                          </Button>
+                                          <Button
+                                            size="sm"
+                                            variant="outline"
+                                            onClick={() => {
+                                              const url =
+                                                window.prompt("Enter the URL");
+                                              if (url) {
+                                                editor
+                                                  ?.chain()
+                                                  .focus()
+                                                  .setLink({ href: url })
+                                                  .run();
+                                              }
+                                            }}
+                                            className={
+                                              editor?.isActive("link")
+                                                ? "bg-muted"
+                                                : ""
+                                            }
+                                          >
+                                            <LinkIcon className="w-4 h-4" />
+                                          </Button>
+                                        </div>
+                                        <EditorContent
+                                          editor={editor}
+                                          className="prose prose-sm max-w-none"
+                                          {...field}
+                                        />
                                       </div>
-                                      <EditorContent
-                                        editor={editor}
-                                        className="prose prose-sm max-w-none"
-                                        {...field}
-                                      />
-                                    </div>
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                            <div className="flex justify-end space-x-2">
-                              <Button
-                                type="button"
-                                variant="outline"
-                                onClick={() => {
-                                  setNewNoteTaskId(null);
-                                  setEditingNoteId(null);
-                                }}
-                              >
-                                Cancel
-                              </Button>
-                              <Button type="submit">Submit</Button>
-                            </div>
-                          </form>
-                        </Form>
-                      </TableCell>
-                    </TableRow>
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                              <div className="flex justify-end space-x-2">
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  onClick={() => {
+                                    setNewNoteTaskId(null);
+                                    setEditingNoteId(null);
+                                  }}
+                                >
+                                  Cancel
+                                </Button>
+                                <Button type="submit">Submit</Button>
+                              </div>
+                            </form>
+                          </Form>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </Fragment>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+
+        <Dialog open={isEditProjectOpen} onOpenChange={setIsEditProjectOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Edit Project</DialogTitle>
+            </DialogHeader>
+            <Form {...projectForm}>
+              <form
+                onSubmit={projectForm.handleSubmit(handleEditProject)}
+                className="space-y-4"
+              >
+                <FormField
+                  control={projectForm.control}
+                  name="title"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Project Title</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
                   )}
-                </Fragment>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+                />
+                <FormField
+                  control={projectForm.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Description</FormLabel>
+                      <FormControl>
+                        <Textarea {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={projectForm.control}
+                  name="programLead"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Program Lead</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <div className="flex justify-end space-x-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setIsEditProjectOpen(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button type="submit">Submit</Button>
+                </div>
+              </form>
+            </Form>
+          </DialogContent>
+        </Dialog>
 
-      <Dialog open={isEditProjectOpen} onOpenChange={setIsEditProjectOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit Project</DialogTitle>
-          </DialogHeader>
-          <Form {...projectForm}>
-            <form
-              onSubmit={projectForm.handleSubmit(handleEditProject)}
-              className="space-y-4"
-            >
-              <FormField
-                control={projectForm.control}
-                name="title"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Project Title</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={projectForm.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Description</FormLabel>
-                    <FormControl>
-                      <Textarea {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={projectForm.control}
-                name="programLead"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Program Lead</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <div className="flex justify-end space-x-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setIsEditProjectOpen(false)}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit">Submit</Button>
-              </div>
-            </form>
-          </Form>
-        </DialogContent>
-      </Dialog>
+        <Dialog
+          open={isDeleteProjectOpen}
+          onOpenChange={setIsDeleteProjectOpen}
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Are you absolutely sure?</DialogTitle>
+            </DialogHeader>
+            <p>
+              This action cannot be undone. This will permanently delete the
+              project and all associated tasks.
+            </p>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setIsDeleteProjectOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button variant="destructive" onClick={handleDeleteProject}>
+                Delete
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
-      <Dialog open={isDeleteProjectOpen} onOpenChange={setIsDeleteProjectOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Are you absolutely sure?</DialogTitle>
-          </DialogHeader>
-          <p>
-            This action cannot be undone. This will permanently delete the
-            project and all associated tasks.
-          </p>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setIsDeleteProjectOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button variant="destructive" onClick={handleDeleteProject}>
-              Delete
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        <Dialog
+          open={isMarkCompletedOpen}
+          onOpenChange={setIsMarkCompletedOpen}
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Mark Task as Completed</DialogTitle>
+            </DialogHeader>
+            <p>
+              Do you want to mark the task "{selectedTask?.title}" as completed?
+            </p>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setIsMarkCompletedOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button onClick={handleMarkCompleted}>Yes</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
-      <Dialog open={isMarkCompletedOpen} onOpenChange={setIsMarkCompletedOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Mark Task as Completed</DialogTitle>
-          </DialogHeader>
-          <p>
-            Do you want to mark the task "{selectedTask?.title}" as completed?
-          </p>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setIsMarkCompletedOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button onClick={handleMarkCompleted}>Yes</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog
-        open={isDeletingNoteId !== null}
-        onOpenChange={() => setIsDeletingNoteId(null)}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Delete Note</DialogTitle>
-          </DialogHeader>
-          <p>
-            Are you sure you want to delete this note? This action cannot be
-            undone.
-          </p>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDeletingNoteId(null)}>
-              Cancel
-            </Button>
-            <Button variant="destructive" onClick={handleDeleteNote}>
-              Delete
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
+        <Dialog
+          open={isDeletingNoteId !== null}
+          onOpenChange={() => setIsDeletingNoteId(null)}
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Delete Note</DialogTitle>
+            </DialogHeader>
+            <p>
+              Are you sure you want to delete this note? This action cannot be
+              undone.
+            </p>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setIsDeletingNoteId(null)}
+              >
+                Cancel
+              </Button>
+              <Button variant="destructive" onClick={handleDeleteNote}>
+                Delete
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>{" "}
+    </>
   );
 }
