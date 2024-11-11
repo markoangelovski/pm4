@@ -512,7 +512,11 @@ export default function ProjectDetail() {
 
   return (
     <div className="container mx-auto p-4 space-y-6">
-      <Button variant="ghost" onClick={() => router.back()} className="">
+      <Button
+        variant="ghost"
+        onClick={() => router.push("/projects")}
+        className=""
+      >
         <ArrowLeft className="mr-2 h-4 w-4" />
         Back
       </Button>
