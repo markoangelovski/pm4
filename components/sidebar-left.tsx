@@ -14,7 +14,9 @@ import {
   Sparkles,
   Trash2,
   SquareChartGantt,
-  ListChecks
+  ListChecks,
+  CalendarCog,
+  ChartNetwork
 } from "lucide-react";
 
 import { NavFavorites } from "@/components/nav-favorites";
@@ -68,6 +70,16 @@ const data = {
       title: "Tasks",
       url: "/tasks",
       icon: ListChecks
+    },
+    {
+      title: "Stats",
+      url: "/stats",
+      icon: ChartNetwork
+    },
+    {
+      title: "Events",
+      url: "/events",
+      icon: CalendarCog
     },
     {
       title: "Ask AI",
