@@ -1,6 +1,6 @@
 // Types for our data structuresexport
 export type Project = {
-  id: number;
+  id: string;
   title: string;
   description: string;
   programLead: string;
@@ -9,7 +9,7 @@ export type Project = {
 export type TaskStatus = "Upcoming" | "In Progress" | "Done";
 
 export type Task = {
-  id: number;
+  id: string;
   title: string;
   description?: string;
   programLead: string;
@@ -21,9 +21,26 @@ export type Task = {
 };
 
 export type Note = {
-  id: number;
-  taskId: number;
+  id: string;
+  taskId: string;
   text: string;
   dateCreated: string;
   dateModified: string;
+};
+
+export type Log = {
+  id: string;
+  title: string;
+  duration: number;
+};
+
+export type Event = {
+  id: string;
+  title: string;
+  creationDate: Date;
+  taskTitle?: string;
+  taskId?: string;
+  duration: number;
+  logs: Log[];
+  totalBooked: number;
 };

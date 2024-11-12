@@ -7,11 +7,9 @@ import {
   Calendar,
   Command,
   Home,
-  Inbox,
   MessageCircleQuestion,
   Search,
   Settings2,
-  Sparkles,
   Trash2,
   SquareChartGantt,
   ListChecks,
@@ -80,18 +78,6 @@ const data = {
       title: "Events",
       url: "/events",
       icon: CalendarCog
-    },
-    {
-      title: "Ask AI",
-      url: "#",
-      icon: Sparkles
-    },
-
-    {
-      title: "Inbox",
-      url: "#",
-      icon: Inbox,
-      badge: "10"
     }
   ],
   navSecondary: [

@@ -41,62 +41,9 @@ import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 import { z } from "zod";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-
-type Log = {
-  id: string;
-  title: string;
-  duration: number;
-};
-
-type Event = {
-  id: string;
-  title: string;
-  creationDate: Date;
-  taskTitle?: string;
-  taskId?: string;
-  duration: number;
-  logs: Log[];
-  totalBooked: number;
-};
-
-const mockData: Event[] = [
-  {
-    id: "1",
-    title: "Project Kickoff",
-    creationDate: new Date("2023-06-01"),
-    taskTitle: "Planning",
-    taskId: "task1",
-    duration: 120,
-    logs: [
-      { id: "1-1", title: "Meeting preparation", duration: 30 },
-      { id: "1-2", title: "Team discussion", duration: 60 },
-      { id: "1-3", title: "Documentation", duration: 30 }
-    ],
-    totalBooked: 90
-  },
-  {
-    id: "2",
-    title: "Client Presentation",
-    creationDate: new Date("2023-06-02"),
-    taskTitle: "Client Communication",
-    taskId: "task2",
-    duration: 90,
-    logs: [
-      { id: "2-1", title: "Slide creation", duration: 45 },
-      { id: "2-2", title: "Rehearsal", duration: 30 },
-      { id: "2-3", title: "Actual presentation", duration: 15 }
-    ],
-    totalBooked: 60
-  }
-];
-
-const mockTasks = [
-  { id: "task1", title: "Planning" },
-  { id: "task2", title: "Client Communication" },
-  { id: "task3", title: "Development" },
-  { id: "task4", title: "Testing" },
-  { id: "task5", title: "Deployment" }
-];
+import { mockEvents, mockTasks } from "@/mock";
+import { Event, Log } from "@/types";
+import Header from "@/components/pm/Header/Header";
 
 const eventSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -111,8 +58,8 @@ const logSchema = z.object({
   duration: z.number().min(0).default(0)
 });
 
-export default function Stats() {
-  const [events, setEvents] = useState<Event[]>(mockData);
+export default function Events() {
+  const [events, setEvents] = useState<Event[]>(mockEvents);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
   const [editingLog, setEditingLog] = useState<{
     eventId: string;
@@ -507,216 +454,222 @@ export default function Stats() {
   };
 
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">
-        {format(new Date(), "MMMM d, yyyy")}
-      </h1>
+    <>
+      <Header breadcrumbs={["Events"]} />
+      <div className="container mx-auto p-4">
+        <h1 className="text-2xl font-bold mb-4">
+          {format(new Date(), "MMMM d, yyyy")}
+        </h1>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-        <PieChartCard title="Total Worked" value={totalWorked} />
-        <PieChartCard title="Total Booked" value={totalBooked} />
-      </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          <PieChartCard title="Total Worked" value={totalWorked} />
+          <PieChartCard title="Total Booked" value={totalBooked} />
+        </div>
 
-      <Dialog>
-        <DialogTrigger asChild>
-          <Button className="mb-4">
-            <Plus className="h-4 w-4" />
-          </Button>
-        </DialogTrigger>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Add New Event</DialogTitle>
-          </DialogHeader>
-          <EventForm onSubmit={handleAddEvent} />
-        </DialogContent>
-      </Dialog>
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button className="mb-4">
+              <Plus className="h-4 w-4" />
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Add New Event</DialogTitle>
+            </DialogHeader>
+            <EventForm onSubmit={handleAddEvent} />
+          </DialogContent>
+        </Dialog>
 
-      {events.map((event) => (
-        <Collapsible key={event.id} className="mb-4 border rounded-lg p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-xl font-semibold">{event.title}</h2>
-              <div className="mt-2 flex items-center space-x-2 text-sm text-gray-500">
-                <ListChecks className="h-4 w-4" />
-                <Link
-                  href={`/tasks?id=${event.taskId}`}
-                  className="hover:underline"
-                >
-                  {event.taskTitle}
-                </Link>
-                <span>-</span>
-                <span>{format(event.creationDate, "MMM d, yyyy")}</span>
+        {events.map((event) => (
+          <Collapsible key={event.id} className="mb-4 border rounded-lg p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-semibold">{event.title}</h2>
+                <div className="mt-2 flex items-center space-x-2 text-sm text-gray-500">
+                  <ListChecks className="h-4 w-4" />
+                  <Link
+                    href={`/tasks?id=${event.taskId}`}
+                    className="hover:underline"
+                  >
+                    {event.taskTitle}
+                  </Link>
+                  <span>-</span>
+                  <span>{format(event.creationDate, "MMM d, yyyy")}</span>
+                </div>
+                <p className="text-sm text-gray-500 mt-1">
+                  Total worked: {formatDuration(event.duration)}
+                </p>
+                <p className="text-sm text-gray-500">
+                  Total booked: {formatDuration(event.totalBooked)}
+                </p>
               </div>
-              <p className="text-sm text-gray-500 mt-1">
-                Total worked: {formatDuration(event.duration)}
-              </p>
-              <p className="text-sm text-gray-500">
-                Total booked: {formatDuration(event.totalBooked)}
-              </p>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => toggleAddingLog(event.id)}
-              >
-                <Plus className="h-4 w-4" />
-              </Button>
-              <CollapsibleTrigger asChild>
+              <div className="flex items-center space-x-2">
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() => toggleEventExpansion(event.id)}
+                  onClick={() => toggleAddingLog(event.id)}
                 >
-                  {expandedEvents.has(event.id) ? (
-                    <ChevronUp className="h-4 w-4" />
-                  ) : (
-                    <ChevronDown className="h-4 w-4" />
-                  )}
+                  <Plus className="h-4 w-4" />
                 </Button>
-              </CollapsibleTrigger>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setEditingEvent(event)}
-              >
-                <Edit className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() =>
-                  setDeleteConfirm({
-                    type: "event",
-                    id: event.id,
-                    title: event.title
-                  })
-                }
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
+                <CollapsibleTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => toggleEventExpansion(event.id)}
+                  >
+                    {expandedEvents.has(event.id) ? (
+                      <ChevronUp className="h-4 w-4" />
+                    ) : (
+                      <ChevronDown className="h-4 w-4" />
+                    )}
+                  </Button>
+                </CollapsibleTrigger>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setEditingEvent(event)}
+                >
+                  <Edit className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() =>
+                    setDeleteConfirm({
+                      type: "event",
+                      id: event.id,
+                      title: event.title
+                    })
+                  }
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
-          </div>
-          {addingLog === event.id && (
-            <div className="mt-4 p-4 border rounded-lg">
-              <h3 className="text-lg font-semibold mb-2">Add New Log</h3>
-              <LogForm
-                onSubmit={(data) => handleAddLog(event.id, data)}
-                onCancel={() => setAddingLog(null)}
-              />
-            </div>
-          )}
-          <CollapsibleContent>
-            <Table className="mt-4">
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Title</TableHead>
-                  <TableHead>Duration</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {event.logs.map((log) => (
-                  <TableRow key={log.id}>
-                    <TableCell>{log.title}</TableCell>
-                    <TableCell>{formatDuration(log.duration)}</TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() =>
-                          setEditingLog({ eventId: event.id, log })
-                        }
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() =>
-                          setDeleteConfirm({
-                            type: "log",
-                            id: log.id,
-                            title: log.title
-                          })
-                        }
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </TableCell>
+            {addingLog === event.id && (
+              <div className="mt-4 p-4 border rounded-lg">
+                <h3 className="text-lg font-semibold mb-2">Add New Log</h3>
+                <LogForm
+                  onSubmit={(data) => handleAddLog(event.id, data)}
+                  onCancel={() => setAddingLog(null)}
+                />
+              </div>
+            )}
+            <CollapsibleContent>
+              <Table className="mt-4">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Title</TableHead>
+                    <TableHead>Duration</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CollapsibleContent>
-        </Collapsible>
-      ))}
+                </TableHeader>
+                <TableBody>
+                  {event.logs.map((log) => (
+                    <TableRow key={log.id}>
+                      <TableCell>{log.title}</TableCell>
+                      <TableCell>{formatDuration(log.duration)}</TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() =>
+                            setEditingLog({ eventId: event.id, log })
+                          }
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() =>
+                            setDeleteConfirm({
+                              type: "log",
+                              id: log.id,
+                              title: log.title
+                            })
+                          }
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CollapsibleContent>
+          </Collapsible>
+        ))}
 
-      {/* Edit Event Dialog */}
-      <Dialog open={!!editingEvent} onOpenChange={() => setEditingEvent(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit Event</DialogTitle>
-          </DialogHeader>
-          {editingEvent && (
-            <EventForm
-              onSubmit={handleUpdateEvent}
-              initialData={editingEvent}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
+        {/* Edit Event Dialog */}
+        <Dialog
+          open={!!editingEvent}
+          onOpenChange={() => setEditingEvent(null)}
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Edit Event</DialogTitle>
+            </DialogHeader>
+            {editingEvent && (
+              <EventForm
+                onSubmit={handleUpdateEvent}
+                initialData={editingEvent}
+              />
+            )}
+          </DialogContent>
+        </Dialog>
 
-      {/* Edit Log Dialog */}
-      <Dialog open={!!editingLog} onOpenChange={() => setEditingLog(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit Log</DialogTitle>
-          </DialogHeader>
-          {editingLog && (
-            <LogForm
-              onSubmit={handleUpdateLog}
-              onCancel={() => setEditingLog(null)}
-              initialData={editingLog.log}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
+        {/* Edit Log Dialog */}
+        <Dialog open={!!editingLog} onOpenChange={() => setEditingLog(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Edit Log</DialogTitle>
+            </DialogHeader>
+            {editingLog && (
+              <LogForm
+                onSubmit={handleUpdateLog}
+                onCancel={() => setEditingLog(null)}
+                initialData={editingLog.log}
+              />
+            )}
+          </DialogContent>
+        </Dialog>
 
-      {/* Delete Confirmation Dialog */}
-      <Dialog
-        open={!!deleteConfirm}
-        onOpenChange={() => setDeleteConfirm(null)}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Confirm Deletion</DialogTitle>
-          </DialogHeader>
-          <DialogDescription>
-            Are you sure you want to delete {deleteConfirm?.title}?
-          </DialogDescription>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteConfirm(null)}>
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={() => {
-                if (deleteConfirm?.type === "event") {
-                  handleDeleteEvent(deleteConfirm.id);
-                } else if (deleteConfirm?.type === "log") {
-                  const event = events.find((e) =>
-                    e.logs.some((l) => l.id === deleteConfirm.id)
-                  );
-                  if (event) handleDeleteLog(event.id, deleteConfirm.id);
-                }
-              }}
-            >
-              Delete
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
+        {/* Delete Confirmation Dialog */}
+        <Dialog
+          open={!!deleteConfirm}
+          onOpenChange={() => setDeleteConfirm(null)}
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Confirm Deletion</DialogTitle>
+            </DialogHeader>
+            <DialogDescription>
+              Are you sure you want to delete {deleteConfirm?.title}?
+            </DialogDescription>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setDeleteConfirm(null)}>
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={() => {
+                  if (deleteConfirm?.type === "event") {
+                    handleDeleteEvent(deleteConfirm.id);
+                  } else if (deleteConfirm?.type === "log") {
+                    const event = events.find((e) =>
+                      e.logs.some((l) => l.id === deleteConfirm.id)
+                    );
+                    if (event) handleDeleteLog(event.id, deleteConfirm.id);
+                  }
+                }}
+              >
+                Delete
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+    </>
   );
 }

@@ -34,7 +34,7 @@ import { ArrowLeft } from "lucide-react";
 import Header from "@/components/pm/Header/Header";
 import TasksList from "@/components/pm/TasksList/TasksList";
 import { mockNotes, mockProject, mockTasks } from "@/mock";
-import { Note, Project, Task, TaskStatus } from "@/schemas";
+import { Note, Project, Task, TaskStatus } from "@/types";
 
 const projectSchema = z.object({
   title: z.string().min(1, "Project title is required"),

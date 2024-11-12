@@ -85,7 +85,8 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { mockNotes } from "@/mock";
-import { Note, Task, TaskStatus } from "@/schemas";
+import { Note, Task, TaskStatus } from "@/types";
+import { randomUUID } from "crypto";
 
 const taskSchema = z.object({
   title: z.string().min(1, "Task title is required"),
@@ -113,11 +114,11 @@ const TasksList = ({ tasksList }: { tasksList: Task[] }) => {
   const [filteredTasks, setFilteredTasks] = useState<Task[]>(tasksList);
   const [isNewTaskOpen, setIsNewTaskOpen] = useState(false);
   const [isMarkCompletedOpen, setIsMarkCompletedOpen] = useState(false);
-  const [expandedTaskId, setExpandedTaskId] = useState<number | null>(null);
+  const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
-  const [newNoteTaskId, setNewNoteTaskId] = useState<number | null>(null);
-  const [editingNoteId, setEditingNoteId] = useState<number | null>(null);
-  const [isDeletingNoteId, setIsDeletingNoteId] = useState<number | null>(null);
+  const [newNoteTaskId, setNewNoteTaskId] = useState<string | null>(null);
+  const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
+  const [isDeletingNoteId, setIsDeletingNoteId] = useState<string | null>(null);
 
   const taskForm = useForm<TaskFormData>({
     resolver: zodResolver(taskSchema),
@@ -239,7 +240,7 @@ const TasksList = ({ tasksList }: { tasksList: Task[] }) => {
   const handleNewTask = (data: TaskFormData) => {
     const newTask: Task = {
       ...data,
-      id: tasks.length + 1,
+      id: "51663d9e-2ac2-46ae-b336-f9325dd4eb6b",
       dateCreated: new Date().toISOString().split("T")[0],
       dateModified: new Date().toISOString().split("T")[0]
     };
@@ -266,7 +267,7 @@ const TasksList = ({ tasksList }: { tasksList: Task[] }) => {
   const handleNewNote = (data: NoteFormData) => {
     if (newNoteTaskId) {
       const newNote: Note = {
-        id: notes.length + 1,
+        id: "51663d9e-2ac2-46ae-b336-f9325dd4eb6b",
         taskId: newNoteTaskId,
         text: data.text,
         dateCreated: new Date().toISOString().split("T")[0],
@@ -332,7 +333,7 @@ const TasksList = ({ tasksList }: { tasksList: Task[] }) => {
     window.open(url, "ExternalLink", "width=1280,height=720");
   };
 
-  const getLatestNote = (taskId: number) => {
+  const getLatestNote = (taskId: string) => {
     const taskNotes = notes.filter((note) => note.taskId === taskId);
     return taskNotes.sort(
       (a, b) =>
