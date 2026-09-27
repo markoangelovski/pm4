@@ -3,7 +3,7 @@ id: T-0001
 title: Bootstrap api/ NestJS app
 milestone: M0
 app: api
-status: review
+status: done
 size: L
 depends_on: [T-0005]
 specs:
@@ -431,3 +431,5 @@ blocking this task's merge).
      `@jest/globals` imports, and a `moduleNameMapper` stripping `.js`. Vitest (the Nest CLI's own
      new default) needs none of this for the same ESM situation. Not a defect — the plan explicitly
      said use Jest — but a real, owner-worth-revisiting trade-off, as the implementer already flagged.
+
+**Owner sign-off (2026-09-27):** runs correctly locally; accepted.

@@ -3,7 +3,7 @@ id: T-0002
 title: Bootstrap web/ from the dashboard template as a static export
 milestone: M0
 app: web
-status: review
+status: done
 size: L
 depends_on: [T-0005]
 specs:
@@ -324,3 +324,5 @@ defects; none block merge).
    changelog lines, plus the explicitly-in-scope `next.config.ts` TODO resolution) — no unauthorized
    behavior changes. `tasks/BOARD.md` row is correct (`review`). Implementation notes are thorough,
    include an explicit DoD walk-through, and every deviation is flagged rather than silently made.
+
+**Owner sign-off (2026-09-27):** runs correctly locally; accepted.

@@ -3,7 +3,7 @@ id: T-0004
 title: Azure Web App CI/CD for api/
 milestone: M0
 app: infra
-status: blocked
+status: ready
 size: M
 depends_on: [T-0001]
 specs:
