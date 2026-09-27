@@ -3,7 +3,7 @@ id: qa-testing
 title: Testing Strategy
 status: draft
 owner: Marko Angelovski
-last_updated: 2026-09-26
+last_updated: 2026-09-27
 related: [qa-dod, NFR-005]
 ---
 
@@ -15,8 +15,8 @@ Defines what is tested, at which level, and with which tools.
 ## API (`api/`)
 | Level | Scope | Tooling | Required for |
 | --- | --- | --- | --- |
-| Unit | Services and pure logic (e.g. duration parsing, totals) | Jest | Every service method with logic |
-| Integration / e2e | HTTP → controller → service → **real Postgres + Redis** | Jest + Supertest; docker-compose locally, service containers in CI | Every endpoint: happy path, validation error, 401, and **cross-user access returns 404** (NFR-005) |
+| Unit | Services and pure logic (e.g. duration parsing, totals) | Vitest | Every service method with logic |
+| Integration / e2e | HTTP → controller → service → **real Postgres + Redis** | Vitest + Supertest; docker-compose locally, service containers in CI | Every endpoint: happy path, validation error, 401, and **cross-user access returns 404** (NFR-005) |
 | Contract | OpenAPI document matches endpoints.md | TODO | CI |
 
 ## Web (`web/`)
@@ -43,3 +43,4 @@ Defines what is tested, at which level, and with which tools.
 
 ## Changelog
 - 2026-09-26: Initial scaffold.
+- 2026-09-27: API tests use Vitest instead of Jest (owner decision: NestJS 12 is ESM-only, and Jest needs experimental ESM workarounds).

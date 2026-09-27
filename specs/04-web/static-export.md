@@ -22,10 +22,20 @@ const nextConfig: NextConfig = {
   trailingSlash: true,          // emit /route/index.html so Pages serves clean URLs
   images: { unoptimized: true },
   // No basePath: served from the root of the custom domain (OQ-013)
+  reactCompiler: true,
+  experimental: {
+    turbopackRustReactCompiler: true, // Rust port: no babel-plugin-react-compiler needed
+  },
 };
 ```
-TODO: after bootstrap, confirm whether `reactCompiler` can stay, and whether `cacheComponents` /
-`partialPrefetching` are compatible with `output: "export"` (template-adaptation.md).
+Resolved at T-0002, by actually building with each option and `output: "export"`, not just reading
+docs:
+- `cacheComponents` and `partialPrefetching` **do not work**: `next build` fails outright
+  ("Invariant: PPR cannot be enabled in export mode") because Cache Components implements Partial
+  Prerendering, which needs a server to stream the dynamic parts in. `partialPrefetching` requires
+  `cacheComponents`, so it's out too. Neither is in the baseline above.
+- `reactCompiler` (with `experimental.turbopackRustReactCompiler`) **works**: the build succeeds
+  and the served `out/` renders correctly. Kept in the baseline above.
 
 ## Not available (do not use)
 | Feature | Why | Use instead |
@@ -64,3 +74,8 @@ user-specific is fetched at build time.
 - 2026-09-26: Custom domain served from the root (no basePath). Query-param routes confirmed.
 - 2026-09-27: Dropped `public/CNAME` and `public/.nojekyll`: neither is used by an Actions-based Pages deploy.
 - 2026-09-27: Approved by the owner.
+- 2026-09-27: T-0002 bootstrap: resolved the next.config TODO. `cacheComponents` and
+  `partialPrefetching` removed (incompatible with `output: "export"`, confirmed by a failing
+  build). `reactCompiler` + `experimental.turbopackRustReactCompiler` kept (confirmed working).
+  `output: "standalone"` and `experimental.useOffline` also removed (mutually exclusive with
+  `output: "export"`, and no server to retry against, respectively).

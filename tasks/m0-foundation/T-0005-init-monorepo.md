@@ -3,7 +3,7 @@ id: T-0005
 title: Initialize the pm4 monorepo
 milestone: M0
 app: infra
-status: review
+status: done
 size: S
 depends_on: []
 specs:
@@ -25,7 +25,7 @@ AGENTS.md and specs). The owner makes the first commit, creates the GitHub remot
 
 ## Acceptance criteria
 - [x] `git status` on a fresh clone shows no legacy, template, secret or build files.
-- [ ] The remote (a new GitHub repo, OQ-033) exists and `master` is pushed.
+- [x] The remote (a new GitHub repo, OQ-033) exists and `master` is pushed (owner, 2026-09-27).
 - [ ] Definition of Done satisfied (the applicable items).
 
 ## Blocked by
