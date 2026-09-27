@@ -1,0 +1,38 @@
+name: pm4-api
+
+# Local Postgres + Redis for dev and tests (T-0001). Same Postgres major as
+# Neon (ADR-0008). `pm4_test` is used by `test:e2e`.
+services:
+  postgres:
+    image: postgres:18
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: pm4
+      POSTGRES_PASSWORD: pm4
+      POSTGRES_DB: pm4
+    ports:
+      - '5432:5432'
+    volumes:
+      # postgres:18's image expects a single mount at /var/lib/postgresql
+      # (pg_ctlcluster-style layout), not the old .../data subdirectory.
+      - pm4-postgres-data:/var/lib/postgresql
+      - ./docker/init-db.sh:/docker-entrypoint-initdb.d/init-db.sh:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U pm4 -d pm4']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:8
+    restart: unless-stopped
+    ports:
+      - '6379:6379'
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  pm4-postgres-data:

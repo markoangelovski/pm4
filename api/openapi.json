@@ -1,0 +1,22 @@
+{
+  "openapi": "3.0.0",
+  "paths": {},
+  "info": {
+    "title": "PM4 API",
+    "description": "The PM4 backend API (see ../specs/03-api).",
+    "version": "0.0.1",
+    "contact": {}
+  },
+  "tags": [],
+  "servers": [],
+  "components": {
+    "securitySchemes": {
+      "bearer": {
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "type": "http"
+      }
+    },
+    "schemas": {}
+  }
+}
