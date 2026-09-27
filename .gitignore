@@ -1,0 +1,25 @@
+# Legacy repositories (own git history, read-only reference)
+/frontend_old/
+/backend_old/
+
+# Inputs / local artifacts
+/next-shadcn-dashboard-main.zip
+/next-shadcn-dashboard-main/
+
+# Dependencies and build output (both apps)
+node_modules/
+web/.next/
+web/out/
+api/dist/
+coverage/
+*.tsbuildinfo
+
+# Environment / local settings
+.env
+.env.*
+!.env.example
+.claude/settings.local.json
+
+# OS / editor junk
+.DS_Store
+*.log
