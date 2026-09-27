@@ -84,7 +84,7 @@ transactions), a repository (Drizzle queries, **always scoped by userId**) and D
 ## Errors
 RFC 9457 Problem Details (`application/problem+json`):
 ```json
-{ "type": "https://pm4.example.com/errors/validation", "title": "Validation failed", "status": 400,
+{ "type": "https://pm4.angelovski.top/errors/validation", "title": "Validation failed", "status": 400,
   "detail": "One or more fields are invalid.", "errors": [{ "field": "note", "message": "must not be empty" }] }
 ```
 | Status | When |
@@ -112,3 +112,4 @@ RFC 9457 Problem Details (`application/problem+json`):
 - 2026-09-27: Logging: NestJS default logger (NFR-009).
 - 2026-09-27: Nest building blocks are always generated with the Nest CLI.
 - 2026-09-27: Approved by the owner.
+- 2026-09-27: Error `type` example uses the real web domain.

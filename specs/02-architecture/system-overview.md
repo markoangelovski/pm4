@@ -22,9 +22,9 @@ The high-level architecture: components, and how they communicate.
  ┌──────────────────────────────┐  HTTPS JSON + Bearer   ┌──────────────────────────────┐
  │ Browser                      │ ─────────────────────▶ │ api/  NestJS                 │
  │ web/: static Next.js export  │ ◀───────────────────── │ Azure Web App (Linux, Node)  │
- │ https://pm4.example.com      │   CORS: web origin     │ https://<app>.azurewebsites.net
+ │ https://pm4.angelovski.top   │   CORS: web origin     │ pm4-api-….azurewebsites.net 
  └──────────────▲───────────────┘                        └───────┬──────────────┬───────┘
-                │ static files                                   │ TLS          │ TLS
+                │ static files                                   │ TLS          │ no TLS (free)
  ┌──────────────┴───────────────┐                        ┌───────▼──────┐ ┌─────▼────────┐
  │ GitHub Pages (custom domain) │                        │ Neon Postgres│ │ Redis Cloud  │
  │ deployed by web-deploy.yml   │                        │ (Drizzle)    │ │ sessions,    │
@@ -64,3 +64,4 @@ The high-level architecture: components, and how they communicate.
 - 2026-09-27: OQ-024 resolved: API stays on *.azurewebsites.net; refresh token in localStorage.
 - 2026-09-27: OQ-031 resolved: the purge runs as a BullMQ job in the API (ADR-0011). Removed the GitHub Actions purge.
 - 2026-09-27: Approved by the owner.
+- 2026-09-27: Real hosts in the diagram. Redis link has no TLS (free tier).

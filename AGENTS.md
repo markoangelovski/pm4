@@ -17,8 +17,8 @@ single-user-per-account project management app. Users create **projects** and **
 | --- | --- | --- | --- |
 | `specs/` | Product and technical specs, ADRs, open questions: **the source of truth** | — | In progress |
 | `tasks/` | Implementation backlog | — | In progress |
-| `web/` | Frontend: Next.js static export + shadcn (from the dashboard template) | GitHub Pages at a custom domain (`https://pm4.example.com`) | To be created (T-0002) |
-| `api/` | Backend: NestJS + Drizzle | Azure Web App (`*.azurewebsites.net`) | To be created (T-0001) |
+| `web/` | Frontend: Next.js static export + shadcn (from the dashboard template) | GitHub Pages at a custom domain (`https://pm4.angelovski.top`) | Bootstrapped (T-0002) |
+| `api/` | Backend: NestJS + Drizzle | Azure Web App (`*.azurewebsites.net`) | Bootstrapped (T-0001) |
 | `.github/workflows/` | Separate build and deploy workflows for `web` and `api` | — | To be created (T-0003, T-0004) |
 | `frontend_old/`, `backend_old/` | **Legacy** PM4 (own git repos, git-ignored). **Read-only reference.** | — | Frozen |
 | `next-shadcn-dashboard-main.zip` | Dashboard template, the **base of `web/`** (git-ignored) | — | Input to T-0002 |

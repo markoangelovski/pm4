@@ -18,7 +18,7 @@ XSS (tokens live in the browser), IDOR (accessing other users' rows), OAuth CSRF
 brute force against the refresh endpoint, and leaked secrets.
 
 ## Authentication flow (ADR-0007)
-Actors: **W** = web (`https://pm4.example.com`), **A** = API (`https://<app>.azurewebsites.net`), **G** = Google.
+Actors: **W** = web (`https://pm4.angelovski.top`), **A** = API (`https://pm4-api-heagfvepgbcje5c3.westeurope-01.azurewebsites.net`), **G** = Google.
 
 1. The user clicks "Continue with Google". W navigates the browser to `A/api/v1/auth/google?returnTo=/projects/`.
    `returnTo` must be a relative path (open-redirect protection).
@@ -86,6 +86,14 @@ same `user_identities` table (`provider` = the configured provider key). Provide
 - Render user text as text. No `dangerouslySetInnerHTML`.
 - Nothing secret in `NEXT_PUBLIC_*`.
 
+## Accepted risks
+- **Redis traffic isn't encrypted.** The Redis Cloud free tier has TLS off, so the API connects with plain
+  `redis://` (owner decision, 2026-09-27). The Redis password and the values in transit (OAuth state and PKCE
+  verifiers, refresh-token hashes, login-code hashes, rate-limit counters, job payloads) could be read by
+  someone on the network path between Azure and Redis Cloud. Mitigations: tokens and codes are stored only as
+  SHA-256 hashes, entries are short-lived, and no user content is stored in Redis. Revisit if the Redis plan
+  changes (switch to `rediss://`, which the API already accepts).
+
 ## Secrets management
 Secrets live in Azure App Settings and in GitHub Actions secrets. They are never committed and never read by agents.
 
@@ -101,3 +109,4 @@ Secrets live in Azure App Settings and in GitHub Actions secrets. They are never
 - 2026-09-27: OQ-039 resolved: rate limits set, allow-list checked on refresh too.
 - 2026-09-27: Documented how future OIDC/SSO providers plug in.
 - 2026-09-27: Approved by the owner.
+- 2026-09-27: Real hosts filled in. Added accepted risk: Redis without TLS (free tier).
