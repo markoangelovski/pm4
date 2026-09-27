@@ -8,7 +8,7 @@ not contradict the root `AGENTS.md`/`CLAUDE.md` or `../specs` — read those fir
 | --- | --- |
 | `npm ci` | Install |
 | `docker compose up -d` | Start local Postgres (`pm4` + `pm4_test` databases) and Redis |
-| `npm run start:dev` | Dev server, watch mode |
+| `npm run start:dev` | Dev server, watch mode. Reads `api/.env` (create it once with `cp .env.example .env`); real env vars take precedence, and tests ignore `.env` |
 | `npm run lint` / `npm run lint:fix` | ESLint (`eslint.config.mjs`) |
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm test` / `npm run test:watch` / `npm run test:cov` | Vitest unit tests (`vitest.config.ts`) |

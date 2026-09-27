@@ -365,6 +365,13 @@ Per `specs/05-quality/definition-of-done.md`.
 - [x] `openapi.json` regenerated and left uncommitted — re-verified in this follow-up
   (`npm run openapi:export` twice, identical checksum, see Verification below).
 
+### Fix (2026-09-27): local `.env` not loaded
+`npm run start:dev` failed with "Invalid environment configuration" because `src/config/config.module.ts` had
+`ignoreEnvFile: true`, so `api/.env` was never read. Changed to `ignoreEnvFile: process.env.NODE_ENV === 'test'`:
+local dev reads `.env`, real env vars (Azure, CI) still take precedence, tests stay independent of a local `.env`.
+Verified with `.env` present: `nest start` → `GET /health` 200 `{"status":"ok","db":"up","redis":"up"}`; lint,
+`tsc --noEmit`, `npm test` (36/36) and `npm run test:e2e` (7/7) pass. `api/AGENTS.md` documents `cp .env.example .env`.
+
 ## Review
 
 **Verdict: approve** (with should-fix items for the owner to action before/along with T-0004, not

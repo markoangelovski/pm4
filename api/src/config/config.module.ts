@@ -9,7 +9,9 @@ import { validateEnv } from './env.schema.js';
     NestConfigModule.forRoot({
       isGlobal: true,
       validate: validateEnv,
-      ignoreEnvFile: true,
+      // Local dev reads api/.env; real env vars (Azure App Settings, CI) take precedence.
+      // Tests ignore it so they only see the env they set themselves.
+      ignoreEnvFile: process.env.NODE_ENV === 'test',
     }),
   ],
   providers: [AppConfigService],
