@@ -1,0 +1,145 @@
+name: api-deploy
+
+# Tests, migrates (Neon) and deploys api/ to the Azure Web App (arch-deployment).
+# Runs only for api-relevant changes, plus a manual trigger. Never for web-only changes.
+on:
+  push:
+    branches: [master]
+    paths:
+      - "api/**"
+      - ".github/workflows/api-deploy.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: api-deploy
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: api
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: pm4
+          POSTGRES_PASSWORD: pm4
+          POSTGRES_DB: pm4_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U pm4 -d pm4_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:8
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: api/.nvmrc
+          cache: npm
+          cache-dependency-path: api/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type-check
+        run: npm run typecheck
+
+      - name: Test
+        run: npm test
+
+      - name: Test (e2e, Postgres + Redis service containers)
+        run: npm run test:e2e
+
+      - name: Regenerate openapi.json
+        run: npm run openapi:export
+
+      - name: Verify openapi.json is current (ADR-0010)
+        run: git diff --exit-code -- openapi.json
+
+      - name: Build
+        run: npm run build
+
+      - name: Stage deployment package
+        run: |
+          rm -rf deploy
+          mkdir -p deploy
+          cp -r dist deploy/dist
+          cp package.json package-lock.json deploy/
+          cp -r drizzle deploy/drizzle
+          cd deploy
+          npm ci --omit=dev
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: api-deploy-package
+          path: api/deploy
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: ${{ vars.NEXT_PUBLIC_API_BASE_URL }}
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: api-deploy-package
+          path: deploy
+
+      - name: Verify DATABASE_URL_DIRECT is set
+        env:
+          DATABASE_URL_DIRECT: ${{ secrets.DATABASE_URL_DIRECT }}
+        run: |
+          if [ -z "$DATABASE_URL_DIRECT" ]; then
+            echo "::error::DATABASE_URL_DIRECT secret is not set. Refusing to run migrations."
+            exit 1
+          fi
+
+      - name: Run database migrations (Neon, direct connection)
+        working-directory: deploy
+        env:
+          DATABASE_URL_DIRECT: ${{ secrets.DATABASE_URL_DIRECT }}
+        run: node dist/scripts/migrate.js
+
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ vars.AZURE_WEBAPP_NAME }}
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          package: deploy
+
+      - name: Smoke check (/health)
+        env:
+          API_BASE_URL: ${{ vars.NEXT_PUBLIC_API_BASE_URL }}
+        run: |
+          for i in $(seq 1 18); do
+            status=$(curl -s -o /dev/null -w '%{http_code}' "$API_BASE_URL/health" || true)
+            if [ "$status" = "200" ]; then
+              echo "Health check passed ($status)."
+              exit 0
+            fi
+            echo "Attempt $i: health check returned $status, retrying in 10s..."
+            sleep 10
+          done
+          echo "::error::API health check did not return 200 within ~3 minutes."
+          exit 1

@@ -1,0 +1,140 @@
+name: ci
+
+# Verifies pull requests. Detects which app(s) changed and runs that app's checks
+# (build, but never deploy) (arch-deployment).
+on:
+  pull_request:
+    branches: [master]
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      web: ${{ steps.filter.outputs.web }}
+      api: ${{ steps.filter.outputs.api }}
+    steps:
+      - uses: dorny/paths-filter@v4
+        id: filter
+        with:
+          filters: |
+            web:
+              - 'web/**'
+              - 'api/openapi.json'
+            api:
+              - 'api/**'
+
+  web:
+    needs: changes
+    if: needs.changes.outputs.web == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: web/.nvmrc
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type-check
+        run: npm run typecheck
+
+      - name: Test
+        run: npm test
+
+      - name: Regenerate API types
+        run: npm run api:types
+
+      - name: Verify generated API types are current (ADR-0010)
+        run: git diff --exit-code -- lib/api/schema.d.ts
+
+      - name: Build (static export)
+        run: npm run build
+        env:
+          NEXT_PUBLIC_API_BASE_URL: ${{ vars.NEXT_PUBLIC_API_BASE_URL }}
+          NEXT_PUBLIC_APP_URL: ${{ vars.NEXT_PUBLIC_APP_URL }}
+
+      - name: Verify 404.html exists
+        run: test -f out/404.html
+
+  api:
+    needs: changes
+    if: needs.changes.outputs.api == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: api
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: pm4
+          POSTGRES_PASSWORD: pm4
+          POSTGRES_DB: pm4_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U pm4 -d pm4_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:8
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: api/.nvmrc
+          cache: npm
+          cache-dependency-path: api/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type-check
+        run: npm run typecheck
+
+      - name: Test
+        run: npm test
+
+      - name: Test (e2e, Postgres + Redis service containers)
+        run: npm run test:e2e
+
+      - name: Regenerate openapi.json
+        run: npm run openapi:export
+
+      - name: Verify openapi.json is current (ADR-0010)
+        run: git diff --exit-code -- openapi.json
+
+      - name: Build
+        run: npm run build
