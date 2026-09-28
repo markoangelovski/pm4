@@ -31,5 +31,11 @@ Rules:
 - IDs (`T-####`) are global, sequential and never reused. The next free ID is shown in BOARD.md.
 - A task targets **one** of: `web` (changes only `web/`), `api` (only `api/`), `infra` (workflows, repo setup), `spec`.
 - Size: `S` (< 2h), `M` (≤ 1 day). Anything bigger must be split. `L` is allowed only for bootstrap tasks.
+- Every task has a `tier` (`haiku` / `sonnet` / `opus`), taken from its feature spec's *Tasks* table.
+  Routing and escalation rules: `specs/05-quality/task-routing.md`.
+- Tasks created from a feature spec (`specs/06-features/`) are thin. They point at a row of the spec's
+  *Tasks* table, and all the details stay in the spec. Tasks before M1 (M0) use the older, self-contained format.
+- `ac_files` lists the acceptance tests a task must make pass, with sha256 hashes. It's filled in by
+  `write-acceptance-tests`, and the reviewer checks the hashes.
 - Status changes are made in **both** the task frontmatter and BOARD.md.
 - Only the owner or reviewer sets `done`.

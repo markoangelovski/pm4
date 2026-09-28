@@ -13,6 +13,15 @@
       "Bash(git diff:*)",
       "Bash(git log:*)"
     ],
+    "ask": [
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(npm install *)",
+      "Bash(npm i *)",
+      "Bash(npm uninstall *)",
+      "Bash(npm run db:migrate*)",
+      "Bash(npx drizzle-kit push*)"
+    ],
     "deny": [
       "Read(./**/.env)",
       "Read(./**/.env.local)",
@@ -21,8 +30,27 @@
       "Read(./**/.env.development)",
       "Edit(./frontend_old/**)",
       "Edit(./backend_old/**)",
-      "Write(./frontend_old/**)",
-      "Write(./backend_old/**)"
+      "Bash(git push:*)",
+      "Bash(git stash:*)",
+      "Bash(git reset:*)",
+      "Bash(git rebase:*)",
+      "Bash(git merge:*)",
+      "Bash(git restore:*)",
+      "Bash(git clean:*)",
+      "Bash(git checkout -- *)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit|NotebookEdit|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/guard-subagents.mjs\""
+          }
+        ]
+      }
     ]
   }
 }

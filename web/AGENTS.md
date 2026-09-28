@@ -1,7 +1,7 @@
 # AGENTS.md — pm4/web
 
 Instructions for AI coding agents working in `web/`, the PM4 frontend. Read the repo root
-`AGENTS.md` first (monorepo rules, non-negotiable constraints, "agents never commit"). This file
+`AGENTS.md` first (monorepo rules, non-negotiable constraints, the review-before-commit rule). This file
 covers only what's specific to this app. When in doubt, the specs win:
 `../specs/04-web/*.md`, `../specs/decisions/ADR-0009-web-data-layer-and-forms.md`,
 `../specs/decisions/ADR-0010-openapi-contract.md`.
@@ -28,8 +28,7 @@ stays.
 | `npm test` / `npm run test:watch` | Vitest (unit + component tests) |
 | `npm run api:types` | Regenerate `lib/api/schema.d.ts` from `../api/openapi.json` |
 
-Node version: see `.nvmrc` (24). `.npmrc` has `legacy-peer-deps=true` — still required (see
-*Known toolchain pins* below), don't remove it without re-testing `npm install` from scratch.
+Node version: see `.nvmrc` (24).
 
 ## Structure
 
@@ -56,73 +55,28 @@ features/<domain>/               # not created yet; conventions.md's target stru
                                   # (zod), components/ — add as each domain is implemented
 ```
 
-Entity detail pages use **query-param routes**, not dynamic segments: `/projects/view/?id=…`. A
-client component reads `id` with `useSearchParams` inside `<Suspense>` and redirects (replace) to
-the list route when `id` is missing or empty — see `app/components/shared/view-id-guard.tsx`.
+## Rules specific to this app
+Full detail: `../specs/04-web/static-export.md` and `../specs/04-web/conventions.md`.
 
-## Static-export hard rules (re-read `../specs/04-web/static-export.md` before changing `next.config.ts`)
+- **Static export.** Every route exists at build time. Entity pages use query-param routes
+  (`/projects/view/?id=…`), not `[id]`. `next.config.ts` is a tested baseline, and its comments say
+  which template options broke the export. After `npm run build`, serve `out/` (`npx serve out`) and
+  hard-refresh a deep route before calling anything done.
+- **shadcn** style is `base-nova` on Base UI, not Radix. A custom component is allowed only when no
+  shadcn one fits, or the fitting one is paid. Put it in `features/<domain>/components/`, and say why
+  in the task notes.
+- **Data layer.** Hooks and query-key factories live in `features/<domain>/api.ts`. Mutations
+  invalidate the precise keys they affect. `lib/api/schema.d.ts` is generated, and stays a stub
+  until the API exports paths. Auth headers and refresh-on-401 go in `lib/api/client.ts` only (M1).
+- **Time.** Work dates are `YYYY-MM-DD` strings, handled as calendar arithmetic (see the comments in
+  `lib/time/index.ts`). Keep the Europe/Zagreb midnight and DST cases in `lib/time/index.test.ts`.
 
-- No Route Handlers (`app/**/route.ts`), Server Actions, middleware/proxy, ISR, `cookies()` /
-  `headers()`, or Next image optimization. Client components + the API only.
-- Every route must exist at build time. No `[id]` dynamic segments — use query-param routes.
-- `next.config.ts` is the tested baseline (`output: "export"`, `trailingSlash: true`,
-  `images.unoptimized: true`, `reactCompiler` + `experimental.turbopackRustReactCompiler`). Before
-  adding any other Next config option, build with `output: "export"` and confirm it actually works
-  — several template options (`output: "standalone"`, `cacheComponents`, `partialPrefetching`,
-  `experimental.useOffline`) do not, and were removed in T-0002 (see the config file's comments
-  and the task's Implementation notes for why).
-- After `npm run build`, serve `out/` statically (`npx serve out`) and hard-refresh a deep route
-  (e.g. `/projects/view/?id=…`) before calling anything done.
+## Known toolchain pins: don't change them
 
-## Components (shadcn) — always use the CLI
-
-- Install every shadcn component, primitive or block, with `npx shadcn@latest add <name>` **run
-  from `web/`**. Never hand-write or copy component source into `components/ui/`.
-- This template's style is `base-nova` on **Base UI** (`@base-ui/react`), not Radix. Its
-  polymorphic prop is `render={<Link href="…" />}`, not `asChild`. Check an existing
-  `components/ui/*.tsx` file for the pattern before assuming Radix conventions.
-- A custom component is allowed only when no shadcn component fits, or the fitting one is paid —
-  build it in `features/<domain>/components/` (or `app/components/shared/` if it's shell-level),
-  and say why in the task's Implementation notes.
-
-## Data layer (ADR-0009 / ADR-0010)
-
-- Components call hooks from `features/<domain>/api.ts`, never `fetch`/`lib/api` directly.
-- `lib/api/client.ts` wraps `openapi-fetch` over generated types (`lib/api/schema.d.ts`). That
-  schema file is a **stub** (`export interface paths {}`) until `../api/openapi.json` exists —
-  regenerate it with `npm run api:types` once it does, and keep it committed and current (CI will
-  fail on drift once that's wired up).
-- TanStack Query defaults (`lib/query-client.tsx`): `staleTime` 30s, `retry: 1` for queries,
-  `retry: 0` for mutations. Query keys come from a per-domain factory; mutations invalidate the
-  precise keys they affect.
-- Auth headers, the shared refresh-on-401, and Problem Details → field error mapping land with
-  auth (M1). Until then `lib/api/client.ts` has no auth handling — don't add ad hoc token logic
-  elsewhere; do it there when M1 lands.
-
-## Time and dates (`lib/time`)
-
-- Always use `lib/time`'s `today(tz)`, `monthRange(date, tz)`, `formatDuration(minutes)`. Never
-  `new Date().toISOString().split("T")[0]` — that reads the UTC date and is wrong near midnight.
-- Work dates are `YYYY-MM-DD` strings end to end, handled as calendar arithmetic, not instants —
-  see the comments in `lib/time/index.ts` for why `monthRange` deliberately avoids going through a
-  time-zone-converted instant.
-- `parseDuration` is a typed stub (throws `"not implemented (M4)"`) until the time-log form needs
-  it.
-- `lib/time/index.test.ts` has the required Europe/Zagreb midnight/DST test cases
-  (`specs/05-quality/testing.md`) — extend it, don't remove the coverage, when you touch this file.
-
-## Known toolchain pins (revisit when the ecosystem catches up)
-
-- **TypeScript is pinned to `6.0.3`**, not the `7.0.x` native compiler `specs/02-architecture/tech-stack.md`'s
-  Shared table lists. `typescript-eslint` (used by `eslint-config-next`) does not support TypeScript
-  7.x yet (confirmed against its latest published peer range at T-0002). Re-test with `7.x` and
-  update this note + flag the tech-stack.md Shared table for an owner update once it does.
-- **ESLint is pinned to `9.39.x`**, not `10.x`. `eslint-plugin-react` (via `eslint-config-next`)
-  does not support ESLint 10 yet (`context.getFilename is not a function`). ESLint 9 is EOL
-  upstream, so this is a temporary, deliberately-tracked pin, not a long-term choice.
-- `.npmrc`'s `legacy-peer-deps=true` is required for at least two independent reasons: the
-  template's own peer graph, and `openapi-typescript`'s peer range (`typescript ^5.x`) conflicting
-  with our pinned `6.0.3`.
+`typescript` is pinned to `6.0.3`, `eslint` to `9.39.x`, and `.npmrc` has `legacy-peer-deps=true`.
+Each works around an ecosystem gap (`typescript-eslint` doesn't support TS 7; `eslint-plugin-react`
+doesn't support ESLint 10; peer ranges). The reasons are in T-0002's *Implementation notes*
+(`../tasks/m0-foundation/T-0002-bootstrap-web-from-template.md`). Changing any of them is an owner decision.
 
 ## Testing
 
@@ -132,8 +86,28 @@ the list route when `id` is missing or empty — see `app/components/shared/view
   `app/components/shared/view-id-guard.test.tsx`.
 - Playwright is **not** set up yet — that's M1+, once there's a real API to run journeys against.
 
-## Non-negotiable reminders
+## Patterns to copy
+No `features/<domain>/` module, form or data view exists yet. The **first** of each becomes the
+reference; their tasks are opus/sonnet (`../specs/05-quality/task-routing.md`). Add them here when they land.
 
-- Agents never commit, stage, stash or push (repo root `AGENTS.md` §3). Leave changes uncommitted.
-- Don't touch `../api/`, `../frontend_old/`, `../backend_old/`, or the template zip.
-- Don't open any `.env*` file except `.env.example`.
+| Need | Copy from | What to copy |
+| --- | --- | --- |
+| Page with metadata | `app/(dashboard-layout)/projects/page.tsx` | `export const metadata`, a server page wrapping client parts |
+| Entity detail route (`?id=`) | `app/(dashboard-layout)/projects/view/page.tsx` + `app/components/shared/view-id-guard.tsx` | `<Suspense>` + `ViewIdGuard` |
+| Query client / defaults | `lib/query-client.tsx` | Don't override the defaults per query without a spec reason |
+| API calls | `lib/api/client.ts` | Use `apiClient` inside `features/<domain>/api.ts` hooks only |
+| Dates and durations | `lib/time/index.ts` | `today(tz)`, `monthRange()`, `formatDuration()` |
+| Typed stub for unwritten code | `lib/time/index.ts` → `parseDuration` | Signature + `throw new Error("not implemented (…)")` |
+| Component test with router mocks | `app/components/shared/view-id-guard.test.tsx` | `vi.mock("next/navigation", …)` |
+| shadcn polymorphism | any `components/ui/*.tsx` | Base UI's `render={<X />}`, not `asChild` |
+
+## Never
+- Never edit `*.ac.test.ts(x)` (acceptance tests) unless you are the test writer.
+- Never hand-write or copy code into `components/ui/`. Use `npx shadcn@latest add`.
+- Never call `fetch` or `apiClient` from a component. Never compute a date with `toISOString()`.
+- Never add `route.ts`, Server Actions, middleware or `[param]` segments. Never add a Next config
+  option without a static-export build check.
+- Never edit `lib/api/schema.d.ts` by hand. Run `npm run api:types`.
+- Never add dependencies without asking (the shadcn CLI installing a component's own deps is fine).
+- Never touch `../api/`, `../frontend_old/`, `../backend_old/` or the template zip. Never open `.env*` except `.env.example`.
+- Never stage, commit or push. Leave changes uncommitted for the owner's review (`../AGENTS.md` §3).

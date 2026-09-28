@@ -4,35 +4,30 @@ title: <Imperative title, e.g. "Implement create project endpoint">
 milestone: M<N>
 app: api            # web | api | infra | spec
 status: blocked     # blocked | ready | in-progress | review | done
-size: M             # S | M | L
+size: S             # S | M | L
+tier: sonnet        # haiku | sonnet | opus (specs/05-quality/task-routing.md)
 depends_on: []      # [T-0001, …]
-specs:              # every spec section the implementer must read
-  - specs/03-api/endpoints.md#api-prj-001-create-project
+feature_spec: specs/06-features/<file>.md#tasks   # row "T<n>" of its Tasks table
 requirements: []    # [FR-PRJ-001, NFR-005]
+ac_files: []        # acceptance tests this task must make pass, with sha256 (filled by write-acceptance-tests)
+                    # - { path: api/test/prj-crud.ac.e2e-spec.ts, sha256: <hash> }
 ---
 
 # T-XXXX: <Title>
 
 ## Goal
-One or two sentences describing the outcome, and why it matters.
+One sentence. The details live in the feature spec. Don't repeat them here.
 
-## Context
-Background, links to decisions, anything non-obvious.
+## Task
+**Feature spec row:** T<n>. **Tier reason:** <copied from the spec>.
 
-## Scope
-**In:**
-- …
-
-**Out:**
-- …
+Read: this file → the feature spec (whole) → the files under its *Read first* → the app's `AGENTS.md`.
+Change only the files that the spec's *Files* table assigns to T<n>.
 
 ## Acceptance criteria
-- [ ] AC1 (FR-…): …
-- [ ] AC2: …
-- [ ] Definition of Done satisfied (`specs/05-quality/definition-of-done.md`)
-
-## Implementation hints (optional)
-Pointers only, not a prescription.
+- [ ] The acceptance tests listed in `ac_files` pass, and are unchanged (hashes match).
+- [ ] <anything the tests can't show, e.g. "`openapi.json` regenerated and matches endpoints.md">
+- [ ] Definition of Done satisfied (`specs/05-quality/definition-of-done.md`).
 
 ## Blocked by (if status is blocked)
 - …
@@ -40,7 +35,11 @@ Pointers only, not a prescription.
 ---
 
 ## Implementation notes
-_Filled in by the implementer: plan, changes, decisions, commands run and their results, follow-ups._
+_Filled in by the implementer: changes, commands run and their real results, follow-ups._
+
+### Attempts
+| # | Tier | Result (`done` / `BLOCKED` / `FAILED`) | Summary |
+| --- | --- | --- | --- |
 
 ## Review
-_Filled in by the reviewer: verdict and findings._
+_Filled in by `review-task`: verdict and findings._

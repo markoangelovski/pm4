@@ -11,6 +11,7 @@ Either way, fix the disagreement. Never ignore it.
 | New to the project | `00-product/vision.md` → `00-product/scope.md` → `00-product/glossary.md` → `02-architecture/system-overview.md` |
 | Implementing an API task | Task file → `03-api/*` → relevant `01-requirements/*` → `02-architecture/security.md` |
 | Implementing a web task | Task file → `04-web/static-export.md` → `04-web/*` → relevant `01-requirements/*` → `03-api/endpoints.md` |
+| Implementing a task from a feature spec | Task file → its feature spec in `06-features/` → only the files under its *Read first* |
 | Writing specs | This file → `open-questions.md` → the spec you are changing |
 
 ## Index and status
@@ -49,6 +50,8 @@ Either way, fix the disagreement. Never ignore it.
 | Testing strategy | [05-quality/testing.md](05-quality/testing.md) | draft |
 | Code style | [05-quality/code-style.md](05-quality/code-style.md) | draft |
 | Definition of Done | [05-quality/definition-of-done.md](05-quality/definition-of-done.md) | draft |
+| Task routing and escalation | [05-quality/task-routing.md](05-quality/task-routing.md) | draft |
+| Feature specs | [06-features/README.md](06-features/README.md) | — |
 | Decisions (ADRs) | [decisions/README.md](decisions/README.md) | — |
 | Open questions | [open-questions.md](open-questions.md) | — |
 
@@ -79,6 +82,8 @@ related: [api-endpoints, ADR-0001]
 | Non-functional requirement | `NFR-###` | `NFR-004` | `01-requirements/non-functional.md` |
 | API endpoint | `API-<AREA>-###` | `API-TLOG-002` | `03-api/endpoints.md` |
 | Screen | `SCR-###` | `SCR-005` | `04-web/screens.md` |
+| Feature spec | `feat-<area>-<slug>` | `feat-prj-crud` | `06-features/` |
+| Acceptance test | `AC-#` (per feature spec) | `AC-3` | feature spec + `*.ac.*` test files |
 | Decision | `ADR-####` | `ADR-0002` | `decisions/` |
 | Open question | `OQ-###` | `OQ-004` | `open-questions.md` |
 | Task | `T-####` | `T-0012` | `../tasks/` |

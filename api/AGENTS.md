@@ -56,8 +56,29 @@ not contradict the root `AGENTS.md`/`CLAUDE.md` or `../specs` — read those fir
   → `../specs/03-api/conventions.md#errors`
 - `openapi.json` must match `../specs/03-api/endpoints.md` and stay regenerated
   (`npm run openapi:export`, no diff). → ADR-0010
-- Agents never commit (`../AGENTS.md` §3). `openapi.json`, `drizzle/*.sql` and this repo's other
-  generated-but-committed files are left as uncommitted working-tree changes for the owner to
-  review and commit.
+- ESM throughout: every relative import ends in `.js`, even though the source is `.ts`.
+- Leave generated tracked files (`openapi.json`, `drizzle/*.sql`, `drizzle/meta/*`) as uncommitted
+  changes for review (`../AGENTS.md` §3).
+
+## Patterns to copy
+No feature module exists yet. The **first** module, repository, DTO and guard become the reference;
+their tasks are opus/sonnet (`../specs/05-quality/task-routing.md`). Add them to this table when they land.
+
+| Need | Copy from | What to copy |
+| --- | --- | --- |
+| Module + controller + service wiring | `src/health/` | `@Module` imports/providers, constructor DI, `.js` imports |
+| Injecting the database | `src/database/drizzle.ts`, `database.module.ts` | `Drizzle` / `DRIZZLE` token; import `DatabaseModule` |
+| Errors | `src/common/filters/problem-details/` | Throw Nest `HttpException`s; the filter makes Problem Details. Don't hand-build error bodies |
+| Unit test | `src/health/health.service.spec.ts` | Construct the service directly with `vi.fn()` fakes |
+| e2e test | `test/health.e2e-spec.ts` + `test/create-test-app.ts` | `createTestApp()` + Supertest, closed in `afterAll` |
+| New env var | `src/config/env.schema.ts` + `app-config.service.ts` | zod schema entry + typed getter + `.env.example` |
+
+## Never
+- Never edit `*.ac.spec.ts` / `*.ac.e2e-spec.ts` (acceptance tests) unless you are the test writer.
+- Never hand-write a module, controller, service, guard, pipe, filter or interceptor. Use `npx nest g`.
+- Never query without a `userId` condition. Never return `403` for another user's resource (use `404`).
+- Never edit an existing migration in `drizzle/`. Never run `db:migrate` against Neon, or `drizzle-kit push`.
+- Never use `console.log`. Use Nest's `Logger`.
+- Never add dependencies without asking.
 
 Full specs: `../specs` (start at `../AGENTS.md`).

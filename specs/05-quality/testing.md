@@ -3,8 +3,8 @@ id: qa-testing
 title: Testing Strategy
 status: draft
 owner: Marko Angelovski
-last_updated: 2026-09-27
-related: [qa-dod, NFR-005]
+last_updated: 2026-09-28
+related: [qa-dod, qa-task-routing, NFR-005]
 ---
 
 # Testing Strategy
@@ -33,6 +33,22 @@ Defines what is tested, at which level, and with which tools.
 - Positions: append, insert, move and delete keep positions dense (1…n) and unique per day. Concurrent appends don't collide.
 - Auth: state/code single use, refresh rotation and reuse detection, cross-user 404s (API).
 
+## Acceptance tests (test-first)
+Each feature spec (`06-features/`) lists its acceptance tests (`AC-#`). The test writer (opus) writes
+them **before** implementation. Implementers make them pass.
+
+- **Naming:** `*.ac.spec.ts` (api unit), `*.ac.e2e-spec.ts` (api e2e, in `api/test/`), `*.ac.test.ts(x)`
+  (web). These names match the existing Vitest include patterns.
+- **Protected:** implementers never edit these files. A hook blocks it, and the reviewer checks the
+  sha256 recorded in the task file. A test that is wrong goes back to the test writer.
+- **Black-box first:** API acceptance tests go through HTTP (`createTestApp()` + Supertest), so they
+  don't import code that doesn't exist yet. Web tests import only the component or hook paths the spec fixes.
+- **Typed stubs:** when a test must import something new, the test writer also creates it with the
+  spec's signature and a body that throws `new Error("not implemented (T-####)")` (the `parseDuration`
+  pattern in `web/lib/time`). Lint and typecheck stay green. The tests fail at runtime, for the right reason.
+- **Test names** start with the AC and requirement IDs: `it('AC-3 FR-PRJ-003: returns 404 for another user\'s project')`.
+- Implementers may add ordinary tests next to their code. Those aren't protected.
+
 ## Rules
 - Tests ship with the feature in the same task. A task isn't done without them.
 - No test depends on production services or real secrets.
@@ -44,3 +60,4 @@ Defines what is tested, at which level, and with which tools.
 ## Changelog
 - 2026-09-26: Initial scaffold.
 - 2026-09-27: API tests use Vitest instead of Jest (owner decision: NestJS 12 is ESM-only, and Jest needs experimental ESM workarounds).
+- 2026-09-28: Acceptance tests are written first by the test writer and protected from implementer edits.
