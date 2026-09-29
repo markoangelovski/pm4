@@ -1,6 +1,6 @@
 # Task Board
 
-**Next free ID:** T-0007
+**Next free ID:** T-0010
 
 | ID | Title | Milestone | App | Size | Status | Depends on |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -10,5 +10,8 @@
 | [T-0003](m0-foundation/T-0003-web-github-pages-pipeline.md) | GitHub Pages workflow for `web/` | M0 | infra | M | review | T-0002 |
 | [T-0004](m0-foundation/T-0004-api-azure-pipeline.md) | Azure Web App workflow for `api/` | M0 | infra | M | review | T-0001 |
 | [T-0006](m0-foundation/T-0006-shared-prettier-config.md) | Same Prettier rules in `web/` and `api/` | M0 | infra | S | blocked | — |
+| [T-0007](m1-auth/T-0007-return-to-helpers.md) | Implement the returnTo helpers in `web/lib/auth/return-to.ts` | M1 | web | S | ready | — |
+| [T-0008](m1-auth/T-0008-move-app-routes-under-app.md) | Move app pages under `/app/` and the landing page to the root | M1 | web | M | blocked | T-0007 |
+| [T-0009](m1-auth/T-0009-landing-cta-login-returnto.md) | Implement `LandingCta` and use it on the landing page | M1 | web | S | blocked | T-0007, T-0008 |
 
-Milestones M1–M6 have no tasks yet. They're created with the `write-task` skill once their specs are approved.
+Milestones M2–M6 have no tasks yet, and M1 has only the landing route split so far. They're created with the `write-task` skill once their specs are approved.

@@ -3,7 +3,7 @@ id: web-static-export
 title: Static Export Constraints
 status: approved
 owner: Marko Angelovski
-last_updated: 2026-09-27
+last_updated: 2026-09-29
 related: [ADR-0001, web-template, web-routing, arch-deployment]
 ---
 
@@ -64,7 +64,7 @@ user-specific is fetched at build time.
 ## Verification (every web task)
 1. `npm run build` succeeds and produces `out/`.
 2. Serve `out/` statically from the root (e.g. `npx serve out`), then hard-refresh on a deep route
-   (e.g. `/projects/view/?id=…`): the page loads, with no 404 and no missing assets.
+   (e.g. `/app/projects/view/?id=…`): the page loads, with no 404 and no missing assets.
 
 ## Open questions
 —
@@ -79,3 +79,6 @@ user-specific is fetched at build time.
   build). `reactCompiler` + `experimental.turbopackRustReactCompiler` kept (confirmed working).
   `output: "standalone"` and `experimental.useOffline` also removed (mutually exclusive with
   `output: "export"`, and no server to retry against, respectively).
+- 2026-09-29: Verification example updated to the `/app/` route prefix (OQ-047). No rule changed.
+  Back to `review` (feat-land-app-route-split).
+- 2026-09-29: Approved by the owner.

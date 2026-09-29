@@ -3,8 +3,8 @@ id: web-conventions
 title: Web Conventions
 status: approved
 owner: Marko Angelovski
-last_updated: 2026-09-27
-related: [web-static-export, web-template, qa-code-style, ADR-0009, ADR-0010]
+last_updated: 2026-09-29
+related: [web-static-export, web-template, web-routing, qa-code-style, ADR-0009, ADR-0010, feat-land-app-route-split]
 ---
 
 # Web Conventions
@@ -12,19 +12,24 @@ related: [web-static-export, web-template, qa-code-style, ADR-0009, ADR-0010]
 ## Purpose
 Coding conventions for `web/`, which extend the template's own conventions.
 
-## Structure (proposed; finalize in T-0002)
+## Structure (proposed; finalize in T-0002; URL layout per OQ-047)
 ```
 app/
-  (dashboard-layout)/          # authenticated shell (auth guard in layout)
-    page.tsx                   # dashboard (FR-RPT-*)
-    projects/  projects/view/  tasks/  tasks/view/  time/  trash/  settings/
-  auth/sign-in/  auth/callback/  # outside the shell
+  page.tsx                     # landing page `/` (SCR-003), outside the shell
+  (dashboard-layout)/          # authenticated shell (auth guard in layout), wraps only `/app/**`
+    layout.tsx  loading.tsx  error.tsx  layout/   # shell internals
+    app/                       # the `/app/` URL segment
+      page.tsx                 #   dashboard `/app/` (FR-RPT-*)
+      projects/  projects/view/  tasks/  tasks/view/  time/  trash/  settings/
+  auth/sign-in/  auth/callback/  # outside the shell and outside `/app/`
 components/ui/                 # shadcn primitives (edit only for global changes)
 features/<domain>/             # projects, tasks, time, reports, trash, auth
   api.ts                       #   query-key factory + useQuery/useMutation hooks
   schemas.ts                   #   zod form schemas
   components/                  #   domain components
 lib/api/                       # openapi-fetch client, schema.d.ts (generated), token handling, error mapping
+lib/routes.ts                  # every internal route path (no hard-coded path literals elsewhere)
+lib/auth/return-to.ts          # `returnTo` validation and the landing / sign-in / post-sign-in hrefs
 lib/time/                      # time-zone-aware helpers: today(), monthRange(), formatDuration(), parseDuration()
 lib/utils.ts
 ```
@@ -50,7 +55,9 @@ lib/utils.ts
 - Optimistic updates for task status changes and log edits, with rollback on error.
 - Defaults: `staleTime` 30 s, `retry` 1 for idempotent queries, no retry for mutations. `refetchOnWindowFocus` stays on.
 - `lib/api` attaches the access token. On a 401 it runs a single shared refresh, then retries once.
-  If the refresh fails, it signs out and redirects to sign-in.
+  If the refresh fails, it signs out (removes the stored refresh token), then replaces the URL with
+  `landingHref(window.location.pathname + window.location.search)`, i.e. `/?returnTo=<current path+query>`
+  (OQ-049, routing.md). Only a user-initiated sign-out goes to `/auth/sign-in/`.
 
 ## Forms (ADR-0009)
 - react-hook-form + zod via `zodResolver`, using the template's shadcn form/field components.
@@ -71,7 +78,7 @@ lib/utils.ts
 - URL state (filters, date ranges, selected projects, day view date) through nuqs.
 
 ## Open questions
-— (depends on ADR-0009/0010 confirmation)
+—
 
 ## Changelog
 - 2026-09-26: Initial scaffold.
@@ -79,3 +86,8 @@ lib/utils.ts
 - 2026-09-27: ADR-0009 accepted.
 - 2026-09-27: shadcn components are always installed with the shadcn CLI. Custom components only when none exists or it is paid.
 - 2026-09-27: Approved by the owner.
+- 2026-09-29: OQ-047: structure updated for the landing page at `/` and the app under `/app/`
+  (`(dashboard-layout)/app/`); added `lib/routes.ts` and `lib/auth/return-to.ts`. The refresh-failure
+  redirect target is TBD (OQ-049). Back to `review` (feat-land-app-route-split).
+- 2026-09-29: OQ-049 resolved: a failed refresh clears the stored token and goes to `/?returnTo=<current path+query>`.
+- 2026-09-29: Approved by the owner.

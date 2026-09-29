@@ -26,7 +26,7 @@ Either way, fix the disagreement. Never ignore it.
 | Glossary | [00-product/glossary.md](00-product/glossary.md) | draft |
 | Requirements overview | [01-requirements/README.md](01-requirements/README.md) | draft |
 | Auth and accounts | [01-requirements/auth.md](01-requirements/auth.md) | draft |
-| Public landing page | [01-requirements/landing.md](01-requirements/landing.md) | draft |
+| Public landing page | [01-requirements/landing.md](01-requirements/landing.md) | approved |
 | Projects | [01-requirements/projects.md](01-requirements/projects.md) | draft |
 | Tasks | [01-requirements/tasks.md](01-requirements/tasks.md) | draft |
 | Time capture | [01-requirements/time-logs.md](01-requirements/time-logs.md) | draft |

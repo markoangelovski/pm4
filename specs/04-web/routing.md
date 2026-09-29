@@ -3,8 +3,8 @@ id: web-routing
 title: Routing and Navigation
 status: approved
 owner: Marko Angelovski
-last_updated: 2026-09-27
-related: [web-static-export, web-screens, req-landing]
+last_updated: 2026-09-29
+related: [web-static-export, web-screens, req-landing, req-auth, feat-land-app-route-split]
 ---
 
 # Routing and Navigation
@@ -12,35 +12,68 @@ related: [web-static-export, web-screens, req-landing]
 ## Purpose
 Defines the URL structure and navigation. Every route must exist at build time (static export).
 
+## URL layout (OQ-047: decided)
+- `/` is the public landing page (SCR-003).
+- `/auth/sign-in/` and `/auth/callback/` are public, outside `/app/`.
+- **Everything else lives under `/app/`, and every `/app/**` route is private.**
+- The old URLs (`/home/`, `/projects/`, `/tasks/`, `/time/`, `/trash/`, `/settings/`, and their
+  `view/` pages) don't exist. There are no redirects: they show the normal not-found page (`404.html`).
+
 ## Entity routes (OQ-014: decided)
-Single-entity pages use **query-param routes**: `/projects/view/?id=<uuid>`. There's one static page,
+Single-entity pages use **query-param routes**: `/app/projects/view/?id=<uuid>`. There's one static page,
 and the client reads `id` with `useSearchParams` (inside `<Suspense>`).
-- **`id` missing or empty → redirect (replace) to the list** (`/projects/`, `/tasks/`).
+- **`id` missing or empty → redirect (replace) to the list** (`/app/projects/`, `/app/tasks/`).
 - `id` not found → a "Not found" state with a link back to the list. If it's in the trash → a "This project is in the trash" state with **Restore**.
 
 ## Route map
 | Route | Screen | Auth |
 | --- | --- | --- |
-| `/home/` | SCR-003 Landing page (marketing, "Go to app" / "Login" header button) | public |
+| `/?returnTo=` | SCR-003 Landing page (marketing, "Go to app" / "Login" header button) | public |
 | `/auth/sign-in/?returnTo=` | SCR-001 Sign in (Google) | public |
 | `/auth/callback/?code=&returnTo=` | SCR-002 OAuth callback (token exchange, then redirect) | public |
-| `/` | SCR-010 Dashboard (range, total, breakdown, chart) | required |
-| `/projects/` | SCR-020 Project list | required |
-| `/projects/view/?id=` | SCR-021 Project detail (tasks, totals) | required |
-| `/tasks/` | SCR-030 Task list (all projects) | required |
-| `/tasks/view/?id=` | SCR-031 Task detail (with its time logs) | required |
-| `/time/?date=&view=sequential\|project` | SCR-040 Day view (workday header, logs, view toggle) | required |
-| `/trash/` | SCR-060 Trash | required |
-| `/settings/` | SCR-050 Profile and settings (time zone) | required |
+| `/app/` | SCR-010 Dashboard (range, total, breakdown, chart) | required |
+| `/app/projects/` | SCR-020 Project list | required |
+| `/app/projects/view/?id=` | SCR-021 Project detail (tasks, totals) | required |
+| `/app/tasks/` | SCR-030 Task list (all projects) | required |
+| `/app/tasks/view/?id=` | SCR-031 Task detail (with its time logs) | required |
+| `/app/time/?date=&view=sequential\|project` | SCR-040 Day view (workday header, logs, view toggle) | required |
+| `/app/trash/` | SCR-060 Trash | required |
+| `/app/settings/` | SCR-050 Profile and settings (time zone) | required |
 
 ## Navigation
-- Sidebar: Dashboard, Time, Projects, Tasks, Trash, Settings.
+- Sidebar: Dashboard (`/app/`), Time, Projects, Tasks, Trash, Settings. The app logo links to `/app/`.
 - Header: a global **Log time** button (FR-TLOG-008), the user menu (avatar, settings, sign out) and the theme toggle.
-- Landing page (`/home/`, FR-LAND-001/002): public, outside the app shell and its auth guard. It has its own marketing header with the "Go to app" / "Login" button, not the sidebar.
-- Auth guard: the shell layout waits for session restore (refresh). Without a session, it redirects to `/auth/sign-in/?returnTo=<path+query>`, except on the root `/`, which redirects to `/home/` (OQ-044).
-- The sign-in screen's logo links to `/home/`.
+- Landing page (`/`, FR-LAND-001/002): public, outside the app shell and its auth guard. It has its own
+  marketing header with the "Go to app" / "Login" button, not the sidebar.
+- The sign-in screen's logo links to the landing page `/`.
+- The not-found page's "Go back home" button links to `/` (the landing page).
 - No page is indexable (FR-LAND-003): every page carries a `noindex` robots directive, and there is no sitemap.
-- All internal links use `next/link`. `returnTo` must be a same-origin relative path.
+- All internal links use `next/link`.
+
+## Auth guard and `returnTo` (OQ-047)
+- The shell layout of `/app/**` waits for session restore (refresh). **Without a session, it redirects
+  (replace) to the landing page `/`, keeping the deep link as `/?returnTo=<path+query>`.** When the
+  path+query is exactly `/app/`, the `returnTo` is left out (plain `/`).
+- If session restore fails because the stored refresh token is expired or revoked, the client
+  **removes the stored refresh token before redirecting**, so the landing page shows "Login" (FR-LAND-002).
+- **Login** on the landing page goes to `/auth/sign-in/?returnTo=<the landing page's returnTo>`, or to
+  `/auth/sign-in/` when there is none. **Go to app** (signed in) goes to the landing page's `returnTo`
+  when it's valid, otherwise to `/app/` (OQ-048).
+- The sign-in screen passes `returnTo` to the API (API-AUTH-001), which round-trips it to `/auth/callback/`.
+  After the token exchange, the callback replaces the URL with `returnTo`, or with **`/app/`** when there is none.
+- **Validation.** Every hop (landing, sign-in, callback) validates `returnTo` with the same rule, and
+  treats an invalid value as absent: it must be a **same-origin relative path under `/app/`**, at most
+  2048 characters, starting with a single `/` and containing no backslash or control character. The
+  check runs on the parsed, normalized URL (so `/app/../auth/` is rejected). The hash is dropped.
+  An invalid value is never echoed into a link, and the page doesn't rewrite its own URL. Details and
+  the helper: [feat-land-app-route-split](../06-features/land-app-route-split.md#web).
+- **A session that ends while the user is inside `/app/**`** (a failed refresh after a 401: expired or
+  revoked, "Sign out of all devices" on another device, allow-list removal) follows the same rule: the
+  client removes the stored refresh token, then replaces the URL with `/?returnTo=<current path+query>` (OQ-049).
+- A user-initiated **Sign out** lands on the sign-in screen `/auth/sign-in/`, with no `returnTo` (FR-AUTH-004).
+
+## Open questions
+— (OQ-047, OQ-048, OQ-049 resolved)
 
 ## Changelog
 - 2026-09-26: Initial scaffold.
@@ -48,3 +81,10 @@ and the client reads `id` with `useSearchParams` (inside `<Suspense>`).
 - 2026-09-27: Added the public landing page route `/home/` (SCR-003).
 - 2026-09-27: OQ-044/045 resolved: `/` without a session → `/home/`; sign-in logo → `/home/`; no page indexable.
 - 2026-09-27: Approved by the owner.
+- 2026-09-29: OQ-047: landing page moves to `/`, the app to `/app/**` (all private); old URLs dropped
+  without redirects. Signed-out visitors on `/app/**` go to `/?returnTo=`; default post-sign-in
+  destination `/app/`; `returnTo` must be under `/app/`. Stale tokens are cleared before the redirect.
+  OQ-048/049 raised. Back to `review` (feat-land-app-route-split).
+- 2026-09-29: OQ-048 resolved: "Go to app" follows a valid `returnTo`, else `/app/`. OQ-049 resolved: a
+  session that ends inside `/app/**` clears the stored token and goes to `/?returnTo=`.
+- 2026-09-29: Approved by the owner.

@@ -3,8 +3,8 @@ id: req-auth
 title: Auth and Accounts
 status: draft
 owner: Marko Angelovski
-last_updated: 2026-09-27
-related: [sec, api-endpoints, req-landing, ADR-0007]
+last_updated: 2026-09-29
+related: [sec, api-endpoints, req-landing, web-routing, ADR-0007, feat-land-app-route-split]
 ---
 
 # Auth and Accounts
@@ -23,9 +23,12 @@ account deletion (TODO: confirm), MFA (delegated to Google).
 ### FR-AUTH-001: Sign in with Google
 **Priority:** Must
 **Statement:** The sign-in screen shows a "Continue with Google" button. The user authenticates with
-Google and returns to PM4 signed in, landing on the page they originally asked for (default: dashboard).
+Google and returns to PM4 signed in, landing on the page they originally asked for (the `returnTo`
+kept by FR-AUTH-005), or on the dashboard **`/app/`** when there is none or it is invalid (OQ-047;
+validation rule in `04-web/routing.md`).
 **Acceptance criteria:**
 - Given I'm signed out, when I finish the Google consent, then I land on the requested page, signed in.
+- Given I opened `/auth/sign-in/` with no `returnTo` (or an invalid one), when I finish the Google consent, then I land on `/app/`.
 - Given I cancel at Google, or Google returns an error, then I'm back on the sign-in screen with a readable error.
 - The OAuth `state` is validated (CSRF protection). A tampered or expired state is rejected.
 
@@ -51,23 +54,33 @@ tabs and survives closing the tab or browser (OQ-024). It ends after 30 days wit
 ### FR-AUTH-004: Sign out
 **Priority:** Must
 **Statement:** Signing out revokes the session on the server, clears the tokens in the client, and
-shows the sign-in screen.
+shows the sign-in screen (`/auth/sign-in/`, with no `returnTo`, so signing in again lands on `/app/`).
 
 ### FR-AUTH-007: Sign out of all devices
 **Priority:** Must
 **Statement:** From the profile, the user can sign out of all devices. Every session of that user is
 revoked. Other tabs and devices are signed out at their next refresh (at the latest, within 15 minutes).
 **Acceptance criteria:**
-- Given I'm signed in on two devices, when I choose "Sign out of all devices" on one, then that device shows the sign-in screen, and the other can't refresh and shows the sign-in screen within 15 minutes.
+- Given I'm signed in on two devices, when I choose "Sign out of all devices" on one, then that device shows the sign-in screen (`/auth/sign-in/`). Within 15 minutes, the other device fails to refresh, removes its stored refresh token, and goes to `/?returnTo=<the page it was on>` (OQ-049, FR-AUTH-005).
 
 ### FR-AUTH-005: Protected routes
 **Priority:** Must
-**Statement:** An unauthenticated user who opens any app screen is redirected to sign-in, and returned
-to that screen afterwards. **Exception:** opening the app root `/` without a session redirects to the
-public landing page `/home/` instead (OQ-044, req-landing). The API rejects unauthenticated requests with 401.
+**Statement:** Every app screen lives under `/app/` and is private (OQ-047). An unauthenticated user who
+opens any `/app/**` route is redirected to the public landing page `/`, which keeps the deep link as
+`/?returnTo=<path+query>` (left out for the dashboard `/app/` itself). From there, **Login** carries the
+deep link through sign-in, and the user is returned to it afterwards (FR-LAND-002, FR-AUTH-001). If the
+stored refresh token is expired or revoked, the client removes it before redirecting, so the landing page
+shows "Login". The same applies when a session ends while the user is already inside `/app/**`: a failed
+refresh after a 401 (expired or revoked session, "Sign out of all devices" elsewhere, allow-list removal)
+removes the stored refresh token and goes to `/?returnTo=<current path+query>` (OQ-049). A user-initiated
+sign-out is different: it goes to the sign-in screen (FR-AUTH-004). The API rejects unauthenticated requests with 401.
 **Acceptance criteria:**
-- Given I'm signed out, when I open `/projects/`, then I'm on sign-in, and after signing in I'm on `/projects/`.
-- Given I'm signed out, when I open `/`, then I'm on `/home/`.
+- Given I'm signed out, when I open `/app/projects/`, then I'm on `/?returnTo=%2Fapp%2Fprojects%2F`; after clicking Login and signing in, I'm on `/app/projects/`.
+- Given I'm signed out, when I open `/app/projects/view/?id=<uuid>`, then after Login and sign-in I'm on `/app/projects/view/?id=<uuid>`.
+- Given I'm signed out, when I open `/app/`, then I'm on `/`, and after Login and sign-in I'm on `/app/`.
+- Given my stored refresh token is expired or revoked, when I open `/app/time/`, then I'm on `/?returnTo=%2Fapp%2Ftime%2F`, the stored token is gone, and the landing page button says "Login".
+- Given I'm on `/app/tasks/` and my session is revoked, when the next API call gets a 401 and the refresh fails, then the stored token is gone and I'm on `/?returnTo=%2Fapp%2Ftasks%2F`.
+- Given I open an old URL such as `/projects/` or `/home/`, then I see the not-found page (no redirect).
 
 ### FR-AUTH-006: Profile and time zone
 **Priority:** Must
@@ -82,7 +95,7 @@ the user changes it.
 - Given I change my time zone, then "today", the default range and all reports use the new zone.
 
 ## Open questions
-—
+— (OQ-047, OQ-049 resolved)
 
 ## Changelog
 - 2026-09-26: Initial scaffold.
@@ -90,3 +103,9 @@ the user changes it.
 - 2026-09-26: Owner answers to OQ-022–026, OQ-032–034.
 - 2026-09-27: OQ-024 resolved: sessions shared by tabs, survive restarts, expire after 30 days unused.
 - 2026-09-27: OQ-044 resolved: signed-out visitors opening `/` go to the landing page `/home/`.
+- 2026-09-29: OQ-047: app screens under `/app/`; signed-out visitors on `/app/**` go to `/?returnTo=`
+  (replaces the OQ-044 rule); default post-sign-in destination `/app/`; stale tokens cleared before the
+  redirect; sign-out lands on `/auth/sign-in/` without `returnTo`. OQ-049 raised.
+- 2026-09-29: OQ-049 resolved: a session that ends inside `/app/**` clears the stored token and goes to
+  `/?returnTo=` (FR-AUTH-005, FR-AUTH-007 AC updated).
+- 2026-09-29: The owner approved FR-AUTH-001, FR-AUTH-004, FR-AUTH-005 and FR-AUTH-007 for feat-land-app-route-split. The file stays `draft` because of the open account-deletion TODO.
