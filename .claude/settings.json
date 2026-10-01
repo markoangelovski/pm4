@@ -11,7 +11,8 @@
       "Bash(npm run typecheck:*)",
       "Bash(git status:*)",
       "Bash(git diff:*)",
-      "Bash(git log:*)"
+      "Bash(git log:*)",
+      "Bash(node scripts/pm4.mjs:*)"
     ],
     "ask": [
       "Bash(git add:*)",

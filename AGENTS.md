@@ -18,6 +18,7 @@ single-user-per-account project management app. Users create **projects** and **
 | `specs/` | Product and technical specs, ADRs, open questions: **the source of truth** | — |
 | `specs/06-features/` | Feature specs: the implementation plan an implementer works from | — |
 | `tasks/` | Implementation backlog (`BOARD.md` = index) | — |
+| `scripts/pm4.mjs` | Workflow helper: task files, hashes, briefs, scope check and gates (`node scripts/pm4.mjs`) | — |
 | `web/` | Frontend: Next.js static export + shadcn (own `AGENTS.md`) | GitHub Pages (`https://pm4.angelovski.top`) |
 | `api/` | Backend: NestJS + Drizzle (own `AGENTS.md`) | Azure Web App (`*.azurewebsites.net`) |
 | `.github/workflows/` | `ci.yml` (PR checks), `web-deploy.yml`, `api-deploy.yml` (path-filtered + manual) | — |
@@ -93,29 +94,35 @@ behavior. Add an entry to `specs/open-questions.md` and ask the user (implemente
 
 These apply to every agent implementing a task, whatever its model.
 
-1. Read the task file, then the feature spec it points to, then **only** the files that spec lists
-   under *Read first*. Don't explore beyond them unless the spec tells you to.
-2. Reuse the utilities and patterns the spec names under *Reuse*. Don't invent new ones.
-3. Don't touch anything listed under *Non-goals*, or any file not listed under *Files*.
+1. Start from `node scripts/pm4.mjs brief <T-####>` (the slice of the feature spec for your task), then
+   open **only** the files under its *Read first* and the files you change. A quick-lane task has no
+   feature spec: its task file is the brief.
+2. Reuse the utilities and patterns the spec names under *Read first*. Don't invent new ones.
+3. Don't touch anything listed under *Non-goals*, or any file not listed for your task under *Files*.
 4. **Never modify acceptance tests** (`*.ac.spec.ts`, `*.ac.e2e-spec.ts`, `*.ac.test.ts(x)`) to make
    them pass. You may add ordinary tests.
-5. If the spec is ambiguous, contradictory or seems wrong, **stop and report**. Don't guess, and
-   don't edit specs.
+5. If the spec is ambiguous, contradictory or seems wrong, **stop and report** `BLOCKED: spec`. If an
+   acceptance test contradicts the spec, report `BLOCKED: test`. Don't guess, and don't edit specs.
 6. Don't add, remove or upgrade dependencies without asking.
-7. If the acceptance tests still fail after **two** fix attempts, stop and report what you tried.
-8. Before finishing, run lint, typecheck and tests for the affected app, and report the real output.
+7. If the acceptance tests still fail after **two** fix attempts, stop and report `FAILED`.
+8. Before finishing, run `node scripts/pm4.mjs check <T-####>` and report its real output.
 
 ## 6. Workflow
 
-Spec → acceptance tests → implement → review. Details: `specs/05-quality/task-routing.md`.
+Spec → acceptance tests → implement → review. Small changes take the **quick lane** (a task file,
+no feature spec, no Opus review). Details: `specs/05-quality/task-routing.md#lanes`.
 
 | Step | Who | Skill |
 | --- | --- | --- |
-| Write the feature spec (reads code first; no open questions left) | Opus, owner approves | `write-spec` |
-| Create task files from the spec's task list | Sonnet | `write-task` |
-| Write the acceptance tests (+ typed stubs), before any code | Opus | `write-acceptance-tests` |
-| Implement one task | Tier on the task: Haiku / Sonnet / Opus | `implement-task` |
-| Review the diff against the spec | Opus | `review-task` |
+| Write the feature spec (reads code first; no open questions left) | Main session (Opus), owner approves | `write-spec` |
+| Create task files from the spec's task list | Script (`pm4 tasks`) | `write-task` |
+| Write the acceptance tests (+ typed stubs), then **owner commits** | Main session (Opus) | `write-acceptance-tests` |
+| Implement each task | Tier on the task: Haiku / Sonnet / Opus | `implement-task` |
+| Review the whole feature, then **owner commits** | Opus reviewer | `review-feature` |
+
+Commit points keep each diff reviewable: the working tree is clean before the first task, tasks of
+one feature build up uncommitted (`pm4 check` allows earlier tasks' files), and the owner commits the
+feature after the review.
 
 ## 7. Commands
 

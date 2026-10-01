@@ -49,8 +49,8 @@ Either way, fix the disagreement. Never ignore it.
 | Screens | [04-web/screens.md](04-web/screens.md) | approved |
 | Testing strategy | [05-quality/testing.md](05-quality/testing.md) | draft |
 | Code style | [05-quality/code-style.md](05-quality/code-style.md) | draft |
-| Definition of Done | [05-quality/definition-of-done.md](05-quality/definition-of-done.md) | draft |
-| Task routing and escalation | [05-quality/task-routing.md](05-quality/task-routing.md) | draft |
+| Definition of Done | [05-quality/definition-of-done.md](05-quality/definition-of-done.md) | review |
+| Task routing and escalation | [05-quality/task-routing.md](05-quality/task-routing.md) | review |
 | Feature specs | [06-features/README.md](06-features/README.md) | — |
 | Decisions (ADRs) | [decisions/README.md](decisions/README.md) | — |
 | Open questions | [open-questions.md](open-questions.md) | — |
@@ -99,6 +99,8 @@ IDs are never reused or renumbered. Removed items are marked `(removed)`.
 ## Changing specs
 1. Edit the spec, bump `last_updated`, and add a changelog line.
 2. If the spec was `approved`, set it back to `review`, and set the tasks that depend on it to
-   `blocked` until the owner re-approves.
+   `blocked` (`pm4 status`) until the owner re-approves. For a feature spec, if an AC changed, update
+   its acceptance tests, then re-run `pm4 hash` (the hash check fails until you do). A task already in
+   `review` whose files changed meaning goes back to `in-progress`.
 3. Architectural changes need a new ADR, which supersedes the old one. Never edit an accepted ADR's decision.
 4. Only the human owner moves a spec to `approved`.

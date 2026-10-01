@@ -5,48 +5,33 @@ description: Create or update a PM4 specification in specs/ — including featur
 
 # Write / update a PM4 spec
 
-1. Read `specs/README.md` (structure, frontmatter, ID scheme, status lifecycle).
-2. Find the right file. Prefer extending an existing spec. A new file goes in the matching numbered
-   folder and is added to the index in `specs/README.md` (and `specs/06-features/README.md` for features).
+Run this inline in the main (Opus) session, so open questions go straight to the owner.
+
+## 0. Pick the lane (`specs/05-quality/task-routing.md#lanes`)
+A change that fits the **quick lane** gets no feature spec. Write a quick-lane task file from
+`tasks/_TEMPLATE.md` instead (next ID from `tasks/BOARD.md`, add a BOARD row), and show it to the owner.
 
 ## Layer specs (requirements, architecture, api, web, quality)
-Use this skeleton:
-
-```markdown
----
-id: <folder-prefix>-<slug>
-title: <Title>
-status: draft                     # draft | review | approved | deprecated
-owner: <human owner>
-last_updated: YYYY-MM-DD
-related: [<other spec ids>, ADR-000X]
----
-# <Title>
-## Purpose
-## Scope            (in / out)
-## Content          (requirements, models, rules)
-## Acceptance criteria   (for requirement specs)
-## Open questions
-## Changelog
-```
-
-Requirements: one ID each (`FR-<AREA>-###`, `NFR-###`), atomic and testable, with no implementation detail unless it's a real constraint.
+Read `specs/README.md` once (frontmatter, ID scheme, status lifecycle). Prefer extending an existing
+spec. Sections: Purpose · Scope (in/out) · content · Acceptance criteria (requirement specs) · Open
+questions · Changelog. Requirements get one ID each (`FR-<AREA>-###`, `NFR-###`), and must be atomic and testable.
 
 ## Feature specs (`specs/06-features/`)
-1. Copy `specs/06-features/_TEMPLATE.md`.
-2. **Read the code before writing.** Use the built-in `Explore` agent with `model: haiku` for searches.
-   Find the closest existing pattern for every file you plan. Every path in *Read first*, *Files* and
-   *Reuse* must exist, or be created by a task in this spec.
-3. Update the layer specs the feature depends on first (endpoint details in `03-api/endpoints.md`,
-   tables in `03-api/data-model.md`, screens in `04-web/screens.md`). Then link their anchors.
-4. Fill *Interfaces* until no design decision is left: class and file names, signatures, validation, query keys.
-5. Write every edge case with its exact expected result, and map each one to an `AC-#`.
-6. Split *Tasks* per `specs/05-quality/task-routing.md`. Give each task a tier with a one-line reason,
-   and a *Done when* column that names its ACs.
-7. **Don't finish with open questions.** Put each unknown into `specs/open-questions.md` and ask the
-   owner. The spec stays `draft` until *Open questions* is empty. Only then set `review`.
+1. Copy `specs/06-features/_TEMPLATE.md` and follow its comment, including the size budget.
+2. **Ground it in the code, cheaply.** Open the files you already know directly. Use `Explore`
+   (`model: haiku`) only for wide searches. Every path in *Read first* and *Files* must exist, or be
+   created by a row in *Files*.
+3. Update the layer specs it depends on first (`03-api/endpoints.md`, `03-api/data-model.md`,
+   `04-web/screens.md`), then link their anchors. Don't copy them into the feature spec.
+4. Fill *Interfaces* until no design decision is left, and tag each subsection with its tasks.
+5. Write each edge case as an *Acceptance criteria* row with its exact expected result, test file and task.
+6. Split *Tasks* per `task-routing.md`: a tier and a one-line reason for each, and no task smaller than a subagent context is worth.
+7. Ask the owner about every unknown as you go (`AskUserQuestion`, batched), and record each one as
+   `OQ-###` in `specs/open-questions.md` with its answer. The spec stays `draft` until *Open questions*
+   is empty. Then set `review`, and tell the owner what to look at.
 
 ## Always
-- Unknowns go in `specs/open-questions.md` as a new `OQ-###`. Never guess.
-- Bump `last_updated`, add a changelog line, and keep the status tables current.
-- Never set `status: approved` yourself. Only the human owner approves.
+- Never guess product behavior. Unknowns become `OQ-###` entries.
+- Bump `last_updated`, add a changelog line, and keep the index tables current (`specs/README.md`, `specs/06-features/README.md`).
+- Never set `status: approved` yourself. Only the owner approves.
+- After the owner approves a feature spec, offer the next step: `write-task`, then `write-acceptance-tests`.

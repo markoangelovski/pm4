@@ -6,42 +6,35 @@ argument-hint: <T-####>
 
 # Implement a PM4 task: $ARGUMENTS
 
-Run this from the main session. You orchestrate; the subagent writes the code.
+Run from the main session. You orchestrate; the subagent writes the code. Don't read the feature spec
+yourself unless something goes wrong. The script and the subagent's report are enough.
 
 ## 1. Check it's ready
-- Open the task file for `$ARGUMENTS` (find it via `tasks/BOARD.md`).
-- Stop and report if any of these hold:
-  - a `depends_on` task isn't `done`;
-  - the feature spec isn't `approved`;
-  - its *Open questions* isn't empty;
-  - `ac_files` is empty, but the spec lists acceptance tests for this task (run `write-acceptance-tests` first).
-- Older self-contained tasks (no `feature_spec`) are allowed. The engineer then reads the task's `specs:` list instead.
+- `node scripts/pm4.mjs ready $ARGUMENTS`. If it says NOT READY, report the reasons and stop.
+- `node scripts/pm4.mjs check $ARGUMENTS --no-gates`. If the scope check lists files, they were
+  there before this task started. Ask the owner to commit or remove them, unless they belong to earlier
+  tasks of the same feature (the check allows those).
 
-## 2. Start
-- Set `status: in-progress` in the task file and in `tasks/BOARD.md`.
-- Run `git status --short` and keep the output, so you can tell the subagent's changes from pre-existing ones.
+## 2. Delegate
+- `node scripts/pm4.mjs status $ARGUMENTS in-progress`.
+- `app: api` → `api-engineer`, `app: web` → `web-engineer`, with `model` = the task's `tier`.
+  `infra`/`spec` tasks: do them yourself, or ask the owner.
+- Prompt: "Implement `$ARGUMENTS`. Follow your agent instructions. Never stage, commit or push." On a
+  retry, add the previous `RESULT` report and the failing `pm4 check` output.
 
-## 3. Delegate
-- `app: api` → `api-engineer`. `app: web` → `web-engineer`. `infra`/`spec` → do it yourself, or ask the owner.
-- Call the Agent tool with `model` set to the task's `tier` (`haiku` / `sonnet` / `opus`). Prompt:
-  "Implement `<T-####>`. Follow your agent instructions. Never stage, commit or push."
-- The subagent returns a `RESULT:` report.
+## 3. Verify (trust your run over the report)
+- `node scripts/pm4.mjs check $ARGUMENTS`. It checks hashes, scope and staging, and runs the gates and
+  the spec's checks. Later tasks' ACs are excluded.
+- `git log -1 --format=%H` must be unchanged since step 1 (the subagent didn't commit).
 
-## 4. Check the result yourself
-- `git status --short`: nothing staged, nothing committed, and no files outside the spec's *Files*
-  for this task (other than the task file).
-- `sha256sum` each `ac_files` entry and compare it with the recorded hash.
-- Re-run the app's gates (AGENTS.md §7) and the acceptance tests. Trust your run over the report.
+## 4. Escalate (`specs/05-quality/task-routing.md#escalation`)
+- `BLOCKED: spec` → `pm4 status $ARGUMENTS blocked`, write the question into the task, propose an `OQ-###` to the owner.
+- `BLOCKED: test` → check the test yourself. Fix it and re-run `pm4 hash <spec>` if it's wrong; then re-delegate at the same tier.
+- `FAILED`, or the check fails → one row in *Attempts*, then re-delegate at the next tier. `FAILED` at opus → blocked, ask the owner.
 
-## 5. Escalate (`specs/05-quality/task-routing.md#escalation`)
-- `BLOCKED` because of the spec → set `status: blocked` and write the question into the task.
-  Tell the owner, with a proposed `OQ-###`. Don't retry.
-- `FAILED`, or your checks in step 4 fail → add a row to *Attempts*, then re-delegate once at the next
-  tier (haiku → sonnet → opus). Include the previous report and the failing output in the prompt.
-- `FAILED` at opus → set `status: blocked` and ask the owner.
-
-## 6. Hand off
-- All green → set `status: review` (task file and BOARD). Don't set `done`.
-- Tell the owner: the files changed, the gate results, the attempts, and a suggested commit message
-  (`feat(api): … (T-####)`). Then suggest running `review-task <T-####>`.
-- Don't commit. Commit only if the owner asks after reviewing (AGENTS.md §3).
+## 5. Hand off
+- `node scripts/pm4.mjs status $ARGUMENTS review`. This unblocks dependent tasks.
+- Tell the owner in a few lines: the files changed, the check summary, and the attempts.
+- Next: the next `ready` task of the feature. After the last one, suggest `review-feature <spec>`.
+  A quick-lane task goes straight to the owner's review (or to `review-feature <T-####>` if its tier is opus).
+- Don't commit. The owner commits after their review (AGENTS.md §3).
