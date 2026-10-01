@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { routes } from "@/lib/routes";
 import { Button } from "@/components/ui/button";
 
 export default function NotFound() {
@@ -8,7 +9,7 @@ export default function NotFound() {
       <p className="text-sm text-muted-foreground">
         This page could not be found.
       </p>
-      <Button render={<Link href="/" />}>Go back home</Button>
+      <Button render={<Link href={routes.landing} />}>Go back home</Button>
     </div>
   );
 }

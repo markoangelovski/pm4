@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import { Suspense } from "react";
+import { LandingCta, LandingCtaFallback } from "@/app/components/shared/landing-cta";
 
 export const metadata: Metadata = {
   title: "PM4 — Projects, tasks and time tracking",
@@ -10,19 +10,15 @@ export const metadata: Metadata = {
  * Public landing page (SCR-003, FR-LAND-001/002). Outside the app shell and
  * its auth guard, with its own marketing header.
  */
-export default function HomePage() {
+export default function LandingPage() {
   return (
     <div className="flex min-h-screen flex-col">
       <header className="border-b border-border">
         <div className="mx-auto flex max-w-5xl items-center justify-between p-4">
           <span className="text-lg font-semibold text-foreground">PM4</span>
-          <Button
-            variant="outline"
-            size="sm"
-            render={<Link href="/auth/sign-in/" />}
-          >
-            Login
-          </Button>
+          <Suspense fallback={<LandingCtaFallback variant="outline" size="sm" />}>
+            <LandingCta variant="outline" size="sm" />
+          </Suspense>
         </div>
       </header>
 
@@ -34,7 +30,9 @@ export default function HomePage() {
           PM4 is a simple project manager: create projects and tasks, and log
           the time you spend on them.
         </p>
-        <Button render={<Link href="/auth/sign-in/" />}>Login</Button>
+        <Suspense fallback={<LandingCtaFallback />}>
+          <LandingCta />
+        </Suspense>
       </main>
     </div>
   );

@@ -1,17 +1,18 @@
 import type { Metadata } from "next";
+import { routes } from "@/lib/routes";
 import { Suspense } from "react";
 import { ViewIdGuard } from "@/app/components/shared/view-id-guard";
 import { PagePlaceholder } from "@/app/components/shared/page-placeholder";
 
 export const metadata: Metadata = {
-  title: "Task",
+  title: "Project",
 };
 
-export default function TaskViewPage() {
+export default function ProjectViewPage() {
   return (
     <Suspense fallback={null}>
-      <ViewIdGuard listPath="/tasks/">
-        <PagePlaceholder title="Task" milestone="M2" />
+      <ViewIdGuard listPath={routes.app.projects}>
+        <PagePlaceholder title="Project" milestone="M2" />
       </ViewIdGuard>
     </Suspense>
   );

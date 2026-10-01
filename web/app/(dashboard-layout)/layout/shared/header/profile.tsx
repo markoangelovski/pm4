@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { routes } from "@/lib/routes";
 import { Settings, LogOut } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
@@ -30,7 +31,7 @@ export default function ProfileMenu() {
       <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuLabel>My account</DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem render={<Link href="/settings/" />}>
+        <DropdownMenuItem render={<Link href={routes.app.settings} />}>
           <Settings />
           Settings
         </DropdownMenuItem>

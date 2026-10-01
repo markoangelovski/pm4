@@ -12,9 +12,7 @@ export default function Layout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // TODO(M1): auth guard. Wait for session restore, then redirect to
-  // `/auth/sign-in/?returnTo=<path+query>` when there is no session
-  // (routing.md: the root `/` redirects to `/home/` instead).
+  // TODO(M1): auth guard. Wait for session restore. With no session (or a failed restore: remove the stored refresh token first), router.replace(landingHref(window.location.pathname + window.location.search)) (routing.md, feat-land-app-route-split).
   return (
     <SidebarProvider
       defaultOpen={true}

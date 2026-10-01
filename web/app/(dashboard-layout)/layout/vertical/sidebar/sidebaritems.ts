@@ -7,6 +7,7 @@ import {
   Settings,
   type LucideIcon,
 } from "lucide-react";
+import { routes } from "@/lib/routes";
 
 export interface ChildItem {
   id?: string;
@@ -35,37 +36,37 @@ const SidebarContent: MenuItem[] = [
         id: "dashboard",
         name: "Dashboard",
         icon: House,
-        url: "/",
+        url: routes.app.dashboard,
       },
       {
         id: "time",
         name: "Time",
         icon: Clock,
-        url: "/time/",
+        url: routes.app.time,
       },
       {
         id: "projects",
         name: "Projects",
         icon: FolderKanban,
-        url: "/projects/",
+        url: routes.app.projects,
       },
       {
         id: "tasks",
         name: "Tasks",
         icon: ListTodo,
-        url: "/tasks/",
+        url: routes.app.tasks,
       },
       {
         id: "trash",
         name: "Trash",
         icon: Trash2,
-        url: "/trash/",
+        url: routes.app.trash,
       },
       {
         id: "settings",
         name: "Settings",
         icon: Settings,
-        url: "/settings/",
+        url: routes.app.settings,
       },
     ],
   },

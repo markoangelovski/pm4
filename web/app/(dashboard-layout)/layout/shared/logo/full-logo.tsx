@@ -1,9 +1,10 @@
 import Link from "next/link";
+import { routes } from "@/lib/routes";
 
 const FullLogo = () => {
   return (
     <Link
-      href="/"
+      href={routes.app.dashboard}
       className="flex items-center gap-2 max-w-[40px] lg:max-w-[120px] overflow-hidden"
     >
       <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary text-sm font-bold text-primary-foreground">

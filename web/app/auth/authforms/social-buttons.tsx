@@ -14,7 +14,7 @@ const SocialButtons = () => {
         variant="outline"
         className="h-9 shadow-xs flex-1 gap-2 px-5! py-2! rounded-lg text-sm font-medium dark:bg-background hover:cursor-pointer w-full"
         onClick={() => {
-          /* TODO(M1): start the Google OAuth flow */
+          /* TODO(M1): start the Google OAuth flow, passing sanitizeReturnTo(searchParams.get(RETURN_TO_PARAM)) as API-AUTH-001's returnTo (omit it when null). */
         }}
       >
         <Image

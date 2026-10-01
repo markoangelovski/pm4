@@ -1,7 +1,8 @@
 import type { NextConfig } from "next";
 
-// Static-export baseline (specs/04-web/static-export.md). Served from the
-// root of the custom domain: no basePath (OQ-013).
+// Static-export baseline (specs/04-web/static-export.md): slash-free URLs
+// (trailingSlash: false, OQ-050). Served from the root of the custom
+// domain: no basePath (OQ-013).
 //
 // Template options tested against `output: "export"` (T-0002):
 // - `output: "standalone"` -> replaced by `output: "export"` (mutually exclusive).
@@ -22,7 +23,7 @@ import type { NextConfig } from "next";
 //   `babel-plugin-react-compiler` dev dependency is needed.
 const nextConfig: NextConfig = {
   output: "export",
-  trailingSlash: true,
+  trailingSlash: false,
   images: { unoptimized: true },
   reactCompiler: true,
   experimental: {

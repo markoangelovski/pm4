@@ -3,7 +3,7 @@ id: feat-land-app-route-split
 title: Landing page at the root, app under /app
 status: approved
 owner: Marko Angelovski
-last_updated: 2026-10-01
+last_updated: 2026-10-02
 milestone: M1
 requirements: [FR-LAND-001, FR-LAND-002, FR-LAND-003, FR-AUTH-001, FR-AUTH-004, FR-AUTH-005, FR-AUTH-007]
 related: [web-routing, web-screens, web-conventions, web-static-export, req-landing, req-auth, sec, OQ-047, OQ-048, OQ-049, OQ-050]
@@ -24,10 +24,10 @@ This is a web-only change (OQ-047, OQ-050).
 - Landing page at `/`: FR-LAND-001, and FR-LAND-002's Login target with `returnTo`
   ([landing.md](../01-requirements/landing.md)), SCR-003 ([screens.md](../04-web/screens.md)).
 - Redirect and default destination: FR-AUTH-005, FR-AUTH-001 (`/app`), FR-AUTH-004 (sign-out →
-  `/auth/sign-in/`) ([auth.md](../01-requirements/auth.md)).
+  `/auth/sign-in`) ([auth.md](../01-requirements/auth.md)).
 - Old URLs (`/home`, `/projects`, `/tasks`, `/time`, `/trash`, `/settings`, `…/view`) are no longer
   built, so GitHub Pages serves the existing `404.html`. There are no redirects.
-- Trailing slashes: `trailingSlash: false`, detail pages as flat siblings, and the `/app` exception:
+- Trailing slashes: `trailingSlash: false`, detail pages as flat siblings, and the known folder risk:
   [static-export.md](../04-web/static-export.md#urls-without-trailing-slashes-oq-050).
 
 ### What exists today, and what this feature builds
@@ -113,7 +113,7 @@ unless the row says otherwise. Approving this spec approves the listed moves and
 | web | `web/app/(dashboard-layout)/time/page.tsx` → `web/app/(dashboard-layout)/app/time/page.tsx` | M (move) | T2 | |
 | web | `web/app/(dashboard-layout)/trash/page.tsx` → `web/app/(dashboard-layout)/app/trash/page.tsx` | M (move) | T2 | |
 | web | `web/app/(dashboard-layout)/settings/page.tsx` → `web/app/(dashboard-layout)/app/settings/page.tsx` | M (move) | T2 | |
-| web | `web/app/home/page.tsx` → `web/app/page.tsx` | M (move) | T2 | Then delete the empty `web/app/home/`. T3 edits it |
+| web | `web/app/home/page.tsx` → `web/app/page.tsx` | M (move) | T2 | Then delete the empty `web/app/home/`. T2 also switches its Login links to `routes.signIn` (AC-13); T3 replaces them with `LandingCta` |
 | web | `web/app/(dashboard-layout)/layout/vertical/sidebar/sidebaritems.ts` | M | T2 | `url`s from `routes.app.*` |
 | web | `web/app/(dashboard-layout)/layout/shared/logo/full-logo.tsx` | M | T2 | `href={routes.app.dashboard}` |
 | web | `web/app/(dashboard-layout)/layout/shared/header/profile.tsx` | M | T2 | Settings `href={routes.app.settings}` |
@@ -277,9 +277,9 @@ export function LandingCtaFallback(props: LandingCtaProps): React.JSX.Element;
 | Sidebar | URLs `/app`, `/app/time`, `/app/projects`, `/app/tasks`, `/app/trash`, `/app/settings`, in the existing order | `AC-9` |
 | App logo → `/app`; sign-in logo → `/`; not-found "Go back home" → `/` | As stated | `AC-10` |
 | Build output has the new pages | `out/index.html`, `out/app.html`, `out/app/{time,projects,project,tasks,task,trash,settings}.html`, `out/auth/sign-in.html`, `out/auth/callback.html`, `out/404.html` exist | `AC-11` |
-| Old URLs dropped, no trailing-slash pages | `out/home*`, `out/projects*`, `out/tasks*`, `out/time*`, `out/trash*`, `out/settings*`, `out/app/index.html`, `out/app/projects/`, `out/app/tasks/` don't exist | `AC-11` |
+| Old URLs dropped, no trailing-slash pages | `out/home*`, `out/projects*`, `out/tasks*`, `out/time*`, `out/trash*`, `out/settings*`, `out/app/index.html`, `out/app/projects/index.html`, `out/app/tasks/index.html` don't exist. (The `out/<route>/` folders of Next's `__next.*.txt` route data always exist.) | `AC-11` |
 | `/` is not indexable | `out/index.html` contains `<meta name="robots" content="noindex, nofollow"` | `AC-12` |
-| No stray path literals | No old route literal (`"/home…"`, `"/projects…"`, …) and no route literal ending in `/` (`"/app/…/"`, `"/auth/…/"`) in non-test `web/app/**` or `web/lib/**` source | `AC-13` |
+| No stray path literals | No old route literal (`"/home…"`, `"/projects…"`, …) and no route literal ending in `/` (`"/app/…/"`, `"/auth/…/"`) in non-test `web/app/**` or `web/lib/**` source, except `web/lib/routes.ts` (D3) | `AC-13` |
 | Deep route on a static server | `npx serve out`, hard-refresh `/`, `/app`, `/app/projects` and `/app/project?id=x`: each loads, no 404 | `AC-14` |
 | Deep route on GitHub Pages (after the owner deploys) | The same URLs load on `https://pm4.angelovski.top` with no redirect to a trailing-slash form; `/home` shows the not-found page | `AC-15` |
 
@@ -306,7 +306,7 @@ Written by the test writer **before** implementation. Implementers must not modi
 | AC-12 | FR-LAND-003: `out/index.html` is `noindex` | DoD command | build |
 | AC-13 | No old path literals in source | DoD command | static |
 | AC-14 | Deep route loads from a static server | Manual (static-export.md → Verification) | manual |
-| AC-15 | Slash-free URLs load on GitHub Pages, including `/app` (static-export.md → the `/app` exception) | Manual, by the owner after deploying | manual |
+| AC-15 | Slash-free URLs load on GitHub Pages, including `/app` (static-export.md → the folder next to every page) | Manual, by the owner after deploying | manual |
 
 Typed stubs created with the tests, so lint and typecheck pass while the tests fail:
 - `web/lib/routes.ts`: the exact content from *Interfaces* (it's data, so the stub is final).
@@ -331,18 +331,18 @@ cd web && npm run lint && npm run typecheck && npm test && npm run build
 cd web && for p in index.html app.html app/time.html app/projects.html app/project.html app/tasks.html \
   app/task.html app/trash.html app/settings.html auth/sign-in.html auth/callback.html 404.html; do test -f "out/$p" || { echo "missing $p"; exit 1; }; done \
   && for p in home home.html projects projects.html tasks tasks.html time time.html trash trash.html settings settings.html \
-  app/index.html app/projects app/tasks; do test ! -e "out/$p" || { echo "stale $p"; exit 1; }; done
+  app/index.html app/projects/index.html app/tasks/index.html; do test ! -e "out/$p" || { echo "stale $p"; exit 1; }; done
 # AC-12: the landing page is noindex
 cd web && grep -q '<meta name="robots" content="noindex, nofollow"' out/index.html
-# AC-13: no old path literals and no trailing-slash route literals in source (tests excluded)
-cd web && ! grep -rnE --include='*.ts' --include='*.tsx' --exclude='*.test.*' \
+# AC-13: no old path literals and no trailing-slash route literals in source (tests and lib/routes.ts excluded, D3)
+cd web && ! grep -rnE --include='*.ts' --include='*.tsx' --exclude='*.test.*' --exclude='routes.ts' \
   -e '"/(home|projects|tasks|time|trash|settings)[/"?]' -e '"/(app|auth)(/[a-z-]+)*/"' app lib
 ```
 AC-14: `npx serve out`, then hard-refresh `/`, `/app`, `/app/projects` and `/app/project?id=x`. Each loads with no
 404 and no missing assets, and `/home` shows the not-found page.
 
 AC-15 (owner, after deploying): the same URLs on `https://pm4.angelovski.top`. None redirects to a
-trailing-slash form. If `/app` doesn't load from `app.html` (static-export.md → the `/app` exception), the owner decides the fix.
+trailing-slash form. If a page redirects to its slashed form (static-export.md → the folder next to every page), the owner decides the fix.
 
 Plus `specs/05-quality/definition-of-done.md`.
 
@@ -366,3 +366,7 @@ Plus `specs/05-quality/definition-of-done.md`.
   `/app/task`; `sanitizeReturnTo` also accepts `/app` and strips trailing slashes. Edge cases, AC-1–AC-14 and the
   DoD commands updated, AC-15 (Pages check after deploy) added. Back to `review`.
 - 2026-10-01: Approved by the owner.
+- 2026-10-02: T-0008 findings (owner-approved): AC-11 checks `out/app/{projects,tasks}/index.html` instead of the
+  folders (Next always writes `__next.*.txt` route data into `out/<route>/`); AC-13 excludes `lib/routes.ts` (D3);
+  T2 switches the moved landing page's Login links to `routes.signIn`.
+- 2026-10-02: Approved by the owner.

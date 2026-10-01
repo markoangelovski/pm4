@@ -35,12 +35,13 @@ Node version: see `.nvmrc` (24).
 ```
 app/
   layout.tsx                    # root layout: metadata (noindex), ThemeProvider, QueryProvider
-  home/                          # public landing page (SCR-003), own header, no sidebar
+  page.tsx                       # public landing page `/` (SCR-003), own header, no sidebar
   auth/sign-in/  auth/callback/  # outside the authenticated shell
-  (dashboard-layout)/            # authenticated shell (sidebar + header)
+  (dashboard-layout)/            # authenticated shell (sidebar + header), wraps `/app/**` only
     layout.tsx                   #   TODO(M1): auth guard goes here
-    page.tsx                     #   dashboard
-    projects/  projects/view/  tasks/  tasks/view/  time/  trash/  settings/
+    app/                         #   the `/app` URL segment
+      page.tsx                   #     dashboard `/app`
+      projects/  project/  tasks/  task/  time/  trash/  settings/
     layout/                      #   shell internals: header, sidebar, footer, logo
   components/shared/             # small shared pieces used by pages (not shadcn primitives)
 components/ui/                   # shadcn primitives — see the shadcn CLI rule below
@@ -49,6 +50,8 @@ lib/
   api/                           # openapi-fetch client + generated schema.d.ts (see ADR-0010)
   time/                          # time-zone-aware date helpers (see below)
   query-client.tsx               # TanStack Query client + provider (ADR-0009)
+  routes.ts                      # every internal route path (no other file hard-codes one)
+  auth/return-to.ts              # returnTo validation + landing/sign-in/post-sign-in targets
   utils.ts                       # cn()
 features/<domain>/               # not created yet; conventions.md's target structure for
                                   # data-driven work: api.ts (query keys + hooks), schemas.ts
@@ -58,8 +61,9 @@ features/<domain>/               # not created yet; conventions.md's target stru
 ## Rules specific to this app
 Full detail: `../specs/04-web/static-export.md` and `../specs/04-web/conventions.md`.
 
-- **Static export.** Every route exists at build time. Entity pages use query-param routes
-  (`/projects/view/?id=…`), not `[id]`. `next.config.ts` is a tested baseline, and its comments say
+- **Static export.** Every route exists at build time. URLs have no trailing slash
+  (`trailingSlash: false`). Entity pages use flat query-param routes (`/app/project?id=…`), not `[id]`,
+  and never a child route. Take every path from `lib/routes.ts`. `next.config.ts` is a tested baseline, and its comments say
   which template options broke the export. After `npm run build`, serve `out/` (`npx serve out`) and
   hard-refresh a deep route before calling anything done.
 - **shadcn** style is `base-nova` on Base UI, not Radix. A custom component is allowed only when no
@@ -92,8 +96,9 @@ reference; their tasks are opus/sonnet (`../specs/05-quality/task-routing.md`). 
 
 | Need | Copy from | What to copy |
 | --- | --- | --- |
-| Page with metadata | `app/(dashboard-layout)/projects/page.tsx` | `export const metadata`, a server page wrapping client parts |
-| Entity detail route (`?id=`) | `app/(dashboard-layout)/projects/view/page.tsx` + `app/components/shared/view-id-guard.tsx` | `<Suspense>` + `ViewIdGuard` |
+| Page with metadata | `app/(dashboard-layout)/app/projects/page.tsx` | `export const metadata`, a server page wrapping client parts |
+| Entity detail route (`?id=`) | `app/(dashboard-layout)/app/project/page.tsx` + `app/components/shared/view-id-guard.tsx` | `<Suspense>` + `ViewIdGuard` |
+| Client part reading `?returnTo=` | `app/components/shared/landing-cta.tsx` + `app/page.tsx` | `useSearchParams` inside `<Suspense>` with a same-size fallback |
 | Query client / defaults | `lib/query-client.tsx` | Don't override the defaults per query without a spec reason |
 | API calls | `lib/api/client.ts` | Use `apiClient` inside `features/<domain>/api.ts` hooks only |
 | Dates and durations | `lib/time/index.ts` | `today(tz)`, `monthRange()`, `formatDuration()` |

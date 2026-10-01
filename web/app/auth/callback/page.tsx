@@ -6,8 +6,7 @@ export const metadata: Metadata = {
 };
 
 /**
- * TODO(M1): exchange `code` for a session (and honor `returnTo`) against the
- * API, then redirect. Placeholder spinner only for now.
+ * TODO(M1): exchange `code` for a session, then router.replace(postSignInPath(searchParams.get(RETURN_TO_PARAM))) (feat-land-app-route-split).
  */
 export default function AuthCallbackPage() {
   return (

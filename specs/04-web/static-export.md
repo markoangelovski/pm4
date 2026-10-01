@@ -3,7 +3,7 @@ id: web-static-export
 title: Static Export Constraints
 status: approved
 owner: Marko Angelovski
-last_updated: 2026-10-01
+last_updated: 2026-10-02
 related: [ADR-0001, web-template, web-routing, arch-deployment]
 ---
 
@@ -45,9 +45,12 @@ redirect target is the slash-free form from `web/lib/routes.ts`.
   `out/x.html` and a folder `out/x/`. Pages then prefers the folder and redirects `/x` to `/x/`, which
   has no `index.html`. This is why detail pages are flat siblings of their lists
   (`/app/project?id=`, not `/app/projects/view?id=`).
-- **Known exception: `/app`.** The dashboard (`out/app.html`) sits next to the `out/app/` folder that
-  holds every other app page. Whether Pages serves `/app` from `app.html` is confirmed on the first
-  deployment after the switch (feat-land-app-route-split, AC-14b). If it doesn't, the owner decides the fix.
+- **Known risk: a folder next to every page.** The export writes each page's route data
+  (`__next.*.txt`) into `out/<route>/`, so every `out/x.html` has a sibling folder `out/x/` with no
+  `index.html` (seen at T-0008). The dashboard's `out/app/` also holds every other app page. Whether
+  Pages serves `/x` from `x.html` despite the folder is confirmed on the first deployment after the
+  switch (feat-land-app-route-split, AC-15). If it redirects to `/x/` instead, the owner decides the fix
+  (the fallback is `trailingSlash: true`).
 
 ## Not available (do not use)
 | Feature | Why | Use instead |
@@ -96,3 +99,4 @@ user-specific is fetched at build time.
 - 2026-09-29: Approved by the owner.
 - 2026-10-01: OQ-050: no trailing slashes (`trailingSlash: false`); detail routes `/app/project?id=` and `/app/task?id=`. Back to `review` (feat-land-app-route-split).
 - 2026-10-01: Approved by the owner.
+- 2026-10-02: Known risk widened from `/app` to every page (Next writes route data into `out/<route>/`), found at T-0008.

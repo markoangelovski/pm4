@@ -3,7 +3,7 @@ id: T-0009
 title: Implement LandingCta and use it on the landing page
 milestone: M1
 app: web
-status: blocked
+status: review
 size: S
 tier: haiku
 depends_on: [T-0007, T-0008]
@@ -38,9 +38,17 @@ Change only the files that the spec's *Files* table assigns to T3.
 ## Implementation notes
 _Filled in by the implementer: changes, commands run and their real results, follow-ups._
 
+`LandingCta` (Login → `signInHref(useSearchParams().get(RETURN_TO_PARAM))`) and `LandingCtaFallback` (`Skeleton`
+sized with `buttonVariants`) implemented in `web/app/components/shared/landing-cta.tsx`; `web/app/page.tsx` renders
+both CTAs inside `<Suspense>` with the matching fallbacks (header `outline`/`sm`, hero default). No `"use client"` on the page.
+
+`pm4 check T-0009` (orchestrator run): lint/typecheck/test/build ok (24/24 tests), AC-11/AC-12/AC-13 ok; manual AC-14/AC-15
+pending. Scope lists only `specs/04-web/static-export.md` and the feature spec, the orchestrator's own spec edits.
+
 ### Attempts
 | # | Tier | Result (`done` / `BLOCKED` / `FAILED`) | Summary |
 | --- | --- | --- | --- |
+| 1 | haiku | done | AC-6–AC-8 pass on the first attempt |
 
 ## Review
-_Filled in by `review-task`: verdict and findings._
+**Verdict: approve** (Opus review, 2026-10-02). `LandingCta`/`LandingCtaFallback` exactly as specified (no fetch, no `localStorage`, button-sized skeleton); `app/page.tsx` stays a Server Component with both CTAs in `<Suspense>` (D9, checked by reading since AC-6–AC-8 test the component alone). No findings. Tier: haiku right.

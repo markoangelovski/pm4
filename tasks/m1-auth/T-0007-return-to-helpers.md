@@ -3,7 +3,7 @@ id: T-0007
 title: Implement the returnTo helpers in web/lib/auth/return-to.ts
 milestone: M1
 app: web
-status: ready
+status: review
 size: S
 tier: opus
 depends_on: []
@@ -35,11 +35,22 @@ Change only the files that the spec's *Files* table assigns to T1.
 ---
 
 ## Implementation notes
-_Filled in by the implementer: changes, commands run and their real results, follow-ups._
+- Implemented `sanitizeReturnTo` (spec steps 1–7 in order, parse origin `https://pm4.invalid`, `/app` check after URL normalization), `landingHref`, `signInHref`, `postSignInPath` in `web/lib/auth/return-to.ts`. Imports `routes`/`APP_PREFIX` from `@/lib/routes` (stub unchanged).
+- `npx vitest run lib/auth/return-to.ac.test.ts`: 5/5 passed.
+- `node scripts/pm4.mjs check T-0007`:
+  ```
+  ac hashes: ok (1)
+  scope: ok
+  pending ACs (later tasks, excluded): AC-6 … AC-15
+  web lint: ok · web typecheck: ok · web test: ok · web build: ok
+  check AC-11, AC-12, AC-13: skipped (later task)
+  PASS T-0007
+  ```
 
 ### Attempts
 | # | Tier | Result (`done` / `BLOCKED` / `FAILED`) | Summary |
 | --- | --- | --- | --- |
+| 1 | opus | done | Helpers implemented per *Interfaces*; AC-1–AC-5 pass; pm4 check PASS |
 
 ## Review
-_Filled in by `review-task`: verdict and findings._
+**Verdict: approve** (Opus review, 2026-10-02). `sanitizeReturnTo` follows steps 1–7 in order; the control-character check runs before parsing (the URL parser would strip tab/newline); open-redirect inputs all give `null`. The three wrappers match *Interfaces* exactly. No findings. Tier: opus right (security logic, first `lib/auth/` file); sonnet would likely have managed given the exact spec.
