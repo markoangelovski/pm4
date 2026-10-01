@@ -14,7 +14,7 @@ Shared style rules for both apps. Tooling enforces them wherever possible.
 
 ## Both apps
 - TypeScript `strict: true`. No `any` without a comment explaining why. No `@ts-ignore` (use `@ts-expect-error` with a reason).
-- ESLint + Prettier, with **the same Prettier rules in both apps** (owner decision 2026-09-28; the shared rule set is TBD (OQ-046), set up in T-0006). Formatting is never discussed in review. CI fails on lint errors.
+- ESLint + Prettier, with **the same Prettier rules in both apps** (owner decision 2026-09-28; the rule set is Prettier defaults with `trailingComma: "none"` (OQ-046, owner 2026-10-01), set up in T-0006). Formatting is never discussed in review. CI fails on lint errors.
 - Names: files in `kebab-case`, React components in `PascalCase`, variables and functions in `camelCase`,
   constants in `SCREAMING_SNAKE_CASE`. Domain terms follow `00-product/glossary.md` exactly.
 - Keep modules small and cohesive. Prefer pure functions for logic.

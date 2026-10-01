@@ -3,7 +3,7 @@ id: web-conventions
 title: Web Conventions
 status: approved
 owner: Marko Angelovski
-last_updated: 2026-09-29
+last_updated: 2026-10-01
 related: [web-static-export, web-template, web-routing, qa-code-style, ADR-0009, ADR-0010, feat-land-app-route-split]
 ---
 
@@ -18,10 +18,10 @@ app/
   page.tsx                     # landing page `/` (SCR-003), outside the shell
   (dashboard-layout)/          # authenticated shell (auth guard in layout), wraps only `/app/**`
     layout.tsx  loading.tsx  error.tsx  layout/   # shell internals
-    app/                       # the `/app/` URL segment
-      page.tsx                 #   dashboard `/app/` (FR-RPT-*)
-      projects/  projects/view/  tasks/  tasks/view/  time/  trash/  settings/
-  auth/sign-in/  auth/callback/  # outside the shell and outside `/app/`
+    app/                       # the `/app` URL segment
+      page.tsx                 #   dashboard `/app` (FR-RPT-*)
+      projects/  project/  tasks/  task/  time/  trash/  settings/
+  auth/sign-in/  auth/callback/  # outside the shell and outside `/app`
 components/ui/                 # shadcn primitives (edit only for global changes)
 features/<domain>/             # projects, tasks, time, reports, trash, auth
   api.ts                       #   query-key factory + useQuery/useMutation hooks
@@ -57,7 +57,7 @@ lib/utils.ts
 - `lib/api` attaches the access token. On a 401 it runs a single shared refresh, then retries once.
   If the refresh fails, it signs out (removes the stored refresh token), then replaces the URL with
   `landingHref(window.location.pathname + window.location.search)`, i.e. `/?returnTo=<current path+query>`
-  (OQ-049, routing.md). Only a user-initiated sign-out goes to `/auth/sign-in/`.
+  (OQ-049, routing.md). Only a user-initiated sign-out goes to `/auth/sign-in`.
 
 ## Forms (ADR-0009)
 - react-hook-form + zod via `zodResolver`, using the template's shadcn form/field components.
@@ -91,3 +91,5 @@ lib/utils.ts
   redirect target is TBD (OQ-049). Back to `review` (feat-land-app-route-split).
 - 2026-09-29: OQ-049 resolved: a failed refresh clears the stored token and goes to `/?returnTo=<current path+query>`.
 - 2026-09-29: Approved by the owner.
+- 2026-10-01: OQ-050: no trailing slashes (`trailingSlash: false`); detail routes `/app/project?id=` and `/app/task?id=`. Back to `review` (feat-land-app-route-split).
+- 2026-10-01: Approved by the owner.

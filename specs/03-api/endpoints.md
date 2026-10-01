@@ -3,7 +3,7 @@ id: api-endpoints
 title: API Endpoints
 status: draft
 owner: Marko Angelovski
-last_updated: 2026-09-27
+last_updated: 2026-10-01
 related: [api-conventions, api-data-model, req-auth, req-projects, req-tasks, req-time-logs, req-reporting, req-trash]
 ---
 
@@ -29,7 +29,7 @@ defines its request, response and errors. Paths are relative to `/api/v1` unless
 | API-SYS-001 | GET | `/health` (root) | NFR-003 | TODO |
 | API-SYS-002 | — | (removed: the purge is a background job, ADR-0011) | — | — |
 | API-AUTH-001 | GET | `/auth/google?returnTo=` → 302 Google | FR-AUTH-001 | TODO |
-| API-AUTH-002 | GET | `/auth/google/callback` → 302 web `/auth/callback/` | FR-AUTH-001/002 | TODO |
+| API-AUTH-002 | GET | `/auth/google/callback` → 302 web `/auth/callback` | FR-AUTH-001/002 | TODO |
 | API-AUTH-003 | POST | `/auth/token` `{code}` → tokens | FR-AUTH-001 | TODO |
 | API-AUTH-004 | POST | `/auth/refresh` `{refreshToken}` → tokens | FR-AUTH-003 | TODO |
 | API-AUTH-005 | POST | `/auth/logout` `{refreshToken}` | FR-AUTH-004 | TODO |
@@ -74,3 +74,4 @@ OQ-029, OQ-030, OQ-036
 - 2026-09-26: Updated with owner answers to OQ-001–018.
 - 2026-09-26: Added API-AUTH-006 (sign out of all devices, OQ-023).
 - 2026-09-27: API-SYS-002 removed (OQ-031, ADR-0011).
+- 2026-10-01: OQ-050: no trailing slashes (`trailingSlash: false`); detail routes `/app/project?id=` and `/app/task?id=` (feat-land-app-route-split).

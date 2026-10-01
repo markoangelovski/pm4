@@ -9,7 +9,8 @@ tier: opus
 depends_on: []
 feature_spec: specs/06-features/land-app-route-split.md#tasks   # row "T1" of its Tasks table
 requirements: [FR-LAND-002, FR-AUTH-001, FR-AUTH-005]
-ac_files: []
+ac_files:
+  - { path: web/lib/auth/return-to.ac.test.ts, sha256: 8d7c80aa70a931e1a798b419214a4701520ed8fa35351cb29582f9bce7cb881e }
 ---
 
 # T-0007: Implement the returnTo helpers in web/lib/auth/return-to.ts

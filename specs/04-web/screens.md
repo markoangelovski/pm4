@@ -3,7 +3,7 @@ id: web-screens
 title: Screens
 status: approved
 owner: Marko Angelovski
-last_updated: 2026-09-29
+last_updated: 2026-10-01
 related: [web-routing, req-landing, feat-land-app-route-split, req-projects, req-tasks, req-time-logs, req-reporting]
 ---
 
@@ -15,7 +15,7 @@ Describes each screen: its purpose, content, actions, states, and the requiremen
 ## Screen template
 ```markdown
 ### SCR-020: Project list
-**Route:** `/app/projects/` · **Implements:** FR-PRJ-002, FR-PRJ-001 · **API:** API-PRJ-002, API-PRJ-001
+**Route:** `/app/projects` · **Implements:** FR-PRJ-002, FR-PRJ-001 · **API:** API-PRJ-002, API-PRJ-001
 **Purpose:** …
 **Layout / content:** … (reference template components to reuse)
 **Actions:** …
@@ -25,13 +25,13 @@ Describes each screen: its purpose, content, actions, states, and the requiremen
 
 ## Screens
 Routes for every screen: [routing.md → Route map](routing.md#route-map). App screens (SCR-010 and up)
-live under `/app/` (OQ-047).
+live under `/app` (OQ-047).
 
 | ID | Name | Status |
 | --- | --- | --- |
 | SCR-001 | Sign in (Continue with Google) | TODO |
 | SCR-002 | OAuth callback (spinner, error state) | TODO |
-| SCR-003 | Landing page (`/`, optional `?returnTo=`): marketing content about PM4 (FR-LAND-001); hero, feature grid (projects, tasks, time logs, dashboard, trash) and footer; header button "Go to app" when signed in, "Login" when not (FR-LAND-002). Login carries a valid `returnTo` on to sign-in (routing.md, OQ-047); "Go to app" opens a valid `returnTo`, else `/app/` (OQ-048); `noindex`, with Open Graph tags (FR-LAND-003) | TODO |
+| SCR-003 | Landing page (`/`, optional `?returnTo=`): marketing content about PM4 (FR-LAND-001); hero, feature grid (projects, tasks, time logs, dashboard, trash) and footer; header button "Go to app" when signed in, "Login" when not (FR-LAND-002). Login carries a valid `returnTo` on to sign-in (routing.md, OQ-047); "Go to app" opens a valid `returnTo`, else `/app` (OQ-048); `noindex`, with Open Graph tags (FR-LAND-003) | TODO |
 | SCR-010 | Dashboard: range picker, total hours, project breakdown, hours-per-day chart with project multi-select | TODO |
 | SCR-020 | Project list | TODO |
 | SCR-021 | Project detail | TODO |
@@ -61,3 +61,5 @@ OQ-021, OQ-029, OQ-030, OQ-036, OQ-038
   `/app/` (template example updated). OQ-048 added. Back to `review` (feat-land-app-route-split).
 - 2026-09-29: OQ-048 resolved: SCR-003's "Go to app" opens a valid `returnTo`, else `/app/`.
 - 2026-09-29: Approved by the owner.
+- 2026-10-01: OQ-050: no trailing slashes (`trailingSlash: false`); detail routes `/app/project?id=` and `/app/task?id=`. Back to `review` (feat-land-app-route-split).
+- 2026-10-01: Approved by the owner.

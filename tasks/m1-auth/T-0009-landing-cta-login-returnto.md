@@ -9,7 +9,8 @@ tier: haiku
 depends_on: [T-0007, T-0008]
 feature_spec: specs/06-features/land-app-route-split.md#tasks   # row "T3" of its Tasks table
 requirements: [FR-LAND-002]
-ac_files: []
+ac_files:
+  - { path: web/app/components/shared/landing-cta.ac.test.tsx, sha256: a1895791e46ca553f351fee83c0b32e4d9eee5f5902d81dfe6328b7057c2d2f0 }
 ---
 
 # T-0009: Implement LandingCta and use it on the landing page

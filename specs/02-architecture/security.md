@@ -3,7 +3,7 @@ id: sec
 title: Security
 status: approved
 owner: Marko Angelovski
-last_updated: 2026-09-29
+last_updated: 2026-10-01
 related: [web-routing, req-auth, arch-env, api-conventions, ADR-0007, NFR-004, NFR-005]
 ---
 
@@ -20,9 +20,9 @@ brute force against the refresh endpoint, and leaked secrets.
 ## Authentication flow (ADR-0007)
 Actors: **W** = web (`https://pm4.angelovski.top`), **A** = API (`https://pm4-api-heagfvepgbcje5c3.westeurope-01.azurewebsites.net`), **G** = Google.
 
-1. The user clicks "Continue with Google". W navigates the browser to `A/api/v1/auth/google?returnTo=/app/projects/`.
+1. The user clicks "Continue with Google". W navigates the browser to `A/api/v1/auth/google?returnTo=/app/projects`.
    `returnTo` must be a relative path (open-redirect protection). W itself only ever sends a path under
-   `/app/`, and re-validates the value it gets back at `W/auth/callback/` (`04-web/routing.md`, OQ-047).
+   `/app`, and re-validates the value it gets back at `W/auth/callback` (`04-web/routing.md`, OQ-047).
    The API's rule stays "relative path": it holds no web route paths.
 2. A creates `state` + a PKCE `code_verifier`, stores `{verifier, returnTo}` in Redis under
    `oauth:state:<state>` (TTL 10 min), and redirects to G's authorize URL (scopes `openid email profile`).
@@ -30,7 +30,7 @@ Actors: **W** = web (`https://pm4.angelovski.top`), **A** = API (`https://pm4-ap
    entry (single use), exchanges the code with PKCE, validates the ID token (issuer, audience,
    `email_verified`), applies the sign-up policy (allow-list, see below), and upserts the user + identity.
 4. A creates a one-time **login code** (32 random bytes, stored in Redis `auth:code:<hash>`, TTL 60 s)
-   and redirects to `W/auth/callback/?code=<code>&returnTo=…`.
+   and redirects to `W/auth/callback?code=<code>&returnTo=…`.
 5. W POSTs `{code}` to `A/api/v1/auth/token`. A consumes the code (single use) and returns
    `{accessToken, accessTokenExpiresAt, refreshToken}`. W replaces the URL (removing the code from history).
 6. **Access token:** a JWT (HS256), `sub` = user id, TTL 15 min. Kept **in memory** only.
@@ -115,3 +115,5 @@ Secrets live in Azure App Settings and in GitHub Actions secrets. They are never
 - 2026-09-29: OQ-047: `returnTo` example moved under `/app/`; the web validates `returnTo` as a path
   under `/app/` at each hop, while the API rule is unchanged. Back to `review` (feat-land-app-route-split).
 - 2026-09-29: Approved by the owner.
+- 2026-10-01: OQ-050: no trailing slashes (`trailingSlash: false`); detail routes `/app/project?id=` and `/app/task?id=`. Back to `review` (feat-land-app-route-split).
+- 2026-10-01: Approved by the owner.

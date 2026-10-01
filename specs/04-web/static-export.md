@@ -3,7 +3,7 @@ id: web-static-export
 title: Static Export Constraints
 status: approved
 owner: Marko Angelovski
-last_updated: 2026-09-29
+last_updated: 2026-10-01
 related: [ADR-0001, web-template, web-routing, arch-deployment]
 ---
 
@@ -19,7 +19,7 @@ Next.js docs (`web/node_modules/next/dist/docs/`), since the details change betw
 // next.config.ts
 const nextConfig: NextConfig = {
   output: "export",
-  trailingSlash: true,          // emit /route/index.html so Pages serves clean URLs
+  trailingSlash: false,         // emit /route.html; Pages serves it at /route (no trailing slash, OQ-050)
   images: { unoptimized: true },
   // No basePath: served from the root of the custom domain (OQ-013)
   reactCompiler: true,
@@ -36,6 +36,18 @@ docs:
   `cacheComponents`, so it's out too. Neither is in the baseline above.
 - `reactCompiler` (with `experimental.turbopackRustReactCompiler`) **works**: the build succeeds
   and the served `out/` renders correctly. Kept in the baseline above.
+
+## URLs without trailing slashes (OQ-050)
+`trailingSlash: false` makes the export write `out/<route>.html` (the dashboard is `out/app.html`), and
+GitHub Pages serves each file at its extensionless URL (`/app/time` → `app/time.html`). Every link and
+redirect target is the slash-free form from `web/lib/routes.ts`.
+- **No route may have a child route.** A route that is both a page and a parent produces both
+  `out/x.html` and a folder `out/x/`. Pages then prefers the folder and redirects `/x` to `/x/`, which
+  has no `index.html`. This is why detail pages are flat siblings of their lists
+  (`/app/project?id=`, not `/app/projects/view?id=`).
+- **Known exception: `/app`.** The dashboard (`out/app.html`) sits next to the `out/app/` folder that
+  holds every other app page. Whether Pages serves `/app` from `app.html` is confirmed on the first
+  deployment after the switch (feat-land-app-route-split, AC-14b). If it doesn't, the owner decides the fix.
 
 ## Not available (do not use)
 | Feature | Why | Use instead |
@@ -63,8 +75,8 @@ user-specific is fetched at build time.
 
 ## Verification (every web task)
 1. `npm run build` succeeds and produces `out/`.
-2. Serve `out/` statically from the root (e.g. `npx serve out`), then hard-refresh on a deep route
-   (e.g. `/app/projects/view/?id=…`): the page loads, with no 404 and no missing assets.
+2. Serve `out/` statically from the root (e.g. `npx serve out`, which serves `x.html` at `/x` like Pages), then hard-refresh on a deep route
+   (e.g. `/app/project?id=…`): the page loads, with no 404 and no missing assets.
 
 ## Open questions
 —
@@ -82,3 +94,5 @@ user-specific is fetched at build time.
 - 2026-09-29: Verification example updated to the `/app/` route prefix (OQ-047). No rule changed.
   Back to `review` (feat-land-app-route-split).
 - 2026-09-29: Approved by the owner.
+- 2026-10-01: OQ-050: no trailing slashes (`trailingSlash: false`); detail routes `/app/project?id=` and `/app/task?id=`. Back to `review` (feat-land-app-route-split).
+- 2026-10-01: Approved by the owner.

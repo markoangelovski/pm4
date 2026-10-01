@@ -3,7 +3,7 @@ id: T-0003
 title: GitHub Pages CI/CD for web/
 milestone: M0
 app: infra
-status: review
+status: done
 size: M
 depends_on: [T-0002]
 specs:

@@ -25,4 +25,4 @@ A feature spec links to those. It doesn't copy them.
 
 | Feature | File | Milestone | Status |
 | --- | --- | --- | --- |
-| Landing page at the root, app under `/app/` | [land-app-route-split.md](land-app-route-split.md) | M1 | approved |
+| Landing page at the root, app under `/app` | [land-app-route-split.md](land-app-route-split.md) | M1 | approved |

@@ -3,7 +3,7 @@ id: T-0006
 title: Same Prettier rules in web/ and api/
 milestone: M0
 app: infra
-status: blocked
+status: ready
 size: S
 tier: sonnet
 depends_on: []
@@ -21,7 +21,7 @@ Both apps format with one Prettier rule set (`specs/05-quality/code-style.md`, o
 ## Task
 **Tier reason:** sonnet. Touches both apps' config and adds a devDependency to `web/`. Mechanical, but a wrong ESLint/Prettier interplay breaks lint in CI.
 
-1. Write the rule set decided in OQ-046 to `api/.prettierrc`, and copy the same file to `web/.prettierrc`.
+1. Write the rule set decided in OQ-046 (`{ "trailingComma": "none" }`, otherwise Prettier defaults) to `api/.prettierrc`, and copy the same file to `web/.prettierrc`.
 2. `web/`: add `prettier` as a devDependency, pinned to the same version as `api/`. Also add
    `eslint-config-prettier`, so ESLint doesn't fight Prettier; append it last in `web/eslint.config.mjs`.
    Add `format` and `format:check` scripts that mirror `api/`'s `format` script (paths for Next:
@@ -37,9 +37,8 @@ Both apps format with one Prettier rule set (`specs/05-quality/code-style.md`, o
 - [ ] Definition of Done satisfied (`specs/05-quality/definition-of-done.md`).
 
 ## Blocked by (if status is blocked)
-- OQ-046: which rule set.
-- Adding `prettier` + `eslint-config-prettier` to `web/` needs the owner's OK (a dependency change).
-  The owner asked for this direction on 2026-09-28. Confirm when resolving OQ-046.
+— (OQ-046 resolved 2026-10-01: Prettier defaults with `trailingComma: "none"`. The owner approved the
+`prettier` + `eslint-config-prettier` devDependencies in `web/`.)
 
 ---
 
