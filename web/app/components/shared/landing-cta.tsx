@@ -18,18 +18,14 @@ export interface LandingCtaProps {
 /** Login link that forwards a valid `?returnTo=` (FR-LAND-002). Render inside <Suspense>. */
 export function LandingCta({
   variant,
-  size,
+  size
 }: LandingCtaProps): React.JSX.Element {
   const searchParams = useSearchParams();
   const raw = searchParams.get(RETURN_TO_PARAM);
   const href = signInHref(raw);
 
   return (
-    <Button
-      variant={variant}
-      size={size}
-      render={<Link href={href} />}
-    >
+    <Button variant={variant} size={size} render={<Link href={href} />}>
       Login
     </Button>
   );
@@ -38,13 +34,16 @@ export function LandingCta({
 /** Neutral, same-size placeholder shown until the CTA is known (Suspense fallback). */
 export function LandingCtaFallback({
   variant,
-  size,
+  size
 }: LandingCtaProps): React.JSX.Element {
   return (
     <Skeleton
       aria-hidden="true"
       data-testid="landing-cta-placeholder"
-      className={cn(buttonVariants({ variant, size }), "w-24 border-transparent bg-muted text-transparent")}
+      className={cn(
+        buttonVariants({ variant, size }),
+        "w-24 border-transparent bg-muted text-transparent"
+      )}
     />
   );
 }

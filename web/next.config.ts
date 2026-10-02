@@ -27,8 +27,8 @@ const nextConfig: NextConfig = {
   images: { unoptimized: true },
   reactCompiler: true,
   experimental: {
-    turbopackRustReactCompiler: true,
-  },
+    turbopackRustReactCompiler: true
+  }
 };
 
 export default nextConfig;

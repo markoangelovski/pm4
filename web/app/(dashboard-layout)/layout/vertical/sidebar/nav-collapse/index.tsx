@@ -25,23 +25,29 @@ export default function NavCollapse({ menu, className }: NavCollapseProps) {
 
   return (
     <>
-
       {menu.map((section, index) => (
         <div key={index}>
           {/* Heading */}
 
-
-          <span className={cn(
-            "text-xs uppercase block font-semibold text-muted-foreground mb-2 transition-all duration-200",
-            isCollapse ? "text-center group-hover:text-start group-data-[state=expanded]:text-start" : ""
-          )}>
+          <span
+            className={cn(
+              "text-xs uppercase block font-semibold text-muted-foreground mb-2 transition-all duration-200",
+              isCollapse
+                ? "text-center group-hover:text-start group-data-[state=expanded]:text-start"
+                : ""
+            )}
+          >
             {isCollapse ? (
               <>
-                <span className="group-hover:hidden group-data-[state=expanded]:hidden">...</span>
-                <span className="hidden group-hover:inline group-data-[state=expanded]:inline">{section.heading ?? ""}</span>
+                <span className="group-hover:hidden group-data-[state=expanded]:hidden">
+                  ...
+                </span>
+                <span className="hidden group-hover:inline group-data-[state=expanded]:inline">
+                  {section.heading ?? ""}
+                </span>
               </>
             ) : (
-              section.heading ?? ""
+              (section.heading ?? "")
             )}
           </span>
 
@@ -60,17 +66,11 @@ export default function NavCollapse({ menu, className }: NavCollapseProps) {
                   className={cn(
                     "flex items-center gap-3  rounded-md transition-all duration-200 ease-in-out ",
 
-                    className,
+                    className
                   )}
-
                 >
-
                   <NavItem item={item} hasChildren={false} isActive={active} />
                 </Link>
-
-
-
-
               );
 
             // 👉 With children → collapsible
@@ -82,8 +82,7 @@ export default function NavCollapse({ menu, className }: NavCollapseProps) {
               >
                 <summary
                   className={cn(
-                    "cursor-pointer rounded-md flex items-center transition-all duration-200 ease-in-out",
-
+                    "cursor-pointer rounded-md flex items-center transition-all duration-200 ease-in-out"
                   )}
                 >
                   <NavItem
@@ -110,10 +109,18 @@ export default function NavCollapse({ menu, className }: NavCollapseProps) {
                         className={cn(
                           "block rounded-md transition-all duration-200 ease-in-out",
 
-                          className,
+                          className
                         )}
                       >
-                        <NavItem item={sub} hasChildren={false} className={cn("px-2! py-1! my-1!", pathname === sub.url && "bg-primary/5 text-primary")} isActive={pathname === sub.url} />
+                        <NavItem
+                          item={sub}
+                          hasChildren={false}
+                          className={cn(
+                            "px-2! py-1! my-1!",
+                            pathname === sub.url && "bg-primary/5 text-primary"
+                          )}
+                          isActive={pathname === sub.url}
+                        />
                       </Link>
                     )
                   )}
@@ -121,9 +128,8 @@ export default function NavCollapse({ menu, className }: NavCollapseProps) {
               </details>
             );
           })}
-        </div >
-      ))
-      }
+        </div>
+      ))}
     </>
   );
 }

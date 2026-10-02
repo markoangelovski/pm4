@@ -11,7 +11,9 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "api:types": "openapi-typescript ../api/openapi.json -o lib/api/schema.d.ts"
+    "api:types": "openapi-typescript ../api/openapi.json -o lib/api/schema.d.ts",
+    "format": "prettier --write app components hooks lib \"*.ts\" \"*.mjs\"",
+    "format:check": "prettier --check app components hooks lib \"*.ts\" \"*.mjs\""
   },
   "dependencies": {
     "@base-ui/react": "^1.4.0",
@@ -45,8 +47,10 @@
     "@vitejs/plugin-react": "^4.3.0",
     "eslint": "^9.39.0",
     "eslint-config-next": "16.3.6",
+    "eslint-config-prettier": "^10.1.8",
     "jsdom": "^25.0.0",
     "openapi-typescript": "^7.13.0",
+    "prettier": "^3.9.9",
     "tailwindcss": "^4",
     "typescript": "6.0.3",
     "vite": "^7.0.0",

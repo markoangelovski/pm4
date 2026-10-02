@@ -10,7 +10,7 @@ describe("Sidebar items (feat-land-app-route-split)", () => {
       ["projects", "/app/projects"],
       ["tasks", "/app/tasks"],
       ["trash", "/app/trash"],
-      ["settings", "/app/settings"],
+      ["settings", "/app/settings"]
     ]);
   });
 });

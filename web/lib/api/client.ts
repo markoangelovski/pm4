@@ -8,5 +8,5 @@ import type { paths } from "./schema";
  * refresh-on-401 described in conventions.md.
  */
 export const apiClient = createClient<paths>({
-  baseUrl: process.env.NEXT_PUBLIC_API_BASE_URL,
+  baseUrl: process.env.NEXT_PUBLIC_API_BASE_URL
 });

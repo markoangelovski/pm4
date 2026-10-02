@@ -6,7 +6,11 @@ import { Skeleton } from "@/components/ui/skeleton";
  */
 export default function DashboardLoading() {
   return (
-    <div className="flex flex-col gap-4" aria-busy="true" aria-label="Loading page">
+    <div
+      className="flex flex-col gap-4"
+      aria-busy="true"
+      aria-label="Loading page"
+    >
       <div className="flex items-center justify-between gap-4">
         <Skeleton className="h-8 w-48" />
         <Skeleton className="h-8 w-28" />

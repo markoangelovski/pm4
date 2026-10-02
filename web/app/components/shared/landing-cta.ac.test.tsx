@@ -8,14 +8,14 @@ import { LandingCta, LandingCtaFallback } from "./landing-cta";
 vi.mock("next/link", () => ({
   default: ({ href, ...props }: { href: string } & ComponentProps<"a">) => (
     <a href={href} {...props} />
-  ),
+  )
 }));
 
 let searchParams = new URLSearchParams();
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ replace: vi.fn(), push: vi.fn() }),
-  useSearchParams: () => searchParams,
+  useSearchParams: () => searchParams
 }));
 
 describe("LandingCta (feat-land-app-route-split)", () => {
@@ -30,18 +30,24 @@ describe("LandingCta (feat-land-app-route-split)", () => {
   it("AC-6 FR-LAND-002: Login href forwards only a valid returnTo (first value wins)", () => {
     const cases: [string, string][] = [
       ["", "/auth/sign-in"],
-      ["returnTo=%2Fapp%2Fprojects", "/auth/sign-in?returnTo=%2Fapp%2Fprojects"],
+      [
+        "returnTo=%2Fapp%2Fprojects",
+        "/auth/sign-in?returnTo=%2Fapp%2Fprojects"
+      ],
       ["returnTo=https%3A%2F%2Fevil.example%2F", "/auth/sign-in"],
       ["returnTo=%2Fhome", "/auth/sign-in"],
       [
         "returnTo=%2Fapp%2Ftasks&returnTo=%2Fapp%2Ftrash",
-        "/auth/sign-in?returnTo=%2Fapp%2Ftasks",
-      ],
+        "/auth/sign-in?returnTo=%2Fapp%2Ftasks"
+      ]
     ];
     for (const [query, href] of cases) {
       searchParams = new URLSearchParams(query);
       const { container, unmount } = render(<LandingCta />);
-      expect(screen.getByRole("link", { name: "Login" })).toHaveAttribute("href", href);
+      expect(screen.getByRole("link", { name: "Login" })).toHaveAttribute(
+        "href",
+        href
+      );
       expect(container.innerHTML).not.toContain("evil.example");
       expect(container.innerHTML).not.toContain("home");
       unmount();

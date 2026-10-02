@@ -5,7 +5,7 @@ import {
   ListTodo,
   Trash2,
   Settings,
-  type LucideIcon,
+  type LucideIcon
 } from "lucide-react";
 import { routes } from "@/lib/routes";
 
@@ -36,40 +36,40 @@ const SidebarContent: MenuItem[] = [
         id: "dashboard",
         name: "Dashboard",
         icon: House,
-        url: routes.app.dashboard,
+        url: routes.app.dashboard
       },
       {
         id: "time",
         name: "Time",
         icon: Clock,
-        url: routes.app.time,
+        url: routes.app.time
       },
       {
         id: "projects",
         name: "Projects",
         icon: FolderKanban,
-        url: routes.app.projects,
+        url: routes.app.projects
       },
       {
         id: "tasks",
         name: "Tasks",
         icon: ListTodo,
-        url: routes.app.tasks,
+        url: routes.app.tasks
       },
       {
         id: "trash",
         name: "Trash",
         icon: Trash2,
-        url: routes.app.trash,
+        url: routes.app.trash
       },
       {
         id: "settings",
         name: "Settings",
         icon: Settings,
-        url: routes.app.settings,
-      },
-    ],
-  },
+        url: routes.app.settings
+      }
+    ]
+  }
 ];
 
 export default SidebarContent;

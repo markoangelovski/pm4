@@ -1,13 +1,13 @@
-import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
-import { drizzle, NodePgDatabase } from 'drizzle-orm/node-postgres';
-import { Pool } from 'pg';
-import { AppConfigService } from '../config/app-config.service.js';
-import * as schema from './schema/index.js';
+import { Injectable, Logger, OnModuleDestroy } from "@nestjs/common";
+import { drizzle, NodePgDatabase } from "drizzle-orm/node-postgres";
+import { Pool } from "pg";
+import { AppConfigService } from "../config/app-config.service.js";
+import * as schema from "./schema/index.js";
 
 export type DrizzleDb = NodePgDatabase<typeof schema>;
 
 /** DI token for the Drizzle database instance (see `DatabaseModule`). */
-export const DRIZZLE = Symbol('DRIZZLE');
+export const DRIZZLE = Symbol("DRIZZLE");
 
 /**
  * Owns the Postgres pool's lifecycle. `pg.Pool` connects lazily (on first
@@ -34,11 +34,11 @@ export class Drizzle implements OnModuleDestroy {
     const timeout = new Promise<never>((_, reject) => {
       timer = setTimeout(
         () => reject(new Error(`Postgres ping timed out after ${timeoutMs}ms`)),
-        timeoutMs,
+        timeoutMs
       );
     });
     try {
-      await Promise.race([this.pool.query('SELECT 1'), timeout]);
+      await Promise.race([this.pool.query("SELECT 1"), timeout]);
     } finally {
       clearTimeout(timer!);
     }
@@ -46,6 +46,6 @@ export class Drizzle implements OnModuleDestroy {
 
   async onModuleDestroy(): Promise<void> {
     await this.pool.end();
-    this.logger.log('Postgres pool closed');
+    this.logger.log("Postgres pool closed");
   }
 }

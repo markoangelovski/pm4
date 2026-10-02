@@ -11,8 +11,8 @@ export const routes = {
     tasks: "/app/tasks",
     task: "/app/task",
     trash: "/app/trash",
-    settings: "/app/settings",
-  },
+    settings: "/app/settings"
+  }
 } as const;
 
 /** Prefix of every private route below the dashboard (`routes.app.dashboard` itself is private too). */

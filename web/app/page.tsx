@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { LandingCta, LandingCtaFallback } from "@/app/components/shared/landing-cta";
+import {
+  LandingCta,
+  LandingCtaFallback
+} from "@/app/components/shared/landing-cta";
 
 export const metadata: Metadata = {
-  title: "PM4 — Projects, tasks and time tracking",
+  title: "PM4 — Projects, tasks and time tracking"
 };
 
 /**
@@ -16,7 +19,9 @@ export default function LandingPage() {
       <header className="border-b border-border">
         <div className="mx-auto flex max-w-5xl items-center justify-between p-4">
           <span className="text-lg font-semibold text-foreground">PM4</span>
-          <Suspense fallback={<LandingCtaFallback variant="outline" size="sm" />}>
+          <Suspense
+            fallback={<LandingCtaFallback variant="outline" size="sm" />}
+          >
             <LandingCta variant="outline" size="sm" />
           </Suspense>
         </div>

@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from "zod";
 
 /**
  * Validates a value is a syntactically valid URL using one of the given
@@ -14,14 +14,14 @@ function urlWithProtocol(protocols: string[]) {
       (value) => {
         try {
           const url = new URL(value);
-          return protocols.includes(url.protocol.replace(/:$/, ''));
+          return protocols.includes(url.protocol.replace(/:$/, ""));
         } catch {
           return false;
         }
       },
       {
-        message: `must be a URL with one of these protocols: ${protocols.join(', ')}`,
-      },
+        message: `must be a URL with one of these protocols: ${protocols.join(", ")}`
+      }
     );
 }
 
@@ -32,22 +32,22 @@ function urlWithProtocol(protocols: string[]) {
  */
 export const envSchema = z.object({
   NODE_ENV: z
-    .enum(['development', 'test', 'production'])
-    .default('development'),
+    .enum(["development", "test", "production"])
+    .default("development"),
   PORT: z.coerce.number().int().min(1).max(65535).default(3001),
-  DATABASE_URL: urlWithProtocol(['postgres', 'postgresql']),
-  REDIS_URL: urlWithProtocol(['redis', 'rediss']),
+  DATABASE_URL: urlWithProtocol(["postgres", "postgresql"]),
+  REDIS_URL: urlWithProtocol(["redis", "rediss"]),
   CORS_ORIGINS: z
     .string()
-    .min(1, 'CORS_ORIGINS must not be empty')
+    .min(1, "CORS_ORIGINS must not be empty")
     .transform((value) =>
       value
-        .split(',')
+        .split(",")
         .map((origin) => origin.trim())
-        .filter((origin) => origin.length > 0),
+        .filter((origin) => origin.length > 0)
     )
-    .pipe(z.array(urlWithProtocol(['http', 'https'])).min(1)),
-  WEB_APP_URL: urlWithProtocol(['http', 'https']),
+    .pipe(z.array(urlWithProtocol(["http", "https"])).min(1)),
+  WEB_APP_URL: urlWithProtocol(["http", "https"])
 });
 
 export type Env = z.infer<typeof envSchema>;
@@ -62,9 +62,9 @@ export function validateEnv(config: Record<string, unknown>): Env {
   if (!result.success) {
     const issues = result.error.issues
       .map(
-        (issue) => `  - ${issue.path.join('.') || '(root)'}: ${issue.message}`,
+        (issue) => `  - ${issue.path.join(".") || "(root)"}: ${issue.message}`
       )
-      .join('\n');
+      .join("\n");
     throw new Error(`Invalid environment configuration:\n${issues}`);
   }
   return result.data;

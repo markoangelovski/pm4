@@ -18,7 +18,6 @@
   --radius-lg: 7px;
   --margin-30: 30px;
   --text-40: 40px;
-
 }
 
 @theme inline {
@@ -133,8 +132,6 @@
   --sidebar-ring: oklch(0.556 0 0);
 }
 
-
-
 @utility frontend-page {
   & .container {
     @apply max-w-[1410px];
@@ -153,7 +150,6 @@
 
   body {
     @apply bg-background text-foreground;
-
   }
 
   /*heading text color*/
@@ -250,22 +246,15 @@ html[data-card-shadow="false"] [data-slot="card"] {
         justify-content: flex-start !important;
       }
 
-
-
       /* Inner alignment for NavUser and NavSecondary to match standard items */
       [data-sidebar="menu-button"] .flex.items-center {
         padding: 8px 12px !important;
         width: 100% !important;
         gap: 12px !important;
       }
-
-
-
-
     }
 
     .sidebar-box:not(:hover) {
-
       /* Ensure icons are perfectly centered in mini mode */
       [data-sidebar="menu-button"] {
         display: flex !important;
@@ -281,13 +270,9 @@ html[data-card-shadow="false"] [data-slot="card"] {
         gap: 0 !important;
         width: 100% !important;
       }
-
-
-
     }
   }
 }
-
 
 [data-slot="chart"] {
   @apply h-72 w-full;
@@ -304,17 +289,15 @@ html[data-card-shadow="false"] [data-slot="card"] {
 }
 
 @theme inline {
-  --animate-scroll: scroll var(--animation-duration, 40s) var(--animation-direction, forwards) linear infinite;
+  --animate-scroll: scroll var(--animation-duration, 40s)
+    var(--animation-direction, forwards) linear infinite;
 
   @keyframes scroll {
     to {
       transform: translate(calc(-50% - 0.5rem));
     }
   }
-
-
 }
-
 
 ::view-transition-old(root),
 ::view-transition-new(root) {
@@ -325,5 +308,3 @@ html[data-card-shadow="false"] [data-slot="card"] {
 html.dark {
   color-scheme: dark;
 }
-
-

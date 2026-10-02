@@ -15,7 +15,7 @@ export default function NavItem({
   item,
   hasChildren,
   className,
-  isActive,
+  isActive
 }: NavItemProps) {
   return (
     <div

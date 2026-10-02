@@ -5,7 +5,7 @@ import { ViewIdGuard } from "@/app/components/shared/view-id-guard";
 import { PagePlaceholder } from "@/app/components/shared/page-placeholder";
 
 export const metadata: Metadata = {
-  title: "Project",
+  title: "Project"
 };
 
 export default function ProjectViewPage() {

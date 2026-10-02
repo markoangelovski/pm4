@@ -7,7 +7,7 @@ let searchParams = new URLSearchParams();
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ replace }),
-  useSearchParams: () => searchParams,
+  useSearchParams: () => searchParams
 }));
 
 describe("ViewIdGuard", () => {

@@ -6,7 +6,7 @@
  */
 export default function GlobalError({
   error,
-  retry,
+  retry
 }: {
   error: Error & { digest?: string };
   retry: () => void;

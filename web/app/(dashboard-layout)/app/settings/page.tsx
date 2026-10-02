@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { PagePlaceholder } from "@/app/components/shared/page-placeholder";
 
 export const metadata: Metadata = {
-  title: "Settings",
+  title: "Settings"
 };
 
 export default function SettingsPage() {

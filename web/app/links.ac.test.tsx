@@ -10,13 +10,13 @@ import NotFound from "./not-found";
 vi.mock("next/link", () => ({
   default: ({ href, ...props }: { href: string } & ComponentProps<"a">) => (
     <a href={href} {...props} />
-  ),
+  )
 }));
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ replace: vi.fn(), push: vi.fn() }),
   useSearchParams: () => new URLSearchParams(),
-  usePathname: () => "/",
+  usePathname: () => "/"
 }));
 
 describe("Internal links (feat-land-app-route-split)", () => {
@@ -26,10 +26,16 @@ describe("Internal links (feat-land-app-route-split)", () => {
     logo.unmount();
 
     const signIn = render(<SignInPage />);
-    expect(screen.getByRole("link", { name: "PM4" })).toHaveAttribute("href", "/");
+    expect(screen.getByRole("link", { name: "PM4" })).toHaveAttribute(
+      "href",
+      "/"
+    );
     signIn.unmount();
 
     render(<NotFound />);
-    expect(screen.getByRole("link", { name: "Go back home" })).toHaveAttribute("href", "/");
+    expect(screen.getByRole("link", { name: "Go back home" })).toHaveAttribute(
+      "href",
+      "/"
+    );
   });
 });

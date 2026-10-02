@@ -1,8 +1,8 @@
-import { writeFileSync } from 'node:fs';
-import { resolve } from 'node:path';
-import { NestFactory } from '@nestjs/core';
-import { AppModule } from '../src/app.module.js';
-import { buildOpenApiDocument } from '../src/openapi.js';
+import { writeFileSync } from "node:fs";
+import { resolve } from "node:path";
+import { NestFactory } from "@nestjs/core";
+import { AppModule } from "../src/app.module.js";
+import { buildOpenApiDocument } from "../src/openapi.js";
 
 /**
  * Writes `api/openapi.json` (committed, ADR-0010) without starting an HTTP
@@ -13,7 +13,7 @@ async function main(): Promise<void> {
   const app = await NestFactory.create(AppModule, { logger: false });
   const document = buildOpenApiDocument(app);
 
-  const outputPath = resolve(import.meta.dirname, '../../openapi.json');
+  const outputPath = resolve(import.meta.dirname, "../../openapi.json");
   writeFileSync(outputPath, `${JSON.stringify(document, null, 2)}\n`);
 
   await app.close();
@@ -22,6 +22,6 @@ async function main(): Promise<void> {
 }
 
 main().catch((error: unknown) => {
-  console.error('Failed to export the OpenAPI document:', error);
+  console.error("Failed to export the OpenAPI document:", error);
   process.exit(1);
 });

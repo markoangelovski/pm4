@@ -1,7 +1,7 @@
-import * as React from "react"
-import { cva, type VariantProps } from "class-variance-authority"
+import * as React from "react";
+import { cva, type VariantProps } from "class-variance-authority";
 
-import { cn } from "@/lib/utils"
+import { cn } from "@/lib/utils";
 
 const alertVariants = cva(
   "cn-alert group/alert relative grid w-full gap-0.5 rounded-lg border px-2.5 py-2 text-left text-sm has-data-[slot=alert-action]:relative has-data-[slot=alert-action]:pr-18 has-[>svg]:grid-cols-[auto_1fr] has-[>svg]:gap-x-2 *:[svg]:row-span-2 *:[svg]:translate-y-0.5 *:[svg]:text-current *:[svg:not([class*='size-'])]:size-4",
@@ -10,14 +10,14 @@ const alertVariants = cva(
       variant: {
         default: "cn-alert-variant-default bg-card text-card-foreground",
         destructive:
-          "cn-alert-variant-destructive bg-card text-destructive *:data-[slot=alert-description]:text-destructive/90 *:[svg]:text-current",
-      },
+          "cn-alert-variant-destructive bg-card text-destructive *:data-[slot=alert-description]:text-destructive/90 *:[svg]:text-current"
+      }
     },
     defaultVariants: {
-      variant: "default",
-    },
+      variant: "default"
+    }
   }
-)
+);
 
 function Alert({
   className,
@@ -31,7 +31,7 @@ function Alert({
       className={cn(alertVariants({ variant }), className)}
       {...props}
     />
-  )
+  );
 }
 
 function AlertTitle({ className, ...props }: React.ComponentProps<"div">) {
@@ -44,7 +44,7 @@ function AlertTitle({ className, ...props }: React.ComponentProps<"div">) {
       )}
       {...props}
     />
-  )
+  );
 }
 
 function AlertDescription({
@@ -60,7 +60,7 @@ function AlertDescription({
       )}
       {...props}
     />
-  )
+  );
 }
 
 function AlertAction({ className, ...props }: React.ComponentProps<"div">) {
@@ -70,7 +70,7 @@ function AlertAction({ className, ...props }: React.ComponentProps<"div">) {
       className={cn("cn-alert-action absolute top-2 right-2", className)}
       {...props}
     />
-  )
+  );
 }
 
-export { Alert, AlertTitle, AlertDescription, AlertAction }
+export { Alert, AlertTitle, AlertDescription, AlertAction };

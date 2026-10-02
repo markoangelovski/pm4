@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Spinner } from "@/components/ui/spinner";
 
 export const metadata: Metadata = {
-  title: "Signing in",
+  title: "Signing in"
 };
 
 /**

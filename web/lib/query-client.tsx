@@ -13,12 +13,12 @@ export function createQueryClient(): QueryClient {
     defaultOptions: {
       queries: {
         staleTime: 30_000,
-        retry: 1,
+        retry: 1
       },
       mutations: {
-        retry: 0,
-      },
-    },
+        retry: 0
+      }
+    }
   });
 }
 

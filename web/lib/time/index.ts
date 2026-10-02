@@ -23,7 +23,10 @@ export function today(tz: string): string {
  * kind of round trip that can shift the calendar day near midnight, so this
  * function deliberately avoids it.
  */
-export function monthRange(date: string, tz: string): { from: string; to: string } {
+export function monthRange(
+  date: string,
+  tz: string
+): { from: string; to: string } {
   void tz;
 
   const [yearStr, monthStr] = date.split("-");
@@ -37,7 +40,7 @@ export function monthRange(date: string, tz: string): { from: string; to: string
 
   return {
     from: `${yearStr}-${monthStr}-01`,
-    to: `${yearStr}-${monthStr}-${pad(lastDay)}`,
+    to: `${yearStr}-${monthStr}-${pad(lastDay)}`
   };
 }
 

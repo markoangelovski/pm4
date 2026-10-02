@@ -1,6 +1,6 @@
-import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
-import { Redis as IORedisClient } from 'ioredis';
-import { AppConfigService } from '../config/app-config.service.js';
+import { Injectable, Logger, OnModuleDestroy } from "@nestjs/common";
+import { Redis as IORedisClient } from "ioredis";
+import { AppConfigService } from "../config/app-config.service.js";
 
 /**
  * Owns the ioredis client's lifecycle. Connects lazily (on first command),
@@ -15,12 +15,12 @@ export class Redis implements OnModuleDestroy {
   constructor(configService: AppConfigService) {
     this.client = new IORedisClient(configService.redisUrl, {
       lazyConnect: true,
-      maxRetriesPerRequest: 1,
+      maxRetriesPerRequest: 1
     });
     // ioredis emits `error` on the client; without a listener, an emitted
     // error event throws and crashes the process (Node EventEmitter default).
-    this.client.on('error', (error) =>
-      this.logger.error(`Redis client error: ${error.message}`),
+    this.client.on("error", (error) =>
+      this.logger.error(`Redis client error: ${error.message}`)
     );
   }
 
@@ -30,7 +30,7 @@ export class Redis implements OnModuleDestroy {
     const timeout = new Promise<never>((_, reject) => {
       timer = setTimeout(
         () => reject(new Error(`Redis ping timed out after ${timeoutMs}ms`)),
-        timeoutMs,
+        timeoutMs
       );
     });
     try {
@@ -41,9 +41,9 @@ export class Redis implements OnModuleDestroy {
   }
 
   async onModuleDestroy(): Promise<void> {
-    if (this.client.status !== 'end') {
+    if (this.client.status !== "end") {
       await this.client.quit();
     }
-    this.logger.log('Redis connection closed');
+    this.logger.log("Redis connection closed");
   }
 }

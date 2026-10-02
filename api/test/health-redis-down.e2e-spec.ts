@@ -1,6 +1,6 @@
-import { vi } from 'vitest';
-import { NestExpressApplication } from '@nestjs/platform-express';
-import request from 'supertest';
+import { vi } from "vitest";
+import { NestExpressApplication } from "@nestjs/platform-express";
+import request from "supertest";
 
 /**
  * `Redis`'s constructor reads `AppConfigService.redisUrl` once, when Nest
@@ -10,7 +10,7 @@ import request from 'supertest';
  * REDIS_URL override below must happen, and the module graph must be
  * re-imported fresh, *before* building the app, not just before the request.
  */
-describe('GET /health (Redis unreachable)', () => {
+describe("GET /health (Redis unreachable)", () => {
   let app: NestExpressApplication;
   const originalRedisUrl = process.env.REDIS_URL;
 
@@ -18,9 +18,9 @@ describe('GET /health (Redis unreachable)', () => {
     vi.resetModules();
     // Port 1 is reserved/unused: nothing accepts connections there, so the
     // health check reliably reports redis:down (via error or its own timeout).
-    process.env.REDIS_URL = 'redis://127.0.0.1:1';
+    process.env.REDIS_URL = "redis://127.0.0.1:1";
 
-    const { createTestApp } = await import('./create-test-app.js');
+    const { createTestApp } = await import("./create-test-app.js");
     app = await createTestApp();
   });
 
@@ -29,10 +29,10 @@ describe('GET /health (Redis unreachable)', () => {
     process.env.REDIS_URL = originalRedisUrl;
   });
 
-  it('returns 503 with redis:down and db:up', async () => {
-    const response = await request(app.getHttpServer()).get('/health');
+  it("returns 503 with redis:down and db:up", async () => {
+    const response = await request(app.getHttpServer()).get("/health");
 
     expect(response.status).toBe(503);
-    expect(response.body).toEqual({ status: 'error', db: 'up', redis: 'down' });
+    expect(response.body).toEqual({ status: "error", db: "up", redis: "down" });
   }, 15_000);
 });

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { PagePlaceholder } from "@/app/components/shared/page-placeholder";
 
 export const metadata: Metadata = {
-  title: "Trash",
+  title: "Trash"
 };
 
 export default function TrashPage() {

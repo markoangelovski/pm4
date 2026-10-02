@@ -1,4 +1,4 @@
-import { ValidationError } from '@nestjs/common';
+import { ValidationError } from "@nestjs/common";
 
 export interface FieldError {
   field: string;
@@ -13,7 +13,7 @@ export interface FieldError {
  */
 export function flattenValidationErrors(
   errors: ValidationError[],
-  parentPath = '',
+  parentPath = ""
 ): FieldError[] {
   return errors.flatMap((error) => {
     const field = parentPath
@@ -21,7 +21,7 @@ export function flattenValidationErrors(
       : error.property;
     const ownErrors = Object.values(error.constraints ?? {}).map((message) => ({
       field,
-      message,
+      message
     }));
     const childErrors = error.children?.length
       ? flattenValidationErrors(error.children, field)

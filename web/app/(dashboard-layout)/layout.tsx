@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 import RouteErrorBoundary from "@/app/components/shared/route-error-boundary";
 
 export default function Layout({
-  children,
+  children
 }: Readonly<{
   children: React.ReactNode;
 }>) {
@@ -24,7 +24,9 @@ export default function Layout({
         <div className="flex flex-1 flex-col gap-4 p-4">
           <div className={cn("w-full mx-auto", "container")}>
             <div className=" min-h-[calc(100vh-140px)]">
-              <RouteErrorBoundary title="Page error">{children}</RouteErrorBoundary>
+              <RouteErrorBoundary title="Page error">
+                {children}
+              </RouteErrorBoundary>
             </div>
             <div className="pt-6">
               <Footer />
@@ -35,4 +37,3 @@ export default function Layout({
     </SidebarProvider>
   );
 }
-

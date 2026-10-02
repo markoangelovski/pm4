@@ -10,7 +10,7 @@ depends_on: []
 feature_spec: specs/06-features/land-app-route-split.md#tasks   # row "T1" of its Tasks table
 requirements: [FR-LAND-002, FR-AUTH-001, FR-AUTH-005]
 ac_files:
-  - { path: web/lib/auth/return-to.ac.test.ts, sha256: 8d7c80aa70a931e1a798b419214a4701520ed8fa35351cb29582f9bce7cb881e }
+  - { path: web/lib/auth/return-to.ac.test.ts, sha256: a11844a19c22d7cf77444cd4106c95043606a1f57e81cf14a3b315c7b2c66a51 }
 ---
 
 # T-0007: Implement the returnTo helpers in web/lib/auth/return-to.ts

@@ -38,12 +38,12 @@ const LightDark = () => {
 
     document.documentElement.animate(
       {
-        clipPath: ["inset(0 0 100% 0)", "inset(0)"],
+        clipPath: ["inset(0 0 100% 0)", "inset(0)"]
       },
       {
         duration: 800,
         easing: "ease-in-out",
-        pseudoElement: "::view-transition-new(root)",
+        pseudoElement: "::view-transition-new(root)"
       }
     );
   };

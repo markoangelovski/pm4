@@ -10,8 +10,8 @@ depends_on: [T-0007]
 feature_spec: specs/06-features/land-app-route-split.md#tasks   # row "T2" of its Tasks table
 requirements: [FR-LAND-001, FR-AUTH-001, FR-AUTH-004, FR-AUTH-005]
 ac_files:
-  - { path: web/app/(dashboard-layout)/layout/vertical/sidebar/sidebaritems.ac.test.ts, sha256: 2c5f1ef179d2f59458f8a2d44775fee426e7b28ac621caf5c08cb7a5233cb85a }
-  - { path: web/app/links.ac.test.tsx, sha256: 51e82b2352ef462fac3b9a87a5667e40ea6f78496d9426bf619613b6b0e57caf }
+  - { path: web/app/(dashboard-layout)/layout/vertical/sidebar/sidebaritems.ac.test.ts, sha256: dffd0bd82e810928c690154e79059fa303341e4e1acbc5e0146a2904396f34ec }
+  - { path: web/app/links.ac.test.tsx, sha256: 2c59f1cdfd284688c69827888a3455556f0ad81f0c593e00c1fe749f85f646e6 }
 ---
 
 # T-0008: Slash-free URLs, app pages under /app, landing page at the root

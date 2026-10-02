@@ -5,7 +5,7 @@ import { ViewIdGuard } from "@/app/components/shared/view-id-guard";
 import { PagePlaceholder } from "@/app/components/shared/page-placeholder";
 
 export const metadata: Metadata = {
-  title: "Task",
+  title: "Task"
 };
 
 export default function TaskViewPage() {

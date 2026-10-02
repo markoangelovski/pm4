@@ -13,7 +13,7 @@ describe("sidebaritems", () => {
       "Projects",
       "Tasks",
       "Trash",
-      "Settings",
+      "Settings"
     ]);
   });
 

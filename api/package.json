@@ -26,7 +26,8 @@
     "test:e2e": "vitest run --config ./vitest.config.e2e.ts",
     "db:generate": "node --env-file=.env.example node_modules/.bin/drizzle-kit generate",
     "db:migrate": "nest build && node --env-file=.env.example dist/scripts/migrate.js",
-    "openapi:export": "nest build && node --env-file=.env.example dist/scripts/export-openapi.js"
+    "openapi:export": "nest build && node --env-file=.env.example dist/scripts/export-openapi.js",
+    "format:check": "prettier --check \"src/**/*.ts\" \"test/**/*.ts\" \"scripts/**/*.ts\""
   },
   "dependencies": {
     "@nestjs/common": "^12.0.1",

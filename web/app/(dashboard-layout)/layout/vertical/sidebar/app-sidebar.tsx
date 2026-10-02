@@ -4,7 +4,7 @@ import {
   Sidebar,
   SidebarContent,
   SidebarGroup,
-  SidebarHeader,
+  SidebarHeader
 } from "@/components/ui/sidebar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import FullLogo from "../../shared/logo/full-logo";

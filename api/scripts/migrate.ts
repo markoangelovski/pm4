@@ -1,7 +1,7 @@
-import { resolve } from 'node:path';
-import { drizzle } from 'drizzle-orm/node-postgres';
-import { migrate } from 'drizzle-orm/node-postgres/migrator';
-import { Pool } from 'pg';
+import { resolve } from "node:path";
+import { drizzle } from "drizzle-orm/node-postgres";
+import { migrate } from "drizzle-orm/node-postgres/migrator";
+import { Pool } from "pg";
 
 /**
  * Runs committed migrations from `api/drizzle/` against
@@ -14,7 +14,7 @@ async function main(): Promise<void> {
     process.env.DATABASE_URL_DIRECT ?? process.env.DATABASE_URL;
   if (!connectionString) {
     throw new Error(
-      'Set DATABASE_URL_DIRECT (or DATABASE_URL) before running migrations.',
+      "Set DATABASE_URL_DIRECT (or DATABASE_URL) before running migrations."
     );
   }
 
@@ -23,16 +23,16 @@ async function main(): Promise<void> {
 
   try {
     await migrate(db, {
-      migrationsFolder: resolve(import.meta.dirname, '../../drizzle'),
+      migrationsFolder: resolve(import.meta.dirname, "../../drizzle")
     });
 
-    console.log('Migrations applied.');
+    console.log("Migrations applied.");
   } finally {
     await pool.end();
   }
 }
 
 main().catch((error: unknown) => {
-  console.error('Migration failed:', error);
+  console.error("Migration failed:", error);
   process.exit(1);
 });

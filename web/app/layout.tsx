@@ -9,23 +9,23 @@ import { QueryProvider } from "@/lib/query-client";
 const geist = Geist({
   subsets: ["latin"],
   display: "swap",
-  variable: "--font-geist",
+  variable: "--font-geist"
 });
 
 export const metadata: Metadata = {
   title: {
     template: "%s | PM4",
-    default: "PM4",
+    default: "PM4"
   },
   description: "PM4: projects, tasks and time tracking.",
   robots: {
     index: false,
-    follow: false,
-  },
+    follow: false
+  }
 };
 
 export default function RootLayout({
-  children,
+  children
 }: {
   children: React.ReactNode;
 }) {
@@ -41,7 +41,11 @@ export default function RootLayout({
       className="style-lyra"
     >
       <body className={`${geist.className}`}>
-        <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="light"
+          enableSystem={false}
+        >
           <QueryProvider>{children}</QueryProvider>
         </ThemeProvider>
       </body>

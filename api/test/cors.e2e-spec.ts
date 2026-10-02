@@ -1,8 +1,8 @@
-import { NestExpressApplication } from '@nestjs/platform-express';
-import request from 'supertest';
-import { createTestApp } from './create-test-app.js';
+import { NestExpressApplication } from "@nestjs/platform-express";
+import request from "supertest";
+import { createTestApp } from "./create-test-app.js";
 
-describe('CORS', () => {
+describe("CORS", () => {
   let app: NestExpressApplication;
 
   beforeAll(async () => {
@@ -13,21 +13,21 @@ describe('CORS', () => {
     await app.close();
   });
 
-  it('allows the configured origin', async () => {
+  it("allows the configured origin", async () => {
     const response = await request(app.getHttpServer())
-      .get('/health')
-      .set('Origin', 'http://localhost:3000');
+      .get("/health")
+      .set("Origin", "http://localhost:3000");
 
-    expect(response.headers['access-control-allow-origin']).toBe(
-      'http://localhost:3000',
+    expect(response.headers["access-control-allow-origin"]).toBe(
+      "http://localhost:3000"
     );
   });
 
-  it('does not allow an unconfigured origin', async () => {
+  it("does not allow an unconfigured origin", async () => {
     const response = await request(app.getHttpServer())
-      .get('/health')
-      .set('Origin', 'https://evil.test');
+      .get("/health")
+      .set("Origin", "https://evil.test");
 
-    expect(response.headers['access-control-allow-origin']).toBeUndefined();
+    expect(response.headers["access-control-allow-origin"]).toBeUndefined();
   });
 });

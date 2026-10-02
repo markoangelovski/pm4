@@ -60,22 +60,22 @@ describe("monthRange", () => {
   it("returns the calendar month bounds, unaffected by DST switches", () => {
     expect(monthRange("2026-03-15", ZAGREB)).toEqual({
       from: "2026-03-01",
-      to: "2026-03-31",
+      to: "2026-03-31"
     });
     expect(monthRange("2026-10-05", ZAGREB)).toEqual({
       from: "2026-10-01",
-      to: "2026-10-31",
+      to: "2026-10-31"
     });
   });
 
   it("handles February in leap and non-leap years", () => {
     expect(monthRange("2026-02-10", ZAGREB)).toEqual({
       from: "2026-02-01",
-      to: "2026-02-28",
+      to: "2026-02-28"
     });
     expect(monthRange("2028-02-10", ZAGREB)).toEqual({
       from: "2028-02-01",
-      to: "2028-02-29",
+      to: "2028-02-29"
     });
   });
 });

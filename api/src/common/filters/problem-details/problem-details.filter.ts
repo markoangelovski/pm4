@@ -4,11 +4,11 @@ import {
   ExceptionFilter,
   HttpException,
   HttpStatus,
-  Logger,
-} from '@nestjs/common';
-import type { Request, Response } from 'express';
-import { AppConfigService } from '../../../config/app-config.service.js';
-import { FieldError } from '../../validation/flatten-validation-errors.js';
+  Logger
+} from "@nestjs/common";
+import type { Request, Response } from "express";
+import { AppConfigService } from "../../../config/app-config.service.js";
+import { FieldError } from "../../validation/flatten-validation-errors.js";
 
 interface ProblemDetailsBody {
   type: string;
@@ -20,23 +20,23 @@ interface ProblemDetailsBody {
 
 /** RFC 9457 slugs, per `specs/03-api/conventions.md#errors`. */
 const SLUG_BY_STATUS: Record<number, string> = {
-  400: 'validation',
-  401: 'unauthorized',
-  403: 'forbidden',
-  404: 'not-found',
-  409: 'conflict',
-  429: 'rate-limited',
-  500: 'internal',
+  400: "validation",
+  401: "unauthorized",
+  403: "forbidden",
+  404: "not-found",
+  409: "conflict",
+  429: "rate-limited",
+  500: "internal"
 };
 
 const TITLE_BY_STATUS: Record<number, string> = {
-  400: 'Validation failed',
-  401: 'Unauthorized',
-  403: 'Forbidden',
-  404: 'Not Found',
-  409: 'Conflict',
-  429: 'Too Many Requests',
-  500: 'Internal Server Error',
+  400: "Validation failed",
+  401: "Unauthorized",
+  403: "Forbidden",
+  404: "Not Found",
+  409: "Conflict",
+  429: "Too Many Requests",
+  500: "Internal Server Error"
 };
 
 /**
@@ -47,7 +47,7 @@ const TITLE_BY_STATUS: Record<number, string> = {
  */
 @Catch()
 export class ProblemDetailsFilter implements ExceptionFilter {
-  private readonly logger = new Logger('ExceptionsHandler');
+  private readonly logger = new Logger("ExceptionsHandler");
 
   constructor(private readonly configService: AppConfigService) {}
 
@@ -57,7 +57,7 @@ export class ProblemDetailsFilter implements ExceptionFilter {
     const request = ctx.getRequest<Request>();
 
     const described = this.describe(exception);
-    const slug = SLUG_BY_STATUS[described.status] ?? 'error';
+    const slug = SLUG_BY_STATUS[described.status] ?? "error";
 
     if (described.status >= 500) {
       const cause =
@@ -65,7 +65,7 @@ export class ProblemDetailsFilter implements ExceptionFilter {
           ? (exception.stack ?? exception.message)
           : String(exception);
       this.logger.error(
-        `${request.method} ${request.originalUrl ?? request.url} -> ${described.status}: ${cause}`,
+        `${request.method} ${request.originalUrl ?? request.url} -> ${described.status}: ${cause}`
       );
     }
 
@@ -74,12 +74,12 @@ export class ProblemDetailsFilter implements ExceptionFilter {
       title: described.title,
       status: described.status,
       detail: described.detail,
-      ...(described.errors ? { errors: described.errors } : {}),
+      ...(described.errors ? { errors: described.errors } : {})
     };
 
     response
       .status(described.status)
-      .type('application/problem+json')
+      .type("application/problem+json")
       .send(body);
   }
 
@@ -99,8 +99,8 @@ export class ProblemDetailsFilter implements ExceptionFilter {
           return {
             status,
             title,
-            detail: 'One or more fields are invalid.',
-            errors,
+            detail: "One or more fields are invalid.",
+            errors
           };
         }
       }
@@ -112,8 +112,8 @@ export class ProblemDetailsFilter implements ExceptionFilter {
         // exception constructor was handed by mistake.
         detail:
           status >= 500
-            ? 'An unexpected error occurred.'
-            : this.extractDetail(exception),
+            ? "An unexpected error occurred."
+            : this.extractDetail(exception)
       };
     }
 
@@ -121,14 +121,14 @@ export class ProblemDetailsFilter implements ExceptionFilter {
       status: HttpStatus.INTERNAL_SERVER_ERROR,
       title: TITLE_BY_STATUS[HttpStatus.INTERNAL_SERVER_ERROR],
       // Never leak internals of an unexpected error (conventions.md#errors).
-      detail: 'An unexpected error occurred.',
+      detail: "An unexpected error occurred."
     };
   }
 
   private extractFieldErrors(response: unknown): FieldError[] | undefined {
     if (
       response &&
-      typeof response === 'object' &&
+      typeof response === "object" &&
       Array.isArray((response as { errors?: unknown }).errors)
     ) {
       return (response as { errors: FieldError[] }).errors;
@@ -138,12 +138,12 @@ export class ProblemDetailsFilter implements ExceptionFilter {
 
   private extractDetail(exception: HttpException): string {
     const response = exception.getResponse();
-    if (typeof response === 'string') {
+    if (typeof response === "string") {
       return response;
     }
     const message =
       (response as { message?: string | string[] })?.message ??
       exception.message;
-    return Array.isArray(message) ? message.join(' ') : message;
+    return Array.isArray(message) ? message.join(" ") : message;
   }
 }

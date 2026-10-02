@@ -1,5 +1,5 @@
-import { Module } from '@nestjs/common';
-import { Drizzle, DRIZZLE } from './drizzle.js';
+import { Module } from "@nestjs/common";
+import { Drizzle, DRIZZLE } from "./drizzle.js";
 
 @Module({
   providers: [
@@ -7,9 +7,9 @@ import { Drizzle, DRIZZLE } from './drizzle.js';
     {
       provide: DRIZZLE,
       inject: [Drizzle],
-      useFactory: (drizzle: Drizzle) => drizzle.db,
-    },
+      useFactory: (drizzle: Drizzle) => drizzle.db
+    }
   ],
-  exports: [Drizzle, DRIZZLE],
+  exports: [Drizzle, DRIZZLE]
 })
 export class DatabaseModule {}

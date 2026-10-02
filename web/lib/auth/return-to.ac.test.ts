@@ -3,7 +3,7 @@ import {
   landingHref,
   postSignInPath,
   sanitizeReturnTo,
-  signInHref,
+  signInHref
 } from "./return-to";
 
 describe("returnTo helpers (feat-land-app-route-split)", () => {
@@ -42,7 +42,7 @@ describe("returnTo helpers (feat-land-app-route-split)", () => {
       "/app/\n",
       "/app/\t",
       "/app/\x7f",
-      "/app/" + "a".repeat(2048),
+      "/app/" + "a".repeat(2048)
     ];
     for (const raw of invalid) {
       expect(sanitizeReturnTo(raw), JSON.stringify(raw)).toBeNull();

@@ -5,7 +5,7 @@ import { routes } from "@/lib/routes";
 import SocialButtons from "../authforms/social-buttons";
 
 export const metadata: Metadata = {
-  title: "Sign in",
+  title: "Sign in"
 };
 
 export default function SignInPage() {
@@ -13,7 +13,10 @@ export default function SignInPage() {
     <div className="min-h-screen flex items-center justify-center bg-accent px-4">
       <Card className="w-full max-w-md border-none shadow-lg p-6">
         <div className="mx-auto w-fit">
-          <Link href={routes.landing} className="text-lg font-semibold text-foreground">
+          <Link
+            href={routes.landing}
+            className="text-lg font-semibold text-foreground"
+          >
             PM4
           </Link>
         </div>
