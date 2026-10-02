@@ -3,7 +3,7 @@ id: api-conventions
 title: API Conventions
 status: approved
 owner: Marko Angelovski
-last_updated: 2026-09-27
+last_updated: 2026-10-02
 related: [api-endpoints, api-data-model, sec, ADR-0010]
 ---
 
@@ -16,7 +16,9 @@ Rules that every endpoint follows.
 - REST over HTTPS, JSON only. Base path `/api/v1`. `/health` sits outside the version prefix.
 - Resource names are plural and kebab-case: `/projects`, `/tasks`, `/workdays`, `/time-logs`.
 - JSON fields are camelCase. IDs are UUIDv7 strings in the standard 36-char form (OQ-027).
-- Auth: `Authorization: Bearer <accessToken>` on everything except `/health` and `/api/v1/auth/*`.
+- Auth: `Authorization: Bearer <accessToken>` on everything except the public endpoints: `/health`,
+  `/api/v1/version` and API-AUTH-001…005 (`/api/v1/auth/logout-all` needs the token). Enforced by a global
+  guard; public handlers are marked `@Public()` (OQ-066). `@CurrentUser()` gives a handler the user id.
 
 ## Dates and times
 This resolves OQ-015. **Two kinds of values. Never mix them.**
@@ -113,3 +115,5 @@ RFC 9457 Problem Details (`application/problem+json`):
 - 2026-09-27: Nest building blocks are always generated with the Nest CLI.
 - 2026-09-27: Approved by the owner.
 - 2026-09-27: Error `type` example uses the real web domain.
+- 2026-10-02: Public endpoints listed; default-deny guard with `@Public()` and `@CurrentUser()` (OQ-066). Back to `review` (feat-auth-api-session).
+- 2026-10-02: Approved by the owner.

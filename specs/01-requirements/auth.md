@@ -3,7 +3,7 @@ id: req-auth
 title: Auth and Accounts
 status: draft
 owner: Marko Angelovski
-last_updated: 2026-10-01
+last_updated: 2026-10-02
 related: [sec, api-endpoints, req-landing, web-routing, ADR-0007, feat-land-app-route-split]
 ---
 
@@ -29,20 +29,23 @@ validation rule in `04-web/routing.md`).
 **Acceptance criteria:**
 - Given I'm signed out, when I finish the Google consent, then I land on the requested page, signed in.
 - Given I opened `/auth/sign-in` with no `returnTo` (or an invalid one), when I finish the Google consent, then I land on `/app`.
-- Given I cancel at Google, or Google returns an error, then I'm back on the sign-in screen with a readable error.
+- Given I cancel at Google, or Google returns an error, then I'm back on the sign-in screen with a readable error (OQ-063): "Sign-in was cancelled." when I cancelled, "This account isn't allowed to use PM4." for the allow-list (FR-AUTH-002), and "Sign-in failed. Please try again." for anything else. A valid `returnTo` is kept, so signing in again still returns me to the requested page.
 - The OAuth `state` is validated (CSRF protection). A tampered or expired state is rejected.
 
 ### FR-AUTH-002: Account provisioning
 **Priority:** Must
 **Statement:** On the first successful Google sign-in, an account is created from the Google profile
 (email, name, avatar URL) and linked to the Google identity (`provider=google`, `subject=sub`).
-Later sign-ins match on the identity, not on the email.
+Later sign-ins match on the identity, not on the email, and update the account's email, name and avatar URL
+from the Google profile when they changed (OQ-062). Refreshing a session doesn't.
 **Rules:** Only Google accounts with a verified email are accepted. Sign-up policy (OQ-022): if the
 `AUTH_ALLOWED_EMAILS` allow-list is set, only listed emails can sign in, and anyone else sees a
 "This account isn't allowed to use PM4" error and gets no account. An empty list means open sign-up.
 **Acceptance criteria:**
 - Given the allow-list is set and my email isn't on it, when I finish Google sign-in, then I'm back on the sign-in screen with the "not allowed" error, and no account was created.
 - Given the allow-list is empty, any verified Google account can sign in and gets an account.
+- Given I changed my Google name or photo, when I next sign in, then PM4 shows the new name and photo.
+- Given my Google email isn't verified, when I finish Google sign-in, then I'm back on the sign-in screen with "Sign-in failed. Please try again.", and no account was created.
 
 ### FR-AUTH-003: Session persistence and refresh
 **Priority:** Must
@@ -87,7 +90,8 @@ sign-out is different: it goes to the sign-in screen (FR-AUTH-004). The API reje
 **Statement:** The user can see their name, email and avatar (from Google, read-only) and set their
 **time zone** (IANA, e.g. `Europe/Zagreb`). All date ranges, "today" and the default "current month"
 are calculated in that zone. The zone is a **profile setting** (OQ-025). At the first sign-in it's set to
-the browser's zone (`Intl.DateTimeFormat().resolvedOptions().timeZone`). Later it changes only when
+the browser's zone (`Intl.DateTimeFormat().resolvedOptions().timeZone`), which the web passes when it
+starts the sign-in (OQ-061); if the zone is missing or invalid, `UTC`. Later it changes only when
 the user changes it.
 **Acceptance criteria:**
 - Given it's my first sign-in, then my profile time zone is my browser's zone.
@@ -110,3 +114,5 @@ the user changes it.
   `/?returnTo=` (FR-AUTH-005, FR-AUTH-007 AC updated).
 - 2026-09-29: The owner approved FR-AUTH-001, FR-AUTH-004, FR-AUTH-005 and FR-AUTH-007 for feat-land-app-route-split. The file stays `draft` because of the open account-deletion TODO.
 - 2026-10-01: OQ-050: no trailing slashes (`trailingSlash: false`); detail routes `/app/project?id=` and `/app/task?id=` (feat-land-app-route-split).
+- 2026-10-02: Sign-in error messages (OQ-063), profile sync on every sign-in (OQ-062), first time zone passed with the sign-in start (OQ-061) (feat-auth-api-session).
+- 2026-10-02: The owner approved FR-AUTH-002, FR-AUTH-003 and FR-AUTH-006 for feat-auth-api-session. The file stays `draft` because of the open account-deletion TODO.

@@ -20,28 +20,35 @@ brute force against the refresh endpoint, and leaked secrets.
 ## Authentication flow (ADR-0007)
 Actors: **W** = web (`https://pm4.angelovski.top`), **A** = API (`https://pm4-api-heagfvepgbcje5c3.westeurope-01.azurewebsites.net`), **G** = Google.
 
-1. The user clicks "Continue with Google". W navigates the browser to `A/api/v1/auth/google?returnTo=/app/projects`.
+1. The user clicks "Continue with Google". W navigates the browser to
+   `A/api/v1/auth/google?returnTo=/app/projects&timeZone=Europe/Zagreb` (the browser's zone, used only for a new account, OQ-061).
    `returnTo` must be a relative path (open-redirect protection). W itself only ever sends a path under
    `/app`, and re-validates the value it gets back at `W/auth/callback` (`04-web/routing.md`, OQ-047).
    The API's rule stays "relative path": it holds no web route paths.
-2. A creates `state` + a PKCE `code_verifier`, stores `{verifier, returnTo}` in Redis under
-   `oauth:state:<state>` (TTL 10 min), and redirects to G's authorize URL (scopes `openid email profile`).
+2. A creates `state` + a PKCE `code_verifier`, stores `{verifier, returnTo, timeZone}` in Redis under
+   `oauth:state:<state>` (TTL 10 min), and redirects to G's authorize URL (scopes `openid email profile`,
+   `prompt=select_account`, OQ-065).
 3. G redirects to `A/api/v1/auth/google/callback?code&state`. A loads and **deletes** the state
    entry (single use), exchanges the code with PKCE, validates the ID token (issuer, audience,
-   `email_verified`), applies the sign-up policy (allow-list, see below), and upserts the user + identity.
+   `email_verified`), applies the sign-up policy (allow-list, see below), and upserts the user + identity:
+   a new identity creates the user (time zone from the state entry, else `UTC`); a known one updates the
+   user's email, name and avatar URL when they changed (OQ-062). Any failure redirects to
+   `W/auth/sign-in?error=cancelled|not-allowed|failed` instead (API-AUTH-002, OQ-063).
 4. A creates a one-time **login code** (32 random bytes, stored in Redis `auth:code:<hash>`, TTL 60 s)
    and redirects to `W/auth/callback?code=<code>&returnTo=…`.
 5. W POSTs `{code}` to `A/api/v1/auth/token`. A consumes the code (single use) and returns
    `{accessToken, accessTokenExpiresAt, refreshToken}`. W replaces the URL (removing the code from history).
 6. **Access token:** a JWT (HS256), `sub` = user id, TTL 15 min. Kept **in memory** only.
-7. **Refresh token:** opaque, 32 random bytes. Redis stores `sha256(token)` → `{userId, familyId, expiresAt}`,
-   with TTL = the refresh lifetime. A cross-site cookie isn't viable: the API stays on
+7. **Refresh token:** opaque, 32 random bytes. Redis stores `auth:refresh:<sha256(token)>` → `{userId, familyId}`,
+   with TTL = the refresh lifetime. Each sign-in starts a **family** (`auth:family:<familyId>` → `{userId, current}`,
+   where `current` is the hash of its live token). A cross-site cookie isn't viable: the API stays on
    `*.azurewebsites.net`, because the Free tier has no custom domains (OQ-004, OQ-024). W keeps the token in
    **`localStorage`** (OQ-024), so all tabs share one session and it survives browser restarts. The
    refresh lifetime is **30 days, sliding** (every rotation issues a token valid for another 30 days),
    which covers the required minimum of 8 hours of use (OQ-023).
 8. **Refresh:** `POST /auth/refresh {refreshToken}` → a new pair, and the old token is invalidated
-   (**rotation**). Reusing an already-rotated token revokes the whole family (**reuse detection**).
+   (**rotation**; a marker `auth:rotated:<hash>` → `familyId` remembers it for the refresh lifetime).
+   Reusing an already-rotated token revokes the whole family (**reuse detection**).
    Concurrent refreshes from several tabs are serialized in the client (one in-flight refresh, shared through a BroadcastChannel/lock).
 9. **Logout:** `POST /auth/logout {refreshToken}` revokes the family. W clears its storage.
 10. **Logout everywhere:** `POST /auth/logout-all` (authenticated) revokes every refresh-token family of
@@ -62,6 +69,8 @@ same `user_identities` table (`provider` = the configured provider key). Provide
 (no OIDC) or SAML-only need their own adapter.
 
 ## Authorization
+- **Default-deny (OQ-066):** a global guard requires a valid access token on every endpoint. Only handlers
+  marked `@Public()` skip it: `/health`, `GET /api/v1/version` and API-AUTH-001…005.
 - Every table carries (or inherits via its parent) `userId`. Every query filters on the
   authenticated user. Implemented in the data-access layer, not only in controllers.
 - A resource that doesn't exist or isn't owned returns **404** (existence isn't revealed).
@@ -71,7 +80,8 @@ same `user_identities` table (`provider` = the configured provider key). Provide
 ## API hardening
 - CORS: allow-list `CORS_ORIGINS` only, with no credentials. Methods and headers restricted to what's used.
 - helmet, a JSON body limit (e.g. 100 kB), and `ValidationPipe` with whitelist + forbidNonWhitelisted.
-- Rate limiting (Redis-backed, `@nestjs/throttler`, OQ-039):
+- Rate limiting (Redis-backed, `@nestjs/throttler`, OQ-039). **Not implemented yet:** it comes in its own
+  feature after auth (OQ-060).
   | Scope | Key | Limit |
   | --- | --- | --- |
   | `GET /auth/google`, `POST /auth/token` | IP | 10 / min |
@@ -119,3 +129,5 @@ Secrets live in Azure App Settings and in GitHub Actions secrets. They are never
 - 2026-10-01: OQ-050: no trailing slashes (`trailingSlash: false`); detail routes `/app/project?id=` and `/app/task?id=`. Back to `review` (feat-land-app-route-split).
 - 2026-10-01: Approved by the owner.
 - 2026-10-02: `GET /api/v1/version` is not rate limited, like `/health` (OQ-052).
+- 2026-10-02: Time zone and account chooser at sign-in start, profile sync, failure redirects, refresh-family keys, default-deny guard, rate limiting deferred (OQ-060…066). Back to `review` (feat-auth-api-session).
+- 2026-10-02: Approved by the owner.

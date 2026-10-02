@@ -3,7 +3,7 @@ id: api-data-model
 title: Data Model
 status: draft
 owner: Marko Angelovski
-last_updated: 2026-09-27
+last_updated: 2026-10-02
 related: [api-conventions, prod-glossary, req-projects, req-tasks, req-time-logs, req-trash, ADR-0008]
 ---
 
@@ -160,3 +160,4 @@ OQ-020, OQ-021, OQ-028, OQ-030, OQ-035, OQ-036, OQ-037
 - 2026-09-26: OQ-025, OQ-026, OQ-032 resolved (profile time zone, text limits, 0.5 GB quota). OQ-027 narrowed to UUIDv7 vs ULID.
 - 2026-09-27: OQ-027 resolved: UUIDv7 primary keys.
 - 2026-09-27: OQ-042: Postgres 18, ids default to uuidv7().
+- 2026-10-02: The owner approved the `users` and `user_identities` tables for feat-auth-api-session.

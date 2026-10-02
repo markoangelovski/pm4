@@ -1,6 +1,6 @@
 # Task Board
 
-**Next free ID:** T-0015
+**Next free ID:** T-0018
 
 | ID | Title | Milestone | App | Size | Status | Depends on |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -18,5 +18,8 @@
 | [T-0012](m1-auth/T-0012-sidebar-nav-hover-highlight.md) | Sidebar nav hover highlight like the template (CSS only) | M1 | web | S | ready | — |
 | [T-0013](m1-auth/T-0013-group-the-sidebar-nav-into-sections.md) | Group the sidebar nav into sections and move Trash and Settings to a fixed footer | M1 | web | S | blocked | — |
 | [T-0014](m1-auth/T-0014-app-footer-copyright-and-legal-links.md) | App footer: copyright line and Terms and Conditions / Privacy links | M1 | web | S | ready | — |
+| [T-0015](m1-auth/T-0015-add-the-users-and-user-identities.md) | Add the users and user_identities tables and their migration | M1 | api | S | blocked | — |
+| [T-0016](m1-auth/T-0016-access-tokens-the-default-deny-guard.md) | Access tokens, the default-deny guard and GET /me | M1 | api | M | blocked | T-0010, T-0015 |
+| [T-0017](m1-auth/T-0017-google-sign-in-login-codes-refresh.md) | Google sign-in, login codes, refresh rotation and sign-out | M1 | api | M | blocked | T-0016 |
 
 Milestones M2–M6 have no tasks yet, and M1 has only the landing route split so far. They're created with the `write-task` skill once their specs are approved.

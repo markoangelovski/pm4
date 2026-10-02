@@ -3,7 +3,7 @@ id: arch-stack
 title: Tech Stack
 status: approved
 owner: Marko Angelovski
-last_updated: 2026-09-27
+last_updated: 2026-10-02
 related: [arch-overview, web-template, ADR-0001, ADR-0002, ADR-0005, ADR-0006, ADR-0007, ADR-0008, ADR-0009, ADR-0010, ADR-0011]
 ---
 
@@ -57,9 +57,9 @@ A newer **major** needs a spec update.
 | DB driver | `pg` (node-postgres) with Neon's **pooled** URL | 8.23.0 | A long-running server, not edge |
 | ORM / migrations | **Drizzle ORM + drizzle-kit** | 0.45.3 / 0.31.11 | ADR-0008 |
 | Cache / ephemeral | **Redis Cloud** via `ioredis` | 6.0.0 (BullMQ's supported range not yet checked — BullMQ isn't installed until the jobs module lands, ADR-0011) | ADR-0008 |
-| Auth | Google OAuth (Authorization Code + PKCE) via `openid-client`; JWT via `@nestjs/jwt` | 6.8.x / 12.0.x | ADR-0007. **Not installed at T-0001** (out of scope; auth is M1). A generic, OpenID-certified OIDC client: PKCE, state, discovery and ID-token validation for Google and any future OIDC provider (Authentik, Keycloak…). No Passport; `openid-client` ships its own Passport strategy if that's ever wanted. |
+| Auth | Google OAuth (Authorization Code + PKCE) via `openid-client`; JWT (HS256) via `@nestjs/jwt` | 6.8.x / 12.0.x | ADR-0007, OQ-059. Installed by feat-auth-api-session. A generic, OpenID-certified OIDC client: PKCE, state, discovery and ID-token validation for Google and any future OIDC provider (Authentik, Keycloak…). No Passport; `openid-client` ships its own Passport strategy if that's ever wanted. |
 | Background jobs | **BullMQ** via `@nestjs/bullmq`, worker in the API process | 6.3.x / 12.0.x | ADR-0011. **Not installed at T-0001** (out of scope). Uses the Redis Cloud DB (`noeviction`) |
-| Rate limiting | `@nestjs/throttler` with Redis storage | 6.7.x | **Not installed at T-0001** (out of scope: the per-user 300/min limit needs an authenticated user, and the auth-endpoint limits need the auth module; deferred to the task that adds auth) |
+| Rate limiting | `@nestjs/throttler` with Redis storage | 6.7.x | **Not installed yet.** Deferred to its own feature after auth (OQ-060) |
 | Security headers | helmet | 8.3.0 | |
 | Logging | NestJS default logger → stdout → App Service logs | — | NFR-009. No log library. |
 | Lint / format | ESLint (flat config, `typescript-eslint`) + Prettier | eslint 10.11.x / typescript-eslint 8.70.x / prettier 3.9.x | Task/spec requirement (`api/AGENTS.md`, `03-api/conventions.md`). The Nest CLI's `new` schematic now scaffolds **oxlint** by default, not ESLint — kept ESLint per this table's requirement, unlike the Tests row (which now follows the CLI's own default) |
@@ -106,3 +106,5 @@ A newer **major** needs a spec update.
   (`openapi:export` still produces a byte-identical `openapi.json` today, since there are no DTOs yet
   to annotate). `typescript` is now pinned as an exact version (`"6.0.3"`, no `^` range) rather than
   a caret range that happened to resolve to the same version.
+- 2026-10-02: Auth libraries installed by feat-auth-api-session (OQ-059); rate limiting deferred to its own feature (OQ-060). Back to `review` (feat-auth-api-session).
+- 2026-10-02: Approved by the owner.
