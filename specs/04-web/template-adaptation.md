@@ -53,6 +53,9 @@ Implemented by task T-0002.
 - Sidebar nav hover (OQ-053): the template's hover highlight without `motion`: a `bg-primary/5` `rounded-lg`
   layer behind each nav item (active ones too, expanded and collapsed) that fades in over 200 ms on
   hover, and appears instantly under `prefers-reduced-motion`. No sliding between items.
+- App footer (OQ-055): the template's footer layout with PM4 content: `© 2026 by PM4, better project
+  management for you.` on the left (**PM4** links to `/`), and **Terms and Conditions** (`/terms-and-conditions`)
+  and **Privacy** (`/privacy`) on the right. Internal links, same tab.
 - Branding: app name, favicon, metadata.
 - Data layer: add `lib/api` (openapi-fetch client targeting `NEXT_PUBLIC_API_BASE_URL`) and the TanStack
   Query provider (ADR-0009, ADR-0010).
@@ -70,3 +73,4 @@ Implemented by task T-0002.
 - 2026-09-26: npm, Google-only auth UI, TanStack Query replaces SWR.
 - 2026-09-27: Approved by the owner.
 - 2026-10-02: Sidebar nav hover highlight, CSS only (OQ-053).
+- 2026-10-02: App footer copyright and legal links (OQ-055).

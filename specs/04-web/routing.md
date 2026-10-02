@@ -53,6 +53,9 @@ and the client reads `id` with `useSearchParams` (inside `<Suspense>`).
 - The sign-in screen's logo links to the landing page `/`.
 - The not-found page's "Go back home" button links to `/` (the landing page).
 - No page is indexable (FR-LAND-003): every page carries a `noindex` robots directive, and there is no sitemap.
+- App footer (every `/app/**` screen, OQ-055): **PM4** in the copyright line links to `/`; **Terms and
+  Conditions** → `/terms-and-conditions`, **Privacy** → `/privacy`. Those two routes have no page yet (not in
+  the route map), so they show the not-found page until a later feature adds them.
 - All internal links use `next/link`.
 
 ## Auth guard and `returnTo` (OQ-047)
@@ -96,3 +99,4 @@ and the client reads `id` with `useSearchParams` (inside `<Suspense>`).
 - 2026-10-01: OQ-050: no trailing slashes (`trailingSlash: false`); detail routes `/app/project?id=` and `/app/task?id=`. Back to `review` (feat-land-app-route-split).
 - 2026-10-01: Approved by the owner.
 - 2026-10-02: Sidebar sections and a fixed footer with Trash and Settings; "Time" is labelled "Logs", "Dashboard" "Default" (OQ-054).
+- 2026-10-02: App footer links to `/`, `/terms-and-conditions` and `/privacy` (pages not built yet, OQ-055).

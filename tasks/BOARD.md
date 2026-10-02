@@ -1,6 +1,6 @@
 # Task Board
 
-**Next free ID:** T-0014
+**Next free ID:** T-0015
 
 | ID | Title | Milestone | App | Size | Status | Depends on |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -17,5 +17,6 @@
 | [T-0011](m1-auth/T-0011-sidebar-header-branding-logo-title-subtitle.md) | Sidebar header branding: logo, title, subtitle, version pill with the API version tooltip | M1 | web | M | blocked | T-0010 |
 | [T-0012](m1-auth/T-0012-sidebar-nav-hover-highlight.md) | Sidebar nav hover highlight like the template (CSS only) | M1 | web | S | ready | — |
 | [T-0013](m1-auth/T-0013-group-the-sidebar-nav-into-sections.md) | Group the sidebar nav into sections and move Trash and Settings to a fixed footer | M1 | web | S | blocked | — |
+| [T-0014](m1-auth/T-0014-app-footer-copyright-and-legal-links.md) | App footer: copyright line and Terms and Conditions / Privacy links | M1 | web | S | ready | — |
 
 Milestones M2–M6 have no tasks yet, and M1 has only the landing route split so far. They're created with the `write-task` skill once their specs are approved.
