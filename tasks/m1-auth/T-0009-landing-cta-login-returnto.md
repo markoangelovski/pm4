@@ -52,3 +52,5 @@ pending. Scope lists only `specs/04-web/static-export.md` and the feature spec, 
 
 ## Review
 **Verdict: approve** (Opus review, 2026-10-02). `LandingCta`/`LandingCtaFallback` exactly as specified (no fetch, no `localStorage`, button-sized skeleton); `app/page.tsx` stays a Server Component with both CTAs in `<Suspense>` (D9, checked by reading since AC-6–AC-8 test the component alone). No findings. Tier: haiku right.
+
+Re-review (Opus, 2026-10-03): **approve** again. Minor: no test checks that `page.tsx` wraps the CTAs in `<Suspense>` (the build would fail without it). AC-7 still asserts `getItem` is never called, stricter than the spec row; feat-auth-web-session rewrites it.

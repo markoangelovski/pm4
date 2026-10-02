@@ -56,3 +56,7 @@ The only failure is scope: `specs/04-web/static-export.md` and the feature spec,
 
 ## Review
 **Verdict: approve** (Opus review, 2026-10-02). Moves, link targets, TODO comments and `trailingSlash` match the spec; Non-goals respected. Minor findings, fixed in the main session: `web/AGENTS.md` structure and patterns updated (spec follow-up); `next.config.ts` header comment reworded. Open (owner's call): the doc comment in `view-id-guard.tsx:14` (a Non-goal file) still says `/projects/view/?id=…`. Tier: sonnet right; the block came from the spec's checks, not the tier.
+
+Re-review (Opus, 2026-10-03): **approve** again. Still open (owner's call): `view-id-guard.tsx:14` comment. New minor (tests weak, no defect): AC-10 doesn't cover the user-menu Settings link or the view pages' `listPath`; AC-13's grep misses bare `"/"`/`"/app"` literals. All checked by reading.
+
+Fixed in the main session (owner, 2026-10-03): `view-id-guard.tsx` doc comment now says `/app/project?id=…`, `/app/task?id=…`.

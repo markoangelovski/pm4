@@ -11,7 +11,7 @@ interface ViewIdGuardProps {
 
 /**
  * Reads `id` from the query string (routing.md's entity routes:
- * `/projects/view/?id=…`, `/tasks/view/?id=…`). Missing or empty `id`
+ * `/app/project?id=…`, `/app/task?id=…`). Missing or empty `id`
  * redirects (replace) to the list. Must be rendered inside a `<Suspense>`
  * boundary (static-export.md: `useSearchParams` needs one).
  *

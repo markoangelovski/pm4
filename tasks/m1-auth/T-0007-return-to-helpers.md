@@ -54,3 +54,5 @@ Change only the files that the spec's *Files* table assigns to T1.
 
 ## Review
 **Verdict: approve** (Opus review, 2026-10-02). `sanitizeReturnTo` follows steps 1–7 in order; the control-character check runs before parsing (the URL parser would strip tab/newline); open-redirect inputs all give `null`. The three wrappers match *Interfaces* exactly. No findings. Tier: opus right (security logic, first `lib/auth/` file); sonnet would likely have managed given the exact spec.
+
+Re-review (Opus, 2026-10-03): **approve** again; hashes re-recorded after the T-0006 reformat match, and the `*.ac.*` changes are formatting only. No findings.
