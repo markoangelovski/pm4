@@ -3,7 +3,7 @@ id: T-0012
 title: Sidebar nav hover highlight like the template (CSS only)
 milestone: M1
 app: web
-status: ready
+status: review
 size: S
 tier: haiku
 depends_on: []
@@ -70,9 +70,17 @@ more fields, add the minimum the type requires.
 ## Implementation notes
 _Implementer: what changed, and anything the reviewer should look at._
 
+`NavItem` root uses the named group `group/item` (no `hover:bg-primary/5`, no `transition-colors`). The first child is an
+`aria-hidden` `data-slot="nav-hover-bg"` span that fades in on `group-hover/item` (`transition-opacity duration-200 ease-out`,
+`motion-reduce:transition-none`). New `index.test.tsx` (3 tests) covers the layer, the root classes and the active state.
+
+`pm4 check T-0012`: web lint, typecheck, test (27), build ok; check checks ok. Scope ok apart from
+`scripts/pm4.mjs`, which is the orchestrator's separate fix to `pm4 check` (block-list `files:` parsing), not part of this task.
+
 ### Attempts
 | # | Tier | Result | Summary |
 | --- | --- | --- | --- |
+| 1 | haiku | done | CSS-only hover layer and unit tests, gates green |
 
 ## Review
 _The owner's review (quick lane), or `review-feature`'s verdict._
