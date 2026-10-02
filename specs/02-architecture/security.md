@@ -3,7 +3,7 @@ id: sec
 title: Security
 status: approved
 owner: Marko Angelovski
-last_updated: 2026-10-01
+last_updated: 2026-10-02
 related: [web-routing, req-auth, arch-env, api-conventions, ADR-0007, NFR-004, NFR-005]
 ---
 
@@ -77,7 +77,8 @@ same `user_identities` table (`provider` = the configured provider key). Provide
   | `GET /auth/google`, `POST /auth/token` | IP | 10 / min |
   | `POST /auth/refresh` | IP | 30 / min |
   | Every other endpoint | user id | 300 / min |
-  Over the limit → `429` with `Retry-After`. `/health` isn't limited.
+  Over the limit → `429` with `Retry-After`. `/health` and `GET /api/v1/version` (API-SYS-003, public,
+  no DB/Redis) aren't limited.
 - Never log tokens, codes, secrets or full request bodies of auth endpoints.
 
 ## Web hardening
@@ -117,3 +118,4 @@ Secrets live in Azure App Settings and in GitHub Actions secrets. They are never
 - 2026-09-29: Approved by the owner.
 - 2026-10-01: OQ-050: no trailing slashes (`trailingSlash: false`); detail routes `/app/project?id=` and `/app/task?id=`. Back to `review` (feat-land-app-route-split).
 - 2026-10-01: Approved by the owner.
+- 2026-10-02: `GET /api/v1/version` is not rate limited, like `/health` (OQ-052).

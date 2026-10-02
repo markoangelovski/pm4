@@ -3,7 +3,7 @@ id: web-routing
 title: Routing and Navigation
 status: approved
 owner: Marko Angelovski
-last_updated: 2026-10-01
+last_updated: 2026-10-02
 related: [web-static-export, web-screens, req-landing, req-auth, feat-land-app-route-split]
 ---
 
@@ -43,7 +43,10 @@ and the client reads `id` with `useSearchParams` (inside `<Suspense>`).
 | `/app/settings` | SCR-050 Profile and settings (time zone) | required |
 
 ## Navigation
-- Sidebar: Dashboard (`/app`), Time, Projects, Tasks, Trash, Settings. The app logo links to `/app`.
+- Sidebar (OQ-054), in sections with a heading (shown in capitals):
+  **Dashboard** → Default (`/app`) · **Project management** → Projects, Tasks · **Time** → Logs (`/app/time`).
+  A fixed footer at the bottom of the sidebar (stays put while the nav scrolls) holds Trash and Settings.
+  The app logo links to `/app`.
 - Header: a global **Log time** button (FR-TLOG-008), the user menu (avatar, settings, sign out) and the theme toggle.
 - Landing page (`/`, FR-LAND-001/002): public, outside the app shell and its auth guard. It has its own
   marketing header with the "Go to app" / "Login" button, not the sidebar.
@@ -92,3 +95,4 @@ and the client reads `id` with `useSearchParams` (inside `<Suspense>`).
 - 2026-09-29: Approved by the owner.
 - 2026-10-01: OQ-050: no trailing slashes (`trailingSlash: false`); detail routes `/app/project?id=` and `/app/task?id=`. Back to `review` (feat-land-app-route-split).
 - 2026-10-01: Approved by the owner.
+- 2026-10-02: Sidebar sections and a fixed footer with Trash and Settings; "Time" is labelled "Logs", "Dashboard" "Default" (OQ-054).

@@ -3,7 +3,7 @@ id: web-screens
 title: Screens
 status: approved
 owner: Marko Angelovski
-last_updated: 2026-10-01
+last_updated: 2026-10-02
 related: [web-routing, req-landing, feat-land-app-route-split, req-projects, req-tasks, req-time-logs, req-reporting]
 ---
 
@@ -32,6 +32,7 @@ live under `/app` (OQ-047).
 | SCR-001 | Sign in (Continue with Google) | TODO |
 | SCR-002 | OAuth callback (spinner, error state) | TODO |
 | SCR-003 | Landing page (`/`, optional `?returnTo=`): marketing content about PM4 (FR-LAND-001); hero, feature grid (projects, tasks, time logs, dashboard, trash) and footer; header button "Go to app" when signed in, "Login" when not (FR-LAND-002). Login carries a valid `returnTo` on to sign-in (routing.md, OQ-047); "Go to app" opens a valid `returnTo`, else `/app` (OQ-048); `noindex`, with Open Graph tags (FR-LAND-003) | TODO |
+| SCR-004 | App shell, sidebar header (every `/app/**` screen): the logo icon (the template's `logoicon.svg`), title **PM4**, subtitle **Project management**, all linking to `/app`; a version pill `v<web version>` (from `web/package.json`). Hovering or focusing the pill shows `Web v<web> · API v<api>`; the API part reads `API …` while `GET /api/v1/version` loads and `API —` if it fails (one request per page load, no retry, no error toast). Collapsed to icons: only the logo icon. The mobile header keeps the icon only (OQ-051, OQ-052) | TODO |
 | SCR-010 | Dashboard: range picker, total hours, project breakdown, hours-per-day chart with project multi-select | TODO |
 | SCR-020 | Project list | TODO |
 | SCR-021 | Project detail | TODO |
@@ -63,3 +64,4 @@ OQ-021, OQ-029, OQ-030, OQ-036, OQ-038
 - 2026-09-29: Approved by the owner.
 - 2026-10-01: OQ-050: no trailing slashes (`trailingSlash: false`); detail routes `/app/project?id=` and `/app/task?id=`. Back to `review` (feat-land-app-route-split).
 - 2026-10-01: Approved by the owner.
+- 2026-10-02: Added SCR-004 App shell sidebar header (OQ-051, OQ-052).

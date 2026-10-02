@@ -3,7 +3,7 @@ id: api-endpoints
 title: API Endpoints
 status: draft
 owner: Marko Angelovski
-last_updated: 2026-10-01
+last_updated: 2026-10-02
 related: [api-conventions, api-data-model, req-auth, req-projects, req-tasks, req-time-logs, req-reporting, req-trash]
 ---
 
@@ -28,6 +28,7 @@ defines its request, response and errors. Paths are relative to `/api/v1` unless
 | --- | --- | --- | --- | --- |
 | API-SYS-001 | GET | `/health` (root) | NFR-003 | TODO |
 | API-SYS-002 | — | (removed: the purge is a background job, ADR-0011) | — | — |
+| API-SYS-003 | GET | `/version` → `{version}` (public, no DB/Redis) | SCR-004 | specified |
 | API-AUTH-001 | GET | `/auth/google?returnTo=` → 302 Google | FR-AUTH-001 | TODO |
 | API-AUTH-002 | GET | `/auth/google/callback` → 302 web `/auth/callback` | FR-AUTH-001/002 | TODO |
 | API-AUTH-003 | POST | `/auth/token` `{code}` → tokens | FR-AUTH-001 | TODO |
@@ -66,6 +67,13 @@ defines its request, response and errors. Paths are relative to `/api/v1` unless
 ## Endpoint details
 TODO: write each endpoint using the template once its requirement spec reaches `review`.
 
+### API-SYS-003: API version
+`GET /version` · Auth: none (public) · Implements: SCR-004 (OQ-052)
+Returns the `version` field of `api/package.json` of the running build. Touches neither Postgres nor
+Redis, so it never wakes Neon. Not rate limited (security.md). In the OpenAPI contract (unlike `/health`).
+**200:** `{ version: string }`, e.g. `{ "version": "0.0.1" }`
+**Errors:** none of its own
+
 ## Open questions
 OQ-029, OQ-030, OQ-036
 
@@ -75,3 +83,5 @@ OQ-029, OQ-030, OQ-036
 - 2026-09-26: Added API-AUTH-006 (sign out of all devices, OQ-023).
 - 2026-09-27: API-SYS-002 removed (OQ-031, ADR-0011).
 - 2026-10-01: OQ-050: no trailing slashes (`trailingSlash: false`); detail routes `/app/project?id=` and `/app/task?id=` (feat-land-app-route-split).
+- 2026-10-02: Added API-SYS-003 `GET /version` (OQ-052, feat-shell-sidebar-branding).
+- 2026-10-02: The owner approved API-SYS-003 for feat-shell-sidebar-branding.
