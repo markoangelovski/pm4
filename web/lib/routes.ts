@@ -3,6 +3,9 @@ export const routes = {
   landing: "/",
   signIn: "/auth/sign-in",
   authCallback: "/auth/callback",
+  // Legal pages: linked from the app footer, no page yet (OQ-055).
+  termsAndConditions: "/terms-and-conditions",
+  privacy: "/privacy",
   app: {
     dashboard: "/app",
     time: "/app/time",

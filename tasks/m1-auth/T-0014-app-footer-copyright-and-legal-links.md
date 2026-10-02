@@ -3,7 +3,7 @@ id: T-0014
 title: "App footer: copyright line and Terms and Conditions / Privacy links"
 milestone: M1
 app: web
-status: ready
+status: review
 size: S
 tier: haiku
 depends_on: []
@@ -93,9 +93,18 @@ Don't touch `layout.tsx` or any other file. No dependencies.
 ## Implementation notes
 _Implementer: what changed, and anything the reviewer should look at._
 
+`footer.tsx` is the task's code verbatim; new `footer.test.tsx` (2 tests: copyright text, three links without `target`).
+The manual check (`npm run dev`, `/app`) is left to the owner.
+
+`pm4 check T-0014`: web lint, typecheck, test, build ok; check checks ok (no legal route pages). Scope ok apart from
+files of other uncommitted work: `scripts/pm4.mjs` (orchestrator fix) and T-0012's `nav-items/` files.
+
 ### Attempts
 | # | Tier | Result | Summary |
 | --- | --- | --- | --- |
+| 1 | haiku | done | Footer from the task's code, unit tests, gates green |
 
 ## Review
 _The owner's review (quick lane), or `review-feature`'s verdict._
+
+Owner decision (2026-10-03), from the land-app-route-split re-review: the footer doesn't hard-code route literals (D3 of feat-land-app-route-split). `routes.ts` gains `termsAndConditions` and `privacy`; `footer.tsx` uses `routes.landing`, `routes.termsAndConditions` and `routes.privacy`, so it differs from the task's verbatim code only there. Done in the main session; `pm4 check T-0014` gates green.
