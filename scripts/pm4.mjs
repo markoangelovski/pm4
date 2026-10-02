@@ -64,6 +64,17 @@ function field(text, key) {
   const m = fm.match(new RegExp(`^${key}:[ \\t]*(.*)$`, "m"));
   if (!m) return undefined;
   const v = m[1].replace(/\s+#.*$/, "").trim();
+  if (v === "") {
+    // YAML block list: `key:` followed by `  - item` lines.
+    const after = fm.slice(m.index + m[0].length).split("\n").slice(1);
+    const items = [];
+    for (const line of after) {
+      const item = line.match(/^\s+-\s+(.*)$/);
+      if (!item) break;
+      items.push(item[1].trim().replace(/^(["'])(.*)\1$/, "$2"));
+    }
+    if (items.length) return items;
+  }
   if (v.startsWith("[")) {
     return v.slice(1, -1).split(",").map((s) => s.trim()).filter(Boolean);
   }
