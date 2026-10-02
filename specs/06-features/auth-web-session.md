@@ -174,7 +174,7 @@ export function SignInState(): React.JSX.Element | null;
 export function signInErrorMessage(error: string | null): string | null;
 ```
 - `signInErrorMessage`: `null` → `null`; `"cancelled"` → `"Sign-in was cancelled."`; `"not-allowed"` →
-  `"This account isn't allowed to use PM4."`; anything else → `"Sign-in failed. Please try again."`.
+  `"This account isn't allowed to use PM4. Continue with Google to choose a different account."`; anything else → `"Sign-in failed. Please try again."`.
 - Renders `<Alert variant="destructive"><AlertDescription>{message}</AlertDescription></Alert>` when there's a message, else `null`.
 - Effect: `getRefreshToken()` → `router.replace(postSignInPath(returnTo))` (D4).
 
@@ -235,4 +235,6 @@ None. OQ-063 and OQ-067…OQ-070 are resolved.
 
 ## Changelog
 - 2026-10-02: Initial draft (OQ-067…OQ-070).
+- 2026-10-03: Approved by the owner.
+- 2026-10-03: `not-allowed` message gets a hint to choose another account (OQ-075). Back to `review`.
 - 2026-10-03: Approved by the owner.

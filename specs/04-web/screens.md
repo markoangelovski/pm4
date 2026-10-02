@@ -29,7 +29,7 @@ live under `/app` (OQ-047).
 
 | ID | Name | Status |
 | --- | --- | --- |
-| SCR-001 | Sign in (`/auth/sign-in`, optional `?returnTo=&error=`): "Continue with Google" starts API-AUTH-001 with a valid `returnTo` and the browser's time zone. `?error=` shows an alert: `cancelled` → "Sign-in was cancelled.", `not-allowed` → "This account isn't allowed to use PM4.", any other value → "Sign-in failed. Please try again." (OQ-063). Signed in already → goes to a valid `returnTo`, else `/app` (OQ-070) | TODO |
+| SCR-001 | Sign in (`/auth/sign-in`, optional `?returnTo=&error=`): "Continue with Google" starts API-AUTH-001 with a valid `returnTo` and the browser's time zone. `?error=` shows an alert: `cancelled` → "Sign-in was cancelled.", `not-allowed` → "This account isn't allowed to use PM4. Continue with Google to choose a different account.", any other value → "Sign-in failed. Please try again." (OQ-063). Signed in already → goes to a valid `returnTo`, else `/app` (OQ-070) | TODO |
 | SCR-002 | OAuth callback (`/auth/callback?code=&returnTo=`): spinner + "Signing in…" while API-AUTH-003 runs; then replaces the URL with a valid `returnTo`, else `/app`. No `code`, or the exchange fails → `/auth/sign-in?error=failed` (keeping a valid `returnTo`) | TODO |
 | SCR-003 | Landing page (`/`, optional `?returnTo=`): marketing content about PM4 (FR-LAND-001); hero, feature grid (projects, tasks, time logs, dashboard, trash) and footer; header button "Go to app" when signed in, "Login" when not (FR-LAND-002). Login carries a valid `returnTo` on to sign-in (routing.md, OQ-047); "Go to app" opens a valid `returnTo`, else `/app` (OQ-048); `noindex`, with Open Graph tags (FR-LAND-003) | TODO |
 | SCR-004 | App shell, sidebar header (every `/app/**` screen): the logo icon (the template's `logoicon.svg`), title **PM4**, subtitle **Project management**, all linking to `/app`; a version pill `v<web version>` (from `web/package.json`). Hovering or focusing the pill shows `Web v<web> · API v<api>`; the API part reads `API …` while `GET /api/v1/version` loads and `API —` if it fails (one request per page load, no retry, no error toast). Collapsed to icons: only the logo icon. The mobile header keeps the icon only (OQ-051, OQ-052) | TODO |
@@ -70,4 +70,6 @@ OQ-021, OQ-029, OQ-030, OQ-036, OQ-038
 - 2026-10-02: Detailed SCR-001 and SCR-002 (OQ-063, OQ-070). Back to `review` (feat-auth-web-session).
 - 2026-10-03: Approved by the owner.
 - 2026-10-03: Added SCR-005 user drawer and SCR-051 Profile; SCR-050 is now Settings (time zone) only (OQ-057, OQ-058, OQ-071…OQ-074). Back to `review` (feat-shell-user-menu).
+- 2026-10-03: Approved by the owner.
+- 2026-10-03: SCR-001 "not allowed" alert gets a hint to choose another account (OQ-075). Back to `review`.
 - 2026-10-03: Approved by the owner.

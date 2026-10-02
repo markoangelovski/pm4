@@ -29,7 +29,7 @@ validation rule in `04-web/routing.md`).
 **Acceptance criteria:**
 - Given I'm signed out, when I finish the Google consent, then I land on the requested page, signed in.
 - Given I opened `/auth/sign-in` with no `returnTo` (or an invalid one), when I finish the Google consent, then I land on `/app`.
-- Given I cancel at Google, or Google returns an error, then I'm back on the sign-in screen with a readable error (OQ-063): "Sign-in was cancelled." when I cancelled, "This account isn't allowed to use PM4." for the allow-list (FR-AUTH-002), and "Sign-in failed. Please try again." for anything else. A valid `returnTo` is kept, so signing in again still returns me to the requested page.
+- Given I cancel at Google, or Google returns an error, then I'm back on the sign-in screen with a readable error (OQ-063): "Sign-in was cancelled." when I cancelled, "This account isn't allowed to use PM4. Continue with Google to choose a different account." for the allow-list (FR-AUTH-002), and "Sign-in failed. Please try again." for anything else. A valid `returnTo` is kept, so signing in again still returns me to the requested page.
 - The OAuth `state` is validated (CSRF protection). A tampered or expired state is rejected.
 
 ### FR-AUTH-002: Account provisioning
@@ -39,8 +39,8 @@ validation rule in `04-web/routing.md`).
 Later sign-ins match on the identity, not on the email, and update the account's email, name and avatar URL
 from the Google profile when they changed (OQ-062). Refreshing a session doesn't.
 **Rules:** Only Google accounts with a verified email are accepted. Sign-up policy (OQ-022): if the
-`AUTH_ALLOWED_EMAILS` allow-list is set, only listed emails can sign in, and anyone else sees a
-"This account isn't allowed to use PM4" error and gets no account. An empty list means open sign-up.
+`AUTH_ALLOWED_EMAILS` allow-list is set, only listed emails can sign in, and anyone else sees the
+"This account isn't allowed to use PM4. Continue with Google to choose a different account." error (OQ-075) and gets no account. An empty list means open sign-up.
 **Acceptance criteria:**
 - Given the allow-list is set and my email isn't on it, when I finish Google sign-in, then I'm back on the sign-in screen with the "not allowed" error, and no account was created.
 - Given the allow-list is empty, any verified Google account can sign in and gets an account.
@@ -126,3 +126,5 @@ the user changes it.
 - 2026-10-03: The owner approved the new FR-AUTH-005 acceptance criteria for feat-auth-web-session.
 - 2026-10-03: Profile page and drawer show the Google identity; time zone on settings (OQ-058); sign out of all devices asks for confirmation (OQ-072) (feat-shell-user-menu).
 - 2026-10-03: The owner approved FR-AUTH-006 and FR-AUTH-007 (as updated) for feat-shell-user-menu.
+- 2026-10-03: The "not allowed" message gets a hint to choose another account (OQ-075).
+- 2026-10-03: The owner approved the FR-AUTH-001/002 wording change (OQ-075).
