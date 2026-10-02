@@ -3,7 +3,7 @@ id: sec
 title: Security
 status: approved
 owner: Marko Angelovski
-last_updated: 2026-10-02
+last_updated: 2026-10-03
 related: [web-routing, req-auth, arch-env, api-conventions, ADR-0007, NFR-004, NFR-005]
 ---
 
@@ -75,6 +75,13 @@ same `user_identities` table (`provider` = the configured provider key). Provide
   authenticated user. Implemented in the data-access layer, not only in controllers.
 - A resource that doesn't exist or isn't owned returns **404** (existence isn't revealed).
 - Linking checks ownership: a log's `taskId`/`projectId` must belong to the same user (and must not be deleted).
+- Linking a task to a project checks ownership the same way: the `projectId` must be the caller's and not in the trash.
+- **The one cross-user read (OQ-076, OQ-077):** a project or task may name **any registered user** as its
+  project lead. To support that, API-USR-003 returns other users' `id`, `displayName`, `email` and
+  `avatarUrl` for the lead picker (search only: at least 2 characters, at most 10 results, OQ-089), and
+  project/task responses include the lead user's `id`, `displayName` and `avatarUrl` (never the email).
+  Naming someone as lead gives them **no access**: every project/task query stays scoped to the owner, and
+  nothing tells a user which items name them (FR-PRJ-007). No other endpoint reads another user's data.
 - Tests: every endpoint has a cross-user test (NFR-005).
 
 ## API hardening
@@ -131,3 +138,5 @@ Secrets live in Azure App Settings and in GitHub Actions secrets. They are never
 - 2026-10-02: `GET /api/v1/version` is not rate limited, like `/health` (OQ-052).
 - 2026-10-02: Time zone and account chooser at sign-in start, profile sync, failure redirects, refresh-family keys, default-deny guard, rate limiting deferred (OQ-060…066). Back to `review` (feat-auth-api-session).
 - 2026-10-02: Approved by the owner.
+- 2026-10-03: The project-lead exception: other users' public profile in the lead picker and in project/task responses, no access (OQ-076, OQ-077, OQ-089). Back to `review` (feat-prj-api).
+- 2026-10-03: Approved by the owner.

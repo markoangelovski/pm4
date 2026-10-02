@@ -31,3 +31,7 @@ A feature spec links to those. It doesn't copy them.
 | Auth API: Google sign-in, sessions and the current user | [auth-api-session.md](auth-api-session.md) | M1 | approved |
 | Auth web: sign-in, session restore, refresh and sign-out | [auth-web-session.md](auth-web-session.md) | M1 | approved |
 | User drawer and profile page | [shell-user-menu.md](shell-user-menu.md) | M1 | approved |
+| Projects API: CRUD, task counts, restore and the project-lead user search | [prj-api.md](prj-api.md) | M2 | approved |
+| Projects web: list, detail with task statistics, create/edit dialog and the lead combobox | [prj-web.md](prj-web.md) | M2 | approved |
+| Tasks API: CRUD, filters, move, status and restore | [tsk-api.md](tsk-api.md) | M3 | approved |
+| Tasks web: task lists, inline status, due-date badges, task detail and the task dialog | [tsk-web.md](tsk-web.md) | M3 | approved |

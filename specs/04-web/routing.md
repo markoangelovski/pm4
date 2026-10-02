@@ -34,10 +34,10 @@ and the client reads `id` with `useSearchParams` (inside `<Suspense>`).
 | `/auth/sign-in?returnTo=` | SCR-001 Sign in (Google) | public |
 | `/auth/callback?code=&returnTo=` | SCR-002 OAuth callback (token exchange, then redirect) | public |
 | `/app` | SCR-010 Dashboard (range, total, breakdown, chart) | required |
-| `/app/projects` | SCR-020 Project list | required |
-| `/app/project?id=` | SCR-021 Project detail (tasks, totals) | required |
-| `/app/tasks` | SCR-030 Task list (all projects) | required |
-| `/app/task?id=` | SCR-031 Task detail (with its time logs) | required |
+| `/app/projects?q=&sort=&page=` | SCR-020 Project list | required |
+| `/app/project?id=&status=&q=&sort=&page=` | SCR-021 Project detail (details, task statistics, tasks) | required |
+| `/app/tasks?project=&status=&q=&sort=&page=` | SCR-030 Task list (all projects) | required |
+| `/app/task?id=` | SCR-031 Task detail (its time logs come with M4) | required |
 | `/app/time?date=&view=sequential\|project` | SCR-040 Day view (workday header, logs, view toggle) | required |
 | `/app/trash` | SCR-060 Trash | required |
 | `/app/user-profile` | SCR-051 Profile (Google identity, sign out of all devices) | required |
@@ -112,4 +112,6 @@ and the client reads `id` with `useSearchParams` (inside `<Suspense>`).
 - 2026-10-02: API unreachable during restore keeps the session (OQ-067); other tabs follow a sign-out (OQ-069); the sign-in page forwards a signed-in visitor (OQ-070). Back to `review` (feat-auth-web-session).
 - 2026-10-03: Approved by the owner.
 - 2026-10-03: `/app/user-profile` (SCR-051); the header user menu becomes the user drawer; `/app/settings` holds only the time zone (OQ-057, OQ-058, OQ-074). Back to `review` (feat-shell-user-menu).
+- 2026-10-03: Approved by the owner.
+- 2026-10-03: Query params of the project and task lists; task detail without time logs until M4 (OQ-080). Back to `review` (feat-prj-web, feat-tsk-web).
 - 2026-10-03: Approved by the owner.

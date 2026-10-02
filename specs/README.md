@@ -27,8 +27,8 @@ Either way, fix the disagreement. Never ignore it.
 | Requirements overview | [01-requirements/README.md](01-requirements/README.md) | draft |
 | Auth and accounts | [01-requirements/auth.md](01-requirements/auth.md) | draft |
 | Public landing page | [01-requirements/landing.md](01-requirements/landing.md) | approved |
-| Projects | [01-requirements/projects.md](01-requirements/projects.md) | review |
-| Tasks | [01-requirements/tasks.md](01-requirements/tasks.md) | review |
+| Projects | [01-requirements/projects.md](01-requirements/projects.md) | approved |
+| Tasks | [01-requirements/tasks.md](01-requirements/tasks.md) | approved |
 | Time capture | [01-requirements/time-logs.md](01-requirements/time-logs.md) | draft |
 | Dashboard and reporting | [01-requirements/reporting.md](01-requirements/reporting.md) | draft |
 | Trash and soft delete | [01-requirements/trash.md](01-requirements/trash.md) | draft |

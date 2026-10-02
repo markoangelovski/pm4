@@ -1,7 +1,7 @@
 ---
 id: req-projects
 title: Projects
-status: review
+status: approved
 owner: Marko Angelovski
 last_updated: 2026-10-03
 related: [req-tasks, req-trash, req-time-logs, api-endpoints, api-data-model, sec]
@@ -147,3 +147,4 @@ None.
   PM4 user or text (suggested: the signed-in user, informational only), task statistics with
   % completed, list rows with status counts. Logged time deferred to the time-capture specs.
 - 2026-10-03: Acceptance criteria for FR-PRJ-004/005 (OQ-086).
+- 2026-10-03: Approved by the owner.

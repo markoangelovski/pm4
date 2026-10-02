@@ -1,7 +1,7 @@
 ---
 id: req-tasks
 title: Tasks
-status: review
+status: approved
 owner: Marko Angelovski
 last_updated: 2026-10-03
 related: [req-projects, req-time-logs, req-trash, api-endpoints]
@@ -136,3 +136,4 @@ None.
   signed-in user), lead and due date optional, multi-select status filter (default all; none selected = empty list, OQ-085), due soon =
   today or tomorrow. Logged time deferred to the time-capture specs.
 - 2026-10-03: Acceptance criteria for FR-TSK-004/005/006/007 (OQ-086, OQ-087).
+- 2026-10-03: Approved by the owner.
