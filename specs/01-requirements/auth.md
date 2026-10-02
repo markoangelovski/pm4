@@ -61,7 +61,7 @@ shows the sign-in screen (`/auth/sign-in`, with no `returnTo`, so signing in aga
 
 ### FR-AUTH-007: Sign out of all devices
 **Priority:** Must
-**Statement:** From the profile, the user can sign out of all devices. Every session of that user is
+**Statement:** From the profile, the user can sign out of all devices, after confirming it (OQ-072). Every session of that user is
 revoked. Other tabs and devices are signed out at their next refresh (at the latest, within 15 minutes).
 **Acceptance criteria:**
 - Given I'm signed in on two devices, when I choose "Sign out of all devices" on one, then that device shows the sign-in screen (`/auth/sign-in`). Within 15 minutes, the other device fails to refresh, removes its stored refresh token, and goes to `/?returnTo=<the page it was on>` (OQ-049, FR-AUTH-005).
@@ -90,7 +90,8 @@ sign-out is different: it goes to the sign-in screen (FR-AUTH-004). The API reje
 
 ### FR-AUTH-006: Profile and time zone
 **Priority:** Must
-**Statement:** The user can see their name, email and avatar (from Google, read-only) and set their
+**Statement:** The user can see their name, email and avatar (from Google, read-only) on the profile page
+`/app/user-profile` and in the user drawer (OQ-058), and set their
 **time zone** (IANA, e.g. `Europe/Zagreb`). All date ranges, "today" and the default "current month"
 are calculated in that zone. The zone is a **profile setting** (OQ-025). At the first sign-in it's set to
 the browser's zone (`Intl.DateTimeFormat().resolvedOptions().timeZone`), which the web passes when it
@@ -100,6 +101,8 @@ the user changes it.
 - Given it's my first sign-in, then my profile time zone is my browser's zone.
 - Given my browser's zone differs from my profile zone (e.g. while travelling), then the app shows a dismissible warning offering to switch the profile to the browser zone.
 - Given I change my time zone, then "today", the default range and all reports use the new zone.
+- Given I open my profile, then I see my Google photo (or my initials when there's none), name and email, and they can't be edited there.
+- The time zone is changed on `/app/settings`, not on the profile page (OQ-058).
 
 ## Open questions
 — (OQ-047, OQ-049 resolved)
@@ -121,3 +124,5 @@ the user changes it.
 - 2026-10-02: The owner approved FR-AUTH-002, FR-AUTH-003 and FR-AUTH-006 for feat-auth-api-session. The file stays `draft` because of the open account-deletion TODO.
 - 2026-10-02: FR-AUTH-005 acceptance criteria for an unreachable API, sign-out in another tab and the sign-in page while signed in (OQ-067, OQ-069, OQ-070) (feat-auth-web-session).
 - 2026-10-03: The owner approved the new FR-AUTH-005 acceptance criteria for feat-auth-web-session.
+- 2026-10-03: Profile page and drawer show the Google identity; time zone on settings (OQ-058); sign out of all devices asks for confirmation (OQ-072) (feat-shell-user-menu).
+- 2026-10-03: The owner approved FR-AUTH-006 and FR-AUTH-007 (as updated) for feat-shell-user-menu.

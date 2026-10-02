@@ -40,14 +40,16 @@ and the client reads `id` with `useSearchParams` (inside `<Suspense>`).
 | `/app/task?id=` | SCR-031 Task detail (with its time logs) | required |
 | `/app/time?date=&view=sequential\|project` | SCR-040 Day view (workday header, logs, view toggle) | required |
 | `/app/trash` | SCR-060 Trash | required |
-| `/app/settings` | SCR-050 Profile and settings (time zone) | required |
+| `/app/user-profile` | SCR-051 Profile (Google identity, sign out of all devices) | required |
+| `/app/settings` | SCR-050 Settings (time zone) | required |
 
 ## Navigation
 - Sidebar (OQ-054), in sections with a heading (shown in capitals):
   **Dashboard** → Default (`/app`) · **Project management** → Projects, Tasks · **Time** → Logs (`/app/time`).
   A fixed footer at the bottom of the sidebar (stays put while the nav scrolls) holds Trash and Settings.
   The app logo links to `/app`.
-- Header: a global **Log time** button (FR-TLOG-008), the user menu (avatar, settings, sign out) and the theme toggle.
+- Header: a global **Log time** button (FR-TLOG-008), the theme toggle and the user's avatar. The avatar
+  opens the **user drawer** (SCR-005) with **Home** (`/app`), **Profile** (`/app/user-profile`) and **Sign out** (OQ-057, OQ-074).
 - Landing page (`/`, FR-LAND-001/002): public, outside the app shell and its auth guard. It has its own
   marketing header with the "Go to app" / "Login" button, not the sidebar.
 - The sign-in screen's logo links to the landing page `/`.
@@ -108,4 +110,6 @@ and the client reads `id` with `useSearchParams` (inside `<Suspense>`).
 - 2026-10-02: Sidebar sections and a fixed footer with Trash and Settings; "Time" is labelled "Logs", "Dashboard" "Default" (OQ-054).
 - 2026-10-02: App footer links to `/`, `/terms-and-conditions` and `/privacy` (pages not built yet, OQ-055).
 - 2026-10-02: API unreachable during restore keeps the session (OQ-067); other tabs follow a sign-out (OQ-069); the sign-in page forwards a signed-in visitor (OQ-070). Back to `review` (feat-auth-web-session).
+- 2026-10-03: Approved by the owner.
+- 2026-10-03: `/app/user-profile` (SCR-051); the header user menu becomes the user drawer; `/app/settings` holds only the time zone (OQ-057, OQ-058, OQ-074). Back to `review` (feat-shell-user-menu).
 - 2026-10-03: Approved by the owner.

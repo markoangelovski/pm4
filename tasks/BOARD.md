@@ -1,6 +1,6 @@
 # Task Board
 
-**Next free ID:** T-0020
+**Next free ID:** T-0022
 
 | ID | Title | Milestone | App | Size | Status | Depends on |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -23,5 +23,7 @@
 | [T-0017](m1-auth/T-0017-google-sign-in-login-codes-refresh.md) | Google sign-in, login codes, refresh rotation and sign-out | M1 | api | M | blocked | T-0016 |
 | [T-0018](m1-auth/T-0018-token-storage-session-refresh-and-the.md) | Token storage, session refresh and the authenticated API client | M1 | web | M | blocked | T-0017 |
 | [T-0019](m1-auth/T-0019-auth-guard-sign-in-callback-landing.md) | Auth guard, sign-in, callback, landing "Go to app" and sign-out | M1 | web | M | blocked | T-0018 |
+| [T-0020](m1-auth/T-0020-user-drawer-useme-usesignouteverywhere-useravatar-and.md) | User drawer: useMe, useSignOutEverywhere, UserAvatar and the header drawer | M1 | web | M | blocked | T-0019 |
+| [T-0021](m1-auth/T-0021-profile-page-app-user-profile-with.md) | Profile page /app/user-profile with sign out of all devices | M1 | web | S | blocked | T-0020 |
 
 Milestones M2–M6 have no tasks yet, and M1 has only the landing route split so far. They're created with the `write-task` skill once their specs are approved.
