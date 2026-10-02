@@ -3,7 +3,7 @@ id: prod-glossary
 title: Glossary
 status: draft
 owner: Marko Angelovski
-last_updated: 2026-09-26
+last_updated: 2026-10-03
 related: [prod-vision, api-data-model]
 ---
 
@@ -13,10 +13,10 @@ Use these terms consistently in specs, code, UI copy and API names.
 
 | Term | Definition | Code / API name | Legacy name |
 | --- | --- | --- | --- |
-| User | A person with an account. Owns all of their data. Nothing is shared. | `User`, `/me` | User |
+| User | A person with an account. Owns all of their data. Nothing is shared (other users appear only as project leads, by name, avatar and email in the picker; OQ-076/077). | `User`, `/me` | User |
 | Identity | A link between a user and an external sign-in provider account (e.g. Google) | `UserIdentity` | — |
 | Project | A named container for tasks | `Project`, `/projects` | Project |
-| Project lead | A free-text name of the person leading the project/task (informational only, not a user) | `projectLead` | `pl` |
+| Project lead | The person leading a project/task: a registered PM4 user **or** a free-text name. Informational only: gives that user no access (OQ-076). | `projectLead` | `pl` |
 | Task | A unit of work in exactly one project | `Task`, `/tasks` | Task |
 | Task status | `upcoming` → `in-progress` → `completed` | `TaskStatus` | same |
 | External link | A URL to an external tracker item (Jira, GitHub, etc.) | `externalLink` | `jiraLink` |
@@ -40,3 +40,4 @@ Use these terms consistently in specs, code, UI copy and API names.
 - 2026-09-26: Initial scaffold.
 - 2026-09-26: Legacy time model terms, trash, identity, external link, project lead.
 - 2026-09-26: OQ-019: Time entry removed, the link moves to the Time log. Added position and views.
+- 2026-10-03: Project lead can be a PM4 user or a free-text name (OQ-076).
