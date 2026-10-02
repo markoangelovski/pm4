@@ -6,7 +6,7 @@ app: web
 status: blocked
 size: M
 tier: opus
-depends_on: []
+depends_on: [T-0024, T-0021]
 feature_spec: specs/06-features/prj-web.md
 spec_row: T1
 ac_files: []

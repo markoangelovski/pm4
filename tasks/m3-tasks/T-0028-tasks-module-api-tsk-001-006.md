@@ -6,7 +6,7 @@ app: api
 status: blocked
 size: M
 tier: sonnet
-depends_on: []
+depends_on: [T-0024]
 feature_spec: specs/06-features/tsk-api.md
 spec_row: T1
 ac_files: []

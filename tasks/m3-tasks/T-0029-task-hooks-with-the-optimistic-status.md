@@ -6,7 +6,7 @@ app: web
 status: blocked
 size: M
 tier: opus
-depends_on: []
+depends_on: [T-0028, T-0027]
 feature_spec: specs/06-features/tsk-web.md
 spec_row: T1
 ac_files: []

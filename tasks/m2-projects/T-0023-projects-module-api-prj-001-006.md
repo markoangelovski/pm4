@@ -6,7 +6,7 @@ app: api
 status: blocked
 size: M
 tier: opus
-depends_on: [T-0022]
+depends_on: [T-0022, T-0017]
 feature_spec: specs/06-features/prj-api.md
 spec_row: T2
 ac_files: []

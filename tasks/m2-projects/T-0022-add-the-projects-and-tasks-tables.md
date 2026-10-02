@@ -6,7 +6,7 @@ app: api
 status: blocked
 size: S
 tier: haiku
-depends_on: []
+depends_on: [T-0015]
 feature_spec: specs/06-features/prj-api.md
 spec_row: T1
 ac_files: []
