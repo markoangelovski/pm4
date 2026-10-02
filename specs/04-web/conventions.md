@@ -3,7 +3,7 @@ id: web-conventions
 title: Web Conventions
 status: approved
 owner: Marko Angelovski
-last_updated: 2026-10-01
+last_updated: 2026-10-03
 related: [web-static-export, web-template, web-routing, qa-code-style, ADR-0009, ADR-0010, feat-land-app-route-split]
 ---
 
@@ -54,10 +54,12 @@ lib/utils.ts
   precise keys they affect (e.g. creating a log invalidates that day's logs, the linked task/project details, and reports).
 - Optimistic updates for task status changes and log edits, with rollback on error.
 - Defaults: `staleTime` 30 s, `retry` 1 for idempotent queries, no retry for mutations. `refetchOnWindowFocus` stays on.
-- `lib/api` attaches the access token. On a 401 it runs a single shared refresh, then retries once.
-  If the refresh fails, it signs out (removes the stored refresh token), then replaces the URL with
+- `lib/api` attaches the access token (not to the public endpoints). On a 401 it runs a single shared
+  refresh, then retries once. If the refresh is **rejected** (`401`/`400`), it signs out (removes the stored
+  refresh token), then replaces the URL with
   `landingHref(window.location.pathname + window.location.search)`, i.e. `/?returnTo=<current path+query>`
-  (OQ-049, routing.md). Only a user-initiated sign-out goes to `/auth/sign-in`.
+  (OQ-049, routing.md). Only a user-initiated sign-out goes to `/auth/sign-in`. A refresh that can't reach
+  the API keeps the session (OQ-067).
 
 ## Forms (ADR-0009)
 - react-hook-form + zod via `zodResolver`, using the template's shadcn form/field components.
@@ -93,3 +95,5 @@ lib/utils.ts
 - 2026-09-29: Approved by the owner.
 - 2026-10-01: OQ-050: no trailing slashes (`trailingSlash: false`); detail routes `/app/project?id=` and `/app/task?id=`. Back to `review` (feat-land-app-route-split).
 - 2026-10-01: Approved by the owner.
+- 2026-10-02: Public endpoints get no token; only a rejected refresh signs out (OQ-067). Back to `review` (feat-auth-web-session).
+- 2026-10-03: Approved by the owner.

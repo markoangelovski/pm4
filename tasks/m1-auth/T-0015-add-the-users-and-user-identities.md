@@ -3,7 +3,7 @@ id: T-0015
 title: Add the users and user_identities tables and their migration
 milestone: M1
 app: api
-status: blocked
+status: ready
 size: S
 tier: haiku
 depends_on: []

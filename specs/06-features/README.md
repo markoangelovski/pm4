@@ -29,3 +29,4 @@ A feature spec links to those. It doesn't copy them.
 | Sidebar header branding with web and API versions | [shell-sidebar-branding.md](shell-sidebar-branding.md) | M1 | approved |
 | Sidebar sections and fixed footer | [shell-sidebar-sections.md](shell-sidebar-sections.md) | M1 | approved |
 | Auth API: Google sign-in, sessions and the current user | [auth-api-session.md](auth-api-session.md) | M1 | approved |
+| Auth web: sign-in, session restore, refresh and sign-out | [auth-web-session.md](auth-web-session.md) | M1 | approved |

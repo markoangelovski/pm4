@@ -3,7 +3,7 @@ id: feat-land-app-route-split
 title: Landing page at the root, app under /app
 status: approved
 owner: Marko Angelovski
-last_updated: 2026-10-02
+last_updated: 2026-10-03
 milestone: M1
 requirements: [FR-LAND-001, FR-LAND-002, FR-LAND-003, FR-AUTH-001, FR-AUTH-004, FR-AUTH-005, FR-AUTH-007]
 related: [web-routing, web-screens, web-conventions, web-static-export, req-landing, req-auth, sec, OQ-047, OQ-048, OQ-049, OQ-050]
@@ -272,7 +272,7 @@ export function LandingCtaFallback(props: LandingCtaProps): React.JSX.Element;
 | Landing `/?returnTo=%2Fapp%2Fprojects` | Login `href="/auth/sign-in?returnTo=%2Fapp%2Fprojects"` | `AC-6` |
 | Landing `/?returnTo=https%3A%2F%2Fevil.example%2F` or `/?returnTo=%2Fhome` | Login `href="/auth/sign-in"`; the invalid value appears nowhere in the DOM | `AC-6` |
 | Landing `?returnTo=` given twice | The first value is used | `AC-6` |
-| `LandingCta` renders | No `fetch` call, no `localStorage` read | `AC-7` |
+| `LandingCta` renders | No `fetch` call; `localStorage` is read only for the stored-session key `pm4.refreshToken` (narrowed by feat-auth-web-session, FR-LAND-002) | `AC-7` |
 | Suspense fallback | An `aria-hidden` placeholder with no link and no text | `AC-8` |
 | Sidebar | URLs `/app`, `/app/time`, `/app/projects`, `/app/tasks`, `/app/trash`, `/app/settings`, in the existing order | `AC-9` |
 | App logo → `/app`; sign-in logo → `/`; not-found "Go back home" → `/` | As stated | `AC-10` |
@@ -298,7 +298,7 @@ Written by the test writer **before** implementation. Implementers must not modi
 | AC-4 | `signInHref` exact outputs | `web/lib/auth/return-to.ac.test.ts` | unit |
 | AC-5 | `postSignInPath` exact outputs (default `/app`; also the "Go to app" target, D12) | `web/lib/auth/return-to.ac.test.ts` | unit |
 | AC-6 | FR-LAND-002: `LandingCta` Login `href` for no, valid, invalid and repeated `returnTo` (mocked `useSearchParams`) | `web/app/components/shared/landing-cta.ac.test.tsx` | component |
-| AC-7 | FR-LAND-002: `LandingCta` makes no `fetch` call and doesn't read `localStorage` (spies) | `web/app/components/shared/landing-cta.ac.test.tsx` | component |
+| AC-7 | FR-LAND-002: `LandingCta` makes no `fetch` call and reads `localStorage` only for `pm4.refreshToken` (spies; narrowed by feat-auth-web-session) | `web/app/components/shared/landing-cta.ac.test.tsx` | component |
 | AC-8 | FR-LAND-002: `LandingCtaFallback` is `aria-hidden`, has no link and no text | `web/app/components/shared/landing-cta.ac.test.tsx` | component |
 | AC-9 | Sidebar URLs and order | `web/app/(dashboard-layout)/layout/vertical/sidebar/sidebaritems.ac.test.ts` | unit |
 | AC-10 | `FullLogo` → `/app`; `SignInPage` logo → `/`; `NotFound` button → `/` | `web/app/links.ac.test.tsx` | component |
@@ -370,3 +370,5 @@ Plus `specs/05-quality/definition-of-done.md`.
   folders (Next always writes `__next.*.txt` route data into `out/<route>/`); AC-13 excludes `lib/routes.ts` (D3);
   T2 switches the moved landing page's Login links to `routes.signIn`.
 - 2026-10-02: Approved by the owner.
+- 2026-10-02: AC-7 narrowed: `LandingCta` may read the stored-session key (FR-LAND-002 "signed in" = a stored refresh token); the test is rewritten by feat-auth-web-session. Back to `review`.
+- 2026-10-03: Approved by the owner.

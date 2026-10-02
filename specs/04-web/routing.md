@@ -3,7 +3,7 @@ id: web-routing
 title: Routing and Navigation
 status: approved
 owner: Marko Angelovski
-last_updated: 2026-10-02
+last_updated: 2026-10-03
 related: [web-static-export, web-screens, req-landing, req-auth, feat-land-app-route-split]
 ---
 
@@ -64,6 +64,11 @@ and the client reads `id` with `useSearchParams` (inside `<Suspense>`).
   path+query is exactly `/app`, the `returnTo` is left out (plain `/`).
 - If session restore fails because the stored refresh token is expired or revoked, the client
   **removes the stored refresh token before redirecting**, so the landing page shows "Login" (FR-LAND-002).
+- If the API **can't be reached** during restore (network error, timeout, `5xx`/`429`), the session is kept:
+  the page shows "Can't reach PM4 right now." with a **Retry** button instead of the app (OQ-067). Only a
+  rejected refresh (`401`/`400`) ends the session.
+- If another tab removes the stored refresh token (sign-out there), every `/app/**` tab follows at once with
+  the ended-session rule below (OQ-069).
 - **Login** on the landing page goes to `/auth/sign-in?returnTo=<the landing page's returnTo>`, or to
   `/auth/sign-in` when there is none. **Go to app** (signed in) goes to the landing page's `returnTo`
   when it's valid, otherwise to `/app` (OQ-048).
@@ -79,6 +84,8 @@ and the client reads `id` with `useSearchParams` (inside `<Suspense>`).
   revoked, "Sign out of all devices" on another device, allow-list removal) follows the same rule: the
   client removes the stored refresh token, then replaces the URL with `/?returnTo=<current path+query>` (OQ-049).
 - A user-initiated **Sign out** lands on the sign-in screen `/auth/sign-in`, with no `returnTo` (FR-AUTH-004).
+- Opening `/auth/sign-in` **while signed in** (a stored refresh token) replaces the URL with a valid
+  `returnTo`, else `/app`, like "Go to app" (OQ-070).
 
 ## Open questions
 — (OQ-047, OQ-048, OQ-049, OQ-050 resolved)
@@ -100,3 +107,5 @@ and the client reads `id` with `useSearchParams` (inside `<Suspense>`).
 - 2026-10-01: Approved by the owner.
 - 2026-10-02: Sidebar sections and a fixed footer with Trash and Settings; "Time" is labelled "Logs", "Dashboard" "Default" (OQ-054).
 - 2026-10-02: App footer links to `/`, `/terms-and-conditions` and `/privacy` (pages not built yet, OQ-055).
+- 2026-10-02: API unreachable during restore keeps the session (OQ-067); other tabs follow a sign-out (OQ-069); the sign-in page forwards a signed-in visitor (OQ-070). Back to `review` (feat-auth-web-session).
+- 2026-10-03: Approved by the owner.

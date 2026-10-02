@@ -3,7 +3,7 @@ id: req-auth
 title: Auth and Accounts
 status: draft
 owner: Marko Angelovski
-last_updated: 2026-10-02
+last_updated: 2026-10-03
 related: [sec, api-endpoints, req-landing, web-routing, ADR-0007, feat-land-app-route-split]
 ---
 
@@ -83,6 +83,9 @@ sign-out is different: it goes to the sign-in screen (FR-AUTH-004). The API reje
 - Given I'm signed out, when I open `/app`, then I'm on `/`, and after Login and sign-in I'm on `/app`.
 - Given my stored refresh token is expired or revoked, when I open `/app/time`, then I'm on `/?returnTo=%2Fapp%2Ftime`, the stored token is gone, and the landing page button says "Login".
 - Given I'm on `/app/tasks` and my session is revoked, when the next API call gets a 401 and the refresh fails, then the stored token is gone and I'm on `/?returnTo=%2Fapp%2Ftasks`.
+- Given the API can't be reached when I open `/app/tasks`, then I see "Can't reach PM4 right now." with Retry, my stored token is kept, and Retry loads the page once the API answers (OQ-067).
+- Given two tabs are open in `/app/**`, when I sign out in one, then the other goes to `/?returnTo=<its page>` without waiting for a refresh (OQ-069).
+- Given I'm signed in, when I open `/auth/sign-in?returnTo=%2Fapp%2Fprojects`, then I'm on `/app/projects` (OQ-070).
 - Given I open an old URL such as `/projects` or `/home`, then I see the not-found page (no redirect).
 
 ### FR-AUTH-006: Profile and time zone
@@ -116,3 +119,5 @@ the user changes it.
 - 2026-10-01: OQ-050: no trailing slashes (`trailingSlash: false`); detail routes `/app/project?id=` and `/app/task?id=` (feat-land-app-route-split).
 - 2026-10-02: Sign-in error messages (OQ-063), profile sync on every sign-in (OQ-062), first time zone passed with the sign-in start (OQ-061) (feat-auth-api-session).
 - 2026-10-02: The owner approved FR-AUTH-002, FR-AUTH-003 and FR-AUTH-006 for feat-auth-api-session. The file stays `draft` because of the open account-deletion TODO.
+- 2026-10-02: FR-AUTH-005 acceptance criteria for an unreachable API, sign-out in another tab and the sign-in page while signed in (OQ-067, OQ-069, OQ-070) (feat-auth-web-session).
+- 2026-10-03: The owner approved the new FR-AUTH-005 acceptance criteria for feat-auth-web-session.
