@@ -348,7 +348,7 @@
   "info": {
     "title": "PM4 API",
     "description": "The PM4 backend API (see ../specs/03-api).",
-    "version": "0.0.1",
+    "version": "0.0.0",
     "contact": {}
   },
   "tags": [],

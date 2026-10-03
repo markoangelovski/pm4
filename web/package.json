@@ -1,7 +1,7 @@
 {
   "name": "pm4-web",
   "description": "PM4 web app (Next.js static export + shadcn)",
-  "version": "0.0.1",
+  "version": "0.0.0",
   "private": true,
   "scripts": {
     "dev": "next dev",

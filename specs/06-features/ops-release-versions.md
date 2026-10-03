@@ -111,11 +111,10 @@ Deploy job, last step, `if: needs.build.outputs.bump != 'none'`, job `permission
     GH_TOKEN: ${{ github.token }}
     TAG: ${{ needs.build.outputs.tag }}
   run: |
-    existing=$(gh api "repos/${{ github.repository }}/git/ref/tags/$TAG" --jq .object.sha 2>/dev/null || true)
-    if [ -z "$existing" ]; then
+    if existing=$(gh api "repos/${{ github.repository }}/git/ref/tags/$TAG" --jq .object.sha 2>/dev/null); then
+      [ "$existing" = "${{ github.sha }}" ] || echo "::warning::$TAG already points to $existing; not moved."
+    else
       gh api "repos/${{ github.repository }}/git/refs" -f ref="refs/tags/$TAG" -f sha="${{ github.sha }}"
-    elif [ "$existing" != "${{ github.sha }}" ]; then
-      echo "::warning::$TAG already points to $existing; not moved."
     fi
 ```
 In `api-deploy.yml` it runs after `Smoke check (/health)`; in `web-deploy.yml` after `Deploy to GitHub Pages`.
@@ -142,8 +141,7 @@ Typed stubs (created with the tests, so the tests fail for the right reason):
 ```bash
 # AC-1…AC-5: release-version acceptance tests
 node --test scripts/release-version.ac.test.mjs
-```
-```bash
+
 # AC-6: workflow steps
 for w in web api; do
   f=.github/workflows/$w-deploy.yml
@@ -156,8 +154,7 @@ for w in web api; do
   test "$(grep -n 'Stamp version' $f | cut -d: -f1)" -lt "$(grep -n 'run: npm run build' $f | cut -d: -f1)"
 done
 test "$(grep -n 'Verify openapi.json is current' .github/workflows/api-deploy.yml | cut -d: -f1)" -lt "$(grep -n 'Stamp version' .github/workflows/api-deploy.yml | cut -d: -f1)"
-```
-```bash
+
 # AC-7: frozen versions, contract current
 test "$(node -p "require('./web/package.json').version")" = 0.0.0
 test "$(node -p "require('./api/package.json').version")" = 0.0.0
@@ -179,3 +176,5 @@ cp api/openapi.json web/lib/api/schema.d.ts "$tmp/"
 ## Changelog
 - 2026-10-03: Initial draft (OQ-098). Open questions empty → `review`.
 - 2026-10-03: Approved by the owner.
+- 2026-10-03: Checks merged into one bash block (pm4 runs only the first).
+- 2026-10-03: Review: the tag step branches on `gh api`'s exit status (on a 404 `gh api` prints the error body to stdout, so an empty-output test never created the tag).

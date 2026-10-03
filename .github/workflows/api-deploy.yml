@@ -20,6 +20,10 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.release.outputs.version }}
+      tag: ${{ steps.release.outputs.tag }}
+      bump: ${{ steps.release.outputs.bump }}
     defaults:
       run:
         working-directory: api
@@ -48,6 +52,8 @@ jobs:
           --health-retries 10
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0 # history and tags for the release version
 
       - uses: actions/setup-node@v7
         with:
@@ -76,6 +82,15 @@ jobs:
       - name: Verify openapi.json is current (ADR-0010)
         run: git diff --exit-code -- openapi.json
 
+      # Release version (OQ-098): next semver from api-v* tags and conventional commits; the stamped
+      # package.json is never committed (the repo stays at 0.0.0).
+      - name: Release version
+        id: release
+        run: node ../scripts/release-version.mjs api
+
+      - name: Stamp version
+        run: npm version "${{ steps.release.outputs.version }}" --no-git-tag-version --allow-same-version
+
       - name: Build
         run: npm run build
 
@@ -97,6 +112,8 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     environment:
       name: production
       url: ${{ vars.NEXT_PUBLIC_API_BASE_URL }}
@@ -143,3 +160,16 @@ jobs:
           done
           echo "::error::API health check did not return 200 within ~3 minutes."
           exit 1
+
+      - name: Tag the release
+        if: needs.build.outputs.bump != 'none'
+        working-directory: .
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.build.outputs.tag }}
+        run: |
+          if existing=$(gh api "repos/${{ github.repository }}/git/ref/tags/$TAG" --jq .object.sha 2>/dev/null); then
+            [ "$existing" = "${{ github.sha }}" ] || echo "::warning::$TAG already points to $existing; not moved."
+          else
+            gh api "repos/${{ github.repository }}/git/refs" -f ref="refs/tags/$TAG" -f sha="${{ github.sha }}"
+          fi
