@@ -1,4 +1,5 @@
 import { Controller, Get } from "@nestjs/common";
+import { ApiProblemResponses } from "../common/decorators/api-problem-responses/api-problem-responses.decorator.js";
 import { Public } from "../common/decorators/public/public.decorator.js";
 import packageJson from "../../package.json" with { type: "json" };
 import { VersionResponseDto } from "./dto/version-response.dto.js";
@@ -8,6 +9,7 @@ import { VersionResponseDto } from "./dto/version-response.dto.js";
 @Controller("version")
 export class VersionController {
   @Get()
+  @ApiProblemResponses()
   get(): VersionResponseDto {
     return { version: packageJson.version };
   }
