@@ -3,7 +3,9 @@ import { join } from "node:path";
 import type { NextConfig } from "next";
 
 // Pill version (OQ-051): web/package.json, read from the app folder that every npm script and CI step runs in.
-const { version } = JSON.parse(readFileSync(join(process.cwd(), "package.json"), "utf8")) as { version: string };
+const { version } = JSON.parse(
+  readFileSync(join(process.cwd(), "package.json"), "utf8")
+) as { version: string };
 
 // Static-export baseline (specs/04-web/static-export.md): slash-free URLs
 // (trailingSlash: false, OQ-050). Served from the root of the custom
