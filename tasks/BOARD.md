@@ -1,6 +1,6 @@
 # Task Board
 
-**Next free ID:** T-0032
+**Next free ID:** T-0033
 
 | ID | Title | Milestone | App | Size | Status | Depends on |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -35,5 +35,6 @@
 | [T-0029](m3-tasks/T-0029-task-hooks-with-the-optimistic-status.md) | Task hooks with the optimistic status change, due state, formatWorkDate, status select and due badge | M3 | web | M | blocked | T-0028, T-0027 |
 | [T-0030](m3-tasks/T-0030-task-create-edit-dialog-with-the.md) | Task create/edit dialog with the project picker and due-date field | M3 | web | M | blocked | T-0029 |
 | [T-0031](m3-tasks/T-0031-task-lists-project-page-section-and.md) | Task lists (project page section and /app/tasks), task detail page, delete and restore | M3 | web | M | blocked | T-0030 |
+| [T-0032](m1-auth/T-0032-base-ui-link-buttons-native-button-false.md) | Render links styled as buttons as a plain Link with buttonVariants | M1 | web | S | done | — |
 
 Milestones M2–M6 have no tasks yet, and M1 has only the landing route split so far. They're created with the `write-task` skill once their specs are approved.

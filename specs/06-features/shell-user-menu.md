@@ -142,7 +142,7 @@ default import, so `header/index.tsx` doesn't change). Copy the template's marku
 - Top: `<UserAvatar className="h-16 w-16" />`, the name in the template's `h6`, the email row with lucide `Mail` (size 18).
   Loading: `Skeleton`s (`h-6 w-32`, `h-4 w-40`) instead of name and email. Error: `<p className="text-sm text-muted-foreground">Couldn't load your profile.</p>`.
 - Menu (the template's `border-t border-dashed` list and link classes): `House` **Home** → `routes.app.dashboard`,
-  `User` **Profile** → `routes.app.userProfile`; each link is `<SheetClose render={<Link href={…} className={…} />}>`, so it closes the drawer.
+  `User` **Profile** → `routes.app.userProfile`; each link is a plain `<Link href={…} className={…} onClick={() => setOpen(false)}>`, so it closes the drawer. The `Sheet` is controlled for this: `const [open, setOpen] = useState(false)`, `<Sheet open={open} onOpenChange={setOpen}>` (web-conventions, links styled as buttons: no `SheetClose` `render`).
 - `SheetFooter className="px-0 pb-6"` → `div.border-t.border-dashed.border-border.w-full` → `div.pt-6.flex.justify-center` →
   `<Button variant="secondary" className="text-primary" onClick={() => void signOut()}><LogOut /> Sign out</Button>` (`signOut = useSignOut()`).
   No image, no promo text.
@@ -212,3 +212,4 @@ None. OQ-057, OQ-058 and OQ-071…OQ-074 are resolved.
 ## Changelog
 - 2026-10-03: Initial draft (OQ-057, OQ-058, OQ-071…OQ-074).
 - 2026-10-03: Approved by the owner.
+- 2026-10-03: The drawer's menu links are plain `<Link>`s that close a controlled `Sheet` in `onClick`, not `SheetClose` with a `Link` `render` (Base UI warning / `role="button"`; web-conventions, links styled as buttons).

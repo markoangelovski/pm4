@@ -3,7 +3,7 @@
 import type { ComponentProps } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { type Button, buttonVariants } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { RETURN_TO_PARAM, signInHref } from "@/lib/auth/return-to";
@@ -25,9 +25,9 @@ export function LandingCta({
   const href = signInHref(raw);
 
   return (
-    <Button variant={variant} size={size} render={<Link href={href} />}>
+    <Link href={href} className={buttonVariants({ variant, size })}>
       Login
-    </Button>
+    </Link>
   );
 }
 

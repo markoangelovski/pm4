@@ -135,7 +135,7 @@ unless the row says otherwise. Approving this spec approves the listed moves and
 | Server page + `<Suspense>` around a client part | `web/app/(dashboard-layout)/projects/view/page.tsx` | `export const metadata`, `<Suspense fallback>` wrapping the client component |
 | Client component reading the query | `web/app/components/shared/view-id-guard.tsx` | `"use client"`, `useSearchParams()` |
 | Router/search-param mocks in tests | `web/app/components/shared/view-id-guard.test.tsx` | `vi.mock("next/navigation", …)` |
-| Link-as-button | `web/app/home/page.tsx` | `<Button render={<Link href=… />}>` (Base UI `render`, not `asChild`) |
+| Link-as-button | `web/app/not-found.tsx` | `<Link href=… className={buttonVariants(…)}>` (never a Base UI `Button` `render`; web-conventions) |
 | Placeholder | `web/components/ui/skeleton.tsx` + `buttonVariants` from `web/components/ui/button.tsx` | Size the skeleton with the button's own variant classes |
 | Class merging | `web/lib/utils.ts` | `cn()` |
 
@@ -219,7 +219,8 @@ export function LandingCta(props: LandingCtaProps): React.JSX.Element;
 export function LandingCtaFallback(props: LandingCtaProps): React.JSX.Element;
 ```
 - `LandingCta`: `const raw = useSearchParams().get(RETURN_TO_PARAM)`, then render
-  `<Button variant={variant} size={size} render={<Link href={signInHref(raw)} />}>Login</Button>`.
+  `<Link href={signInHref(raw)} className={buttonVariants({ variant, size })}>Login</Link>`
+  (web-conventions, links styled as buttons; changed by T-0032).
   It makes no network call and doesn't touch `localStorage` (M1 adds the signed-in branch here).
 - `LandingCtaFallback`: `<Skeleton aria-hidden="true" data-testid="landing-cta-placeholder" className={cn(buttonVariants({ variant, size }), "w-24 border-transparent bg-muted text-transparent")} />`.
   It contains no link and no text.
@@ -372,3 +373,4 @@ Plus `specs/05-quality/definition-of-done.md`.
 - 2026-10-02: Approved by the owner.
 - 2026-10-02: AC-7 narrowed: `LandingCta` may read the stored-session key (FR-LAND-002 "signed in" = a stored refresh token); the test is rewritten by feat-auth-web-session. Back to `review`.
 - 2026-10-03: Approved by the owner.
+- 2026-10-03: `LandingCta` renders a `<Link>` styled with `buttonVariants` instead of a Base UI `Button` with a `Link` `render` (Base UI warns, or with `nativeButton={false}` sets `role="button"`; web-conventions). Code fix in quick-lane T-0032.

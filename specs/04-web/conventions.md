@@ -47,6 +47,14 @@ lib/utils.ts
 - Use `npx shadcn@latest view <name>` or `add --dry-run` to inspect a component before installing it.
   Don't overwrite a customized file in `components/ui/` without asking.
 - Compose domain components in `features/<domain>/components/` from the installed primitives.
+- **Links styled as buttons.** Never render a link through a Base UI part built on `useButton` (`Button`,
+  every `*Close` and `*Trigger`, e.g. `SheetClose`) via its `render` prop. With `nativeButton` left at `true`,
+  Base UI logs a console warning; with `nativeButton={false}` it adds `role="button"`, so the link stops being a
+  link for assistive technology. Use a plain Next.js `<Link>` styled with the button classes instead:
+  `<Link href={routes.landing} className={buttonVariants({ variant, size })}>…</Link>`. A link that must also
+  close an overlay (e.g. a drawer) makes the overlay controlled and closes it in the link's `onClick`.
+  Parts that don't render a `<button>` by default (`DropdownMenuItem`/`Menu.Item`) may keep `render={<Link … />}`.
+  Never use `asChild` (Radix, not Base UI).
 
 ## Data layer (ADR-0009)
 - Components never call `fetch` or the client directly. They use hooks from `features/<domain>/api.ts`.
@@ -97,3 +105,4 @@ lib/utils.ts
 - 2026-10-01: Approved by the owner.
 - 2026-10-02: Public endpoints get no token; only a rejected refresh signs out (OQ-067). Back to `review` (feat-auth-web-session).
 - 2026-10-03: Approved by the owner.
+- 2026-10-03: Links styled as buttons are a plain `<Link>` with `buttonVariants(...)`, never a Base UI button part's `render` (dev console warning on the landing page; `nativeButton={false}` would give the link `role="button"`; T-0032).

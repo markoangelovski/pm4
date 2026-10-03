@@ -188,8 +188,8 @@ export function useSignOut(): () => Promise<void>; // await signOut(); queryClie
 `profile.tsx`: the Sign out item loses `disabled` and gets `onClick={() => void signOut()}` with `const signOut = useSignOut()`.
 
 `landing-cta.tsx` (`LandingCta`): `const signedIn = useHasStoredSession()`. `null` → render
-`<LandingCtaFallback variant={variant} size={size} />`; `true` → the same `Button` with
-`render={<Link href={postSignInPath(raw)} />}` and the label **Go to app**; `false` → today's Login.
+`<LandingCtaFallback variant={variant} size={size} />`; `true` → the same link as Login, as
+`<Link href={postSignInPath(raw)} className={buttonVariants({ variant, size })}>` (no `Button`; web-conventions, links styled as buttons) and the label **Go to app**; `false` → today's Login.
 
 ## Acceptance criteria
 | AC | Case → expected | Test | Task |
@@ -238,3 +238,4 @@ None. OQ-063 and OQ-067…OQ-070 are resolved.
 - 2026-10-03: Approved by the owner.
 - 2026-10-03: `not-allowed` message gets a hint to choose another account (OQ-075). Back to `review`.
 - 2026-10-03: Approved by the owner.
+- 2026-10-03: "Go to app" is a `<Link>` styled with `buttonVariants`, not a `Button` with a `Link` `render` (web-conventions, links styled as buttons).
