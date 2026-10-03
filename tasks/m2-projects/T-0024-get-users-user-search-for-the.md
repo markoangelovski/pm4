@@ -9,7 +9,8 @@ tier: sonnet
 depends_on: [T-0023]
 feature_spec: specs/06-features/prj-api.md
 spec_row: T3
-ac_files: []
+ac_files:
+  - { path: api/test/users-search.ac.e2e-spec.ts, sha256: 5141150c3058c5a9ea2023f6c1cc5b22f673c05d51a18ec22a29685522a4797d }
 ---
 
 # T-0024: GET /users user search for the lead picker (API-USR-003)
