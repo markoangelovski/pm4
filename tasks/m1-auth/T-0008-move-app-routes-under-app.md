@@ -3,7 +3,7 @@ id: T-0008
 title: Slash-free URLs, app pages under /app, landing page at the root
 milestone: M1
 app: web
-status: review
+status: done
 size: M
 tier: sonnet
 depends_on: [T-0007]

@@ -103,12 +103,12 @@ In `app-sidebar.tsx`, after `</SidebarContent>`:
 ## Acceptance criteria
 | AC | Case → expected | Test | Task |
 | --- | --- | --- | --- |
-| AC-1 | Default export, as `[heading, [[id, name, url]…]]`: `["Dashboard", [["dashboard","Default","/app"]]]`, `["Project management", [["projects","Projects","/app/projects"],["tasks","Tasks","/app/tasks"]]]`, `["Time", [["time","Logs","/app/time"]]]` | `sidebaritems.ac.test.ts` | T1 |
-| AC-2 | `footerItems`: one section with no `heading`, items `[["trash","Trash","/app/trash"],["settings","Settings","/app/settings"]]` | `sidebaritems.ac.test.ts` | T1 |
-| AC-3 | All app routes still reachable: the URLs of both exports together are exactly `/app`, `/app/projects`, `/app/tasks`, `/app/time`, `/app/trash`, `/app/settings` (replaces feat-land-app-route-split AC-9) | `sidebaritems.ac.test.ts` | T1 |
-| AC-4 | `NavCollapse` with the default export, sidebar expanded: shows the texts `Dashboard`, `Project management`, `Time`, and links `Default`, `Projects`, `Tasks`, `Logs` | `nav-collapse.ac.test.tsx` | T1 |
-| AC-5 | `NavCollapse` with `footerItems`: no heading element; collapsed (`useSidebar` → `state: "collapsed"`) shows no `...`. With the default export collapsed, `...` shows 3 times | `nav-collapse.ac.test.tsx` | T1 |
-| AC-6 | `NavCollapse` with `footerItems` at pathname `/app/settings`: the `Settings` link contains the active item (class `bg-primary`), and `Trash` doesn't | `nav-collapse.ac.test.tsx` | T1 |
+| AC-1 | Default export, as `[heading, [[id, name, url]…]]`: `["Dashboard", [["dashboard","Default","/app"]]]`, `["Project management", [["projects","Projects","/app/projects"],["tasks","Tasks","/app/tasks"]]]`, `["Time", [["time","Logs","/app/time"]]]` | `web/app/(dashboard-layout)/layout/vertical/sidebar/sidebaritems.ac.test.ts` | T1 |
+| AC-2 | `footerItems`: one section with no `heading`, items `[["trash","Trash","/app/trash"],["settings","Settings","/app/settings"]]` | `web/app/(dashboard-layout)/layout/vertical/sidebar/sidebaritems.ac.test.ts` | T1 |
+| AC-3 | All app routes still reachable: the URLs of both exports together are exactly `/app`, `/app/projects`, `/app/tasks`, `/app/time`, `/app/trash`, `/app/settings` (replaces feat-land-app-route-split AC-9) | `web/app/(dashboard-layout)/layout/vertical/sidebar/sidebaritems.ac.test.ts` | T1 |
+| AC-4 | `NavCollapse` with the default export, sidebar expanded: shows the texts `Dashboard`, `Project management`, `Time`, and links `Default`, `Projects`, `Tasks`, `Logs` | `web/app/(dashboard-layout)/layout/vertical/sidebar/nav-collapse/nav-collapse.ac.test.tsx` | T1 |
+| AC-5 | `NavCollapse` with `footerItems`: no heading element; collapsed (`useSidebar` → `state: "collapsed"`) shows no `...`. With the default export collapsed, `...` shows 3 times | `web/app/(dashboard-layout)/layout/vertical/sidebar/nav-collapse/nav-collapse.ac.test.tsx` | T1 |
+| AC-6 | `NavCollapse` with `footerItems` at pathname `/app/settings`: the `Settings` link contains the active item (class `bg-primary`), and `Trash` doesn't | `web/app/(dashboard-layout)/layout/vertical/sidebar/nav-collapse/nav-collapse.ac.test.tsx` | T1 |
 | AC-7 | The built `/app` page has a sidebar footer with the Trash and Settings links | `check` | T1 |
 | AC-8 | Expanded and collapsed: headings in capitals (`...` when collapsed), the footer pinned to the bottom with a top border, Settings filled when on `/app/settings`; light and dark | `manual` | T1 |
 
@@ -133,3 +133,4 @@ None. OQ-054 is resolved.
 ## Changelog
 - 2026-10-02: Initial draft (OQ-054).
 - 2026-10-02: Approved by the owner.
+- 2026-10-03: AC table: test files given with their full paths (needed by `pm4 hash`); no behavior change.

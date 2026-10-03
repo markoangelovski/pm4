@@ -73,3 +73,6 @@ const SidebarContent: MenuItem[] = [
 ];
 
 export default SidebarContent;
+
+/** The fixed sidebar footer (OQ-054): no heading. */
+export const footerItems: MenuItem[] = [];

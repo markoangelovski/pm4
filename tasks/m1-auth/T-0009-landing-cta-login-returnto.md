@@ -3,7 +3,7 @@ id: T-0009
 title: Implement LandingCta and use it on the landing page
 milestone: M1
 app: web
-status: review
+status: done
 size: S
 tier: haiku
 depends_on: [T-0007, T-0008]
