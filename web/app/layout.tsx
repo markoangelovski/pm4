@@ -5,6 +5,7 @@ import { Geist } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/Themeprovider";
 import { QueryProvider } from "@/lib/query-client";
+import { Toaster } from "@/components/ui/sonner";
 
 const geist = Geist({
   subsets: ["latin"],
@@ -47,6 +48,7 @@ export default function RootLayout({
           enableSystem={false}
         >
           <QueryProvider>{children}</QueryProvider>
+          <Toaster />
         </ThemeProvider>
       </body>
     </html>
