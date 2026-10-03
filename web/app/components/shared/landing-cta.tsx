@@ -6,7 +6,12 @@ import { useSearchParams } from "next/navigation";
 import { type Button, buttonVariants } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
-import { RETURN_TO_PARAM, signInHref } from "@/lib/auth/return-to";
+import {
+  RETURN_TO_PARAM,
+  postSignInPath,
+  signInHref
+} from "@/lib/auth/return-to";
+import { useHasStoredSession } from "@/lib/auth/token-store";
 
 type ButtonProps = ComponentProps<typeof Button>;
 
@@ -15,13 +20,28 @@ export interface LandingCtaProps {
   size?: ButtonProps["size"];
 }
 
-/** Login link that forwards a valid `?returnTo=` (FR-LAND-002). Render inside <Suspense>. */
+/** Login link (or "Go to app" when signed in) that forwards a valid `?returnTo=` (FR-LAND-002). Render inside <Suspense>. */
 export function LandingCta({
   variant,
   size
 }: LandingCtaProps): React.JSX.Element {
   const searchParams = useSearchParams();
   const raw = searchParams.get(RETURN_TO_PARAM);
+  const signedIn = useHasStoredSession();
+
+  if (signedIn === null) {
+    return <LandingCtaFallback variant={variant} size={size} />;
+  }
+  if (signedIn) {
+    return (
+      <Link
+        href={postSignInPath(raw)}
+        className={buttonVariants({ variant, size })}
+      >
+        Go to app
+      </Link>
+    );
+  }
   const href = signInHref(raw);
 
   return (

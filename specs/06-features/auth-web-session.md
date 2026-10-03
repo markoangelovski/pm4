@@ -89,6 +89,10 @@ T-0007…T-0009 are `done` (this feature rewrites `landing-cta.ac.test.tsx`, who
 | web | `web/app/auth/authforms/social-buttons.tsx` | M | T2 | Start the Google flow |
 | web | `web/app/components/shared/landing-cta.tsx` | M | T2 | Signed-in branch |
 | web | `web/app/(dashboard-layout)/layout/shared/header/profile.tsx` | M | T2 | Enable Sign out |
+| web | `web/lib/auth/session.test.ts` | C | T1 | Review fix: sign-out vs. late refresh race (ordinary test) |
+| web | `web/features/auth/components/auth-guard.test.tsx` | C | T2 | Review fix: unexpected errors reach the error boundary (ordinary test) |
+| web | `web/AGENTS.md` | M | review | Main session: structure list and the shell's `AuthGuard` |
+|  | `specs/06-features/auth-web-session.md` | M | review | Main session: refresh paragraph (review findings 1, 3) |
 
 ## Interfaces
 
@@ -129,8 +133,9 @@ export function resetSessionForTests(): void;
 ```
 Refresh, inside the lock: `token = getRefreshToken()`; `null` → return `null`, no request. `POST /api/v1/auth/refresh`:
 `200` → `setRefreshToken`, cache `{accessToken, expiresAt}`, return it; `401`/`400` → `clearRefreshToken()`,
-drop the cache, notify `onSessionEnded`, return `null`; a thrown fetch, `5xx` or `429` → throw
-`SessionUnavailableError`, keep everything. At import, subscribe to `onRemovedElsewhere`: drop the cache and notify `onSessionEnded`.
+drop the cache, notify `onSessionEnded`, return `null`; a thrown fetch, `5xx`, `429` or any other status → throw
+`SessionUnavailableError`, keep everything. A `200` that arrives after the session ended (sign-out, rejected refresh,
+removal elsewhere) stores nothing and returns `null`. At import, subscribe to `onRemovedElsewhere`: drop the cache and notify `onSessionEnded`.
 
 ### API client (T1)
 ```ts
@@ -239,3 +244,4 @@ None. OQ-063 and OQ-067…OQ-070 are resolved.
 - 2026-10-03: `not-allowed` message gets a hint to choose another account (OQ-075). Back to `review`.
 - 2026-10-03: Approved by the owner.
 - 2026-10-03: "Go to app" is a `<Link>` styled with `buttonVariants`, not a `Button` with a `Link` `render` (web-conventions, links styled as buttons).
+- 2026-10-03: Review fixes: refresh paragraph covers any other status and a `200` after the session ended; Files table lists the two review-fix tests and `web/AGENTS.md`.

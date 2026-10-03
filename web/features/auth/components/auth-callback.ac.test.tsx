@@ -97,9 +97,11 @@ describe("AuthCallback (feat-auth-web-session)", () => {
     expect(fetchMock).not.toHaveBeenCalled();
     third.unmount();
 
-    // The exchange fails with a valid returnTo → it's kept.
+    // The exchange fails with a valid returnTo → it's kept, and nothing is stored.
     replace.mockReset();
     fetchMock.mockReset();
+    window.localStorage.clear();
+    resetSessionForTests();
     fetchMock.mockImplementation(async () => unauthorized());
     searchParams = new URLSearchParams("code=c3&returnTo=%2Fapp%2Fprojects");
     const fourth = renderStrict();

@@ -1,7 +1,9 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Card } from "@/components/ui/card";
 import { routes } from "@/lib/routes";
+import { SignInState } from "@/features/auth/components/sign-in-state";
 import SocialButtons from "../authforms/social-buttons";
 
 export const metadata: Metadata = {
@@ -27,6 +29,10 @@ export default function SignInPage() {
             Sign in with your Google account to continue.
           </p>
         </div>
+
+        <Suspense fallback={null}>
+          <SignInState />
+        </Suspense>
 
         <SocialButtons />
       </Card>
