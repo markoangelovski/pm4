@@ -58,7 +58,9 @@ describe("signOut race", () => {
       new Response(
         JSON.stringify({
           accessToken: "A2",
-          accessTokenExpiresAt: new Date(Date.now() + 15 * 60_000).toISOString(),
+          accessTokenExpiresAt: new Date(
+            Date.now() + 15 * 60_000
+          ).toISOString(),
           refreshToken: "R2"
         }),
         { status: 200, headers: { "Content-Type": "application/json" } }

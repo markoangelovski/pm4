@@ -23,8 +23,8 @@ const TASKS_DIR = path.join(ROOT, "tasks");
 const BOARD = path.join(TASKS_DIR, "BOARD.md");
 const STATUSES = ["blocked", "ready", "in-progress", "review", "done"];
 const GATES = {
-  web: ["lint", "typecheck", "test", "build"],
-  api: ["lint", "typecheck", "test", "test:e2e", "build"],
+  web: ["lint", "format:check", "typecheck", "test", "build"],
+  api: ["lint", "format:check", "typecheck", "test", "test:e2e", "build"],
 };
 const TEST_GATES = new Set(["test", "test:e2e"]);
 const CONTRACT = {

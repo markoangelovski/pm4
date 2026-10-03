@@ -26,8 +26,9 @@ Rules:
 - Never stage, commit, stash, reset or push.
 
 While iterating, run only what you need (`npx vitest run <file>`, `npm run typecheck`). When done,
-run `node scripts/pm4.mjs check <T-####>` once. It runs lint, typecheck, test, e2e (needs
-`docker compose up -d`; if it isn't running, say so, don't start it), build and the OpenAPI export.
+run `node scripts/pm4.mjs check <T-####>` once. It runs lint, format:check (if it fails, run
+`npm run format`), typecheck, test, e2e (needs `docker compose up -d`; if it isn't running, say so,
+don't start it), build and the OpenAPI export.
 Paste its summary into the task's *Implementation notes*, and add a row to *Attempts*.
 
 End with exactly:
