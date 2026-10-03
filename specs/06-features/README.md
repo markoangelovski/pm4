@@ -30,6 +30,7 @@ A feature spec links to those. It doesn't copy them.
 | Sidebar sections and fixed footer | [shell-sidebar-sections.md](shell-sidebar-sections.md) | M1 | approved |
 | Auth API: Google sign-in, sessions and the current user | [auth-api-session.md](auth-api-session.md) | M1 | approved |
 | Auth web: sign-in, session restore, refresh and sign-out | [auth-web-session.md](auth-web-session.md) | M1 | approved |
+| Problem Details error responses in the OpenAPI contract | [api-error-docs.md](api-error-docs.md) | M1 | approved |
 | User drawer and profile page | [shell-user-menu.md](shell-user-menu.md) | M1 | approved |
 | Projects API: CRUD, task counts, restore and the project-lead user search | [prj-api.md](prj-api.md) | M2 | approved |
 | Projects web: list, detail with task statistics, create/edit dialog and the lead combobox | [prj-web.md](prj-web.md) | M2 | approved |

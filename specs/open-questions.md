@@ -21,6 +21,10 @@ and link to where the decision now lives. Resolved items stay here for history.
 
 | ID | Question (short) | Answer | Recorded in |
 | --- | --- | --- | --- |
+| OQ-094 | Which error statuses each OpenAPI operation documents | The statuses on its endpoints.md *Errors* line, plus `500` on every operation. `429` waits for rate limiting. | conventions.md#openapi, feat-api-error-docs |
+| OQ-095 | How controllers attach Problem responses | A composite `@ApiProblemResponses(...statuses)` over Nest's `@ApiXxxResponse` decorators, with the content type `application/problem+json` → `ProblemDetailsDto` | feat-api-error-docs |
+| OQ-096 | Should the filter's body type be the OpenAPI DTO? | **Yes.** `ProblemDetailsFilter` types its body as `ProblemDetailsDto` | feat-api-error-docs |
+| OQ-097 | Does the rule apply to future controllers? | **Yes**, as a rule in conventions.md#openapi. prj-api and tsk-api aren't edited | conventions.md#openapi |
 | OQ-093 | Where to go after creating | **Owner decision (2026-10-03):** creating a project opens its page (SCR-021) with the toast "Project created". Creating a task keeps the user where they are (the dialog closes, the task shows in the current list) with the toast "Task created". | web-screens SCR-022, SCR-032, feat-prj-web, feat-tsk-web |
 | OQ-092 | Web dependencies for projects and tasks | **Owner decision (2026-10-03):** feat-prj-web may add `react-hook-form`, `zod`, `@hookform/resolvers` (forms, ADR-0009), `nuqs` (URL state) and the shadcn `sonner` component (toasts, installs `sonner`). | [feat-prj-web](06-features/prj-web.md) |
 | OQ-091 | Does a task change bump its project's updated date? | **Owner decision (2026-10-03):** no. A project's `updatedAt` changes only when its own fields change. | [data-model](03-api/data-model.md#projects), [api-endpoints](03-api/endpoints.md#shared-project-and-task-shapes) |

@@ -3,7 +3,7 @@ id: api-conventions
 title: API Conventions
 status: approved
 owner: Marko Angelovski
-last_updated: 2026-10-02
+last_updated: 2026-10-03
 related: [api-endpoints, api-data-model, sec, ADR-0010]
 ---
 
@@ -101,6 +101,10 @@ RFC 9457 Problem Details (`application/problem+json`):
 ## OpenAPI
 - `@nestjs/swagger` + the CLI plugin. `/docs` is served when `NODE_ENV !== production`.
 - `npm run openapi:export` writes `api/openapi.json` (committed). CI fails if it's stale (ADR-0010).
+- Every operation documents its error responses with `@ApiProblemResponses(...statuses)`
+  (`api/src/common/decorators/api-problem-responses/`): the statuses on its *Errors* line in endpoints.md,
+  plus `500`, each `application/problem+json` → `ProblemDetailsDto`. A handler that never answers with a
+  Problem (e.g. API-AUTH-002, always `302`) has none. `429` is added once rate limiting exists (OQ-094, OQ-097).
 
 ## Open questions
 —
@@ -117,3 +121,5 @@ RFC 9457 Problem Details (`application/problem+json`):
 - 2026-09-27: Error `type` example uses the real web domain.
 - 2026-10-02: Public endpoints listed; default-deny guard with `@Public()` and `@CurrentUser()` (OQ-066). Back to `review` (feat-auth-api-session).
 - 2026-10-02: Approved by the owner.
+- 2026-10-03: OpenAPI: error responses documented with `@ApiProblemResponses` (OQ-094…OQ-097). Back to `review` (feat-api-error-docs).
+- 2026-10-03: Approved by the owner.
