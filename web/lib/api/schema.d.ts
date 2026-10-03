@@ -138,6 +138,76 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/users": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["UserSearchController_search"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The caller's projects that aren't in the trash (API-PRJ-002). */
+        get: operations["ProjectsController_list"];
+        put?: never;
+        /** Create a project (API-PRJ-001). */
+        post: operations["ProjectsController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One project (API-PRJ-003). */
+        get: operations["ProjectsController_get"];
+        put?: never;
+        post?: never;
+        /** Move the project to the trash (API-PRJ-005). */
+        delete: operations["ProjectsController_remove"];
+        options?: never;
+        head?: never;
+        /** Change the given fields (API-PRJ-004). */
+        patch: operations["ProjectsController_update"];
+        trace?: never;
+    };
+    "/api/v1/projects/{id}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Take the project out of the trash (API-PRJ-006). */
+        post: operations["ProjectsController_restore"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -192,6 +262,89 @@ export interface components {
             timeZone: string;
             /** @description ISO 8601 UTC */
             createdAt: string;
+        };
+        UserSummaryDto: {
+            avatarUrl: string | null;
+            id: string;
+            displayName: string;
+            email: string;
+        };
+        UserSearchResponseDto: {
+            items: components["schemas"]["UserSummaryDto"][];
+        };
+        CreateProjectDto: {
+            /** @description ≤ 2000 chars; empty after trimming → `null`. */
+            description?: string | null;
+            /**
+             * Format: uri
+             * @description Absolute `http(s)://` URL, ≤ 500 chars; empty after trimming → `null`.
+             */
+            externalLink?: string | null;
+            /**
+             * Format: uuid
+             * @description A registered user as the lead; excludes `projectLeadName`.
+             */
+            projectLeadUserId?: string | null;
+            /** @description A free-text lead name, ≤ 100 chars; empty after trimming → `null`. */
+            projectLeadName?: string | null;
+            /** @description 1–200 chars after trimming. */
+            title: string;
+        };
+        LeadUserDto: {
+            avatarUrl: string | null;
+            id: string;
+            /** @description The user's current display name (D2). */
+            displayName: string;
+        };
+        ProjectLeadDto: {
+            /** @enum {string} */
+            kind: "user" | "text";
+            user: components["schemas"]["LeadUserDto"] | null;
+            /** @description `user.displayName` for a user lead, else the saved text name. */
+            name: string;
+        };
+        TaskCountsDto: {
+            upcoming: number;
+            inProgress: number;
+            completed: number;
+            /** @description `upcoming + inProgress + completed`. */
+            total: number;
+        };
+        ProjectResponseDto: {
+            description: string | null;
+            externalLink: string | null;
+            projectLead: components["schemas"]["ProjectLeadDto"] | null;
+            id: string;
+            title: string;
+            taskCounts: components["schemas"]["TaskCountsDto"];
+            /** @description ISO 8601 UTC */
+            createdAt: string;
+            /** @description ISO 8601 UTC */
+            updatedAt: string;
+        };
+        ProjectListResponseDto: {
+            page: number;
+            pageSize: number;
+            total: number;
+            items: components["schemas"]["ProjectResponseDto"][];
+        };
+        UpdateProjectDto: {
+            /** @description 1–200 chars after trimming; not `null`. */
+            title?: string;
+            /** @description ≤ 2000 chars; empty after trimming → `null`. */
+            description?: string | null;
+            /**
+             * Format: uri
+             * @description Absolute `http(s)://` URL, ≤ 500 chars; empty after trimming → `null`.
+             */
+            externalLink?: string | null;
+            /**
+             * Format: uuid
+             * @description A registered user as the lead; excludes `projectLeadName`.
+             */
+            projectLeadUserId?: string | null;
+            /** @description A free-text lead name, ≤ 100 chars; empty after trimming → `null`. */
+            projectLeadName?: string | null;
         };
     };
     responses: never;
@@ -471,6 +624,363 @@ export interface operations {
             };
             /** @description Missing, invalid or expired credentials. */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Unexpected error. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+        };
+    };
+    UserSearchController_search: {
+        parameters: {
+            query: {
+                /** @description Matched against display name and email, case-insensitive, as a substring. */
+                q: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserSearchResponseDto"];
+                };
+            };
+            /** @description Validation failed: one entry in errors[] per invalid field. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Missing, invalid or expired credentials. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Unexpected error. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+        };
+    };
+    ProjectsController_list: {
+        parameters: {
+            query?: {
+                /** @description 1-based page number. */
+                page?: number;
+                /** @description Items per page, 1–100. */
+                pageSize?: number;
+                /** @description Sort order; `title` compares case-insensitively. Ties break on `id` descending. */
+                sort?: "updatedAt:desc" | "updatedAt:asc" | "createdAt:desc" | "createdAt:asc" | "title:asc" | "title:desc";
+                /** @description Case-insensitive "contains" filter on the title; empty = no filter. */
+                q?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectListResponseDto"];
+                };
+            };
+            /** @description Validation failed: one entry in errors[] per invalid field. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Missing, invalid or expired credentials. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Unexpected error. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+        };
+    };
+    ProjectsController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateProjectDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectResponseDto"];
+                };
+            };
+            /** @description Validation failed: one entry in errors[] per invalid field. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Missing, invalid or expired credentials. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Unexpected error. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+        };
+    };
+    ProjectsController_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectResponseDto"];
+                };
+            };
+            /** @description Missing, invalid or expired credentials. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Not found. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Unexpected error. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+        };
+    };
+    ProjectsController_remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Moved to the trash. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing, invalid or expired credentials. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Not found. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Unexpected error. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+        };
+    };
+    ProjectsController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateProjectDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectResponseDto"];
+                };
+            };
+            /** @description Validation failed: one entry in errors[] per invalid field. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Missing, invalid or expired credentials. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Not found. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Unexpected error. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+        };
+    };
+    ProjectsController_restore: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Restored, or already active. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing, invalid or expired credentials. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Not found. */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

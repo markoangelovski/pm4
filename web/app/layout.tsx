@@ -5,6 +5,8 @@ import { Geist } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/Themeprovider";
 import { QueryProvider } from "@/lib/query-client";
+import { Toaster } from "@/components/ui/sonner";
+import { NuqsAdapter } from "nuqs/adapters/next/app";
 
 const geist = Geist({
   subsets: ["latin"],
@@ -46,7 +48,10 @@ export default function RootLayout({
           defaultTheme="light"
           enableSystem={false}
         >
-          <QueryProvider>{children}</QueryProvider>
+          <QueryProvider>
+            <NuqsAdapter>{children}</NuqsAdapter>
+          </QueryProvider>
+          <Toaster />
         </ThemeProvider>
       </body>
     </html>
