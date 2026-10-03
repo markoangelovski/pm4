@@ -27,41 +27,47 @@ export interface MenuItem {
 }
 
 /**
- * PM4 navigation (routing.md: Dashboard, Time, Projects, Tasks, Trash, Settings).
+ * PM4 navigation, grouped under headings (routing.md: Navigation):
+ * Dashboard, Project management (Projects, Tasks) and Time (Logs).
+ * Trash and Settings live in `footerItems`.
  */
 const SidebarContent: MenuItem[] = [
   {
+    heading: "Dashboard",
     items: [
       {
         id: "dashboard",
-        name: "Dashboard",
+        name: "Default",
         icon: House,
         url: routes.app.dashboard
-      },
-      {
-        id: "time",
-        name: "Time",
-        icon: Clock,
-        url: routes.app.time
-      },
+      }
+    ]
+  },
+  {
+    heading: "Project management",
+    items: [
       {
         id: "projects",
         name: "Projects",
         icon: FolderKanban,
         url: routes.app.projects
       },
-      {
-        id: "tasks",
-        name: "Tasks",
-        icon: ListTodo,
-        url: routes.app.tasks
-      },
-      {
-        id: "trash",
-        name: "Trash",
-        icon: Trash2,
-        url: routes.app.trash
-      },
+      { id: "tasks", name: "Tasks", icon: ListTodo, url: routes.app.tasks }
+    ]
+  },
+  {
+    heading: "Time",
+    items: [{ id: "time", name: "Logs", icon: Clock, url: routes.app.time }]
+  }
+];
+
+export default SidebarContent;
+
+/** The fixed sidebar footer (OQ-054): no heading. */
+export const footerItems: MenuItem[] = [
+  {
+    items: [
+      { id: "trash", name: "Trash", icon: Trash2, url: routes.app.trash },
       {
         id: "settings",
         name: "Settings",
@@ -71,5 +77,3 @@ const SidebarContent: MenuItem[] = [
     ]
   }
 ];
-
-export default SidebarContent;
