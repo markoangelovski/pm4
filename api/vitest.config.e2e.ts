@@ -8,6 +8,8 @@ export default defineConfig({
     root: './',
     include: ['test/**/*.e2e-spec.ts'],
     setupFiles: ['./test/setup-env.ts'],
+    // Migrates the e2e database once per run (feat-auth-api-session D13).
+    globalSetup: ['./test/global-setup.ts'],
     // Neon-style cold starts (NFR-003) and the deliberate dead-Redis-port
     // case need more than Vitest's 5s default.
     hookTimeout: 20_000,
