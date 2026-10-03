@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { routes } from "@/lib/routes";
 
-const FullLogo = () => {
+const FullLogo = ({ compact = false }: { compact?: boolean }) => {
+  void compact;
   return (
     <Link
       href={routes.app.dashboard}

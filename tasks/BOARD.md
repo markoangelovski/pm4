@@ -13,7 +13,7 @@
 | [T-0007](m1-auth/T-0007-return-to-helpers.md) | Implement the returnTo helpers in `web/lib/auth/return-to.ts` | M1 | web | S | done | — |
 | [T-0008](m1-auth/T-0008-move-app-routes-under-app.md) | Slash-free URLs, app pages under `/app`, landing page at the root | M1 | web | M | done | T-0007 |
 | [T-0009](m1-auth/T-0009-landing-cta-login-returnto.md) | Implement `LandingCta` and use it on the landing page | M1 | web | S | done | T-0007, T-0008 |
-| [T-0010](m1-auth/T-0010-add-get-api-v1-version-api.md) | Add GET /api/v1/version (API-SYS-003) and export the OpenAPI document | M1 | api | S | blocked | — |
+| [T-0010](m1-auth/T-0010-add-get-api-v1-version-api.md) | Add GET /api/v1/version (API-SYS-003) and export the OpenAPI document | M1 | api | S | ready | — |
 | [T-0011](m1-auth/T-0011-sidebar-header-branding-logo-title-subtitle.md) | Sidebar header branding: logo, title, subtitle, version pill with the API version tooltip | M1 | web | M | blocked | T-0010 |
 | [T-0012](m1-auth/T-0012-sidebar-nav-hover-highlight.md) | Sidebar nav hover highlight like the template (CSS only) | M1 | web | S | review | — |
 | [T-0013](m1-auth/T-0013-group-the-sidebar-nav-into-sections.md) | Group the sidebar nav into sections and move Trash and Settings to a fixed footer | M1 | web | S | done | — |
