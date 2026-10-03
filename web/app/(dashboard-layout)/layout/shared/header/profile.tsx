@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useSignOut } from "@/features/auth/use-sign-out";
 import { routes } from "@/lib/routes";
 import { Settings, LogOut } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -14,11 +15,10 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 /**
- * Static user-menu placeholder (avatar, settings, sign out). Real session data
- * and a working sign-out call land with auth (M1).
- * TODO(M1): wire up the authenticated user's name/email and a real sign-out.
+ * User menu (avatar, settings, sign out). User name/email arrive with feat-shell-user-menu.
  */
 export default function ProfileMenu() {
+  const signOut = useSignOut();
   return (
     <DropdownMenu>
       <DropdownMenuTrigger className="cursor-pointer hover:bg-primary/5 flex items-center justify-center rounded-full h-10 w-10">
@@ -35,7 +35,7 @@ export default function ProfileMenu() {
           <Settings />
           Settings
         </DropdownMenuItem>
-        <DropdownMenuItem disabled>
+        <DropdownMenuItem onClick={() => void signOut()}>
           <LogOut />
           Sign out
         </DropdownMenuItem>

@@ -38,7 +38,7 @@ app/
   page.tsx                       # public landing page `/` (SCR-003), own header, no sidebar
   auth/sign-in/  auth/callback/  # outside the authenticated shell
   (dashboard-layout)/            # authenticated shell (sidebar + header), wraps `/app/**` only
-    layout.tsx                   #   TODO(M1): auth guard goes here
+    layout.tsx                   #   wraps the shell in AuthGuard (features/auth)
     app/                         #   the `/app` URL segment
       page.tsx                   #     dashboard `/app`
       projects/  project/  tasks/  task/  time/  trash/  settings/
@@ -52,11 +52,14 @@ lib/
   query-client.tsx               # TanStack Query client + provider (ADR-0009)
   routes.ts                      # every internal route path (no other file hard-codes one)
   auth/return-to.ts              # returnTo validation + landing/sign-in/post-sign-in targets
+  auth/token-store.ts            # refresh token in localStorage (pm4.refreshToken) + cross-tab events
+  auth/session.ts                # access token cache, single-flight refresh, code exchange, sign-out
   version.ts                     # web version (inlined at build time) + version summary text
   utils.ts                       # cn()
 features/<domain>/               # data-driven work per conventions.md: api.ts (query keys + hooks),
                                   # schemas.ts (zod), components/. First one: features/system/
-                                  # (API version query + VersionBadge); add domains as implemented
+                                  # (API version query + VersionBadge); features/auth/ (AuthGuard,
+                                  # AuthCallback, SignInState, useSignOut); add domains as implemented
 ```
 
 ## Rules specific to this app
