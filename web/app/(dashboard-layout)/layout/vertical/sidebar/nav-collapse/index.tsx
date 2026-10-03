@@ -28,28 +28,29 @@ export default function NavCollapse({ menu, className }: NavCollapseProps) {
       {menu.map((section, index) => (
         <div key={index}>
           {/* Heading */}
-
-          <span
-            className={cn(
-              "text-xs uppercase block font-semibold text-muted-foreground mb-2 transition-all duration-200",
-              isCollapse
-                ? "text-center group-hover:text-start group-data-[state=expanded]:text-start"
-                : ""
-            )}
-          >
-            {isCollapse ? (
-              <>
-                <span className="group-hover:hidden group-data-[state=expanded]:hidden">
-                  ...
-                </span>
-                <span className="hidden group-hover:inline group-data-[state=expanded]:inline">
-                  {section.heading ?? ""}
-                </span>
-              </>
-            ) : (
-              (section.heading ?? "")
-            )}
-          </span>
+          {section.heading ? (
+            <span
+              className={cn(
+                "text-xs uppercase block font-semibold text-muted-foreground mb-2 transition-all duration-200",
+                isCollapse
+                  ? "text-center group-hover:text-start group-data-[state=expanded]:text-start"
+                  : ""
+              )}
+            >
+              {isCollapse ? (
+                <>
+                  <span className="group-hover:hidden group-data-[state=expanded]:hidden">
+                    ...
+                  </span>
+                  <span className="hidden group-hover:inline group-data-[state=expanded]:inline">
+                    {section.heading}
+                  </span>
+                </>
+              ) : (
+                section.heading
+              )}
+            </span>
+          ) : null}
 
           {section.items?.map((item: ChildItem, index) => {
             const hasChildren =

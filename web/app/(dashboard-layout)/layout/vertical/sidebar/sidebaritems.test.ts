@@ -1,24 +1,27 @@
 import { describe, expect, it } from "vitest";
-import sidebaritems from "./sidebaritems";
+import sidebaritems, { footerItems } from "./sidebaritems";
 
 describe("sidebaritems", () => {
-  it("matches the PM4 navigation list and order from routing.md", () => {
-    const names = sidebaritems.flatMap(
-      (section) => section.items?.map((item) => item.name) ?? []
-    );
-
-    expect(names).toEqual([
-      "Dashboard",
-      "Time",
-      "Projects",
-      "Tasks",
+  it("has the sections, names and order from routing.md", () => {
+    expect(
+      sidebaritems.map((s) => [s.heading, s.items?.map((i) => i.name)])
+    ).toEqual([
+      ["Dashboard", ["Default"]],
+      ["Project management", ["Projects", "Tasks"]],
+      ["Time", ["Logs"]]
+    ]);
+    expect(footerItems).toHaveLength(1);
+    expect(footerItems[0].heading).toBeUndefined();
+    expect(footerItems[0].items?.map((i) => i.name)).toEqual([
       "Trash",
       "Settings"
     ]);
   });
 
-  it("gives every item a url and an icon", () => {
-    const items = sidebaritems.flatMap((section) => section.items ?? []);
+  it("gives every item of both exports a url and an icon", () => {
+    const items = [...sidebaritems, ...footerItems].flatMap(
+      (section) => section.items ?? []
+    );
 
     for (const item of items) {
       expect(item.url).toBeTruthy();

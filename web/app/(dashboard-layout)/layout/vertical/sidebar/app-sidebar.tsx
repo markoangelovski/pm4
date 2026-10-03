@@ -3,12 +3,13 @@ import { Suspense } from "react";
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarGroup,
   SidebarHeader
 } from "@/components/ui/sidebar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import FullLogo from "../../shared/logo/full-logo";
-import sidebaritems from "./sidebaritems";
+import sidebaritems, { footerItems } from "./sidebaritems";
 import NavCollapse from "./nav-collapse";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -19,6 +20,15 @@ function NavSkeleton() {
       <Skeleton className="h-8 w-full" />
       <Skeleton className="h-8 w-full" />
       <Skeleton className="h-8 w-full" />
+      <Skeleton className="h-8 w-full" />
+      <Skeleton className="h-8 w-full" />
+    </div>
+  );
+}
+
+function FooterSkeleton() {
+  return (
+    <div className="flex w-full flex-col gap-2">
       <Skeleton className="h-8 w-full" />
       <Skeleton className="h-8 w-full" />
     </div>
@@ -50,6 +60,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </SidebarGroup>
         </ScrollArea>
       </SidebarContent>
+
+      <SidebarFooter className="border-t border-border p-3 group-data-[state=collapsed]:px-2">
+        {/* usePathname suspends under Cache Components when dynamic params are unknown */}
+        <Suspense fallback={<FooterSkeleton />}>
+          <NavCollapse menu={footerItems} className="text-sm" />
+        </Suspense>
+      </SidebarFooter>
     </Sidebar>
   );
 }
