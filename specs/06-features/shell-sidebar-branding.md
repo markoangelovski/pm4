@@ -67,6 +67,7 @@ shows the API's version, read from a new public endpoint. Behavior: SCR-004 in
 | api | `api/src/version/dto/version-response.dto.ts` | C | T1 | Hand-written |
 | api | `api/src/app.module.ts` | M | T1 | The CLI adds `VersionModule` |
 | api | `api/openapi.json` | M | T1 | `npm run openapi:export` |
+| api | `api/scripts/export-openapi.ts` | M | T1 | Call `configureApp(app)` before `buildOpenApiDocument`, so the exported paths get the `api/v1` prefix |
 | web | `web/lib/version.ac.test.ts` | C | tests | Acceptance tests |
 | web | `web/features/system/api.ac.test.tsx` | C | tests | Acceptance tests |
 | web | `web/features/system/components/version-badge.ac.test.tsx` | C | tests | Acceptance tests |
@@ -226,16 +227,12 @@ Typed stubs (created with the tests, so lint and typecheck pass while the tests 
 ```bash
 # AC-3: the contract has the endpoint
 node -e "const d=require('./api/openapi.json'); if(!d.paths['/api/v1/version']?.get?.responses?.['200']) process.exit(1)"
-```
 
-```bash
 # AC-11: the built /app page shows the web version, and the logo is exported
 VER=$(node -p "require('./web/package.json').version")
 grep -q "v${VER}<" web/out/app.html
 test -f web/out/images/logos/logoicon.svg
-```
 
-```bash
 # AC-12: the logo asset is the template's, unchanged
 unzip -p next-shadcn-dashboard-main.zip 'next-shadcn-dashboard-main/public/images/logos/logoicon.svg' | cmp - web/public/images/logos/logoicon.svg
 ```
@@ -252,3 +249,5 @@ None. OQ-051 and OQ-052 are resolved.
 ## Changelog
 - 2026-10-02: Initial draft (OQ-051, OQ-052).
 - 2026-10-02: Approved by the owner.
+- 2026-10-03: T1 also changes `api/scripts/export-openapi.ts`: it now calls `configureApp(app)`, so `openapi.json` paths carry the `api/v1` prefix (found by T-0010; owner-approved).
+- 2026-10-03: *Checks* merged into one bash block, since `pm4 check` reads only the first (AC-11 and AC-12 were skipped).

@@ -1,7 +1,9 @@
 import { writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { NestFactory } from "@nestjs/core";
+import { NestExpressApplication } from "@nestjs/platform-express";
 import { AppModule } from "../src/app.module.js";
+import { configureApp } from "../src/app.setup.js";
 import { buildOpenApiDocument } from "../src/openapi.js";
 
 /**
@@ -10,7 +12,10 @@ import { buildOpenApiDocument } from "../src/openapi.js";
  * compiled script with `.env.example` supplying the env it needs to boot).
  */
 async function main(): Promise<void> {
-  const app = await NestFactory.create(AppModule, { logger: false });
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    logger: false
+  });
+  configureApp(app);
   const document = buildOpenApiDocument(app);
 
   const outputPath = resolve(import.meta.dirname, "../../openapi.json");

@@ -8,6 +8,7 @@ import {
   SidebarHeader
 } from "@/components/ui/sidebar";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { VersionBadge } from "@/features/system/components/version-badge";
 import FullLogo from "../../shared/logo/full-logo";
 import sidebaritems, { footerItems } from "./sidebaritems";
 import NavCollapse from "./nav-collapse";
@@ -46,6 +47,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     >
       <SidebarHeader className="p-3 group-data-[state=collapsed]:px-2.5 flex flex-row items-center justify-between border-b border-border">
         <FullLogo />
+        <VersionBadge className="group-data-[state=collapsed]:hidden" />
       </SidebarHeader>
 
       <SidebarContent>

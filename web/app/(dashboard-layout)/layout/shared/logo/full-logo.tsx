@@ -1,19 +1,31 @@
+import Image from "next/image";
 import Link from "next/link";
 import { routes } from "@/lib/routes";
 
 const FullLogo = ({ compact = false }: { compact?: boolean }) => {
-  void compact;
   return (
     <Link
       href={routes.app.dashboard}
-      className="flex items-center gap-2 max-w-[40px] lg:max-w-[120px] overflow-hidden"
+      aria-label="PM4"
+      className="flex min-w-0 items-center gap-2"
     >
-      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary text-sm font-bold text-primary-foreground">
-        P4
-      </span>
-      <span className="hidden lg:inline text-lg font-semibold text-foreground">
-        PM4
-      </span>
+      <Image
+        src="/images/logos/logoicon.svg"
+        alt=""
+        width={32}
+        height={32}
+        className="size-8 shrink-0"
+      />
+      {!compact && (
+        <span className="flex min-w-0 flex-col leading-tight group-data-[state=collapsed]:hidden">
+          <span className="truncate text-base font-semibold text-foreground">
+            PM4
+          </span>
+          <span className="truncate text-xs text-muted-foreground">
+            Project management
+          </span>
+        </span>
+      )}
     </Link>
   );
 };
