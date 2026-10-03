@@ -6,7 +6,14 @@ const validConfig = {
   DATABASE_URL: "postgres://user:pass@localhost:5432/pm4_test",
   REDIS_URL: "redis://localhost:6379",
   CORS_ORIGINS: "http://localhost:3000, http://localhost:3001",
-  WEB_APP_URL: "http://localhost:3000"
+  WEB_APP_URL: "http://localhost:3000",
+  GOOGLE_CLIENT_ID: "client-id",
+  GOOGLE_CLIENT_SECRET: "client-secret",
+  GOOGLE_CALLBACK_URL: "http://localhost:3001/api/v1/auth/google/callback",
+  JWT_ACCESS_SECRET: "x".repeat(32),
+  ACCESS_TOKEN_TTL: "1h",
+  REFRESH_TOKEN_TTL: "7d",
+  AUTH_ALLOWED_EMAILS: "Owner@Example.com"
 };
 
 describe("validateEnv", () => {
@@ -19,7 +26,14 @@ describe("validateEnv", () => {
       DATABASE_URL: "postgres://user:pass@localhost:5432/pm4_test",
       REDIS_URL: "redis://localhost:6379",
       CORS_ORIGINS: ["http://localhost:3000", "http://localhost:3001"],
-      WEB_APP_URL: "http://localhost:3000"
+      WEB_APP_URL: "http://localhost:3000",
+      GOOGLE_CLIENT_ID: "client-id",
+      GOOGLE_CLIENT_SECRET: "client-secret",
+      GOOGLE_CALLBACK_URL: "http://localhost:3001/api/v1/auth/google/callback",
+      JWT_ACCESS_SECRET: "x".repeat(32),
+      ACCESS_TOKEN_TTL: 3600,
+      REFRESH_TOKEN_TTL: 604800,
+      AUTH_ALLOWED_EMAILS: ["owner@example.com"]
     });
   });
 

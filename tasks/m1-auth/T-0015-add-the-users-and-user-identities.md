@@ -3,7 +3,7 @@ id: T-0015
 title: Add the users and user_identities tables and their migration
 milestone: M1
 app: api
-status: review
+status: done
 size: S
 tier: haiku
 depends_on: []
@@ -29,4 +29,11 @@ Created the `users` and `user_identities` tables with the schema specified in th
 | 1 | haiku | PASS | `api lint: ok · api typecheck: ok · api test: ok · api test:e2e: ok · api build: ok` |
 
 ## Review
-_Filled in by `review-feature`._
+**Verdict: approve.**
+
+Opus review, 2026-10-03, feature `auth-api-session`. `pm4 check --feature`: all gates ok (e2e with
+Postgres/Redis up); the only scope flag is the coordinator's authorized spec edit (*Config (T2)*). AC-25 manual (owner).
+
+- Schema matches *Interfaces* column for column (order, `uuidv7()`, `lower(email)` unique index, composite PK,
+  cascade FK, `user_id` index); `0001_users.sql` is generated and passes AC-24. No findings.
+- Tier feedback: haiku was right (schema given in full, migration generated).

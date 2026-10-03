@@ -5,6 +5,8 @@ import { RedisModule } from "./redis/redis.module.js";
 import { HealthModule } from "./health/health.module.js";
 import { ProblemDetailsFilter } from "./common/filters/problem-details/problem-details.filter.js";
 import { VersionModule } from "./version/version.module.js";
+import { AuthModule } from "./auth/auth.module.js";
+import { UsersModule } from "./users/users.module.js";
 
 @Module({
   imports: [
@@ -12,7 +14,9 @@ import { VersionModule } from "./version/version.module.js";
     DatabaseModule,
     RedisModule,
     HealthModule,
-    VersionModule
+    VersionModule,
+    AuthModule,
+    UsersModule
   ],
   providers: [ProblemDetailsFilter]
 })
