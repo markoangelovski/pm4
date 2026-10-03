@@ -61,8 +61,8 @@ not contradict the root `AGENTS.md`/`CLAUDE.md` or `../specs` — read those fir
   changes for review (`../AGENTS.md` §3).
 
 ## Patterns to copy
-No feature module exists yet. The **first** module, repository, DTO and guard become the reference;
-their tasks are opus/sonnet (`../specs/05-quality/task-routing.md`). Add them to this table when they land.
+The **first** module, repository, DTO and guard of a kind become the reference; their tasks are
+opus/sonnet (`../specs/05-quality/task-routing.md`). Add them to this table when they land.
 
 | Need | Copy from | What to copy |
 | --- | --- | --- |
@@ -71,6 +71,12 @@ their tasks are opus/sonnet (`../specs/05-quality/task-routing.md`). Add them to
 | Errors | `src/common/filters/problem-details/` | Throw Nest `HttpException`s; the filter makes Problem Details. Don't hand-build error bodies |
 | Unit test | `src/health/health.service.spec.ts` | Construct the service directly with `vi.fn()` fakes |
 | e2e test | `test/health.e2e-spec.ts` + `test/create-test-app.ts` | `createTestApp()` + Supertest, closed in `afterAll` |
+| Feature module (CRUD, soft delete) | `src/projects/` | Controller → service → repository; every query scoped by `userId`; `findOwned` (non-UUID → 404, trashed → `InTrashException`); `LEFT JOIN` count subquery |
+| Request DTOs | `src/projects/dto/`, `src/common/validation/transforms.ts` | `Trim`/`TrimToNull`, nullable `@ApiProperty`, `ValidateIf` for PATCH fields that can't be null |
+| List query + pagination | `src/common/dto/page-query.dto.ts`, `src/common/sql/escape-like.ts` | Extend `PageQueryDto`; `ilike` with `escapeLike` |
+| Non-default Problem types | `src/common/exceptions/in-trash.exception.ts` | `problemType` slug + `extensions` members (feat-prj-api D10) |
+| Project lead fields | `src/users/project-lead.service.ts`, `src/users/dto/project-lead.dto.ts` | `toColumns` / `toDto`, the two flat input fields |
+| Seeding e2e data | `test/support/project-test-utils.ts` | Insert rows directly with `testDb()`; cleaned up with their user |
 | New env var | `src/config/env.schema.ts` + `app-config.service.ts` | zod schema entry + typed getter + `.env.example` |
 
 ## Never

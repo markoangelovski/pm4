@@ -3,7 +3,7 @@ id: T-0022
 title: Add the projects and tasks tables, the task_status enum and their migration
 milestone: M2
 app: api
-status: review
+status: done
 size: S
 tier: haiku
 depends_on: [T-0015]

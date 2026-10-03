@@ -72,23 +72,23 @@ the filter change, `Trim`/`TrimToNull`, `PageQueryDto`, `escapeLike`); the OpenA
 | api | `api/src/database/schema/projects.ts` | C | T1 | Hand-written (Drizzle): `projects`, `tasks`, `task_status` |
 | api | `api/src/database/schema/index.ts` | M | T1 | Re-export |
 | api | `api/drizzle/0002_projects_tasks.sql`, `api/drizzle/meta/*` | C/M | T1 | `npm run db:generate -- --name projects_tasks` |
-| api | `api/src/common/exceptions/in-trash.exception.ts`, `…exception.spec.ts` | C | T2 | `npx nest g class common/exceptions/in-trash.exception --flat` |
-| api | `api/src/common/filters/problem-details/problem-details.filter.ts`, `…filter.spec.ts` | M | T2 | D10, plus unit cases |
+| api | `api/src/common/exceptions/in-trash.exception.ts`, `api/src/common/exceptions/in-trash.exception.spec.ts` | C | T2 | `npx nest g class common/exceptions/in-trash.exception --flat` |
+| api | `api/src/common/filters/problem-details/problem-details.filter.ts`, `api/src/common/filters/problem-details/problem-details.filter.spec.ts` | M | T2 | D10, plus unit cases |
 | api | `api/src/common/validation/transforms.ts` | C | T2 | Hand-written (no schematic) |
 | api | `api/src/common/dto/page-query.dto.ts` | C | T2 | Hand-written |
-| api | `api/src/users/project-lead.service.ts`, `…service.spec.ts` | C | T2 | `npx nest g service users/project-lead --flat` |
+| api | `api/src/users/project-lead.service.ts`, `api/src/users/project-lead.service.spec.ts` | C | T2 | `npx nest g service users/project-lead --flat` |
 | api | `api/src/users/dto/project-lead.dto.ts` | C | T2 | Hand-written |
 | api | `api/src/users/users.module.ts` | M | T2, T3 | Export `ProjectLeadService` (T2); the CLI adds the controller (T3) |
-| api | `api/src/users/users.repository.ts`, `…repository.spec.ts` | M | T2, T3 | `findLeadUser` (T2), `search` (T3) |
+| api | `api/src/users/users.repository.ts`, `api/src/users/users.repository.spec.ts` | M | T2, T3 | `findLeadUser` (T2), `search` (T3) |
 | api | `api/src/projects/projects.module.ts` | C | T2 | `npx nest g module projects` |
-| api | `api/src/projects/projects.controller.ts`, `…controller.spec.ts` | C | T2 | `npx nest g controller projects` |
-| api | `api/src/projects/projects.service.ts`, `…service.spec.ts` | C | T2 | `npx nest g service projects` |
-| api | `api/src/projects/projects.repository.ts`, `…repository.spec.ts` | C | T2 | `npx nest g provider projects/projects.repository --flat` |
+| api | `api/src/projects/projects.controller.ts`, `api/src/projects/projects.controller.spec.ts` | C | T2 | `npx nest g controller projects` |
+| api | `api/src/projects/projects.service.ts`, `api/src/projects/projects.service.spec.ts` | C | T2 | `npx nest g service projects` |
+| api | `api/src/projects/projects.repository.ts`, `api/src/projects/projects.repository.spec.ts` | C | T2 | `npx nest g provider projects/projects.repository --flat` |
 | api | `api/src/projects/dto/*.ts` | C | T2 | Hand-written |
 | api | `api/src/app.module.ts` | M | T2 | The CLI adds `ProjectsModule` |
 | api | `api/openapi.json` | M | T2, T3 | `npm run openapi:export` |
-| api | `api/src/users/user-search.controller.ts`, `…controller.spec.ts` | C | T3 | `npx nest g controller users/user-search --flat`, then `@Controller('users')` |
-| api | `api/src/users/users.service.ts`, `…service.spec.ts` | M | T3 | `search` |
+| api | `api/src/users/user-search.controller.ts`, `api/src/users/user-search.controller.spec.ts` | C | T3 | `npx nest g controller users/user-search --flat`, then `@Controller('users')` |
+| api | `api/src/users/users.service.ts`, `api/src/users/users.service.spec.ts` | M | T3 | `search` |
 | api | `api/src/users/dto/user-search.dto.ts` | C | T3 | Hand-written |
 
 ## Interfaces

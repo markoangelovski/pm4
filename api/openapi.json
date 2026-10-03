@@ -343,6 +343,514 @@
           "Users"
         ]
       }
+    },
+    "/api/v1/users": {
+      "get": {
+        "operationId": "UserSearchController_search",
+        "parameters": [
+          {
+            "name": "q",
+            "required": true,
+            "in": "query",
+            "description": "Matched against display name and email, case-insensitive, as a substring.",
+            "schema": {
+              "minLength": 2,
+              "maxLength": 100,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserSearchResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed: one entry in errors[] per invalid field.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid or expired credentials.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "UserSearch"
+        ]
+      }
+    },
+    "/api/v1/projects": {
+      "post": {
+        "operationId": "ProjectsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateProjectDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed: one entry in errors[] per invalid field.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid or expired credentials.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create a project (API-PRJ-001).",
+        "tags": [
+          "Projects"
+        ]
+      },
+      "get": {
+        "operationId": "ProjectsController_list",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "1-based page number.",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "description": "Items per page, 1–100.",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 25,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "sort",
+            "required": false,
+            "in": "query",
+            "description": "Sort order; `title` compares case-insensitively. Ties break on `id` descending.",
+            "schema": {
+              "default": "updatedAt:desc",
+              "type": "string",
+              "enum": [
+                "updatedAt:desc",
+                "updatedAt:asc",
+                "createdAt:desc",
+                "createdAt:asc",
+                "title:asc",
+                "title:desc"
+              ]
+            }
+          },
+          {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "description": "Case-insensitive \"contains\" filter on the title; empty = no filter.",
+            "schema": {
+              "maxLength": 200,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectListResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed: one entry in errors[] per invalid field.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid or expired credentials.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "The caller's projects that aren't in the trash (API-PRJ-002).",
+        "tags": [
+          "Projects"
+        ]
+      }
+    },
+    "/api/v1/projects/{id}": {
+      "get": {
+        "operationId": "ProjectsController_get",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid or expired credentials.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "One project (API-PRJ-003).",
+        "tags": [
+          "Projects"
+        ]
+      },
+      "patch": {
+        "operationId": "ProjectsController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateProjectDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed: one entry in errors[] per invalid field.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid or expired credentials.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Change the given fields (API-PRJ-004).",
+        "tags": [
+          "Projects"
+        ]
+      },
+      "delete": {
+        "operationId": "ProjectsController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Moved to the trash."
+          },
+          "401": {
+            "description": "Missing, invalid or expired credentials.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Move the project to the trash (API-PRJ-005).",
+        "tags": [
+          "Projects"
+        ]
+      }
+    },
+    "/api/v1/projects/{id}/restore": {
+      "post": {
+        "operationId": "ProjectsController_restore",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Restored, or already active."
+          },
+          "401": {
+            "description": "Missing, invalid or expired credentials.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Take the project out of the trash (API-PRJ-006).",
+        "tags": [
+          "Projects"
+        ]
+      }
     }
   },
   "info": {
@@ -509,6 +1017,269 @@
           "timeZone",
           "createdAt"
         ]
+      },
+      "UserSummaryDto": {
+        "type": "object",
+        "properties": {
+          "avatarUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "id": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "avatarUrl",
+          "id",
+          "displayName",
+          "email"
+        ]
+      },
+      "UserSearchResponseDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UserSummaryDto"
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "CreateProjectDto": {
+        "type": "object",
+        "properties": {
+          "description": {
+            "type": "string",
+            "nullable": true,
+            "description": "≤ 2000 chars; empty after trimming → `null`.",
+            "maxLength": 2000
+          },
+          "externalLink": {
+            "type": "string",
+            "nullable": true,
+            "description": "Absolute `http(s)://` URL, ≤ 500 chars; empty after trimming → `null`.",
+            "maxLength": 500,
+            "format": "uri"
+          },
+          "projectLeadUserId": {
+            "type": "string",
+            "nullable": true,
+            "description": "A registered user as the lead; excludes `projectLeadName`.",
+            "format": "uuid"
+          },
+          "projectLeadName": {
+            "type": "string",
+            "nullable": true,
+            "description": "A free-text lead name, ≤ 100 chars; empty after trimming → `null`.",
+            "maxLength": 100
+          },
+          "title": {
+            "type": "string",
+            "description": "1–200 chars after trimming.",
+            "minLength": 1,
+            "maxLength": 200
+          }
+        },
+        "required": [
+          "title"
+        ]
+      },
+      "LeadUserDto": {
+        "type": "object",
+        "properties": {
+          "avatarUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "id": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string",
+            "description": "The user's current display name (D2)."
+          }
+        },
+        "required": [
+          "avatarUrl",
+          "id",
+          "displayName"
+        ]
+      },
+      "ProjectLeadDto": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "enum": [
+              "user",
+              "text"
+            ],
+            "type": "string"
+          },
+          "user": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LeadUserDto"
+              }
+            ]
+          },
+          "name": {
+            "type": "string",
+            "description": "`user.displayName` for a user lead, else the saved text name."
+          }
+        },
+        "required": [
+          "kind",
+          "user",
+          "name"
+        ]
+      },
+      "TaskCountsDto": {
+        "type": "object",
+        "properties": {
+          "upcoming": {
+            "type": "integer"
+          },
+          "inProgress": {
+            "type": "integer"
+          },
+          "completed": {
+            "type": "integer"
+          },
+          "total": {
+            "type": "integer",
+            "description": "`upcoming + inProgress + completed`."
+          }
+        },
+        "required": [
+          "upcoming",
+          "inProgress",
+          "completed",
+          "total"
+        ]
+      },
+      "ProjectResponseDto": {
+        "type": "object",
+        "properties": {
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "externalLink": {
+            "type": "string",
+            "nullable": true
+          },
+          "projectLead": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ProjectLeadDto"
+              }
+            ]
+          },
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "taskCounts": {
+            "$ref": "#/components/schemas/TaskCountsDto"
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "ISO 8601 UTC"
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "ISO 8601 UTC"
+          }
+        },
+        "required": [
+          "description",
+          "externalLink",
+          "projectLead",
+          "id",
+          "title",
+          "taskCounts",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "ProjectListResponseDto": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "integer"
+          },
+          "pageSize": {
+            "type": "integer"
+          },
+          "total": {
+            "type": "integer"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProjectResponseDto"
+            }
+          }
+        },
+        "required": [
+          "page",
+          "pageSize",
+          "total",
+          "items"
+        ]
+      },
+      "UpdateProjectDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "1–200 chars after trimming; not `null`.",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "description": {
+            "type": "string",
+            "nullable": true,
+            "description": "≤ 2000 chars; empty after trimming → `null`.",
+            "maxLength": 2000
+          },
+          "externalLink": {
+            "type": "string",
+            "nullable": true,
+            "description": "Absolute `http(s)://` URL, ≤ 500 chars; empty after trimming → `null`.",
+            "maxLength": 500,
+            "format": "uri"
+          },
+          "projectLeadUserId": {
+            "type": "string",
+            "nullable": true,
+            "description": "A registered user as the lead; excludes `projectLeadName`.",
+            "format": "uuid"
+          },
+          "projectLeadName": {
+            "type": "string",
+            "nullable": true,
+            "description": "A free-text lead name, ≤ 100 chars; empty after trimming → `null`.",
+            "maxLength": 100
+          }
+        }
       }
     }
   }

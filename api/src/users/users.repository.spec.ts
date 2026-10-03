@@ -17,6 +17,7 @@ describe("UsersRepository", () => {
       select: () => query,
       from: () => query,
       where: () => query,
+      orderBy: () => query,
       limit: () => Promise.resolve(rows)
     };
     const module: TestingModule = await Test.createTestingModule({
@@ -35,6 +36,23 @@ describe("UsersRepository", () => {
 
   it("findById returns null when there is no row", async () => {
     await expect(repository.findById("missing")).resolves.toBeNull();
+  });
+
+  it("findLeadUser returns the id and display name", async () => {
+    rows = [{ id: "user-1", displayName: "Ada" }];
+    await expect(repository.findLeadUser("user-1")).resolves.toEqual({
+      id: "user-1",
+      displayName: "Ada"
+    });
+  });
+
+  it("findLeadUser returns null when there is no row", async () => {
+    await expect(repository.findLeadUser("missing")).resolves.toBeNull();
+  });
+
+  it("search returns the matching summaries", async () => {
+    rows = [{ id: "user-1", displayName: "Ana" }];
+    await expect(repository.search("an", "caller", 10)).resolves.toEqual(rows);
   });
 });
 

@@ -1,6 +1,10 @@
 import { Injectable, UnauthorizedException } from "@nestjs/common";
 import { MeResponseDto } from "./dto/me-response.dto.js";
+import { UserSearchResponseDto } from "./dto/user-search.dto.js";
+
 import { UsersRepository } from "./users.repository.js";
+
+const SEARCH_LIMIT = 10;
 
 @Injectable()
 export class UsersService {
@@ -19,6 +23,13 @@ export class UsersService {
       avatarUrl: user.avatarUrl,
       timeZone: user.timeZone,
       createdAt: user.createdAt.toISOString()
+    };
+  }
+
+  /** Users whose name or email contains `q`; the caller first (API-USR-003). */
+  async search(callerId: string, q: string): Promise<UserSearchResponseDto> {
+    return {
+      items: await this.usersRepository.search(q, callerId, SEARCH_LIMIT)
     };
   }
 }

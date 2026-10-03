@@ -10,6 +10,7 @@ import {
 } from "@nestjs/common";
 import { vi } from "vitest";
 import { AppConfigService } from "../../../config/app-config.service.js";
+import { InTrashException } from "../../exceptions/in-trash.exception.js";
 import { ProblemDetailsFilter } from "./problem-details.filter.js";
 
 interface ProblemDetailsBody {
@@ -153,6 +154,128 @@ describe("ProblemDetailsFilter", () => {
     filter.catch(new Error("password=hunter2"), host);
 
     expect(status).toHaveBeenCalledWith(500);
+    expect(send).toHaveBeenCalledWith({
+      type: "https://pm4.example.com/errors/internal",
+      title: "Internal Server Error",
+      status: 500,
+      detail: "An unexpected error occurred."
+    });
+  });
+});
+
+describe("ProblemDetailsFilter: problemType and extensions (D10)", () => {
+  const configService = {
+    webAppUrl: "https://pm4.example.com"
+  } as AppConfigService;
+  const filter = new ProblemDetailsFilter(configService);
+
+  beforeEach(() => {
+    vi.spyOn(Logger.prototype, "error").mockImplementation(() => undefined);
+  });
+
+  it("uses problemType as the slug and keeps the status title", () => {
+    const { host, status, send } = createHost();
+
+    filter.catch(new InTrashException("Project is in the trash."), host);
+
+    expect(status).toHaveBeenCalledWith(404);
+    expect(send).toHaveBeenCalledWith({
+      type: "https://pm4.example.com/errors/in-trash",
+      title: "Not Found",
+      status: 404,
+      detail: "Project is in the trash."
+    });
+  });
+
+  it("adds extension members after the standard ones", () => {
+    const { host, send } = createHost();
+
+    filter.catch(
+      new InTrashException("Task is in the trash.", {
+        projectId: "p-1",
+        projectInTrash: true
+      }),
+      host
+    );
+
+    const body = send.mock.calls[0]?.[0] as unknown as Record<string, unknown>;
+    expect(body).toEqual({
+      type: "https://pm4.example.com/errors/in-trash",
+      title: "Not Found",
+      status: 404,
+      detail: "Task is in the trash.",
+      projectId: "p-1",
+      projectInTrash: true
+    });
+    expect(Object.keys(body)).toEqual([
+      "type",
+      "title",
+      "status",
+      "detail",
+      "projectId",
+      "projectInTrash"
+    ]);
+  });
+
+  it("never lets an extension overwrite a standard member", () => {
+    const { host, send } = createHost();
+
+    filter.catch(
+      new NotFoundException({
+        message: "Gone.",
+        problemType: "in-trash",
+        extensions: {
+          type: "x",
+          title: "x",
+          status: 200,
+          detail: "x",
+          errors: [],
+          extra: 1
+        }
+      }),
+      host
+    );
+
+    expect(send).toHaveBeenCalledWith({
+      type: "https://pm4.example.com/errors/in-trash",
+      title: "Not Found",
+      status: 404,
+      detail: "Gone.",
+      extra: 1
+    });
+  });
+
+  it("ignores a non-string problemType and non-object extensions", () => {
+    const { host, send } = createHost();
+
+    filter.catch(
+      new NotFoundException({
+        message: "Nope.",
+        problemType: 42,
+        extensions: "x"
+      }),
+      host
+    );
+
+    expect(send).toHaveBeenCalledWith({
+      type: "https://pm4.example.com/errors/not-found",
+      title: "Not Found",
+      status: 404,
+      detail: "Nope."
+    });
+  });
+
+  it("a 500 never takes a problemType or extensions", () => {
+    const { host, send } = createHost();
+
+    filter.catch(
+      new HttpException(
+        { problemType: "in-trash", extensions: { secret: "s" } },
+        500
+      ),
+      host
+    );
+
     expect(send).toHaveBeenCalledWith({
       type: "https://pm4.example.com/errors/internal",
       title: "Internal Server Error",
