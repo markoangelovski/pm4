@@ -3,7 +3,7 @@ id: T-0015
 title: Add the users and user_identities tables and their migration
 milestone: M1
 app: api
-status: ready
+status: review
 size: S
 tier: haiku
 depends_on: []
@@ -21,9 +21,12 @@ Work from the brief: `node scripts/pm4.mjs brief T-0015`. Verify with `node scri
 ## Implementation notes
 _Implementer: what changed, and anything the reviewer should look at._
 
+Created the `users` and `user_identities` tables with the schema specified in the brief. The migration was generated automatically using Drizzle's migration tool.
+
 ### Attempts
 | # | Tier | Result | Summary |
 | --- | --- | --- | --- |
+| 1 | haiku | PASS | `api lint: ok · api typecheck: ok · api test: ok · api test:e2e: ok · api build: ok` |
 
 ## Review
 _Filled in by `review-feature`._

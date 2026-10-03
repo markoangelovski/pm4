@@ -18,14 +18,14 @@
 | [T-0012](m1-auth/T-0012-sidebar-nav-hover-highlight.md) | Sidebar nav hover highlight like the template (CSS only) | M1 | web | S | review | — |
 | [T-0013](m1-auth/T-0013-group-the-sidebar-nav-into-sections.md) | Group the sidebar nav into sections and move Trash and Settings to a fixed footer | M1 | web | S | blocked | — |
 | [T-0014](m1-auth/T-0014-app-footer-copyright-and-legal-links.md) | App footer: copyright line and Terms and Conditions / Privacy links | M1 | web | S | review | — |
-| [T-0015](m1-auth/T-0015-add-the-users-and-user-identities.md) | Add the users and user_identities tables and their migration | M1 | api | S | ready | — |
+| [T-0015](m1-auth/T-0015-add-the-users-and-user-identities.md) | Add the users and user_identities tables and their migration | M1 | api | S | review | — |
 | [T-0016](m1-auth/T-0016-access-tokens-the-default-deny-guard.md) | Access tokens, the default-deny guard and GET /me | M1 | api | M | blocked | T-0010, T-0015 |
 | [T-0017](m1-auth/T-0017-google-sign-in-login-codes-refresh.md) | Google sign-in, login codes, refresh rotation and sign-out | M1 | api | M | blocked | T-0016 |
 | [T-0018](m1-auth/T-0018-token-storage-session-refresh-and-the.md) | Token storage, session refresh and the authenticated API client | M1 | web | M | blocked | T-0017 |
 | [T-0019](m1-auth/T-0019-auth-guard-sign-in-callback-landing.md) | Auth guard, sign-in, callback, landing "Go to app" and sign-out | M1 | web | M | blocked | T-0018 |
 | [T-0020](m1-auth/T-0020-user-drawer-useme-usesignouteverywhere-useravatar-and.md) | User drawer: useMe, useSignOutEverywhere, UserAvatar and the header drawer | M1 | web | M | blocked | T-0019 |
 | [T-0021](m1-auth/T-0021-profile-page-app-user-profile-with.md) | Profile page /app/user-profile with sign out of all devices | M1 | web | S | blocked | T-0020 |
-| [T-0022](m2-projects/T-0022-add-the-projects-and-tasks-tables.md) | Add the projects and tasks tables, the task_status enum and their migration | M2 | api | S | blocked | T-0015 |
+| [T-0022](m2-projects/T-0022-add-the-projects-and-tasks-tables.md) | Add the projects and tasks tables, the task_status enum and their migration | M2 | api | S | ready | T-0015 |
 | [T-0023](m2-projects/T-0023-projects-module-api-prj-001-006.md) | Projects module (API-PRJ-001…006) with task counts, the project lead and the in-trash Problem type | M2 | api | M | blocked | T-0022, T-0017 |
 | [T-0024](m2-projects/T-0024-get-users-user-search-for-the.md) | GET /users user search for the lead picker (API-USR-003) | M2 | api | S | blocked | T-0023 |
 | [T-0025](m2-projects/T-0025-dependencies-providers-api-error-helpers-project.md) | Dependencies, providers, API error helpers, project and user-search hooks, lead helpers | M2 | web | M | blocked | T-0024, T-0021 |
