@@ -2,3 +2,4 @@
 // here as `specs/03-api/data-model.md` is implemented, one migration at a
 // time (drizzle-kit reads this file to generate SQL migrations).
 export * from "./users.js";
+export * from "./projects.js";

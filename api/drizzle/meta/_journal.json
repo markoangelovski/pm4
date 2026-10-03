@@ -15,6 +15,13 @@
       "when": 1791009733506,
       "tag": "0001_users",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791012276392,
+      "tag": "0002_projects_tasks",
+      "breakpoints": true
     }
   ]
 }
