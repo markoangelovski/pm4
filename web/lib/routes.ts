@@ -14,7 +14,8 @@ export const routes = {
     tasks: "/app/tasks",
     task: "/app/task",
     trash: "/app/trash",
-    settings: "/app/settings"
+    settings: "/app/settings",
+    userProfile: "/app/user-profile"
   }
 } as const;
 
