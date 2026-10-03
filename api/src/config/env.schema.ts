@@ -25,6 +25,20 @@ function urlWithProtocol(protocols: string[]) {
     );
 }
 
+const DURATION_UNIT_SECONDS = { s: 1, m: 60, h: 3600, d: 86400 } as const;
+
+/**
+ * A duration like `15m` or `30d` (a positive integer and one of `s`, `m`,
+ * `h`, `d`), transformed to whole seconds.
+ */
+const duration = z
+  .string()
+  .regex(/^[1-9]\d*[smhd]$/, "must look like 15m or 30d")
+  .transform((value) => {
+    const unit = value.slice(-1) as keyof typeof DURATION_UNIT_SECONDS;
+    return Number(value.slice(0, -1)) * DURATION_UNIT_SECONDS[unit];
+  });
+
 /**
  * Env vars validated at boot for T-0001. Every other variable listed in
  * specs/02-architecture/environments.md goes into `.env.example` now, and is
@@ -47,7 +61,26 @@ export const envSchema = z.object({
         .filter((origin) => origin.length > 0)
     )
     .pipe(z.array(urlWithProtocol(["http", "https"])).min(1)),
-  WEB_APP_URL: urlWithProtocol(["http", "https"])
+  WEB_APP_URL: urlWithProtocol(["http", "https"]),
+  // Auth (feat-auth-api-session). `.prefault` (not `.default`) so the
+  // default goes through the transform (zod 4).
+  GOOGLE_CLIENT_ID: z.string().min(1),
+  GOOGLE_CLIENT_SECRET: z.string().min(1),
+  GOOGLE_CALLBACK_URL: urlWithProtocol(["http", "https"]),
+  JWT_ACCESS_SECRET: z
+    .string()
+    .min(32, "JWT_ACCESS_SECRET must be at least 32 characters"),
+  ACCESS_TOKEN_TTL: duration.prefault("15m"),
+  REFRESH_TOKEN_TTL: duration.prefault("30d"),
+  AUTH_ALLOWED_EMAILS: z
+    .string()
+    .prefault("")
+    .transform((value) =>
+      value
+        .split(",")
+        .map((email) => email.trim().toLowerCase())
+        .filter((email) => email.length > 0)
+    )
 });
 
 export type Env = z.infer<typeof envSchema>;

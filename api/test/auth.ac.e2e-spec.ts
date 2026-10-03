@@ -253,6 +253,19 @@ describe("Auth: Google sign-in, login codes, refresh and sign-out (feat-auth-api
     }
   );
 
+  it.each([
+    ["+01:00", "UTC"],
+    ["-0530", "UTC"],
+    ["Etc/GMT-1", "Etc/GMT-1"]
+  ])(
+    "AC-9 FR-AUTH-006: timeZone %s → the new user's timeZone is %s (UTC offsets aren't IANA names)",
+    async (timeZone, expected) => {
+      const tokens = await signIn(googleProfile(), { timeZone });
+      const me = await getMe(tokens.accessToken);
+      expect(me.body).toMatchObject({ timeZone: expected });
+    }
+  );
+
   it("AC-10 FR-AUTH-002: a known identity syncs email, name and avatar but keeps its id and time zone", async () => {
     const first = googleProfile();
     const firstTokens = await signIn(first, { timeZone: "Europe/Zagreb" });
@@ -438,6 +451,18 @@ describe("Auth: Google sign-in, login codes, refresh and sign-out (feat-auth-api
 
     expect((await refresh(r1)).status).toBe(401);
     expect((await refresh(r3)).status).toBe(401);
+  });
+
+  it("AC-26 FR-AUTH-003: two concurrent refreshes with one token → one 200, one 401, and the session is revoked", async () => {
+    const { refreshToken: r1 } = await signIn(googleProfile());
+
+    const responses = await Promise.all([refresh(r1), refresh(r1)]);
+    const statuses = responses.map((response) => response.status).sort();
+    expect(statuses).toEqual([200, 401]);
+
+    const winner = responses.find((response) => response.status === 200)!;
+    const r2 = (winner.body as TokenPair).refreshToken;
+    expect((await refresh(r2)).status).toBe(401);
   });
 
   it("AC-17 FR-AUTH-003: an unknown refresh token → 401; refresh keys live REFRESH_TOKEN_TTL", async () => {

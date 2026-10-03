@@ -1,11 +1,10 @@
 import { vi } from "vitest";
 
 /**
- * `ConfigModule`'s `@Module` decorator calls `NestConfigModule.forRoot(...)`
- * (and so `validateEnv`) as soon as `config.module.ts` is evaluated, i.e. at
- * import time — not lazily inside `compile()`. So each case here must reset
- * Vitest's module registry and re-`import` `AppModule` *after* mutating
- * `process.env`, or the mutation has no effect on an already-evaluated module.
+ * `ConfigModule` validates the env in its `APP_ENV` provider factory, so an
+ * invalid env rejects `compile()` (feat-auth-api-session *Config (T2)*). Each
+ * case still resets Vitest's module registry and re-`import`s `AppModule`
+ * after mutating `process.env`, so every case boots from a fresh module graph.
  */
 describe("Env validation at boot", () => {
   const originalEnv = { ...process.env };

@@ -3,7 +3,7 @@ id: feat-auth-api-session
 title: "Auth API: Google sign-in, sessions and the current user"
 status: approved
 owner: Marko Angelovski
-last_updated: 2026-10-02
+last_updated: 2026-10-03
 milestone: M1
 requirements: [FR-AUTH-001, FR-AUTH-002, FR-AUTH-003, FR-AUTH-004, FR-AUTH-006, FR-AUTH-007, API-AUTH-001, API-AUTH-002, API-AUTH-003, API-AUTH-004, API-AUTH-005, API-AUTH-006, API-USR-001]
 related: [req-auth, sec, api-endpoints, api-data-model, api-conventions, arch-env, arch-stack, ADR-0007, ADR-0008, OQ-056, OQ-059, OQ-060, OQ-061, OQ-062, OQ-063, OQ-064, OQ-065, OQ-066]
@@ -79,9 +79,10 @@ and API-USR-001; `@Public()` on `/health` and `/api/v1/version`; the OpenAPI exp
 | api | `api/test/support/auth-test-utils.ts` | C | tests | Signs test JWTs (node:crypto), DB/Redis helpers |
 | api | `api/test/fake-google-oidc.ts` | C | tests | The fake `GoogleOidc` |
 | api | `api/test/global-setup.ts` | C | tests | Migrates the test DB (D13) |
-| api | `api/vitest.config.e2e.ts` | M | tests | `globalSetup` |
+| api | `api/vitest.config.e2e.ts` | M | tests | `globalSetup`; review follow-up: drop the now-dead `onUnhandledError` filter |
 | api | `api/test/create-test-app.ts` | M | tests | Optional `overrides` |
 | api | `api/test/setup-env.ts` | M | tests | Auth env defaults |
+| api | `api/test/env-validation.e2e-spec.ts` | M | tests | Review follow-up: header comment (validation runs in `compile()`, not at import time) |
 | api | `api/src/config/env.schema.ac.spec.ts` | C | tests | Env parsing |
 | api | `api/src/auth/google-oidc.ac.spec.ts` | C | tests | `GoogleOidc` with `openid-client` mocked |
 | api | `api/src/auth/google-oidc.ts` | C | tests, T3 | Typed stub from the test writer; T3 implements |
@@ -90,7 +91,8 @@ and API-USR-001; `@Public()` on `/health` and `/api/v1/version`; the OpenAPI exp
 | api | `api/drizzle/0001_users.sql`, `api/drizzle/meta/*` | C/M | T1 | `npm run db:generate -- --name users` |
 | api | `api/package.json`, `api/package-lock.json` | M | T2, T3 | `npm install @nestjs/jwt` (T2), `npm install openid-client` (T3) |
 | api | `api/src/config/env.schema.ts`, `api/src/config/env.schema.spec.ts` | M | T2 | New vars; update the existing exact-match test |
-| api | `api/src/config/app-config.service.ts` | M | T2 | Getters |
+| api | `api/src/config/app-config.service.ts`, `api/src/config/app-config.service.spec.ts` | M | T2 | Getters; the spec's typed `Env` literal gets the new fields |
+| api | `api/src/config/config.module.ts` | M | T2 | Parse the env in a provider, no write-back to `process.env` (see *Config*) |
 | api | `api/src/auth/auth.module.ts` | C/M | T2, T3 | `npx nest g module auth` (T2) |
 | api | `api/src/auth/access-token.service.ts`, `api/src/auth/access-token.service.spec.ts` | C | T2 | `npx nest g service auth/access-token --flat` |
 | api | `api/src/common/guards/access-token/*` | C | T2 | `npx nest g guard common/guards/access-token` |
@@ -157,6 +159,11 @@ AUTH_ALLOWED_EMAILS: z.string().prefault('').transform(/* split ',', trim, lower
 `AppConfigService` getters: `googleClientId`, `googleClientSecret`, `googleCallbackUrl`, `jwtAccessSecret`,
 `accessTokenTtlSeconds`, `refreshTokenTtlSeconds` (numbers), `allowedEmails` (`string[]`, lowercase).
 Update `env.schema.spec.ts`'s exact-match expectations for the new fields.
+Validated values must **not** be written back into `process.env`: `@nestjs/config`'s `validate` option copies
+defaulted values into it (`ACCESS_TOKEN_TTL="900"`), and a second app booted in the same process (the e2e tests
+boot two) then fails the `duration` rule. So `ConfigModule` uses `NestConfigModule.forRoot` only to load `.env`,
+without `validate`, and the parsed `Env` comes from `validateEnv(process.env)` in a provider factory that
+`AppConfigService` reads (still failing fast at boot). The env format stays strict.
 
 ### Access tokens, guard, decorators (T2)
 ```ts
@@ -238,7 +245,7 @@ Redis keys and TTLs (security.md; `h(x)` = sha256 hex of `x`; tokens and codes =
 | `auth:families:<userId>` | set of family ids | refresh TTL, re-armed on each start/rotate |
 
 ```ts
-// api/src/auth/session.store.ts (uses Redis.client; multi-key writes in one MULTI)
+// api/src/auth/session.store.ts (uses Redis.client; `rotate` is one Lua script, other multi-key writes one MULTI)
 saveState(state: string, entry: OAuthState): Promise<void>;
 takeState(state: string): Promise<OAuthState | null>;     // GETDEL
 createLoginCode(userId: string): Promise<string>;
@@ -247,17 +254,27 @@ startFamily(userId: string): Promise<string>;             // new family (randomU
 rotate(token: string): Promise<{ userId: string; familyId: string; refreshToken: string } | null>;
 revokeFamily(familyId: string): Promise<void>;            // deletes its live token, the family, its set entry
 revokeByToken(token: string): Promise<void>;              // the family of a live or rotated token; unknown → no-op
-revokeAll(userId: string): Promise<void>;                 // every family in the user's set, then the set
+revokeAll(userId: string): Promise<void>;                 // every family in the user's set; never DELs the set itself
 ```
 `rotate`: `GETDEL auth:refresh:<h>`. Missing → if `auth:rotated:<h>` exists, `revokeFamily` it (reuse);
 return `null`. Found → the family must exist with `current === h`, else `null`. Then write the new token,
 the family's new `current`, the rotated marker for `h`, and re-arm the user's set.
+All of `rotate` (lookups, reuse revocation and writes) runs as **one Lua script** (ioredis `defineCommand`,
+the script a string constant in `session.store.ts`; no new dependency), so Redis executes it atomically. The
+node side only generates the new token and its hash and passes them in. This closes two races of separate
+round trips: two concurrent uses of one token (the loser must see the rotated marker and revoke the family,
+AC-26), and a `revokeFamily` landing between the read and the write (which would bring the session back).
+`WATCH` isn't used: the API shares one Redis connection between requests.
+
+`revokeAll`: `SMEMBERS`, then `revokeFamily` each id (which `SREM`s it); an id whose family has already
+expired is `SREM`ed directly. The set itself is never `DEL`ed, so a session started concurrently stays listed
+and a later `logout-all` still finds it.
 
 ### Auth flow (T3)
 ```ts
 // api/src/auth/auth.service.ts
 export function sanitizeReturnTo(raw: unknown): string | null;   // endpoints.md "Valid returnTo"; non-string → null
-export function sanitizeTimeZone(raw: unknown): string | null;   // ≤ 64 chars and Intl accepts it → resolvedOptions().timeZone, else null
+export function sanitizeTimeZone(raw: unknown): string | null;   // ≤ 64 chars, Intl accepts it, and the resolved name isn't a UTC offset → resolvedOptions().timeZone, else null
 start(returnTo: unknown, timeZone: unknown): Promise<string>;                 // Google URL
 callback(query: Record<string, unknown>, rawQuery: string): Promise<string>;  // web URL (success or failure)
 exchangeCode(code: string): Promise<TokenPairDto>;  // unknown code → UnauthorizedException('Invalid or expired code.')
@@ -286,7 +303,14 @@ Azure's proxy) → `!emailVerified` → `failed` → allow-list (non-empty and l
 DTOs (`api/src/auth/dto/`): `CodeRequestDto { @IsString() @Length(1, 128) code }`,
 `RefreshTokenRequestDto { @IsString() @Length(1, 128) refreshToken }`,
 `TokenPairDto { accessToken: string; /** ISO 8601 UTC */ accessTokenExpiresAt: string; refreshToken: string }`.
-Never log tokens, codes or auth request bodies. Run `npm run openapi:export` at the end.
+`sanitizeTimeZone` rejects a resolved name starting with `+` or `-` (`+01:00`, `-0530`): a fixed offset isn't an
+IANA name (data-model.md `time_zone`) and has no DST. IANA names, legacy aliases (`Europe/Kiev`), `UTC` and
+`Etc/GMT±N` stay accepted. Not checked against `Intl.supportedValuesOf('timeZone')`, which omits aliases an
+older browser may still send.
+
+Never log tokens, codes or auth request bodies. A logged error (the callback's failure warning) has the
+error's `name` and, if present, `cause.code` (e.g. Postgres `23505`), never its `message`: Drizzle's query
+error messages include the query parameters (email, name). Run `npm run openapi:export` at the end.
 
 ## Acceptance criteria
 | AC | Case → expected | Test | Task |
@@ -299,7 +323,7 @@ Never log tokens, codes or auth request bodies. Run `npm run openapi:export` at 
 | AC-6 | `validateEnv`: TTLs `15m` → 900, `30d` → 2592000, defaults when unset, `15x` / `0m` rejected; `JWT_ACCESS_SECRET` < 32 chars rejected; Google vars required; `AUTH_ALLOWED_EMAILS` `' A@x.com, b@y.com ,'` → `['a@x.com', 'b@y.com']`, unset → `[]` | `api/src/config/env.schema.ac.spec.ts` | T2 |
 | AC-7 | `GET /auth/google?returnTo=/app/projects&timeZone=Europe/Zagreb` → `302` to the fake's URL; the fake got a `state` and a `codeChallenge`; the state entry exists in Redis with TTL ≤ 600 | `api/test/auth.ac.e2e-spec.ts` | T3 |
 | AC-8 | New user, happy path: start → callback `?code=x&state=…` → `302` `<WEB>/auth/callback?code=<c>&returnTo=%2Fapp%2Fprojects`; the fake's `codeVerifier` hashes to the `codeChallenge`; `POST /auth/token {code: c}` → `200` TokenPair (refresh token 43 chars, `accessTokenExpiresAt` ≈ now + 15 min); `GET /me` → the profile's email and name, avatar, `timeZone: "Europe/Zagreb"` | `api/test/auth.ac.e2e-spec.ts` | T3 |
-| AC-9 | `returnTo` `//evil.com`, `https://evil.com`, `/a\b`, 2049 chars, and `timeZone` `Mars/Base` → success redirect without `returnTo`; the new user's `timeZone` is `UTC`. No `400` | `api/test/auth.ac.e2e-spec.ts` | T3 |
+| AC-9 | `returnTo` `//evil.com`, `https://evil.com`, `/a\b`, 2049 chars, and `timeZone` `Mars/Base` → success redirect without `returnTo`; the new user's `timeZone` is `UTC`. No `400`. `timeZone` `+01:00` or `-0530` → `UTC`; `Etc/GMT-1` is kept | `api/test/auth.ac.e2e-spec.ts` | T3 |
 | AC-10 | Known identity whose Google email, name and picture changed → same user id; `GET /me` shows the new values; `timeZone` unchanged even with another `timeZone` param. Name empty → email local part; picture `http://…` → `avatarUrl: null` | `api/test/auth.ac.e2e-spec.ts` | T3 |
 | AC-11 | Callback `?error=access_denied&state=…` → `302` `<WEB>/auth/sign-in?error=cancelled&returnTo=…`; `?error=server_error&state=…` → `error=failed` | `api/test/auth.ac.e2e-spec.ts` | T3 |
 | AC-12 | Callback without `state`, with an unknown `state`, or reusing a consumed `state` → `<WEB>/auth/sign-in?error=failed` with no `returnTo` | `api/test/auth.ac.e2e-spec.ts` | T3 |
@@ -316,6 +340,7 @@ Never log tokens, codes or auth request bodies. Run `npm run openapi:export` at 
 | AC-23 | `api/openapi.json` has the 7 paths; `/api/v1/me` and `/api/v1/auth/logout-all` require `bearer`; the 5 public auth paths and `/api/v1/version` don't | `check` | T3 |
 | AC-24 | The migration creates `users` (with `uuidv7()` and the `lower(email)` unique index), `user_identities` and the `auth_provider` enum | `check` | T1 |
 | AC-25 | After *Setup*: opening `http://localhost:3001/api/v1/auth/google` locally shows Google's account chooser; choosing an account lands on `http://localhost:3000/auth/callback?code=…`; `curl -X POST …/api/v1/auth/token` with that code within 60 s returns tokens | `manual` | T3 |
+| AC-26 | Two concurrent refreshes with the same `R1` → one `200` (`R2`) and one `401`; then `R2` → `401` (the reuse revoked the family) | `api/test/auth.ac.e2e-spec.ts` | T3 |
 
 Typed stubs (created with the tests, so lint and typecheck pass while the tests fail):
 - `api/src/auth/google-oidc.ts`: `GoogleProfile` and the `GoogleOidc` class with the constructor and the two
@@ -355,3 +380,6 @@ None. OQ-056 and OQ-059…OQ-066 are resolved.
 ## Changelog
 - 2026-10-02: Initial draft (OQ-056, OQ-059…OQ-066).
 - 2026-10-02: Approved by the owner.
+- 2026-10-03: *Config (T2)*: no write-back to `process.env`; env parsed in an `APP_ENV` provider (owner decision during T-0016).
+- 2026-10-03: Review follow-ups (owner): `rotate` as one Lua script (AC-26), `revokeAll` keeps the set,
+  `sanitizeTimeZone` rejects UTC offsets (AC-9), errors logged by name/code only; test-harness cleanup files listed.
