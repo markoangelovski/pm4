@@ -14,6 +14,7 @@ import {
   type AuthUser,
   CurrentUser
 } from "../common/decorators/current-user/current-user.decorator.js";
+import { ApiProblemResponses } from "../common/decorators/api-problem-responses/api-problem-responses.decorator.js";
 import { Public } from "../common/decorators/public/public.decorator.js";
 import { AuthService } from "./auth.service.js";
 import { CodeRequestDto } from "./dto/code-request.dto.js";
@@ -39,6 +40,7 @@ export class AuthController {
   @ApiFoundResponse({
     description: "Redirect to Google's authorization endpoint."
   })
+  @ApiProblemResponses()
   async start(
     @Query("returnTo") returnTo?: string,
     @Query("timeZone") timeZone?: string
@@ -66,6 +68,7 @@ export class AuthController {
   @Public()
   @Post("token")
   @HttpCode(200)
+  @ApiProblemResponses(400, 401)
   token(@Body() body: CodeRequestDto): Promise<TokenPairDto> {
     return this.authService.exchangeCode(body.code);
   }
@@ -74,6 +77,7 @@ export class AuthController {
   @Public()
   @Post("refresh")
   @HttpCode(200)
+  @ApiProblemResponses(400, 401)
   refresh(@Body() body: RefreshTokenRequestDto): Promise<TokenPairDto> {
     return this.authService.refresh(body.refreshToken);
   }
@@ -82,6 +86,7 @@ export class AuthController {
   @Public()
   @Post("logout")
   @HttpCode(204)
+  @ApiProblemResponses(400)
   logout(@Body() body: RefreshTokenRequestDto): Promise<void> {
     return this.authService.logout(body.refreshToken);
   }
@@ -90,6 +95,7 @@ export class AuthController {
   @ApiBearerAuth("bearer")
   @Post("logout-all")
   @HttpCode(204)
+  @ApiProblemResponses(401)
   logoutAll(@CurrentUser() user: AuthUser): Promise<void> {
     return this.authService.logoutAll(user.id);
   }

@@ -8,15 +8,8 @@ import {
 } from "@nestjs/common";
 import type { Request, Response } from "express";
 import { AppConfigService } from "../../../config/app-config.service.js";
+import { ProblemDetailsDto } from "./problem-details.dto.js";
 import { FieldError } from "../../validation/flatten-validation-errors.js";
-
-interface ProblemDetailsBody {
-  type: string;
-  title: string;
-  status: number;
-  detail: string;
-  errors?: FieldError[];
-}
 
 /** RFC 9457 slugs, per `specs/03-api/conventions.md#errors`. */
 const SLUG_BY_STATUS: Record<number, string> = {
@@ -69,7 +62,7 @@ export class ProblemDetailsFilter implements ExceptionFilter {
       );
     }
 
-    const body: ProblemDetailsBody = {
+    const body: ProblemDetailsDto = {
       type: `${this.configService.webAppUrl}/errors/${slug}`,
       title: described.title,
       status: described.status,
