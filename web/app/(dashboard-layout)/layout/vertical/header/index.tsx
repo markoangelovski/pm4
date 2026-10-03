@@ -20,7 +20,7 @@ const Header = () => {
         <div className="mx-auto flex flex-wrap items-center justify-between p-2">
           <div className="flex gap-2 items-center">
             <div className="block lg:hidden">
-              <FullLogo />
+              <FullLogo compact />
             </div>
 
             <Button

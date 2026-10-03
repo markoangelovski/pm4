@@ -52,10 +52,11 @@ lib/
   query-client.tsx               # TanStack Query client + provider (ADR-0009)
   routes.ts                      # every internal route path (no other file hard-codes one)
   auth/return-to.ts              # returnTo validation + landing/sign-in/post-sign-in targets
+  version.ts                     # web version (inlined at build time) + version summary text
   utils.ts                       # cn()
-features/<domain>/               # not created yet; conventions.md's target structure for
-                                  # data-driven work: api.ts (query keys + hooks), schemas.ts
-                                  # (zod), components/ — add as each domain is implemented
+features/<domain>/               # data-driven work per conventions.md: api.ts (query keys + hooks),
+                                  # schemas.ts (zod), components/. First one: features/system/
+                                  # (API version query + VersionBadge); add domains as implemented
 ```
 
 ## Rules specific to this app
@@ -70,8 +71,8 @@ Full detail: `../specs/04-web/static-export.md` and `../specs/04-web/conventions
   shadcn one fits, or the fitting one is paid. Put it in `features/<domain>/components/`, and say why
   in the task notes.
 - **Data layer.** Hooks and query-key factories live in `features/<domain>/api.ts`. Mutations
-  invalidate the precise keys they affect. `lib/api/schema.d.ts` is generated, and stays a stub
-  until the API exports paths. Auth headers and refresh-on-401 go in `lib/api/client.ts` only (M1).
+  invalidate the precise keys they affect. `lib/api/schema.d.ts` is generated (`npm run api:types`)
+  from `../api/openapi.json`; never edit it by hand. Auth headers and refresh-on-401 go in `lib/api/client.ts` only (M1).
 - **Time.** Work dates are `YYYY-MM-DD` strings, handled as calendar arithmetic (see the comments in
   `lib/time/index.ts`). Keep the Europe/Zagreb midnight and DST cases in `lib/time/index.test.ts`.
 
@@ -91,11 +92,13 @@ doesn't support ESLint 10; peer ranges). The reasons are in T-0002's *Implementa
 - Playwright is **not** set up yet — that's M1+, once there's a real API to run journeys against.
 
 ## Patterns to copy
-No `features/<domain>/` module, form or data view exists yet. The **first** of each becomes the
-reference; their tasks are opus/sonnet (`../specs/05-quality/task-routing.md`). Add them here when they land.
+No form or data view exists yet. The **first** of each becomes the reference; their tasks are
+opus/sonnet (`../specs/05-quality/task-routing.md`). Add them here when they land.
 
 | Need | Copy from | What to copy |
 | --- | --- | --- |
+| Query hook + key factory | `features/system/api.ts` | `systemKeys` factory + `useXxx` hook over `apiClient`; per-query option overrides only with a spec reason |
+| Domain component | `features/system/components/version-badge.tsx` | `"use client"` component in `features/<domain>/components/` consuming the domain hook |
 | Page with metadata | `app/(dashboard-layout)/app/projects/page.tsx` | `export const metadata`, a server page wrapping client parts |
 | Entity detail route (`?id=`) | `app/(dashboard-layout)/app/project/page.tsx` + `app/components/shared/view-id-guard.tsx` | `<Suspense>` + `ViewIdGuard` |
 | Client part reading `?returnTo=` | `app/components/shared/landing-cta.tsx` + `app/page.tsx` | `useSearchParams` inside `<Suspense>` with a same-size fallback |

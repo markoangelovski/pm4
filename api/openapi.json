@@ -1,6 +1,28 @@
 {
   "openapi": "3.0.0",
-  "paths": {},
+  "paths": {
+    "/api/v1/version": {
+      "get": {
+        "operationId": "VersionController_get",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VersionResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Version"
+        ]
+      }
+    }
+  },
   "info": {
     "title": "PM4 API",
     "description": "The PM4 backend API (see ../specs/03-api).",
@@ -17,6 +39,19 @@
         "type": "http"
       }
     },
-    "schemas": {}
+    "schemas": {
+      "VersionResponseDto": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "string",
+            "description": "The `version` field of `api/package.json`, e.g. `0.0.1`."
+          }
+        },
+        "required": [
+          "version"
+        ]
+      }
+    }
   }
 }
