@@ -12,7 +12,7 @@ import {
   AlertDialogTitle
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { deleteProject, type Project } from "@/features/projects/mock-store";
+import { useDeleteProject, type Project } from "@/features/projects/api";
 import { routes } from "@/lib/routes";
 
 /** SCR-021's delete confirmation; confirm → trash, the list and a toast (OQ-086). */
@@ -25,10 +25,11 @@ export function DeleteProjectDialog({
   project: Project;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  /** Called before the project moves to the trash, so its page can stop rendering it. */
+  /** Called after the project moved to the trash, so its page stops fetching and rendering it. */
   onDeleted?: () => void;
 }) {
   const router = useRouter();
+  const deleteProject = useDeleteProject();
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent className="rounded-md!">
@@ -45,12 +46,17 @@ export function DeleteProjectDialog({
           </AlertDialogCancel>
           <Button
             variant="destructive"
-            onClick={() => {
-              onDeleted?.();
-              router.push(routes.app.projects);
-              deleteProject(project.id);
-              toast("Moved to trash");
-            }}
+            disabled={deleteProject.isPending}
+            onClick={() =>
+              deleteProject.mutate(project.id, {
+                onSuccess: () => {
+                  onDeleted?.();
+                  router.push(routes.app.projects);
+                  toast("Moved to trash");
+                },
+                onError: () => toast.error("Couldn't delete the project.")
+              })
+            }
             className="cursor-pointer"
           >
             Delete

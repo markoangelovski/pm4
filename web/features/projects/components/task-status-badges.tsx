@@ -4,7 +4,7 @@ import {
   TASK_STATUS_LABELS,
   type TaskStatus
 } from "@/features/tasks/status";
-import type { TaskCounts } from "@/features/projects/mock-store";
+import { taskCount, type TaskCounts } from "@/features/projects/stats";
 import { cn } from "@/lib/utils";
 
 /** Status colors, in the template's badge style (`bg-chart-N/12 text-chart-N`). */
@@ -24,7 +24,7 @@ export function TaskStatusBadges({ counts }: { counts: TaskCounts }) {
           title={TASK_STATUS_LABELS[status]}
           className={cn("min-w-7 tabular-nums", TASK_STATUS_BADGE[status])}
         >
-          {counts[status]}
+          {taskCount(counts, status)}
         </Badge>
       ))}
     </span>

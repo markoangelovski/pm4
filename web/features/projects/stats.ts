@@ -5,13 +5,17 @@ export type TaskCounts = components["schemas"]["TaskCountsDto"];
 
 /** 0 when total is 0; else Math.round(completed / total * 100) (OQ-085). */
 export function completionPercent(counts: TaskCounts): number {
-  void counts;
-  throw new Error("not implemented (feat-prj-web)");
+  if (counts.total === 0) return 0;
+  return Math.round((counts.completed / counts.total) * 100);
 }
+
+const COUNT_FIELDS: Record<TaskStatus, keyof Omit<TaskCounts, "total">> = {
+  upcoming: "upcoming",
+  "in-progress": "inProgress",
+  completed: "completed"
+};
 
 /** The count for a UI status ("in-progress" → counts.inProgress) (D14). */
 export function taskCount(counts: TaskCounts, status: TaskStatus): number {
-  void counts;
-  void status;
-  throw new Error("not implemented (feat-prj-web)");
+  return counts[COUNT_FIELDS[status]];
 }

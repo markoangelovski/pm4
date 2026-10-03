@@ -4,8 +4,9 @@ import { TASK_STATUSES, TASK_STATUS_LABELS } from "@/features/tasks/status";
 import { TASK_STATUS_BADGE } from "@/features/projects/components/task-status-badges";
 import {
   completionPercent,
+  taskCount,
   type TaskCounts
-} from "@/features/projects/mock-store";
+} from "@/features/projects/stats";
 import { cn } from "@/lib/utils";
 
 /** FR-PRJ-008: counts per status, the total and the completed percentage. */
@@ -27,7 +28,7 @@ export function ProjectTaskStats({ counts }: { counts: TaskCounts }) {
                 {TASK_STATUS_LABELS[status]}
               </p>
               <p className="text-2xl font-semibold tabular-nums">
-                {counts[status]}
+                {taskCount(counts, status)}
               </p>
             </div>
           ))}

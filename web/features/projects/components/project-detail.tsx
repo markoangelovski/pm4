@@ -2,16 +2,9 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
-import {
-  ArrowLeft,
-  ExternalLink,
-  FolderX,
-  Minus,
-  Pencil,
-  Plus,
-  Trash2
-} from "lucide-react";
+import { useQueryState } from "nuqs";
+import { toast } from "sonner";
+import { ArrowLeft, ExternalLink, FolderX, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -28,18 +21,13 @@ import { ProjectFormDialog } from "@/features/projects/components/project-form-d
 import { ProjectIcon } from "@/features/projects/components/project-icon";
 import { ProjectLeadLabel } from "@/features/users/components/project-lead-label";
 import { ProjectTaskStats } from "@/features/projects/components/project-task-stats";
-import { PrototypeStateSwitch } from "@/features/projects/components/prototype-state-switch";
 import {
-  adjustTaskCount,
-  restoreProject,
-  useProjectById,
+  useProject,
+  useRestoreProject,
   type Project
-} from "@/features/projects/mock-store";
-import { TASK_STATUSES, TASK_STATUS_LABELS } from "@/features/tasks/status";
+} from "@/features/projects/api";
+import { isApiError } from "@/lib/api/problem";
 import { routes } from "@/lib/routes";
-
-const VIEW_STATES = ["data", "loading", "error"] as const;
-type ViewState = (typeof VIEW_STATES)[number];
 
 function BackToProjects() {
   return (
@@ -55,50 +43,22 @@ function BackToProjects() {
 
 /** SCR-021: the project page (`?id=`). */
 export function ProjectDetail() {
-  const id = useSearchParams().get("id") ?? "";
-  const project = useProjectById(id);
-  const [viewState, setViewState] = useState<ViewState>("data");
+  const [idParam] = useQueryState("id");
+  const id = idParam ?? "";
+  const [leaving, setLeaving] = useState(false);
+  const query = useProject(id, !leaving);
+  const restore = useRestoreProject();
+  const project = query.data;
   const [editing, setEditing] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [leaving, setLeaving] = useState(false);
 
   if (leaving) return null;
 
   let body: React.ReactNode;
-  if (viewState === "loading") {
+  const error = query.error;
+  if (query.isPending) {
     body = <DetailSkeleton />;
-  } else if (viewState === "error") {
-    body = (
-      <Empty>
-        <EmptyHeader>
-          <EmptyTitle>Couldn&apos;t load the project.</EmptyTitle>
-        </EmptyHeader>
-        <EmptyContent>
-          <Button
-            variant="outline"
-            onClick={() => setViewState("data")}
-            className="cursor-pointer"
-          >
-            Retry
-          </Button>
-        </EmptyContent>
-      </Empty>
-    );
-  } else if (!project) {
-    body = (
-      <Empty>
-        <EmptyHeader>
-          <EmptyMedia variant="icon">
-            <FolderX />
-          </EmptyMedia>
-          <EmptyTitle>Project not found</EmptyTitle>
-        </EmptyHeader>
-        <EmptyContent>
-          <BackToProjects />
-        </EmptyContent>
-      </Empty>
-    );
-  } else if (project.deletedAt) {
+  } else if (isApiError(error, 404, "in-trash")) {
     body = (
       <Empty>
         <EmptyHeader>
@@ -112,12 +72,48 @@ export function ProjectDetail() {
         </EmptyHeader>
         <EmptyContent className="flex-row justify-center">
           <Button
-            onClick={() => restoreProject(project.id)}
+            disabled={restore.isPending}
+            onClick={() =>
+              restore.mutate(id, {
+                onError: () => toast.error("Couldn't restore the project.")
+              })
+            }
             className="cursor-pointer"
           >
             Restore
           </Button>
           <BackToProjects />
+        </EmptyContent>
+      </Empty>
+    );
+  } else if (isApiError(error, 404)) {
+    body = (
+      <Empty>
+        <EmptyHeader>
+          <EmptyMedia variant="icon">
+            <FolderX />
+          </EmptyMedia>
+          <EmptyTitle>Project not found</EmptyTitle>
+        </EmptyHeader>
+        <EmptyContent>
+          <BackToProjects />
+        </EmptyContent>
+      </Empty>
+    );
+  } else if (!project) {
+    body = (
+      <Empty>
+        <EmptyHeader>
+          <EmptyTitle>Couldn&apos;t load the project.</EmptyTitle>
+        </EmptyHeader>
+        <EmptyContent>
+          <Button
+            variant="outline"
+            onClick={() => void query.refetch()}
+            className="cursor-pointer"
+          >
+            Retry
+          </Button>
         </EmptyContent>
       </Empty>
     );
@@ -133,13 +129,8 @@ export function ProjectDetail() {
 
   return (
     <div className="flex flex-col gap-6">
-      <PrototypeStateSwitch
-        states={VIEW_STATES}
-        value={viewState}
-        onChange={setViewState}
-      />
       {body}
-      {project && !project.deletedAt ? (
+      {project ? (
         <>
           <ProjectFormDialog
             open={editing}
@@ -234,27 +225,15 @@ function ProjectView({
               )}
             </DetailRow>
             <DetailRow label="Project lead">
-              <ProjectLeadLabel lead={project.lead} />
+              <ProjectLeadLabel lead={project.projectLead} />
             </DetailRow>
           </CardContent>
         </Card>
 
         <div className="flex flex-col gap-3">
           <ProjectTaskStats counts={project.taskCounts} />
-          <TaskCountControls projectId={project.id} />
         </div>
       </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Tasks</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground">
-            The project&apos;s task list comes with the Tasks feature.
-          </p>
-        </CardContent>
-      </Card>
     </>
   );
 }
@@ -270,38 +249,6 @@ function DetailRow({
     <div className="flex flex-col gap-1">
       <span className="text-xs text-muted-foreground">{label}</span>
       <div>{children}</div>
-    </div>
-  );
-}
-
-/** UI PROTOTYPE ONLY: change the task counts to try the statistics (tasks don't exist yet). */
-function TaskCountControls({ projectId }: { projectId: string }) {
-  return (
-    <div className="flex flex-wrap items-center gap-3 rounded-lg border border-dashed border-chart-4 px-3 py-2 text-xs">
-      <span className="font-medium text-chart-4">Prototype · tasks:</span>
-      {TASK_STATUSES.map((status) => (
-        <span key={status} className="flex items-center gap-1">
-          {TASK_STATUS_LABELS[status]}
-          <Button
-            size="icon-xs"
-            variant="outline"
-            aria-label={`One fewer ${TASK_STATUS_LABELS[status]}`}
-            onClick={() => adjustTaskCount(projectId, status, -1)}
-            className="cursor-pointer"
-          >
-            <Minus />
-          </Button>
-          <Button
-            size="icon-xs"
-            variant="outline"
-            aria-label={`One more ${TASK_STATUS_LABELS[status]}`}
-            onClick={() => adjustTaskCount(projectId, status, 1)}
-            className="cursor-pointer"
-          >
-            <Plus />
-          </Button>
-        </span>
-      ))}
     </div>
   );
 }

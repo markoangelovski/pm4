@@ -11,14 +11,9 @@ import {
 import { XIcon } from "lucide-react";
 import { InputGroupAddon, InputGroupButton } from "@/components/ui/input-group";
 import { Spinner } from "@/components/ui/spinner";
-import { useMe } from "@/features/users/api";
+import { useMe, useUserSearch, type UserSummary } from "@/features/users/api";
 import { UserAvatar } from "@/features/users/components/user-avatar";
-import {
-  searchUsers,
-  type LeadUser,
-  type LeadValue,
-  type UserSummary
-} from "@/features/projects/mock-store";
+import type { LeadUser, LeadValue } from "@/features/users/lead";
 import { useDebouncedValue } from "@/lib/use-debounced-value";
 
 /** A lead, where a user may carry the email shown in search results. */
@@ -46,13 +41,17 @@ export function ProjectLeadField({
   id,
   value,
   onChange,
-  invalid
+  invalid,
+  disabled,
+  "aria-describedby": ariaDescribedBy
 }: {
   id?: string;
   value: LeadValue;
   onChange: (value: LeadValue) => void;
   invalid?: boolean;
-}) {
+  disabled?: boolean;
+  "aria-describedby"?: string;
+}): React.JSX.Element {
   const { data: me } = useMe();
   const [text, setText] = useState(display(value));
   const [lastValue, setLastValue] = useState(value);
@@ -64,24 +63,25 @@ export function ProjectLeadField({
 
   const trimmed = text.trim();
   const debounced = useDebouncedValue(trimmed, 300);
-  const searching = trimmed.length >= 2 && debounced !== trimmed;
   const typing = trimmed !== display(value);
+  // While the box shows the current lead, it counts as empty.
+  const length = typing ? trimmed.length : 0;
+  const search = useUserSearch(length >= 2 ? debounced : "");
+  const searching = length >= 2 && (debounced !== trimmed || search.isFetching);
+  const results = search.data;
 
   const items = useMemo<LeadOption[]>(() => {
     // Not typing (box empty or showing the current lead): suggest me.
-    if (!typing || trimmed.length === 0) {
+    if (length === 0) {
       return me ? [{ kind: "user", user: me }] : [];
     }
     const useText: LeadOption = { kind: "text", name: trimmed };
-    if (trimmed.length < 2 || searching) return [useText];
+    if (length < 2 || searching) return [useText];
     return [
-      ...searchUsers(debounced, me).map((user): LeadOption => ({
-        kind: "user",
-        user
-      })),
+      ...(results ?? []).map((user): LeadOption => ({ kind: "user", user })),
       useText
     ];
-  }, [typing, trimmed, debounced, searching, me]);
+  }, [length, trimmed, searching, results, me]);
 
   const hasLead = value !== null || text !== "";
 
@@ -116,12 +116,15 @@ export function ProjectLeadField({
       }
       isItemEqualToValue={sameLead}
       autoHighlight
+      disabled={disabled}
     >
       <ComboboxInput
         id={id}
         placeholder="Name or PM4 user"
         maxLength={101}
         aria-invalid={invalid || undefined}
+        aria-describedby={ariaDescribedBy}
+        disabled={disabled}
         showTrigger={!hasLead}
         className="w-full rounded-md! [&_button]:cursor-pointer"
         onBlur={commitTyped}
@@ -137,6 +140,7 @@ export function ProjectLeadField({
               size="icon-xs"
               variant="ghost"
               aria-label="Clear project lead"
+              disabled={disabled}
               onClick={() => {
                 setText("");
                 onChange(null);

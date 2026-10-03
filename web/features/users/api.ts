@@ -5,14 +5,17 @@ import {
   type UseQueryResult
 } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api/client";
+import { unwrap } from "@/lib/api/problem";
 import { useSignOut } from "@/features/auth/use-sign-out";
 import type { components } from "@/lib/api/schema";
 
 export type Me = components["schemas"]["MeResponseDto"];
+export type UserSummary = components["schemas"]["UserSummaryDto"];
 
 export const userKeys = {
   all: ["users"] as const,
-  me: () => [...userKeys.all, "me"] as const
+  me: () => [...userKeys.all, "me"] as const,
+  search: (q: string) => [...userKeys.all, "search", q] as const
 };
 
 /** API-USR-001. App defaults (staleTime 30 s, retry 1). */
@@ -37,5 +40,22 @@ export function useSignOutEverywhere(): UseMutationResult<void, Error, void> {
         throw new Error("POST /api/v1/auth/logout-all failed");
     },
     onSuccess: () => signOut()
+  });
+}
+
+/** API-USR-003. Enabled only when q.trim().length >= 2; the key uses the trimmed q; staleTime 60 s. */
+export function useUserSearch(q: string): UseQueryResult<UserSummary[]> {
+  const term = q.trim();
+  return useQuery({
+    queryKey: userKeys.search(term),
+    queryFn: async ({ signal }) =>
+      unwrap(
+        await apiClient.GET("/api/v1/users", {
+          params: { query: { q: term } },
+          signal
+        })
+      ).items,
+    enabled: term.length >= 2,
+    staleTime: 60_000
   });
 }

@@ -1,8 +1,14 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
+import {
+  parseAsInteger,
+  parseAsString,
+  parseAsStringLiteral,
+  useQueryStates
+} from "nuqs";
 import { FolderKanban, Plus, SearchIcon, SearchX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -47,15 +53,13 @@ import {
 import { ProjectFormDialog } from "@/features/projects/components/project-form-dialog";
 import { ProjectIcon } from "@/features/projects/components/project-icon";
 import { ProjectLeadLabel } from "@/features/users/components/project-lead-label";
-import { PrototypeStateSwitch } from "@/features/projects/components/prototype-state-switch";
 import { TaskStatusBadges } from "@/features/projects/components/task-status-badges";
 import {
-  completionPercent,
   PROJECT_SORTS,
-  useAllProjects,
-  type Project,
+  useProjects,
   type ProjectSort
-} from "@/features/projects/mock-store";
+} from "@/features/projects/api";
+import { completionPercent } from "@/features/projects/stats";
 import { useDebouncedValue } from "@/lib/use-debounced-value";
 import { routes } from "@/lib/routes";
 
@@ -71,78 +75,47 @@ const SORT_ITEMS = PROJECT_SORTS.map((value) => ({
   label: SORT_LABELS[value]
 }));
 
-const VIEW_STATES = ["data", "loading", "empty", "error"] as const;
-type ViewState = (typeof VIEW_STATES)[number];
-
-function sortProjects(list: Project[], sort: ProjectSort): Project[] {
-  const copy = [...list];
-  if (sort === "title:asc")
-    return copy.sort((a, b) => a.title.localeCompare(b.title));
-  const key = sort === "createdAt:desc" ? "createdAt" : "updatedAt";
-  return copy.sort((a, b) => b[key].localeCompare(a[key]));
-}
-
 /** SCR-020: the projects list. URL: `?q=&sort=&page=`. */
 export function ProjectsList() {
   const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const q = searchParams.get("q") ?? "";
-  const sortParam = searchParams.get("sort");
-  const sort: ProjectSort = PROJECT_SORTS.includes(sortParam as ProjectSort)
-    ? (sortParam as ProjectSort)
-    : "updatedAt:desc";
-  const page = Math.max(1, Number(searchParams.get("page")) || 1);
-
-  function setParams(next: { q?: string; sort?: ProjectSort; page?: number }) {
-    const params = new URLSearchParams(searchParams.toString());
-    const merged = { q, sort, page, ...next };
-    if (merged.q) params.set("q", merged.q);
-    else params.delete("q");
-    if (merged.sort !== "updatedAt:desc") params.set("sort", merged.sort);
-    else params.delete("sort");
-    if (merged.page > 1) params.set("page", String(merged.page));
-    else params.delete("page");
-    const query = params.toString();
-    router.replace(query ? `${pathname}?${query}` : pathname, {
-      scroll: false
-    });
-  }
+  const [{ q, sort, page }, setParams] = useQueryStates(
+    {
+      q: parseAsString.withDefault(""),
+      sort: parseAsStringLiteral(PROJECT_SORTS).withDefault("updatedAt:desc"),
+      page: parseAsInteger.withDefault(1)
+    },
+    { history: "replace", clearOnDefault: true }
+  );
 
   const [text, setText] = useState(q);
   const debounced = useDebouncedValue(text.trim(), 300);
+  // Resync when q changes from outside (e.g. a sidebar link), not while typing:
+  // our own URL updates make q equal the debounced text, so they are skipped.
+  const [prevQ, setPrevQ] = useState(q);
+  if (q !== prevQ) {
+    setPrevQ(q);
+    if (q !== debounced) setText(q);
+  }
   useEffect(() => {
-    if (debounced !== q) setParams({ q: debounced, page: 1 });
+    if (debounced !== q) void setParams({ q: debounced, page: 1 });
     // Only the debounced text drives the URL.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debounced]);
 
-  const [viewState, setViewState] = useState<ViewState>("data");
   const [creating, setCreating] = useState(false);
 
-  const all = useAllProjects();
-  const { items, total } = useMemo(() => {
-    const live = viewState === "empty" ? [] : all.filter((p) => !p.deletedAt);
-    const needle = q.toLowerCase();
-    const matched = needle
-      ? live.filter((p) => p.title.toLowerCase().includes(needle))
-      : live;
-    const sorted = sortProjects(matched, sort);
-    return {
-      items: sorted.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
-      total: sorted.length
-    };
-  }, [all, q, sort, page, viewState]);
+  const query = useProjects({
+    q,
+    sort,
+    page: Math.max(1, page),
+    pageSize: PAGE_SIZE
+  });
+  const items = query.data?.items ?? [];
+  const total = query.data?.total ?? 0;
   const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   return (
     <div className="flex flex-col gap-6">
-      <PrototypeStateSwitch
-        states={VIEW_STATES}
-        value={viewState}
-        onChange={setViewState}
-      />
-
       <div className="flex flex-wrap items-center justify-between gap-4">
         <h1 className="text-2xl font-semibold">Projects</h1>
         <Button onClick={() => setCreating(true)} className="cursor-pointer">
@@ -169,7 +142,7 @@ export function ProjectsList() {
             items={SORT_ITEMS}
             value={sort}
             onValueChange={(value) => {
-              if (value) setParams({ sort: value, page: 1 });
+              if (value) void setParams({ sort: value, page: 1 });
             }}
           >
             <SelectTrigger aria-label="Sort" className="cursor-pointer w-44">
@@ -189,7 +162,7 @@ export function ProjectsList() {
           </Select>
         </div>
 
-        {viewState === "error" ? (
+        {query.isError ? (
           <Empty>
             <EmptyHeader>
               <EmptyTitle>Couldn&apos;t load projects.</EmptyTitle>
@@ -197,14 +170,14 @@ export function ProjectsList() {
             <EmptyContent>
               <Button
                 variant="outline"
-                onClick={() => setViewState("data")}
+                onClick={() => void query.refetch()}
                 className="cursor-pointer"
               >
                 Retry
               </Button>
             </EmptyContent>
           </Empty>
-        ) : viewState !== "loading" && total === 0 ? (
+        ) : !query.isPending && total === 0 ? (
           q ? (
             <Empty>
               <EmptyHeader>
@@ -248,7 +221,7 @@ export function ProjectsList() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {viewState === "loading"
+                {query.isPending
                   ? Array.from({ length: 6 }, (_, i) => (
                       <TableRow key={i}>
                         <TableCell className="pl-4">
@@ -295,7 +268,7 @@ export function ProjectsList() {
                             </div>
                           </TableCell>
                           <TableCell className="whitespace-nowrap">
-                            <ProjectLeadLabel lead={project.lead} />
+                            <ProjectLeadLabel lead={project.projectLead} />
                           </TableCell>
                           <TableCell>
                             <TaskStatusBadges counts={project.taskCounts} />
@@ -320,12 +293,13 @@ export function ProjectsList() {
           </div>
         )}
 
-        {viewState === "data" && total > PAGE_SIZE ? (
+        {!query.isPending && total > PAGE_SIZE ? (
           <div className="border-t p-3">
             <Pagination>
               <PaginationContent>
                 <PaginationItem>
                   <PaginationPrevious
+                    role="link"
                     href="#"
                     aria-disabled={page <= 1}
                     className={
@@ -333,18 +307,20 @@ export function ProjectsList() {
                     }
                     onClick={(e) => {
                       e.preventDefault();
-                      setParams({ page: page - 1 });
+                      if (page <= 1) return;
+                      void setParams({ page: page - 1 });
                     }}
                   />
                 </PaginationItem>
                 {Array.from({ length: pageCount }, (_, i) => i + 1).map((n) => (
                   <PaginationItem key={n}>
                     <PaginationLink
+                      role="link"
                       href="#"
                       isActive={n === page}
                       onClick={(e) => {
                         e.preventDefault();
-                        setParams({ page: n });
+                        void setParams({ page: n });
                       }}
                     >
                       {n}
@@ -353,6 +329,7 @@ export function ProjectsList() {
                 ))}
                 <PaginationItem>
                   <PaginationNext
+                    role="link"
                     href="#"
                     aria-disabled={page >= pageCount}
                     className={
@@ -362,7 +339,8 @@ export function ProjectsList() {
                     }
                     onClick={(e) => {
                       e.preventDefault();
-                      setParams({ page: page + 1 });
+                      if (page >= pageCount) return;
+                      void setParams({ page: page + 1 });
                     }}
                   />
                 </PaginationItem>

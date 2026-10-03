@@ -28,9 +28,9 @@
 | [T-0022](m2-projects/T-0022-add-the-projects-and-tasks-tables.md) | Add the projects and tasks tables, the task_status enum and their migration | M2 | api | S | done | T-0015 |
 | [T-0023](m2-projects/T-0023-projects-module-api-prj-001-006.md) | Projects module (API-PRJ-001…006) with task counts, the project lead and the in-trash Problem type | M2 | api | M | done | T-0022, T-0017 |
 | [T-0024](m2-projects/T-0024-get-users-user-search-for-the.md) | GET /users user search for the lead picker (API-USR-003) | M2 | api | S | done | T-0023 |
-| [T-0025](m2-projects/T-0025-dependencies-providers-api-error-helpers-project.md) | Dependencies, providers, API error helpers, project and user-search hooks, lead helpers | M2 | web | M | ready | T-0024, T-0021 |
-| [T-0026](m2-projects/T-0026-projectleadfield-projectleadlabel-and-the-project-create.md) | ProjectLeadField, ProjectLeadLabel and the project create/edit dialog | M2 | web | M | blocked | T-0025 |
-| [T-0027](m2-projects/T-0027-projects-list-page-and-project-detail.md) | Projects list page and project detail page (stats, delete, restore, not found) | M2 | web | M | blocked | T-0026 |
+| [T-0025](m2-projects/T-0025-dependencies-providers-api-error-helpers-project.md) | Dependencies, providers, API error helpers, project and user-search hooks, lead helpers | M2 | web | M | done | T-0024, T-0021 |
+| [T-0026](m2-projects/T-0026-projectleadfield-projectleadlabel-and-the-project-create.md) | ProjectLeadField, ProjectLeadLabel and the project create/edit dialog | M2 | web | M | done | T-0025 |
+| [T-0027](m2-projects/T-0027-projects-list-page-and-project-detail.md) | Projects list page and project detail page (stats, delete, restore, not found) | M2 | web | M | done | T-0026 |
 | [T-0028](m3-tasks/T-0028-tasks-module-api-tsk-001-006.md) | Tasks module (API-TSK-001…006): CRUD, filters, move, restore | M3 | api | M | blocked | T-0024 |
 | [T-0029](m3-tasks/T-0029-task-hooks-with-the-optimistic-status.md) | Task hooks with the optimistic status change, due state, formatWorkDate, status select and due badge | M3 | web | M | blocked | T-0028, T-0027 |
 | [T-0030](m3-tasks/T-0030-task-create-edit-dialog-with-the.md) | Task create/edit dialog with the project picker and due-date field | M3 | web | M | blocked | T-0029 |
