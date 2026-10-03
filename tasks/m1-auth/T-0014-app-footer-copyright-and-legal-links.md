@@ -3,7 +3,7 @@ id: T-0014
 title: "App footer: copyright line and Terms and Conditions / Privacy links"
 milestone: M1
 app: web
-status: review
+status: done
 size: S
 tier: haiku
 depends_on: []

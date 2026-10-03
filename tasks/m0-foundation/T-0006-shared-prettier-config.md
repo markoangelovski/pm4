@@ -3,7 +3,7 @@ id: T-0006
 title: Same Prettier rules in web/ and api/
 milestone: M0
 app: infra
-status: review
+status: done
 size: S
 tier: sonnet
 depends_on: []

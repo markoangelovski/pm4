@@ -3,7 +3,7 @@ id: T-0012
 title: Sidebar nav hover highlight like the template (CSS only)
 milestone: M1
 app: web
-status: review
+status: done
 size: S
 tier: haiku
 depends_on: []
