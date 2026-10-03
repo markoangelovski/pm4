@@ -60,7 +60,12 @@ if (tool === "Bash") {
 
 if (FILE_TOOLS.has(tool) && agent in IMPLEMENTER_APP) {
   const target = toolInput.file_path ?? toolInput.notebook_path ?? "";
-  const rel = path.relative(root, path.resolve(root, target)).split(path.sep).join("/");
+  // A task branch checked out under .worktrees/<name>/ follows the same rules as the main checkout.
+  const rel = path
+    .relative(root, path.resolve(root, target))
+    .split(path.sep)
+    .join("/")
+    .replace(/^\.worktrees\/[^/]+\//, "");
   const app = IMPLEMENTER_APP[agent];
 
   if (AC_FILE.test(rel)) {
