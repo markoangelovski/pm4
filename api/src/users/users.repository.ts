@@ -1,7 +1,9 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { and, eq, sql } from "drizzle-orm";
+import { and, desc, eq, ilike, or, sql } from "drizzle-orm";
+import { escapeLike } from "../common/sql/escape-like.js";
 import type { GoogleProfile } from "../auth/google-oidc.js";
 import { DRIZZLE, type DrizzleDb } from "../database/drizzle.js";
+import type { UserSummaryDto } from "./dto/user-search.dto.js";
 import { User, userIdentities, users } from "../database/schema/index.js";
 
 const DISPLAY_NAME_MAX = 100;
@@ -38,6 +40,42 @@ export class UsersRepository {
       .where(eq(users.id, id))
       .limit(1);
     return user ?? null;
+  }
+
+  /** A user picked as a project lead: id and current name only (never the email, OQ-077). */
+  async findLeadUser(
+    id: string
+  ): Promise<{ id: string; displayName: string } | null> {
+    const [user] = await this.db
+      .select({ id: users.id, displayName: users.displayName })
+      .from(users)
+      .where(eq(users.id, id))
+      .limit(1);
+    return user ?? null;
+  }
+
+  /** Users whose name or email contains `q`, the caller first (API-USR-003). */
+  async search(
+    q: string,
+    callerId: string,
+    limit: number
+  ): Promise<UserSummaryDto[]> {
+    const pattern = `%${escapeLike(q)}%`;
+    return this.db
+      .select({
+        id: users.id,
+        displayName: users.displayName,
+        email: users.email,
+        avatarUrl: users.avatarUrl
+      })
+      .from(users)
+      .where(or(ilike(users.displayName, pattern), ilike(users.email, pattern)))
+      .orderBy(
+        desc(sql`${users.id} = ${callerId}`),
+        sql`lower(${users.displayName})`,
+        sql`lower(${users.email})`
+      )
+      .limit(limit);
   }
 
   /**

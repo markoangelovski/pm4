@@ -619,17 +619,19 @@ describe("Projects API (feat-prj-api)", () => {
   it("AC-15 API-PRJ-001…006: every /projects endpoint without a token → 401", async () => {
     const server = app.getHttpServer();
     const id = randomUUID();
+    // Built one at a time: supertest closes its ephemeral server after a request.
     const calls = [
-      request(server).get("/api/v1/projects"),
-      request(server).post("/api/v1/projects").send({ title: "T" }),
-      request(server).get(`/api/v1/projects/${id}`),
-      request(server).patch(`/api/v1/projects/${id}`).send({ title: "T" }),
-      request(server).delete(`/api/v1/projects/${id}`),
-      request(server).post(`/api/v1/projects/${id}/restore`)
+      () => request(server).get("/api/v1/projects"),
+      () => request(server).post("/api/v1/projects").send({ title: "T" }),
+      () => request(server).get(`/api/v1/projects/${id}`),
+      () =>
+        request(server).patch(`/api/v1/projects/${id}`).send({ title: "T" }),
+      () => request(server).delete(`/api/v1/projects/${id}`),
+      () => request(server).post(`/api/v1/projects/${id}/restore`)
     ];
 
     for (const call of calls) {
-      const response = await send(call);
+      const response = await send(call());
       expect(response.status).toBe(401);
       expect(response.body.type).toBe(errorType("unauthorized"));
     }

@@ -32,6 +32,15 @@ const TITLE_BY_STATUS: Record<number, string> = {
   500: "Internal Server Error"
 };
 
+/** Members an extension may never overwrite (D10). */
+const STANDARD_MEMBERS = new Set([
+  "type",
+  "title",
+  "status",
+  "detail",
+  "errors"
+]);
+
 /**
  * Converts every thrown exception into an RFC 9457
  * `application/problem+json` response. Registered as a global filter in
@@ -50,7 +59,8 @@ export class ProblemDetailsFilter implements ExceptionFilter {
     const request = ctx.getRequest<Request>();
 
     const described = this.describe(exception);
-    const slug = SLUG_BY_STATUS[described.status] ?? "error";
+    const slug =
+      described.problemType ?? SLUG_BY_STATUS[described.status] ?? "error";
 
     if (described.status >= 500) {
       const cause =
@@ -62,13 +72,17 @@ export class ProblemDetailsFilter implements ExceptionFilter {
       );
     }
 
-    const body: ProblemDetailsDto = {
+    const body: ProblemDetailsDto & Record<string, unknown> = {
       type: `${this.configService.webAppUrl}/errors/${slug}`,
       title: described.title,
       status: described.status,
       detail: described.detail,
       ...(described.errors ? { errors: described.errors } : {})
     };
+    // Extension members (D10) go after the standard ones and never replace them.
+    for (const [key, value] of Object.entries(described.extensions ?? {})) {
+      if (!STANDARD_MEMBERS.has(key)) body[key] = value;
+    }
 
     response
       .status(described.status)
@@ -81,10 +95,15 @@ export class ProblemDetailsFilter implements ExceptionFilter {
     title: string;
     detail: string;
     errors?: FieldError[];
+    problemType?: string;
+    extensions?: Record<string, unknown>;
   } {
     if (exception instanceof HttpException) {
       const status = exception.getStatus();
       const title = TITLE_BY_STATUS[status] ?? exception.name;
+      const { problemType, extensions } = this.extractProblemType(
+        exception.getResponse()
+      );
 
       if (status === 400) {
         const errors = this.extractFieldErrors(exception.getResponse());
@@ -101,6 +120,8 @@ export class ProblemDetailsFilter implements ExceptionFilter {
       return {
         status,
         title,
+        // A 500 keeps the default type and carries no extensions.
+        ...(status < 500 ? { problemType, extensions } : {}),
         // A 500 never leaks internals (conventions.md#errors), even one an
         // exception constructor was handed by mistake.
         detail:
@@ -115,6 +136,31 @@ export class ProblemDetailsFilter implements ExceptionFilter {
       title: TITLE_BY_STATUS[HttpStatus.INTERNAL_SERVER_ERROR],
       // Never leak internals of an unexpected error (conventions.md#errors).
       detail: "An unexpected error occurred."
+    };
+  }
+
+  /**
+   * A non-default Problem type (D10): an exception response object with a
+   * string `problemType` (the slug) and optional object `extensions` (extra
+   * body members), e.g. `InTrashException`.
+   */
+  private extractProblemType(response: unknown): {
+    problemType?: string;
+    extensions?: Record<string, unknown>;
+  } {
+    if (!response || typeof response !== "object") return {};
+    const { problemType, extensions } = response as {
+      problemType?: unknown;
+      extensions?: unknown;
+    };
+    return {
+      problemType: typeof problemType === "string" ? problemType : undefined,
+      extensions:
+        extensions &&
+        typeof extensions === "object" &&
+        !Array.isArray(extensions)
+          ? (extensions as Record<string, unknown>)
+          : undefined
     };
   }
 

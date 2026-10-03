@@ -7,6 +7,7 @@ import { ProblemDetailsFilter } from "./common/filters/problem-details/problem-d
 import { VersionModule } from "./version/version.module.js";
 import { AuthModule } from "./auth/auth.module.js";
 import { UsersModule } from "./users/users.module.js";
+import { ProjectsModule } from "./projects/projects.module.js";
 
 @Module({
   imports: [
@@ -16,7 +17,8 @@ import { UsersModule } from "./users/users.module.js";
     HealthModule,
     VersionModule,
     AuthModule,
-    UsersModule
+    UsersModule,
+    ProjectsModule
   ],
   providers: [ProblemDetailsFilter]
 })

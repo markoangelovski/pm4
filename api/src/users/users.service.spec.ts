@@ -8,12 +8,14 @@ describe("UsersService", () => {
   let service: UsersService;
   const findById = vi.fn<(id: string) => Promise<User | null>>();
 
+  const search = vi.fn();
+
   beforeEach(async () => {
     findById.mockReset();
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         UsersService,
-        { provide: UsersRepository, useValue: { findById } }
+        { provide: UsersRepository, useValue: { findById, search } }
       ]
     }).compile();
 
@@ -47,5 +49,13 @@ describe("UsersService", () => {
     await expect(service.getMe("gone")).rejects.toBeInstanceOf(
       UnauthorizedException
     );
+  });
+
+  it("search asks for at most 10 users, the caller first", async () => {
+    search.mockResolvedValue([{ id: "u2" }]);
+    await expect(service.search("u1", "an")).resolves.toEqual({
+      items: [{ id: "u2" }]
+    });
+    expect(search).toHaveBeenCalledWith("an", "u1", 10);
   });
 });
