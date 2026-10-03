@@ -1,7 +1,11 @@
 import {
+  useMutation,
+  useQuery,
   type UseMutationResult,
   type UseQueryResult
 } from "@tanstack/react-query";
+import { apiClient } from "@/lib/api/client";
+import { useSignOut } from "@/features/auth/use-sign-out";
 import type { components } from "@/lib/api/schema";
 
 export type Me = components["schemas"]["MeResponseDto"];
@@ -13,10 +17,25 @@ export const userKeys = {
 
 /** API-USR-001. App defaults (staleTime 30 s, retry 1). */
 export function useMe(): UseQueryResult<Me> {
-  throw new Error("not implemented (feat-shell-user-menu)");
+  return useQuery({
+    queryKey: userKeys.me(),
+    queryFn: async ({ signal }) => {
+      const { data } = await apiClient.GET("/api/v1/me", { signal });
+      if (!data) throw new Error("GET /api/v1/me failed");
+      return data;
+    }
+  });
 }
 
 /** API-AUTH-006, then the local sign-out (FR-AUTH-007: this device → /auth/sign-in). No retry (mutation default). */
 export function useSignOutEverywhere(): UseMutationResult<void, Error, void> {
-  throw new Error("not implemented (feat-shell-user-menu)");
+  const signOut = useSignOut();
+  return useMutation({
+    mutationFn: async () => {
+      const { response } = await apiClient.POST("/api/v1/auth/logout-all");
+      if (response.status !== 204)
+        throw new Error("POST /api/v1/auth/logout-all failed");
+    },
+    onSuccess: () => signOut()
+  });
 }

@@ -67,7 +67,5 @@ export function parseDuration(value: string): number {
 
 /** An ISO instant as a calendar date in `tz`: formatDate("2026-10-02T22:30:00.000Z", "Europe/Zagreb") → "3 October 2026". */
 export function formatDate(iso: string, tz: string): string {
-  void iso;
-  void tz;
-  throw new Error("not implemented (feat-shell-user-menu)");
+  return format(new TZDate(iso, tz), "d MMMM yyyy");
 }

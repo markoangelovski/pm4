@@ -28,6 +28,7 @@ type MeState = {
 
 type MutationState = {
   mutate: () => void;
+  reset: () => void;
   isPending: boolean;
   isError: boolean;
   error: Error | null;
@@ -70,6 +71,7 @@ function loaded() {
 function idleMutation(overrides: Partial<MutationState> = {}) {
   hooks.everywhere = {
     mutate: vi.fn(),
+    reset: vi.fn(),
     isPending: false,
     isError: false,
     error: null,
