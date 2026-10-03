@@ -1,6 +1,6 @@
 # Task Board
 
-**Next free ID:** T-0036
+**Next free ID:** T-0037
 
 | ID | Title | Milestone | App | Size | Status | Depends on |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -39,5 +39,6 @@
 | [T-0033](m1-auth/T-0033-problem-details-schema-the-apiproblemresponses-decorator.md) | Problem Details schema, the ApiProblemResponses decorator and error responses on the existing controllers | M1 | api | S | done | — |
 | [T-0034](m1-auth/T-0034-regenerate-the-web-api-types-for.md) | Regenerate the web API types for the Problem Details responses | M1 | web | S | done | T-0033 |
 | [T-0035](m1-auth/T-0035-add-format-check-to-pm4-gates.md) | Add format:check to pm4 check's gates and fix the two unformatted web files | M1 | infra | S | done | — |
+| [T-0036](m1-auth/T-0036-release-script-workflow-version-stamp-tag.md) | Release script, workflow version/stamp/tag steps, frozen 0.0.0 versions | M1 | infra | M | done | — |
 
 Milestones M2–M6 have no tasks yet, and M1 has only the landing route split so far. They're created with the `write-task` skill once their specs are approved.

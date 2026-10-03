@@ -28,8 +28,14 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+    outputs:
+      version: ${{ steps.release.outputs.version }}
+      tag: ${{ steps.release.outputs.tag }}
+      bump: ${{ steps.release.outputs.bump }}
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0 # history and tags for the release version
 
       - uses: actions/setup-node@v7
         with:
@@ -55,6 +61,15 @@ jobs:
       - name: Verify generated API types are current (ADR-0010)
         run: git diff --exit-code -- lib/api/schema.d.ts
 
+      # Release version (OQ-098): next semver from web-v* tags and conventional commits; the stamped
+      # package.json is never committed (the repo stays at 0.0.0).
+      - name: Release version
+        id: release
+        run: node ../scripts/release-version.mjs web
+
+      - name: Stamp version
+        run: npm version "${{ steps.release.outputs.version }}" --no-git-tag-version --allow-same-version
+
       - name: Build (static export)
         run: npm run build
         env:
@@ -72,6 +87,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     permissions:
+      contents: write
       pages: write
       id-token: write
     environment:
@@ -81,3 +97,16 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v5
+
+      - name: Tag the release
+        if: needs.build.outputs.bump != 'none'
+        working-directory: .
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.build.outputs.tag }}
+        run: |
+          if existing=$(gh api "repos/${{ github.repository }}/git/ref/tags/$TAG" --jq .object.sha 2>/dev/null); then
+            [ "$existing" = "${{ github.sha }}" ] || echo "::warning::$TAG already points to $existing; not moved."
+          else
+            gh api "repos/${{ github.repository }}/git/refs" -f ref="refs/tags/$TAG" -f sha="${{ github.sha }}"
+          fi

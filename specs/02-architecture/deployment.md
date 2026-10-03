@@ -3,7 +3,7 @@ id: arch-deployment
 title: Deployment and CI/CD
 status: approved
 owner: Marko Angelovski
-last_updated: 2026-09-27
+last_updated: 2026-10-03
 related: [arch-env, arch-repos, web-static-export, ADR-0001, ADR-0002, ADR-0006, ADR-0011]
 ---
 
@@ -53,6 +53,28 @@ the npm cache keyed on that app's `package-lock.json`. A `concurrency` group per
 - Plan: **Free (F1)**. There's no Always On, so the app unloads when idle and cold-starts on the next request (NFR-003).
 - Background jobs (trash purge) run in the API process via BullMQ (ADR-0011). Nothing extra to deploy.
 
+## Release versions (OQ-098)
+Nobody bumps a version by hand. Each deploy workflow versions its own app; web and API have separate versions.
+
+- **Tags are the source.** A release of an app is a git tag `web-v<major>.<minor>.<patch>` or
+  `api-v<major>.<minor>.<patch>` on the deployed commit. The `version` in `web/package.json` and
+  `api/package.json` is frozen at `0.0.0` in the repo (what local builds show).
+- **Next version** (`scripts/release-version.mjs <app>`): start from the app's last tag reachable from
+  the commit (none → `0.0.0`). Take the non-merge commits since that tag that touched the app's paths
+  (web: `web/`, `api/openapi.json`; api: `api/`), the same paths that trigger its deploy. The highest
+  bump wins: a breaking change (`type!:` or a `BREAKING CHANGE:` footer) → major, `feat` → minor,
+  anything else, including non-conventional messages → patch. No such commits → no bump: the run
+  redeploys the current version and creates no tag.
+- **Stamping.** After the checks and before the build, the build job runs
+  `npm version <version> --no-git-tag-version --allow-same-version` in the app folder (not committed).
+  Web: `next.config.ts` puts it into `NEXT_PUBLIC_APP_VERSION`. API: the build copies `package.json`
+  into `dist/`, which `GET /api/v1/version` (API-SYS-003) reads. `openapi.json` is exported before
+  stamping, so the contract never changes with a release.
+- **Tagging.** The deploy job creates the tag on the run's commit through the GitHub API, only after
+  the deploy (and, for the API, the `/health` smoke check) succeeds. A failed deploy uses up no version.
+  An existing tag on the same commit is fine (re-runs); one on another commit gets a warning and is left alone.
+- CI pushes only tags, never commits, so it never races with the owner's pushes.
+
 ## Owner checklist (before the first push)
 One-time setup outside the repo, done by the owner, not an agent:
 - Azure Web App (`pm4-api`) → **Configuration → General settings → Startup Command:**
@@ -64,6 +86,10 @@ One-time setup outside the repo, done by the owner, not an agent:
   `npm install`/build on deploy.
 - Repo **Pages settings:** tick **Enforce HTTPS** once the certificate has been issued for the
   custom domain.
+- **Release tags (once, OQ-098):** tag the commit that's deployed now as the starting point, then push:
+  `git tag web-v0.0.1 github/master && git tag api-v0.0.1 github/master && git push github web-v0.0.1 api-v0.0.1`.
+  If the tag step fails with `403`, set repo **Settings → Actions → General → Workflow permissions** to
+  *Read and write*.
 
 ## Rollback
 - Web: re-run `web-deploy.yml` on the previous commit (`workflow_dispatch` with a ref).
@@ -84,3 +110,4 @@ One-time setup outside the repo, done by the owner, not an agent:
 - 2026-09-27: T-0003/T-0004 implemented `web-deploy.yml`, `api-deploy.yml` and `ci.yml`. Corrected
   the startup command to `node dist/src/main.js` (the build's actual output path, per `start:prod`).
   Added the post-deploy `/health` smoke check and the owner's one-time Azure/Pages setup checklist.
+- 2026-10-03: *Release versions* (OQ-098): automatic per-app versions from git tags and conventional commits; bootstrap tags in the owner checklist.

@@ -3,7 +3,7 @@ id: arch-env
 title: Environments and Configuration
 status: approved
 owner: Marko Angelovski
-last_updated: 2026-10-02
+last_updated: 2026-10-03
 related: [arch-deployment, sec]
 ---
 
@@ -28,7 +28,7 @@ A static export inlines `NEXT_PUBLIC_*` at build time. **Nothing secret.** Value
 | --- | --- | --- |
 | `NEXT_PUBLIC_API_BASE_URL` | `https://pm4-api-heagfvepgbcje5c3.westeurope-01.azurewebsites.net` | API origin |
 | `NEXT_PUBLIC_APP_URL` | `https://pm4.angelovski.top` | Own origin (canonical links, CSP) |
-| `NEXT_PUBLIC_APP_VERSION` | `0.1.0` | **Not configured:** set by `web/next.config.ts` from `web/package.json` `version` on every build (OQ-051) |
+| `NEXT_PUBLIC_APP_VERSION` | `0.1.0` | **Not configured:** set by `web/next.config.ts` from `web/package.json` `version` on every build (OQ-051), which `web-deploy` stamps with the release version ([release versions](deployment.md#release-versions-oq-098)); `0.0.0` locally |
 
 ## API configuration (runtime, Azure App Settings)
 Validated at startup. The app refuses to boot if something is missing or invalid.
@@ -73,3 +73,4 @@ Each app commits a `.env.example` with every variable and dummy values.
 - 2026-09-27: Approved by the owner.
 - 2026-09-27: Filled in the real web domain and API host. REDIS_URL is plain `redis://` (Redis Cloud free tier, TLS off).
 - 2026-10-02: `NEXT_PUBLIC_APP_VERSION`, derived from `web/package.json` at build time (OQ-051).
+- 2026-10-03: `NEXT_PUBLIC_APP_VERSION` is the release version stamped by `web-deploy` (OQ-098).

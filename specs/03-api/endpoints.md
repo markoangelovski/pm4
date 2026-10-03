@@ -70,7 +70,8 @@ TODO: write each endpoint using the template once its requirement spec reaches `
 
 ### API-SYS-003: API version
 `GET /version` · Auth: none (public) · Implements: SCR-004 (OQ-052)
-Returns the `version` field of `api/package.json` of the running build. Touches neither Postgres nor
+Returns the `version` field of `api/package.json` of the running build, which `api-deploy` stamps with
+the release version ([release versions](../02-architecture/deployment.md#release-versions-oq-098)); `0.0.0` in local builds. Touches neither Postgres nor
 Redis, so it never wakes Neon. Not rate limited (security.md). In the OpenAPI contract (unlike `/health`).
 **200:** `{ version: string }`, e.g. `{ "version": "0.0.1" }`
 **Errors:** none of its own
@@ -279,3 +280,4 @@ OQ-029, OQ-030, OQ-036
 - 2026-10-02: The owner approved API-AUTH-001…006 and API-USR-001 (with *Shared auth shapes*) for feat-auth-api-session.
 - 2026-10-03: Detailed API-USR-003, API-PRJ-001…006 and API-TSK-001…006 with the shared project and task shapes (OQ-076…OQ-091; feat-prj-api, feat-tsk-api). Logged-time totals dropped from API-PRJ-002 (OQ-080).
 - 2026-10-03: The owner approved *Shared project and task shapes*, API-USR-003, API-PRJ-001…006 and API-TSK-001…006 for feat-prj-api, feat-prj-web, feat-tsk-api and feat-tsk-web.
+- 2026-10-03: API-SYS-003 returns the release version stamped by `api-deploy` (OQ-098, feat-ops-release-versions).
