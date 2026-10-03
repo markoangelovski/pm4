@@ -3,7 +3,7 @@ id: qa-code-style
 title: Code Style
 status: draft
 owner: Marko Angelovski
-last_updated: 2026-09-28
+last_updated: 2026-10-03
 related: [web-conventions, api-conventions]
 ---
 
@@ -19,7 +19,10 @@ Shared style rules for both apps. Tooling enforces them wherever possible.
   constants in `SCREAMING_SNAKE_CASE`. Domain terms follow `00-product/glossary.md` exactly.
 - Keep modules small and cohesive. Prefer pure functions for logic.
 - Comments explain *why*, not *what*. Reference requirement IDs in tests (`it('FR-TLOG-001: …')`).
-- Conventional commits: `feat|fix|refactor|test|docs|chore(scope): summary`, and mention `T-####` in the body.
+- Conventional commits: `feat|fix|refactor|style|test|docs|chore(scope): summary`, and mention `T-####` in the body.
+  The scope is always present (owner decision 2026-10-03): `web` or `api` for a change in one app, `web,api`
+  for one that spans both (e.g. `feat(web,api): …`), and the area name otherwise (`specs`, `tasks`, `scripts`,
+  `claude`).
   Agents leave changes uncommitted and suggest the message. They commit only when the owner asks, after reviewing the diff. The owner pushes (AGENTS.md §3).
 
 ## Per app
