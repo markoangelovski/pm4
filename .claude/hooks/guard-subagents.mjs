@@ -17,7 +17,7 @@ const AC_FILE = /\.ac\.(spec|e2e-spec|test)\.tsx?$/;
 const AC_WRITE_IN_BASH = /(>|\btee\b|\bsed\s+-i|\bperl\s+-\w*i|\bmv\b|\bcp\b|\brm\b)[^|;&]*\.ac\.(spec|e2e-spec|test)\.tsx?/;
 const PM4_BOOKKEEPING = /\bpm4\.mjs\s+(tasks|hash|status)\b/;
 const TASK_FILE = /^tasks\/[^/]+\/T-\d{4}[^/]*\.md$/;
-const GIT_MUTATION = /\bgit\s+(add|commit|push|stash|reset|rebase|merge|restore|clean|cherry-pick|revert|am|apply|checkout\s+--)\b/;
+const GIT_MUTATION = /\bgit\s+(add|rm|mv|update-index|commit|push|stash|reset|rebase|merge|restore|clean|cherry-pick|revert|am|apply|checkout\s+--)\b/;
 
 function deny(reason) {
   process.stdout.write(
