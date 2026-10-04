@@ -5,7 +5,7 @@ milestone: M3
 app: web
 status: blocked
 size: M
-tier: sonnet
+tier: haiku
 depends_on: [T-0030]
 feature_spec: specs/06-features/tsk-web.md
 spec_row: T3

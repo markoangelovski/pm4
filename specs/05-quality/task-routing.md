@@ -3,7 +3,7 @@ id: qa-task-routing
 title: Task Routing and Escalation
 status: review
 owner: Marko Angelovski
-last_updated: 2026-10-01
+last_updated: 2026-10-04
 related: [qa-testing, qa-dod, feat-template]
 ---
 
@@ -33,21 +33,26 @@ change itself. Delegating costs a fresh subagent context, which is more than the
 | `scripts/pm4.mjs` | — | Task files, BOARD, hashes, readiness, briefs, scope check, gates |
 
 ## Choosing a tier
-Pick the **lowest** tier for which every condition in its row holds. If any condition fails, go up.
+**Haiku first.** Every task starts at `haiku` unless one of the triggers below applies. Escalation
+(below) catches the tasks Haiku can't finish, so a tier is never raised "to be safe".
 
-| Tier | All of these hold |
+| Tier | When |
 | --- | --- |
-| **haiku** | ≤ 3 files. Every file has a named pattern to copy (*Read first*) or is fully specified (e.g. a DTO from a field table, a migration from a column table). No new decisions. No shared state, concurrency, auth or security logic. No contract change. Examples: DTOs, a schema table + generated migration, ordinary unit tests, renames, docs, adding a shadcn component with the CLI |
-| **sonnet** | One app. Composes existing patterns, even across several files and layers (controller → service → repository, or page → hooks → form). Business rules are fully stated in the spec. No new cross-cutting pattern |
-| **opus** | Any of: the **first** instance of a pattern (the first feature module, repository, `features/<domain>/api.ts`, form); auth, tokens or ownership checks beyond copying an existing guard; concurrency or ordering (e.g. dense log positions); transactions over several tables; performance-sensitive queries |
+| **opus** | Any of: the **first** instance of a pattern (the first feature module, repository, `features/<domain>/api.ts`, form); auth, tokens or ownership checks beyond copying an existing guard; concurrency or ordering (e.g. dense log positions); transactions over several tables; performance-sensitive queries. These stay above Haiku because passing tests don't prove them correct, so a weak attempt wouldn't surface as `FAILED` |
+| **sonnet** | No opus trigger, and the spec deliberately leaves code-level judgment open: non-trivial React state or effects, cache invalidation spread over several hooks, or a refactor of existing code across many (≳ 8) files |
+| **haiku** | Everything else: one app, every file either has a pattern to copy (*Read first*) or is fully specified in *Interfaces*, the business rules are stated in the spec. Size and file count don't matter |
 
 Rules of thumb:
-- A task sized `M` is rarely `haiku`. Split it until the mechanical part stands alone.
-- When a pattern appears for the first time, make it its own task. Later tasks copy it at a lower tier.
+- A decision Haiku would have to make that the spec doesn't make is a spec gap, not a tier problem:
+  fill *Interfaces* until it's typing, or the implementer stops with `BLOCKED: spec`.
+- When a pattern appears for the first time, make it its own (opus) task. Later tasks copy it at haiku.
 - Don't split below what one subagent context handles well: every task costs a fresh context
-  (roughly 10–15k tokens before any work). Two haiku-sized edits to the same files are one task.
+  (roughly 10–15k tokens before any work). Two small edits to the same files are one task.
 - A contract change is two tasks: the `api` task (exports `openapi.json`), then a `web` task that depends on it.
-- Write a one-line reason next to every tier (e.g. "haiku: DTOs from the field table, copy `x.dto.ts`").
+- Write a one-line reason next to every tier: for haiku, the pattern it copies (e.g. "copy `x.dto.ts`");
+  for sonnet or opus, the trigger.
+- Revisit the triggers from the *Attempts* tables after each feature. If more than about a third of
+  haiku attempts end in `FAILED`, a sonnet trigger is missing.
 
 ## Escalation
 The implementer stops and returns one of:
@@ -66,3 +71,5 @@ The implementer stops and returns one of:
 - 2026-09-28: Initial version.
 - 2026-10-01: Lanes (quick / feature). Specs and tests are written inline by the main session. One
   review per feature. `BLOCKED: test`. Each `FAILED` climbs one tier. Mechanical steps moved to `scripts/pm4.mjs`.
+- 2026-10-04: Haiku first. Every task starts at haiku unless an opus or sonnet trigger applies; the
+  file-count and size limits on haiku are gone. Escalation unchanged.

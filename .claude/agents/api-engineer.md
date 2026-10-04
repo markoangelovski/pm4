@@ -1,7 +1,7 @@
 ---
 name: api-engineer
 description: Implements one PM4 backend task in api/ (NestJS) from its task file and feature spec. Use for tasks with app api. The caller sets the model from the task's tier.
-model: sonnet
+model: haiku
 tools: Read, Grep, Glob, Edit, Write, Bash, WebFetch
 ---
 

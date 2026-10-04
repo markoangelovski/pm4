@@ -3,7 +3,7 @@ id: feat-tsk-api
 title: "Tasks API: CRUD, filters, move, status and restore"
 status: approved
 owner: Marko Angelovski
-last_updated: 2026-10-03
+last_updated: 2026-10-04
 milestone: M3
 requirements: [FR-TSK-001, FR-TSK-002, FR-TSK-003, FR-TSK-004, FR-TSK-005, FR-TSK-006, FR-TSK-007, FR-TRASH-003, API-TSK-001, API-TSK-002, API-TSK-003, API-TSK-004, API-TSK-005, API-TSK-006]
 related: [req-tasks, req-trash, api-endpoints, api-data-model, api-conventions, sec, feat-prj-api, feat-tsk-web, OQ-028, OQ-080, OQ-081, OQ-084, OQ-085, OQ-087, OQ-088, OQ-090, OQ-091]
@@ -172,7 +172,7 @@ if (!d.components?.schemas?.TaskStatus) { console.error('missing TaskStatus sche
 ## Tasks
 | # | Task | App | Size | Tier | Why this tier | Depends on |
 | --- | --- | --- | --- | --- | --- | --- |
-| T1 | Tasks module (API-TSK-001…006): CRUD, filters, move, restore | api | M | sonnet | Copies the projects module; every rule and query is stated above; ownership via the existing `findOwned` | — (feat-prj-api done) |
+| T1 | Tasks module (API-TSK-001…006): CRUD, filters, move, restore | api | M | haiku | Copies the projects module; every rule and query is stated above; ownership via the existing `findOwned` | — (feat-prj-api done) |
 
 ## Open questions
 None. OQ-028, OQ-080, OQ-081, OQ-084, OQ-085, OQ-087, OQ-088, OQ-090 and OQ-091 are resolved.
@@ -180,3 +180,4 @@ None. OQ-028, OQ-080, OQ-081, OQ-084, OQ-085, OQ-087, OQ-088, OQ-090 and OQ-091 
 ## Changelog
 - 2026-10-03: Initial draft.
 - 2026-10-03: Approved by the owner.
+- 2026-10-04: T1 re-tiered sonnet → haiku (task-routing: haiku first).

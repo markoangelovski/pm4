@@ -3,7 +3,7 @@ id: feat-tsk-web
 title: "Tasks web: task lists, inline status, due-date badges, task detail and the task dialog"
 status: approved
 owner: Marko Angelovski
-last_updated: 2026-10-03
+last_updated: 2026-10-04
 milestone: M3
 requirements: [FR-TSK-001, FR-TSK-002, FR-TSK-003, FR-TSK-004, FR-TSK-005, FR-TSK-006, FR-TSK-007, FR-TSK-008, FR-PRJ-008, FR-TRASH-003, SCR-021, SCR-030, SCR-031, SCR-032]
 related: [req-tasks, web-screens, web-routing, web-conventions, ADR-0009, feat-tsk-api, feat-prj-web, OQ-081, OQ-082, OQ-084, OQ-085, OQ-086, OQ-087, OQ-090, OQ-093]
@@ -228,8 +228,8 @@ cd web && npm run build >/dev/null && test -f out/app/tasks.html && test -f out/
 | # | Task | App | Size | Tier | Why this tier | Depends on |
 | --- | --- | --- | --- | --- | --- | --- |
 | T1 | Task hooks with the optimistic status change, due state, `formatWorkDate`, status select and due badge | web | M | opus | First optimistic update with rollback across several cached lists (D5) | — (feat-tsk-api and feat-prj-web done) |
-| T2 | Task create/edit dialog with the project picker and due-date field | web | M | sonnet | Copies the project form; picker and date field from installed primitives, fully specified | T1 |
-| T3 | Task lists (project page section and `/app/tasks`), task detail page, delete and restore | web | M | sonnet | Composes T1/T2 and the project list/detail patterns; states and copy stated | T2 |
+| T2 | Task create/edit dialog with the project picker and due-date field | web | M | haiku | Copies the project form; picker and date field from installed primitives, fully specified | T1 |
+| T3 | Task lists (project page section and `/app/tasks`), task detail page, delete and restore | web | M | haiku | Composes T1/T2 and the project list/detail patterns; states and copy stated | T2 |
 
 ## Open questions
 None. OQ-081, OQ-082, OQ-084…OQ-087, OQ-090 and OQ-093 are resolved.
@@ -237,3 +237,4 @@ None. OQ-081, OQ-082, OQ-084…OQ-087, OQ-090 and OQ-093 are resolved.
 ## Changelog
 - 2026-10-03: Initial draft.
 - 2026-10-03: Approved by the owner.
+- 2026-10-04: T2 and T3 re-tiered sonnet → haiku (task-routing: haiku first).

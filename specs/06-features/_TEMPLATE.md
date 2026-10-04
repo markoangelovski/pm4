@@ -95,7 +95,8 @@ test -f web/out/app/<route>/index.html
 ```
 
 ## Tasks
-Ordered, each small and independently verifiable. Tiers: `specs/05-quality/task-routing.md`.
+Ordered, each small and independently verifiable. Tiers: `specs/05-quality/task-routing.md` (haiku first;
+sonnet or opus only on a named trigger).
 A task's ACs come from the *Task* column above. The lint/typecheck/test/build gates always apply.
 
 | # | Task | App | Size | Tier | Why this tier | Depends on |

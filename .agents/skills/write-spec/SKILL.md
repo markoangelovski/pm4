@@ -25,7 +25,9 @@ questions · Changelog. Requirements get one ID each (`FR-<AREA>-###`, `NFR-###`
    `04-web/screens.md`), then link their anchors. Don't copy them into the feature spec.
 4. Fill *Interfaces* until no design decision is left, and tag each subsection with its tasks.
 5. Write each edge case as an *Acceptance criteria* row with its exact expected result, test file and task.
-6. Split *Tasks* per `task-routing.md`: a tier and a one-line reason for each, and no task smaller than a subagent context is worth.
+6. Split *Tasks* per `task-routing.md`: haiku first, sonnet or opus only on a named trigger, a one-line reason
+   for each, and no task smaller than a subagent context is worth. Write *Read first* and *Interfaces* so a
+   haiku task is typing: every file names the pattern it copies or has its signatures spelled out.
 7. Ask the owner about every unknown as you go (`AskUserQuestion`, batched), and record each one as
    `OQ-###` in `specs/open-questions.md` with its answer. The spec stays `draft` until *Open questions*
    is empty. Then set `review`, and tell the owner what to look at.

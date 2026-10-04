@@ -12,8 +12,8 @@ The shared instructions above apply in full. This section adds only what is spec
 
 | Agent | Default model | Use for |
 | --- | --- | --- |
-| `api-engineer` | sonnet | Implementing `api/` tasks. `implement-task` sets the model from the task's `tier` |
-| `web-engineer` | sonnet | Implementing `web/` tasks. `implement-task` sets the model from the task's `tier` |
+| `api-engineer` | haiku | Implementing `api/` tasks. `implement-task` sets the model from the task's `tier` |
+| `web-engineer` | haiku | Implementing `web/` tasks. `implement-task` sets the model from the task's `tier` |
 | `reviewer` | opus | One review per feature (`review-feature`): the diff against the spec. Read-only |
 | `Explore` (built-in) | pass `model: haiku` | Wide codebase searches only; open known files directly |
 

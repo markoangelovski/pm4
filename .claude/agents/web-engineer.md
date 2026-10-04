@@ -1,7 +1,7 @@
 ---
 name: web-engineer
 description: Implements one PM4 frontend task in web/ (Next.js static export + shadcn) from its task file and feature spec. Use for tasks with app web. The caller sets the model from the task's tier.
-model: sonnet
+model: haiku
 tools: Read, Grep, Glob, Edit, Write, Bash, WebFetch
 ---
 
