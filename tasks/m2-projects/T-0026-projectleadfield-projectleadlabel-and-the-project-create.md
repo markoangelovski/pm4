@@ -26,20 +26,20 @@ _Implementer: what changed, and anything the reviewer should look at._
 Attempt 1: BLOCKED: test (`/users` mock was a bare array). The test author fixed it to `{ items }` and re-hashed.
 
 Attempt 2:
-- `ProjectLeadField`: the prototype with `searchUsers` replaced by `useUserSearch(debounced trimmed text)`. "Searching…"
+- `ProjectLeadField`: searches with `useUserSearch(debounced trimmed text)`. "Searching…"
   shows while the debounce is pending or the query is fetching. Added `disabled` and `aria-describedby`; the lead
   types now come from `features/users/lead.ts`.
 - `ProjectLeadLabel` takes the API's `ProjectLeadDto | null`. A user lead shows avatar + name, anything else shows `name`.
 - `schemas.ts`: `projectFormSchema`, `projectFormDefaults`, `toProjectInput`, `PROJECT_FIELD_MAP` as the brief specifies.
-  `toProjectInput` keeps the prototype's rule that a whitespace-only description becomes `null`.
+  `toProjectInput` keeps the rule that a whitespace-only description becomes `null`.
 - `ProjectFormDialog`: react-hook-form + `zodResolver`, `Controller` for the lead, `FieldError errors=[...]`,
   `useCreateProject`/`useUpdateProject`. On failure it calls `applyFieldErrors`, else `toast.error`.
 
 **Expected break (owner decision):** `ProjectFormDialog` now takes the API `Project` and `ProjectLeadLabel`
-takes `ProjectLeadDto`, so the T-0027 files (`projects-list.tsx`, `project-detail.tsx`), still on the
-mock store, fail typecheck. `build` fails for the same reason because `next build` runs tsc. T-0027 fixes both.
+takes `ProjectLeadDto`, so the T-0027 files (`projects-list.tsx`, `project-detail.tsx`), not yet on
+the API hooks, fail typecheck. `build` fails for the same reason because `next build` runs tsc. T-0027 fixes both.
 Remaining tsc errors, all in T-0027 files:
-- `features/projects/components/project-detail.tsx(147,13)` TS2741 (mock `Project` lacks `projectLead`)
+- `features/projects/components/project-detail.tsx(147,13)` TS2741 (the local `Project` type lacks `projectLead`)
 - `features/projects/components/project-detail.tsx(237,33)` TS2322 (`LeadValue` → `ProjectLeadDto`)
 - `features/projects/components/projects-list.tsx(298,47)` TS2322 (`LeadValue` → `ProjectLeadDto`)
 
@@ -47,14 +47,14 @@ pm4 check T-0026:
 ```
   ac hashes: ok (2)
   scope: ok
-  pending ACs (later tasks, excluded): AC-11, AC-12, AC-13, AC-14, AC-15, AC-16, AC-17, AC-18
+  pending ACs (later tasks, excluded): AC-11, AC-12, AC-13, AC-14, AC-15, AC-16, AC-17
   web lint: ok
   web format:check: ok
   web typecheck: FAIL   (only the 3 T-0027 errors above)
   web test: ok
   web build: FAIL       (same 3 tsc errors)
   web api:types: ok
-  check AC-16, AC-18: skipped (later task)
+  check AC-16: skipped (later task)
 FAIL T-0026
 ```
 

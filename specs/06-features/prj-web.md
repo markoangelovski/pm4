@@ -18,10 +18,6 @@ delete a project to the trash and restore it from its page. Behavior:
 [screens.md SCR-020…022](../04-web/screens.md#screens), [req-projects](../01-requirements/projects.md).
 API: feat-prj-api. The project's task list comes in feat-tsk-web.
 
-The layout and copy come from the **owner-approved UI prototype** (uncommitted on `master`, 2026-10-03:
-`web/features/projects/`, `web/features/tasks/status.ts`, `web/lib/use-debounced-value.ts`, `sonner`). This
-feature replaces its mock data with the API (D10).
-
 ## Decisions
 | # | Decision | Source |
 | --- | --- | --- |
@@ -34,21 +30,21 @@ feature replaces its mock data with the API (D10).
 | D7 | Deleting or restoring a project also invalidates every `["tasks"]` query (its tasks disappear/reappear in task lists; the key is feat-tsk-web's `taskKeys.all`). | Agent: FR-PRJ-005 |
 | D8 | Search boxes apply 300 ms after typing stops (`useDebouncedValue`) and reset `page` to 1; so do sort changes. List URL state uses nuqs with `history: "replace"`. | Agent: SCR-020, conventions *UI rules* |
 | D9 | `TASK_STATUSES` and their labels live in `features/tasks/status.ts`, created here for the statistics card; feat-tsk-web reuses them. | Agent |
-| D10 | The test-first step copies the prototype into the worktree at the final paths in *Files* (the lead field and label go to `features/users/components/`), **instead of** stubs for those components; only the modules the prototype lacks get stubs. Prototype-only code is deleted: `mock-store.ts`, `prototype-state-switch.tsx`, the task-count controls and the placeholder **Tasks** card on the project page. | Owner: prototype is final (2026-10-03) |
-| D11 | `ProjectIcon`: a rounded-square gradient from an FNV-1a hash of the project id (as in the prototype); nothing stored. | Owner: prototype |
-| D12 | A list row opens the project on click anywhere except its title link (which navigates itself) and while text is selected. | Owner: prototype |
+| D10 | The layout, classes and copy of the components are owner-approved; the lead field and label live in `features/users/components/`; the project page has no **Tasks** card yet. | Owner (2026-10-03) |
+| D11 | `ProjectIcon`: a rounded-square gradient from an FNV-1a hash of the project id ; nothing stored. | Owner (2026-10-03) |
+| D12 | A list row opens the project on click anywhere except its title link (which navigates itself) and while text is selected. | Owner (2026-10-03) |
 | D13 | After a delete, the project page renders nothing and disables its query before navigating (`onDeleted`), so the trashed project isn't refetched and "in the trash" never flashes. | Agent: `removeQueries` on a mounted observer refetches |
 | D14 | The API's counts use `inProgress`; the UI's status is `in-progress`. `taskCount(counts, status)` maps them; components never index `TaskCountsDto` by status. | Agent: contract |
-| D15 | The dialog mounts its form only while open, so each opening starts from fresh `defaultValues` (no `reset`). | Owner: prototype |
+| D15 | The dialog mounts its form only while open, so each opening starts from fresh `defaultValues` (no `reset`). | Owner (2026-10-03) |
 
 ## Scope
 **In:** dependencies and providers (`NuqsAdapter`, `Toaster`); `lib/api/problem.ts`; `lib/use-debounced-value.ts`;
-`features/projects/` (API hooks, form schema, components, ported from the prototype); `features/users/` additions (user search hook, lead
+`features/projects/` (API hooks, form schema, components); `features/users/` additions (user search hook, lead
 helpers, `ProjectLeadField`, `ProjectLeadLabel`); `features/tasks/status.ts`; the pages `/app/projects` and `/app/project`.
 
 **Before the tests are written:** feat-prj-api is done (its `openapi.json`), feat-auth-web-session and
 feat-shell-user-menu are done (`apiClient` with the token, `useMe`, `UserAvatar`). The test writer runs
-`npm run api:types` so the new paths exist in `schema.d.ts`, and copies the prototype in (D10).
+`npm run api:types` so the new paths exist in `schema.d.ts`.
 
 **Non-goals** (implementers must not touch these):
 - `api/`. The task list section on the project page (no placeholder card either), task dialogs, `/app/tasks` and `/app/task` (feat-tsk-web).
@@ -67,7 +63,6 @@ feat-shell-user-menu are done (`apiClient` with the token, `useMe`, `UserAvatar`
 | `web/app/components/shared/view-id-guard.tsx`, `web/app/(dashboard-layout)/app/project/page.tsx` | The detail page shell |
 | `web/components/ui/combobox.tsx`, `field.tsx`, `dialog.tsx`, `alert-dialog.tsx`, `table.tsx`, `pagination.tsx`, `progress.tsx`, `badge.tsx`, `select.tsx` | Base UI primitives (`render` prop, not `asChild`) |
 | `web/lib/routes.ts` | Paths |
-| The prototype files (already at their final paths, D10) | Layout, copy and classes to keep; replace only the mock-store imports and calls |
 
 ## Files
 | App | File | C/M | Task | Notes |
@@ -84,27 +79,25 @@ feat-shell-user-menu are done (`apiClient` with the token, `useMe`, `UserAvatar`
 | web | `web/lib/api/problem.ts` | C | tests, T1 | Stub from the test writer |
 | web | `web/features/projects/stats.ts` | C | tests, T1 | Stub from the test writer |
 | web | `web/features/users/lead.ts` | C | tests, T1 | Stub from the test writer |
-| web | `web/package.json`, `web/package-lock.json` | M | tests | Prototype: `sonner` (shadcn CLI). Test writer: `npm install react-hook-form zod @hookform/resolvers nuqs` (the tests import them) |
-| web | `web/components/ui/sonner.tsx` | C | tests | Prototype (created by the shadcn CLI) |
-| web | `web/app/layout.tsx` | M | tests, T1 | Prototype: `<Toaster />`. T1: `NuqsAdapter` |
-| web | `web/lib/use-debounced-value.ts` | C | tests | Prototype, final |
-| web | `web/features/tasks/status.ts` | C | tests | Prototype, final (D9) |
+| web | `web/package.json`, `web/package-lock.json` | M | tests | `sonner` (shadcn CLI). Test writer: `npm install react-hook-form zod @hookform/resolvers nuqs` (the tests import them) |
+| web | `web/components/ui/sonner.tsx` | C | tests | Created by the shadcn CLI |
+| web | `web/app/layout.tsx` | M | tests, T1 | `<Toaster />`. T1: `NuqsAdapter` |
+| web | `web/lib/use-debounced-value.ts` | C | tests | Final |
+| web | `web/features/tasks/status.ts` | C | tests | Final (D9) |
 | web | `web/features/users/api.ts` | M | T1 | `useUserSearch` |
 | web | `web/features/projects/api.ts` | C | tests, T1 | Stub from the test writer (`projectKeys` real) |
-| web | `web/features/projects/mock-store.ts` | C (prototype), D | tests, T3 | Copied in by the test writer; T3 deletes it once nothing imports it |
-| web | `web/features/projects/components/prototype-state-switch.tsx` | C (prototype), D | tests, T3 | Copied in by the test writer; T3 deletes it |
-| web | `web/features/users/components/project-lead-field.tsx` | C | tests, T2 | Prototype (from `features/projects/components/`) |
-| web | `web/features/users/components/project-lead-label.tsx` | C | tests, T2 | Prototype (from `features/projects/components/`) |
-| web | `web/features/projects/schemas.ts` | C | T2 | Replaces the prototype's hand-written `validate`/`toInput` |
-| web | `web/features/projects/components/project-form-dialog.tsx` | C | tests, T2 | Prototype |
-| web | `web/features/projects/components/projects-list.tsx` | C | tests, T3 | Prototype |
-| web | `web/features/projects/components/project-detail.tsx` | C | tests, T3 | Prototype |
-| web | `web/features/projects/components/project-task-stats.tsx` | C | tests, T3 | Prototype |
-| web | `web/features/projects/components/task-status-badges.tsx` | C | tests, T3 | Prototype |
-| web | `web/features/projects/components/project-icon.tsx` | C | tests | Prototype, final (D11) |
-| web | `web/features/projects/components/delete-project-dialog.tsx` | C | tests, T3 | Prototype |
-| web | `web/app/(dashboard-layout)/app/projects/page.tsx` | M | tests | Prototype, final |
-| web | `web/app/(dashboard-layout)/app/project/page.tsx` | M | tests | Prototype, final |
+| web | `web/features/users/components/project-lead-field.tsx` | C | tests, T2 | |
+| web | `web/features/users/components/project-lead-label.tsx` | C | tests, T2 | |
+| web | `web/features/projects/schemas.ts` | C | T2 | Replaces the dialog's hand-written `validate`/`toInput` |
+| web | `web/features/projects/components/project-form-dialog.tsx` | C | tests, T2 | |
+| web | `web/features/projects/components/projects-list.tsx` | C | tests, T3 | |
+| web | `web/features/projects/components/project-detail.tsx` | C | tests, T3 | |
+| web | `web/features/projects/components/project-task-stats.tsx` | C | tests, T3 | |
+| web | `web/features/projects/components/task-status-badges.tsx` | C | tests, T3 | |
+| web | `web/features/projects/components/project-icon.tsx` | C | tests | Final (D11) |
+| web | `web/features/projects/components/delete-project-dialog.tsx` | C | tests, T3 | |
+| web | `web/app/(dashboard-layout)/app/projects/page.tsx` | M | tests | Final |
+| web | `web/app/(dashboard-layout)/app/project/page.tsx` | M | tests | Final |
 
 ## Interfaces
 
@@ -148,7 +141,7 @@ export function completionPercent(counts: TaskCounts): number;
 /** The count for a UI status ("in-progress" → counts.inProgress) (D14). */
 export function taskCount(counts: TaskCounts, status: TaskStatus): number;
 ```
-`app/layout.tsx`: inside `QueryProvider`, wrap `children` in `<NuqsAdapter>` (`nuqs/adapters/next/app`); `<Toaster />` stays as in the prototype.
+`app/layout.tsx`: inside `QueryProvider`, wrap `children` in `<NuqsAdapter>` (`nuqs/adapters/next/app`); `<Toaster />` stays.
 
 ### Lead (T1, T2)
 ```ts
@@ -178,7 +171,7 @@ export function ProjectLeadField(props: {
 /** user → <UserAvatar className="h-6 w-6 text-xs" /> + name; text → the name; null → "—" (muted). */
 export function ProjectLeadLabel(props: { lead: components["schemas"]["ProjectLeadDto"] | null }): React.JSX.Element;
 ```
-`ProjectLeadField` is the prototype's component (installed `Combobox` primitives, `filter={null}`, controlled `inputValue`), with `searchUsers` from the mock store replaced by `useUserSearch`. Rules (SCR-022):
+`ProjectLeadField` uses the installed `Combobox` primitives (`filter={null}`, controlled `inputValue`) and searches with `useUserSearch`. Rules (SCR-022):
 - The input shows the current value: a user lead as its name (with `UserAvatar size-5` before the input), a text lead as its text, `null` as empty with placeholder "Name or PM4 user". The open trigger shows only when there's no lead and no text; the clear button only when there is one.
 - Typing changes only the input text. Options, by trimmed input length (while the text still equals the value's display, it counts as 0): **0** → the signed-in user (`useMe`) as a user option, its name followed by a muted "(me)"; **1** → only `Use "<text>"`; **≥ 2** → the users from `useUserSearch(useDebouncedValue(text, 300))` (avatar, name with "(me)" for the caller, email in muted text), then `Use "<text>"`. While the debounce is pending or the search is fetching: a "Searching…" row with a spinner above just `Use "<text>"`; no matches → just `Use "<text>"`.
 - Picking a user → `onChange({ kind: "user", user })`; picking `Use "<text>"` → `onChange({ kind: "text", name: text })`.
@@ -232,9 +225,9 @@ export const PROJECT_FIELD_MAP = { title: "title", description: "description", e
 export function ProjectFormDialog(props: { open: boolean; onOpenChange: (open: boolean) => void; project?: Project }): React.JSX.Element;
 ```
 react-hook-form + `zodResolver(projectFormSchema)`, the `Field`/`FieldLabel`/`FieldError` components, `Controller` for the lead.
-The prototype's structure stays: `ProjectFormDialog` renders the inner form only while `open` (D15), and the form calls
+`ProjectFormDialog` renders the inner form only while `open` (D15), and the form calls
 `useForm({ resolver, defaultValues: projectFormDefaults(project, me) })`; field ids, labels, `autoFocus` on Title and
-the `https://` placeholder as in the prototype. Submit (button disabled and labelled "Creating…"/"Saving…" while pending):
+the `https://` placeholder stay as they are. Submit (button disabled and labelled "Creating…"/"Saving…" while pending):
 create → `toast.success("Project created")`, close, `router.push(\`${routes.app.project}?id=${id}\`)`; edit → close.
 Failure: `applyFieldErrors(error, setError, PROJECT_FIELD_MAP)`; if nothing was mapped → `toast.error("Couldn't save the project.")`. The dialog stays open on failure.
 
@@ -254,18 +247,17 @@ export function ProjectTaskStats(props: { counts: TaskCounts }): React.JSX.Eleme
 export function DeleteProjectDialog(props: { project: Project; open: boolean; onOpenChange: (open: boolean) => void; onDeleted?: () => void }): React.JSX.Element;
 
 // web/features/projects/components/task-status-badges.tsx
-export const TASK_STATUS_BADGE: Record<TaskStatus, string>;   // upcoming chart-4, in-progress primary, completed chart-2 (prototype classes)
+export const TASK_STATUS_BADGE: Record<TaskStatus, string>;   // upcoming chart-4, in-progress primary, completed chart-2
 export function TaskStatusBadges(props: { counts: TaskCounts }): React.JSX.Element;
 
-// web/features/projects/components/project-icon.tsx (prototype, final)
+// web/features/projects/components/project-icon.tsx (final)
 export function ProjectIcon(props: { project: { id: string }; className?: string }): React.JSX.Element;
 ```
-The prototype's layout, classes and copy stay as they are; the bullets below say what changes.
-- `ProjectsList`: SCR-020. The prototype's `useSearchParams`/`router.replace` URL code becomes the nuqs `useQueryStates` above (`clearOnDefault`, so defaults stay out of the URL), and `useAllProjects` + in-memory filtering becomes `useProjects({ q, sort, page, pageSize: 25 })`; loading = `isPending`, error = `isError` (Retry → `refetch`). The search input keeps local text, and writes `q` (trimmed, and `page: 1`) from `useDebouncedValue(text, 300)`. Sort select labels: "Recently updated", "Recently created", "Title A–Z". Pagination (`pageSize` 25) only when `total > 25`, with Previous/Next and page links. Counts: three `Badge`s with `title` attributes naming the status (`TASK_STATUS_LABELS`); Completed: `<Progress value={percent} />` + `${percent} %`. "New project" opens `ProjectFormDialog`.
-- `ProjectDetail`: SCR-021, the prototype's header (back link, icon, title, Edit/Delete), **Details** and **Statistics** cards, **without** the task-count controls and the **Tasks** card. `useProject(id, !leaving)`; `onDeleted` sets `leaving`, after which it renders `null` (D13). `ApiError` 404 slug `in-trash` → the trash state with **Restore** (`useRestoreProject`; failure → `toast.error("Couldn't restore the project.")`); other 404 → not found; other errors → error + **Retry** (`refetch`). Links: external link `target="_blank" rel="noopener noreferrer"`, "Back to projects" → `routes.app.projects`.
+The layout, classes and copy stay as they are (D10); the bullets below say what changes.
+- `ProjectsList`: SCR-020. URL state is the nuqs `useQueryStates` above (`clearOnDefault`, so defaults stay out of the URL); rows come from `useProjects({ q, sort, page, pageSize: 25 })`; loading = `isPending`, error = `isError` (Retry → `refetch`). The search input keeps local text, and writes `q` (trimmed, and `page: 1`) from `useDebouncedValue(text, 300)`. Sort select labels: "Recently updated", "Recently created", "Title A–Z". Pagination (`pageSize` 25) only when `total > 25`, with Previous/Next and page links. Counts: three `Badge`s with `title` attributes naming the status (`TASK_STATUS_LABELS`); Completed: `<Progress value={percent} />` + `${percent} %`. "New project" opens `ProjectFormDialog`.
+- `ProjectDetail`: SCR-021, the header (back link, icon, title, Edit/Delete), **Details** and **Statistics** cards, no **Tasks** card. `useProject(id, !leaving)`; `onDeleted` sets `leaving`, after which it renders `null` (D13). `ApiError` 404 slug `in-trash` → the trash state with **Restore** (`useRestoreProject`; failure → `toast.error("Couldn't restore the project.")`); other 404 → not found; other errors → error + **Retry** (`refetch`). Links: external link `target="_blank" rel="noopener noreferrer"`, "Back to projects" → `routes.app.projects`.
 - `DeleteProjectDialog`: SCR-021's confirmation (`AlertDialog`); confirm → `useDeleteProject` (the Delete button disabled while pending) → on success `onDeleted?.()`, `router.push(routes.app.projects)`, `toast("Moved to trash")`; failure → `toast.error("Couldn't delete the project.")`, dialog stays.
 - `TaskStatusBadges` and `ProjectTaskStats` read counts through `taskCount` (D14).
-- Delete `mock-store.ts` and `prototype-state-switch.tsx`; nothing may import them (AC-18).
 - Pages: `projects/page.tsx` → `<Suspense fallback={null}><ProjectsList /></Suspense>` (metadata title "Projects"); `project/page.tsx` keeps `ViewIdGuard` and renders `<ProjectDetail />` instead of the placeholder.
 
 ## Acceptance criteria
@@ -290,21 +282,17 @@ Tests mock `@/lib/api/client` (`apiClient.GET/POST/PATCH/DELETE`) and `next/navi
 | AC-15 | Delete → the confirmation text from SCR-021; Cancel → no request; Delete → `DELETE /api/v1/projects/p1`, toast "Moved to trash", `router.push("/app/projects")`, and no further `GET /api/v1/projects/p1` (D13) | `web/features/projects/components/project-detail.ac.test.tsx` | T3 |
 | AC-16 | `npm run build` succeeds and `web/out/app/projects.html` and `web/out/app/project.html` exist | `check` | T3 |
 | AC-17 | Signed in locally against the API: create a project with lead = me, see it in the list with 0 %, edit its lead to another user via search, delete it (lands on the list with the toast), open its old URL → in the trash → Restore | `manual` | T3 |
-| AC-18 | No prototype code is left: `mock-store.ts` and `prototype-state-switch.tsx` don't exist, and nothing under `web/` mentions `mock-store`, `PrototypeStateSwitch` or `UI PROTOTYPE` | `check` | T3 |
 
 Typed stubs (created with the tests, so lint and typecheck pass while the tests fail): each listed
 signature from *Interfaces* in `lib/api/problem.ts`, `features/projects/stats.ts`, `features/users/lead.ts`,
 `features/projects/api.ts` (`projectKeys` and the types real), each body
-`throw new Error("not implemented (feat-prj-web)")`. The components are the prototype (D10), still on the mock
-store, so their tests fail on the missing requests and the mock data; the copied lead field and label import
-from the prototype's new location.
+`throw new Error("not implemented (feat-prj-web)")`. The component tests fail until T2 and T3 connect the
+components to the hooks.
 
 ## Checks
 ```bash
 # AC-16: the static export still has both project pages
 cd web && npm run build >/dev/null && test -f out/app/projects.html && test -f out/app/project.html
-# AC-18: no prototype code left
-cd web && test ! -e features/projects/mock-store.ts && test ! -e features/projects/components/prototype-state-switch.tsx && ! grep -rIlE "mock-store|PrototypeStateSwitch|UI PROTOTYPE" --exclude-dir=node_modules --exclude-dir=out --exclude-dir=.next .
 ```
 
 ## Tasks
@@ -312,7 +300,7 @@ cd web && test ! -e features/projects/mock-store.ts && test ! -e features/projec
 | --- | --- | --- | --- | --- | --- | --- |
 | T1 | Dependencies, providers, API error helpers, project and user-search hooks, lead helpers | web | M | opus | First `ApiError`/`unwrap`/`applyFieldErrors` and first domain mutations with invalidations; new deps | — (feat-prj-api and T-0021 done) |
 | T2 | `ProjectLeadField`, `ProjectLeadLabel` and the project create/edit dialog | web | M | opus | First form (rhf + zod + API field errors) and a non-trivial combobox, both reused by tasks | T1 |
-| T3 | Projects list page and project detail page (stats, delete, restore, not found); remove the prototype code | web | M | sonnet | Swaps the prototype's mock store for T1's hooks; layout, behavior and copy fully stated | T2 |
+| T3 | Projects list page and project detail page (stats, delete, restore, not found) | web | M | sonnet | Connects the components to T1's hooks; layout, behavior and copy fully stated | T2 |
 
 ## Open questions
 None. OQ-076…OQ-078, OQ-083, OQ-085, OQ-086, OQ-089, OQ-090, OQ-092 and OQ-093 are resolved.
@@ -320,5 +308,5 @@ None. OQ-076…OQ-078, OQ-083, OQ-085, OQ-086, OQ-089, OQ-090, OQ-092 and OQ-093
 ## Changelog
 - 2026-10-03: Initial draft.
 - 2026-10-03: Approved by the owner.
-- 2026-10-04: Aligned with the owner-approved UI prototype (D10–D15): the prototype is the starting point, copied in by the test writer; project icon, status badges, clickable rows, `taskCount`, no refetch after delete, no Tasks card; AC-18 removes the prototype code. Back to `review`.
+- 2026-10-04: Owner layout review (D10–D15): project icon, status badges, clickable rows, `taskCount`, no refetch after delete, no Tasks card. Back to `review`.
 - 2026-10-04: Approved by the owner.

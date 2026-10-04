@@ -25,7 +25,7 @@ Work from the brief: `node scripts/pm4.mjs brief T-0025`. Verify with `node scri
 ## Implementation notes
 _Implementer: what changed, and anything the reviewer should look at._
 
-- Dependencies (`nuqs`, `sonner`), `features/tasks/status.ts` and `lib/use-debounced-value.ts` were already in the tree (prototype / test writer); nothing installed.
+- Dependencies (`nuqs`, `sonner`), `features/tasks/status.ts` and `lib/use-debounced-value.ts` were already in the tree (test writer); nothing installed.
 - `lib/api/problem.ts`: `ApiError`, `unwrap`/`unwrapVoid` (Problem Details detected by a string `type` and numeric `status` on openapi-fetch's `error`), `isApiError`, `applyFieldErrors` (sets one error per form field, the first API entry wins, e.g. `projectLeadUserId`/`projectLeadName` → `lead`).
 - `features/projects/api.ts`: hooks per the Interfaces. `useProject` retry = `!isApiError(e, 404) && failureCount < 1` (keeps the app default of one retry otherwise). Mutation `onSuccess` returns the invalidation promises, so the mutation stays pending until they settle.
 - `features/projects/stats.ts`, `features/users/lead.ts`, `useUserSearch` + `userKeys.search` in `features/users/api.ts`, `NuqsAdapter` inside `QueryProvider` in `app/layout.tsx`.
@@ -34,14 +34,14 @@ _Implementer: what changed, and anything the reviewer should look at._
 pm4 check T-0025
   ac hashes: ok (4)
   scope: ok
-  pending ACs (later tasks, excluded): AC-7 … AC-18
+  pending ACs (later tasks, excluded): AC-7 … AC-17
   web lint: ok
   web format:check: ok
   web typecheck: ok
   web test: ok
   web build: ok
   web api:types: ok
-  check AC-16, AC-18: skipped (later task)
+  check AC-16: skipped (later task)
 PASS T-0025
 ```
 

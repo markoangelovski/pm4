@@ -49,7 +49,7 @@ live under `/app` (OQ-047).
 | SCR-051 | Profile (`/app/user-profile`, read-only, API-USR-001): header card (avatar, name, email); **Account**: Name, Email, Signed in with: Google, Member since (date in the profile time zone), Time zone with a "Change in Settings" link; **Sessions**: **Sign out of all devices** behind a confirmation dialog (API-AUTH-006, FR-AUTH-007) (OQ-058, OQ-071, OQ-072) | TODO |
 | SCR-060 | Trash: deleted projects (with their tasks), deleted tasks, days left, restore, permanent delete | TODO |
 
-**Project icon** (SCR-020, SCR-021): a rounded square with a two-colour gradient computed from the project id, so it is stable and nothing is stored (owner-approved prototype, 2026-10-03).
+**Project icon** (SCR-020, SCR-021): a rounded square with a two-colour gradient computed from the project id, so it is stable and nothing is stored (owner, 2026-10-03).
 
 TODO: detail each screen using the template above. Wireframes (optional) go in `specs/04-web/wireframes/`.
 
@@ -77,7 +77,7 @@ OQ-021, OQ-029, OQ-030, OQ-036, OQ-038
 - 2026-10-03: Approved by the owner.
 - 2026-10-03: Detailed SCR-020…022 and SCR-030…032 (OQ-076…OQ-093; feat-prj-web, feat-tsk-web). Back to `review`.
 - 2026-10-03: Approved by the owner.
-- 2026-10-04: SCR-020…022 aligned with the owner-approved prototype: project icon, clickable rows, back link, empty-state and trash copy, "(me)" lead option. Back to `review` (feat-prj-web).
+- 2026-10-04: SCR-020…022 aligned with the owner's layout review: project icon, clickable rows, back link, empty-state and trash copy, "(me)" lead option. Back to `review` (feat-prj-web).
 - 2026-10-04: Approved by the owner.
 - 2026-10-04: SCR-020: **Created** and **Updated** columns, search by title or lead (OQ-099, OQ-100). SCR-021: **Created** and **Last modified** in *Details* (OQ-101), then moved to a dimmed line below the title. Back to `review` (feat-prj-dates-lead-search).
 - 2026-10-04: Approved by the owner.
