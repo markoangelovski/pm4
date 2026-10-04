@@ -3,7 +3,7 @@ id: T-0038
 title: Project dates in the list and detail, the lead-search placeholder, regenerated API types
 milestone: M2
 app: web
-status: blocked
+status: done
 size: S
 tier: sonnet
 depends_on: [T-0037]
@@ -21,11 +21,16 @@ ac_files:
 Work from the brief: `node scripts/pm4.mjs brief T-0038`. Verify with `node scripts/pm4.mjs check T-0038`.
 
 ## Implementation notes
-_Implementer: what changed, and anything the reviewer should look at._
+Added formatShortDate/formatDateTime, Created/Updated list columns, new placeholder, detail Created/Last modified rows, regenerated schema.d.ts.
+pm4 check: PASS T-0038 (lint, format, typecheck, test, build, api:types, AC-11 all ok).
 
 ### Attempts
 | # | Tier | Result | Summary |
 | --- | --- | --- | --- |
+| 1 | sonnet | pass | Implemented; check PASS |
 
 ## Review
-_Filled in by `review-feature`._
+**Verdict: approve** (Opus review, 2026-10-04; `pm4 check --feature` PASS).
+- Formatters follow the `TZDate` + `format` pattern. The list columns, skeleton cells, `—` fallback, placeholder and detail rows match the spec. The table scrolls sideways at narrow widths.
+- Observation, no change: if `GET /me` fails, the dates stay `—` (as the spec says).
+- Tier: sonnet was fine; haiku would have done.

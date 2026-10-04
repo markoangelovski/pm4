@@ -8,6 +8,7 @@ import {
   ilike,
   isNotNull,
   isNull,
+  or,
   sql,
   type SQL
 } from "drizzle-orm";
@@ -79,18 +80,29 @@ export class ProjectsRepository {
     page: number,
     pageSize: number
   ): Promise<{ rows: ProjectRow[]; total: number }> {
+    const pattern = q ? `%${escapeLike(q)}%` : null;
+    const titleMatch = pattern ? ilike(projects.title, pattern) : undefined;
+    // The lead's read-model name: the user's current name, else the saved text.
+    const leadName = sql`coalesce(${lead.displayName}, ${projects.projectLead})`;
     const where = and(
       eq(projects.userId, userId),
       isNull(projects.deletedAt),
-      q ? ilike(projects.title, `%${escapeLike(q)}%`) : undefined
+      pattern ? or(titleMatch, ilike(leadName, pattern)) : undefined
     );
+    const orderBy = titleMatch
+      ? [sql`(${titleMatch}) desc`, ...ORDER_BY[sort]]
+      : ORDER_BY[sort];
     const [rows, [{ total }]] = await Promise.all([
       this.selectRows(userId)
         .where(where)
-        .orderBy(...ORDER_BY[sort])
+        .orderBy(...orderBy)
         .limit(pageSize)
         .offset((page - 1) * pageSize),
-      this.db.select({ total: count() }).from(projects).where(where)
+      this.db
+        .select({ total: count() })
+        .from(projects)
+        .leftJoin(lead, eq(lead.id, projects.projectLeadUserId))
+        .where(where)
     ]);
     return { rows: rows.map(toRow), total };
   }

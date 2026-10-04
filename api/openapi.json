@@ -526,7 +526,7 @@
             "name": "q",
             "required": false,
             "in": "query",
-            "description": "Case-insensitive \"contains\" filter on the title; empty = no filter.",
+            "description": "Case-insensitive \"contains\" on the title or the project lead's name (title matches first); empty = no filter.",
             "schema": {
               "maxLength": 200,
               "type": "string"

@@ -700,7 +700,7 @@ export interface operations {
                 pageSize?: number;
                 /** @description Sort order; `title` compares case-insensitively. Ties break on `id` descending. */
                 sort?: "updatedAt:desc" | "updatedAt:asc" | "createdAt:desc" | "createdAt:asc" | "title:asc" | "title:desc";
-                /** @description Case-insensitive "contains" filter on the title; empty = no filter. */
+                /** @description Case-insensitive "contains" on the title or the project lead's name (title matches first); empty = no filter. */
                 q?: string;
             };
             header?: never;

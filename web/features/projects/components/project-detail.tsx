@@ -26,6 +26,8 @@ import {
   useRestoreProject,
   type Project
 } from "@/features/projects/api";
+import { useMe } from "@/features/users/api";
+import { formatDateTime } from "@/lib/time";
 import { isApiError } from "@/lib/api/problem";
 import { routes } from "@/lib/routes";
 
@@ -158,6 +160,7 @@ function ProjectView({
   onEdit: () => void;
   onDelete: () => void;
 }) {
+  const { data: me } = useMe();
   return (
     <>
       <div className="flex flex-col gap-2">
@@ -226,6 +229,20 @@ function ProjectView({
             </DetailRow>
             <DetailRow label="Project lead">
               <ProjectLeadLabel lead={project.projectLead} />
+            </DetailRow>
+            <DetailRow label="Created">
+              {me ? (
+                formatDateTime(project.createdAt, me.timeZone)
+              ) : (
+                <span className="text-muted-foreground">—</span>
+              )}
+            </DetailRow>
+            <DetailRow label="Last modified">
+              {me ? (
+                formatDateTime(project.updatedAt, me.timeZone)
+              ) : (
+                <span className="text-muted-foreground">—</span>
+              )}
             </DetailRow>
           </CardContent>
         </Card>

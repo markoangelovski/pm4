@@ -60,6 +60,8 @@ import {
   type ProjectSort
 } from "@/features/projects/api";
 import { completionPercent } from "@/features/projects/stats";
+import { useMe } from "@/features/users/api";
+import { formatShortDate } from "@/lib/time";
 import { useDebouncedValue } from "@/lib/use-debounced-value";
 import { routes } from "@/lib/routes";
 
@@ -78,6 +80,7 @@ const SORT_ITEMS = PROJECT_SORTS.map((value) => ({
 /** SCR-020: the projects list. URL: `?q=&sort=&page=`. */
 export function ProjectsList() {
   const router = useRouter();
+  const { data: me } = useMe();
   const [{ q, sort, page }, setParams] = useQueryStates(
     {
       q: parseAsString.withDefault(""),
@@ -132,7 +135,7 @@ export function ProjectsList() {
             </InputGroupAddon>
             <InputGroupInput
               type="search"
-              placeholder="Search projects…"
+              placeholder="Search by title or lead…"
               aria-label="Search projects"
               value={text}
               onChange={(e) => setText(e.target.value)}
@@ -217,7 +220,9 @@ export function ProjectsList() {
                   <TableHead className="pl-4">Title</TableHead>
                   <TableHead>Project lead</TableHead>
                   <TableHead>Tasks</TableHead>
-                  <TableHead className="pr-4">Completed</TableHead>
+                  <TableHead>Completed</TableHead>
+                  <TableHead>Created</TableHead>
+                  <TableHead className="pr-4">Updated</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -236,8 +241,14 @@ export function ProjectsList() {
                         <TableCell>
                           <Skeleton className="h-4 w-24" />
                         </TableCell>
-                        <TableCell className="pr-4">
+                        <TableCell>
                           <Skeleton className="h-4 w-32" />
+                        </TableCell>
+                        <TableCell>
+                          <Skeleton className="h-4 w-20" />
+                        </TableCell>
+                        <TableCell className="pr-4">
+                          <Skeleton className="h-4 w-20" />
                         </TableCell>
                       </TableRow>
                     ))
@@ -273,7 +284,7 @@ export function ProjectsList() {
                           <TableCell>
                             <TaskStatusBadges counts={project.taskCounts} />
                           </TableCell>
-                          <TableCell className="pr-4">
+                          <TableCell>
                             <div className="flex min-w-36 items-center gap-3">
                               <Progress
                                 value={percent}
@@ -284,6 +295,20 @@ export function ProjectsList() {
                                 {percent} %
                               </span>
                             </div>
+                          </TableCell>
+                          <TableCell className="whitespace-nowrap">
+                            {me ? (
+                              formatShortDate(project.createdAt, me.timeZone)
+                            ) : (
+                              <span className="text-muted-foreground">—</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="whitespace-nowrap pr-4">
+                            {me ? (
+                              formatShortDate(project.updatedAt, me.timeZone)
+                            ) : (
+                              <span className="text-muted-foreground">—</span>
+                            )}
                           </TableCell>
                         </TableRow>
                       );
