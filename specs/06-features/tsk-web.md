@@ -164,7 +164,7 @@ project was deleted meanwhile) → `setError("project", { message: "Choose a pro
 ### Lists and detail (T3)
 ```tsx
 // web/features/tasks/components/tasks-list.tsx
-/** With project: the project page's Tasks card (no Project column/filter; "New task" pre-selects it). Without: SCR-030. */
+/** With project: the project page's Tasks card (no Project column/filter; "New task" pre-selects it). Without: SCR-030 ("New task" pre-selects the project filter's project, if any). */
 export function TasksList(props: { project?: ProjectRef }): React.JSX.Element;
 // web/features/tasks/components/task-detail.tsx (reads ?id=)
 export function TaskDetail(): React.JSX.Element;
@@ -242,3 +242,4 @@ None. OQ-081, OQ-082, OQ-084…OQ-087, OQ-090 and OQ-093 are resolved.
 - 2026-10-04: Approved by the owner.
 - 2026-10-04: Test step: D14 (`Task.project.id` narrowed to `string`; `status` as the typed array). feat-prj-web's
   `project-detail.ac.test.tsx` scoped to the Statistics card, so the Tasks section's status labels don't clash.
+- 2026-10-04: Review: on SCR-030, "New task" pre-selects the project filter's project (as screens.md SCR-030/032 already say).

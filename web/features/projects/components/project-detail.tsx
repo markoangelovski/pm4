@@ -21,6 +21,7 @@ import { ProjectFormDialog } from "@/features/projects/components/project-form-d
 import { ProjectIcon } from "@/features/projects/components/project-icon";
 import { ProjectLeadLabel } from "@/features/users/components/project-lead-label";
 import { ProjectTaskStats } from "@/features/projects/components/project-task-stats";
+import { TasksList } from "@/features/tasks/components/tasks-list";
 import {
   useProject,
   useRestoreProject,
@@ -251,6 +252,8 @@ function ProjectView({
           <ProjectTaskStats counts={project.taskCounts} />
         </div>
       </div>
+
+      <TasksList project={{ id: project.id, title: project.title }} />
     </>
   );
 }

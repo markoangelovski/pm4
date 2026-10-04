@@ -32,9 +32,9 @@
 | [T-0026](m2-projects/T-0026-projectleadfield-projectleadlabel-and-the-project-create.md) | ProjectLeadField, ProjectLeadLabel and the project create/edit dialog | M2 | web | M | done | T-0025 |
 | [T-0027](m2-projects/T-0027-projects-list-page-and-project-detail.md) | Projects list page and project detail page (stats, delete, restore, not found) | M2 | web | M | done | T-0026 |
 | [T-0028](m3-tasks/T-0028-tasks-module-api-tsk-001-006.md) | Tasks module (API-TSK-001…006): CRUD, filters, move, restore | M3 | api | M | done | T-0024 |
-| [T-0029](m3-tasks/T-0029-task-hooks-with-the-optimistic-status.md) | Task hooks with the optimistic status change, due state, formatWorkDate, status select and due badge | M3 | web | M | ready | T-0028, T-0027 |
-| [T-0030](m3-tasks/T-0030-task-create-edit-dialog-with-the.md) | Task create/edit dialog with the project picker and due-date field | M3 | web | M | blocked | T-0029 |
-| [T-0031](m3-tasks/T-0031-task-lists-project-page-section-and.md) | Task lists (project page section and /app/tasks), task detail page, delete and restore | M3 | web | M | blocked | T-0030 |
+| [T-0029](m3-tasks/T-0029-task-hooks-with-the-optimistic-status.md) | Task hooks with the optimistic status change, due state, formatWorkDate, status select and due badge | M3 | web | M | done | T-0028, T-0027 |
+| [T-0030](m3-tasks/T-0030-task-create-edit-dialog-with-the.md) | Task create/edit dialog with the project picker and due-date field | M3 | web | M | done | T-0029 |
+| [T-0031](m3-tasks/T-0031-task-lists-project-page-section-and.md) | Task lists (project page section and /app/tasks), task detail page, delete and restore | M3 | web | M | done | T-0030 |
 | [T-0032](m1-auth/T-0032-base-ui-link-buttons-native-button-false.md) | Render links styled as buttons as a plain Link with buttonVariants | M1 | web | S | done | — |
 | [T-0033](m1-auth/T-0033-problem-details-schema-the-apiproblemresponses-decorator.md) | Problem Details schema, the ApiProblemResponses decorator and error responses on the existing controllers | M1 | api | S | done | — |
 | [T-0034](m1-auth/T-0034-regenerate-the-web-api-types-for.md) | Regenerate the web API types for the Problem Details responses | M1 | web | S | done | T-0033 |

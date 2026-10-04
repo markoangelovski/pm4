@@ -1,10 +1,15 @@
 import type { Metadata } from "next";
-import { PagePlaceholder } from "@/app/components/shared/page-placeholder";
+import { Suspense } from "react";
+import { TasksList } from "@/features/tasks/components/tasks-list";
 
 export const metadata: Metadata = {
   title: "Tasks"
 };
 
 export default function TasksPage() {
-  return <PagePlaceholder title="Tasks" milestone="M2" />;
+  return (
+    <Suspense fallback={null}>
+      <TasksList />
+    </Suspense>
+  );
 }

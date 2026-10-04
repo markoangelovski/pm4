@@ -1,5 +1,5 @@
 import { TZDate } from "@date-fns/tz";
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 
 const DATE_FORMAT = "yyyy-MM-dd";
 
@@ -78,4 +78,9 @@ export function formatShortDate(iso: string, tz: string): string {
 /** An ISO instant as a date and time in `tz`: formatDateTime("2026-10-02T22:30:00.000Z", "Europe/Zagreb") → "3 October 2026, 00:30". */
 export function formatDateTime(iso: string, tz: string): string {
   return format(new TZDate(iso, tz), "d MMMM yyyy, HH:mm");
+}
+
+/** A work date (`YYYY-MM-DD`) as a short date: formatWorkDate("2026-10-03") → "3 Oct 2026". Calendar string in, no time zone. */
+export function formatWorkDate(date: string): string {
+  return format(parseISO(date), "d MMM yyyy");
 }

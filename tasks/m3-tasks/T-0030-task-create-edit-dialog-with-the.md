@@ -3,7 +3,7 @@ id: T-0030
 title: Task create/edit dialog with the project picker and due-date field
 milestone: M3
 app: web
-status: blocked
+status: done
 size: M
 tier: haiku
 depends_on: [T-0029]
@@ -22,9 +22,17 @@ Work from the brief: `node scripts/pm4.mjs brief T-0030`. Verify with `node scri
 ## Implementation notes
 _Implementer: what changed, and anything the reviewer should look at._
 
+- `features/tasks/schemas.ts` (new): `taskFormSchema`, `taskFormDefaults`, `toTaskInput`, `TASK_FIELD_MAP`, copied from the projects form pattern.
+- `task-form-dialog.tsx`: on `useCreateTask` / `useUpdateTask`; a 404 sets "Choose a project." on the project field, a 400 goes through `applyFieldErrors`, anything else toasts "Couldn't save the task."; the dialog stays open on failure.
+- `pm4 check T-0030`: PASS (ac hashes ok (1), scope ok, lint/format:check/typecheck/test/build/api:types ok; AC-16 skipped as a later task).
+
 ### Attempts
 | # | Tier | Result | Summary |
 | --- | --- | --- | --- |
+| 1 | haiku | done | Form dialog on the real hooks, schemas.ts added; check PASS |
+| 2 | haiku | done | Review fixes: TASK_STATUSES, spread PROJECT_FIELD_MAP |
 
 ## Review
-_Filled in by `review-feature`._
+**Verdict: approve** (Opus reviewer, 2026-10-04).
+- Minor: `schemas.ts:12` hard-codes the status enum instead of `z.enum(TASK_STATUSES)`, and `TASK_FIELD_MAP` lists the keys instead of spreading `PROJECT_FIELD_MAP`. `mutate` with callbacks instead of `mutateAsync` behaves the same.
+- Tier: haiku was right.

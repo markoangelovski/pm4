@@ -95,19 +95,26 @@ doesn't support ESLint 10; peer ranges). The reasons are in T-0002's *Implementa
 - Playwright is **not** set up yet — that's M1+, once there's a real API to run journeys against.
 
 ## Patterns to copy
-No form or data view exists yet. The **first** of each becomes the reference; their tasks are
-opus/sonnet (`../specs/05-quality/task-routing.md`). Add them here when they land.
+The **first** of each pattern becomes the reference; its task is opus or sonnet
+(`../specs/05-quality/task-routing.md`). Add new ones here when they land.
 
 | Need | Copy from | What to copy |
 | --- | --- | --- |
 | Query hook + key factory | `features/system/api.ts` | `systemKeys` factory + `useXxx` hook over `apiClient`; per-query option overrides only with a spec reason |
+| CRUD hooks + invalidation | `features/projects/api.ts` | `projectKeys`, `unwrap`, list/detail/create/update/delete/restore hooks and what each invalidates |
+| Optimistic update with rollback | `features/tasks/api.ts` → `useUpdateTaskStatus` | `cancelQueries`, snapshot lists + detail, `setQueriesData` in place, restore + toast on error, `refetchType: "none"` on success |
+| Form dialog | `features/projects/schemas.ts` + `components/project-form-dialog.tsx` | zod schema, `xxxFormDefaults`, `toXxxInput`, `XXX_FIELD_MAP` + `applyFieldErrors`, submit-error toast |
+| List page with URL state | `features/projects/components/projects-list.tsx` | nuqs params, debounced search, loading / error + Retry / empty states, pagination |
+| Detail page states | `features/projects/components/project-detail.tsx` | not found, in the trash + Restore, `leaving` guard after delete |
+| Entity combobox | `features/tasks/components/project-picker.tsx` | shadcn Combobox over a list hook, icon in the box, "No … found" |
+| Optional date field | `features/tasks/components/due-date-field.tsx` | Calendar in a Popover, `YYYY-MM-DD` via `format`, never `toISOString`; clear button |
 | Domain component | `features/system/components/version-badge.tsx` | `"use client"` component in `features/<domain>/components/` consuming the domain hook |
 | Page with metadata | `app/(dashboard-layout)/app/projects/page.tsx` | `export const metadata`, a server page wrapping client parts |
 | Entity detail route (`?id=`) | `app/(dashboard-layout)/app/project/page.tsx` + `app/components/shared/view-id-guard.tsx` | `<Suspense>` + `ViewIdGuard` |
 | Client part reading `?returnTo=` | `app/components/shared/landing-cta.tsx` + `app/page.tsx` | `useSearchParams` inside `<Suspense>` with a same-size fallback |
 | Query client / defaults | `lib/query-client.tsx` | Don't override the defaults per query without a spec reason |
 | API calls | `lib/api/client.ts` | Use `apiClient` inside `features/<domain>/api.ts` hooks only |
-| Dates and durations | `lib/time/index.ts` | `today(tz)`, `monthRange()`, `formatDuration()` |
+| Dates and durations | `lib/time/index.ts` | `today(tz)`, `monthRange()`, `formatDuration()`, `formatWorkDate()` |
 | Typed stub for unwritten code | `lib/time/index.ts` → `parseDuration` | Signature + `throw new Error("not implemented (…)")` |
 | Component test with router mocks | `app/components/shared/view-id-guard.test.tsx` | `vi.mock("next/navigation", …)` |
 | shadcn polymorphism | any `components/ui/*.tsx` | Base UI's `render={<X />}`, not `asChild` |
