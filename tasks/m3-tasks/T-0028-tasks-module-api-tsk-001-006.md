@@ -3,13 +3,14 @@ id: T-0028
 title: Tasks module (API-TSK-001…006): CRUD, filters, move, restore
 milestone: M3
 app: api
-status: blocked
+status: ready
 size: M
 tier: haiku
 depends_on: [T-0024]
 feature_spec: specs/06-features/tsk-api.md
 spec_row: T1
-ac_files: []
+ac_files:
+  - { path: api/test/tasks.ac.e2e-spec.ts, sha256: d312177042731bfbadba689136dd745b60df48c3e708e364be62ecb4e99b40b8 }
 ---
 
 # T-0028: Tasks module (API-TSK-001…006): CRUD, filters, move, restore
