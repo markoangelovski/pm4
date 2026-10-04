@@ -8,6 +8,7 @@ import { VersionModule } from "./version/version.module.js";
 import { AuthModule } from "./auth/auth.module.js";
 import { UsersModule } from "./users/users.module.js";
 import { ProjectsModule } from "./projects/projects.module.js";
+import { TasksModule } from "./tasks/tasks.module.js";
 
 @Module({
   imports: [
@@ -18,7 +19,8 @@ import { ProjectsModule } from "./projects/projects.module.js";
     VersionModule,
     AuthModule,
     UsersModule,
-    ProjectsModule
+    ProjectsModule,
+    TasksModule
   ],
   providers: [ProblemDetailsFilter]
 })

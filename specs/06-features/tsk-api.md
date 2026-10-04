@@ -57,9 +57,9 @@ API-TSK-001…006. The `tasks` table exists already (feat-prj-api T1). The web s
 | api | `api/test/tasks.ac.e2e-spec.ts` | C | tests | API-TSK-* |
 | api | `api/src/common/dto/ref.dto.ts` | C | T1 | Hand-written |
 | api | `api/src/tasks/tasks.module.ts` | C | T1 | `npx nest g module tasks` |
-| api | `api/src/tasks/tasks.controller.ts`, `…controller.spec.ts` | C | T1 | `npx nest g controller tasks` |
-| api | `api/src/tasks/tasks.service.ts`, `…service.spec.ts` | C | T1 | `npx nest g service tasks` |
-| api | `api/src/tasks/tasks.repository.ts`, `…repository.spec.ts` | C | T1 | `npx nest g provider tasks/tasks.repository --flat` |
+| api | `api/src/tasks/tasks.controller.ts`, `api/src/tasks/tasks.controller.spec.ts` | C | T1 | `npx nest g controller tasks` |
+| api | `api/src/tasks/tasks.service.ts`, `api/src/tasks/tasks.service.spec.ts` | C | T1 | `npx nest g service tasks` |
+| api | `api/src/tasks/tasks.repository.ts`, `api/src/tasks/tasks.repository.spec.ts` | C | T1 | `npx nest g provider tasks/tasks.repository --flat` |
 | api | `api/src/tasks/dto/*.ts` | C | T1 | Hand-written |
 | api | `api/src/app.module.ts` | M | T1 | The CLI adds `TasksModule` |
 | api | `api/openapi.json` | M | T1 | `npm run openapi:export` |
