@@ -3,7 +3,7 @@ id: api-endpoints
 title: API Endpoints
 status: draft
 owner: Marko Angelovski
-last_updated: 2026-10-03
+last_updated: 2026-10-04
 related: [api-conventions, api-data-model, req-auth, req-projects, req-tasks, req-time-logs, req-reporting, req-trash]
 ---
 
@@ -197,6 +197,10 @@ This is the only endpoint that returns other users' emails (security.md *Authori
 `GET /projects?q=&sort=&page=&pageSize=` · Auth: bearer · Implements: FR-PRJ-002
 The caller's projects that aren't in the trash. `sort` ∈ `updatedAt:desc` (default), `updatedAt:asc`,
 `createdAt:desc`, `createdAt:asc`, `title:asc`, `title:desc` (title compared case-insensitively).
+`q` (OQ-099, OQ-102): matches the `title` **or** the lead's name, each a case-insensitive "contains" with wildcards
+literal. The lead's name is the read-model name (data-model.md *Project lead*): the lead user's current
+`displayName`, else the text lead; never an email. With a non-empty `q`, projects whose title matches come first,
+then lead-only matches; inside each group the `sort` order applies, then `id` descending. `total` counts both groups.
 **200:** `{ items: Project[], page, pageSize, total }`
 **Errors:** 400 validation · 401
 
@@ -281,3 +285,5 @@ OQ-029, OQ-030, OQ-036
 - 2026-10-03: Detailed API-USR-003, API-PRJ-001…006 and API-TSK-001…006 with the shared project and task shapes (OQ-076…OQ-091; feat-prj-api, feat-tsk-api). Logged-time totals dropped from API-PRJ-002 (OQ-080).
 - 2026-10-03: The owner approved *Shared project and task shapes*, API-USR-003, API-PRJ-001…006 and API-TSK-001…006 for feat-prj-api, feat-prj-web, feat-tsk-api and feat-tsk-web.
 - 2026-10-03: API-SYS-003 returns the release version stamped by `api-deploy` (OQ-098, feat-ops-release-versions).
+- 2026-10-04: API-PRJ-002 `q` also matches the lead's name, title matches first (OQ-099, OQ-102; feat-prj-dates-lead-search). Needs the owner's approval again.
+- 2026-10-04: The owner approved API-PRJ-002 (as updated) for feat-prj-dates-lead-search.

@@ -69,3 +69,17 @@ export function parseDuration(value: string): number {
 export function formatDate(iso: string, tz: string): string {
   return format(new TZDate(iso, tz), "d MMMM yyyy");
 }
+
+/** An ISO instant as a short date in `tz`: formatShortDate("2026-10-02T22:30:00.000Z", "Europe/Zagreb") → "3 Oct 2026". */
+export function formatShortDate(iso: string, tz: string): string {
+  void iso;
+  void tz;
+  throw new Error("not implemented (feat-prj-dates-lead-search)");
+}
+
+/** An ISO instant as a date and time in `tz`: formatDateTime("2026-10-02T22:30:00.000Z", "Europe/Zagreb") → "3 October 2026, 00:30". */
+export function formatDateTime(iso: string, tz: string): string {
+  void iso;
+  void tz;
+  throw new Error("not implemented (feat-prj-dates-lead-search)");
+}

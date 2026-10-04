@@ -37,3 +37,4 @@ A feature spec links to those. It doesn't copy them.
 | Tasks API: CRUD, filters, move, status and restore | [tsk-api.md](tsk-api.md) | M3 | approved |
 | Tasks web: task lists, inline status, due-date badges, task detail and the task dialog | [tsk-web.md](tsk-web.md) | M3 | approved |
 | Automatic release versions from git tags and conventional commits | [ops-release-versions.md](ops-release-versions.md) | M1 | approved |
+| Projects: created/updated dates and search by project lead | [prj-dates-lead-search.md](prj-dates-lead-search.md) | M2 | approved |

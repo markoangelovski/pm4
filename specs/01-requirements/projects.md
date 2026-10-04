@@ -3,7 +3,7 @@ id: req-projects
 title: Projects
 status: approved
 owner: Marko Angelovski
-last_updated: 2026-10-03
+last_updated: 2026-10-04
 related: [req-tasks, req-trash, req-time-logs, api-endpoints, api-data-model, sec]
 ---
 
@@ -81,17 +81,22 @@ and a project lead (suggested: the signed-in user).
 ### FR-PRJ-002: List projects
 **Priority:** Must
 **Statement:** A paginated list of the user's non-deleted projects. Each row shows the title, the
-project lead, the task counts per status and a small completed-percentage bar (OQ-083). Can be
-searched by title and sorted by title, created date or updated date (default: updated, descending).
+project lead, the task counts per status, a small completed-percentage bar (OQ-083), and the created
+and updated dates (OQ-100). Can be searched by title or project lead name, with title matches listed
+first (OQ-099, OQ-102), and sorted by title, created date or updated date (default: updated, descending).
 **Acceptance criteria:**
 - Given projects in the trash, they don't appear in the list.
 - Given a project with 2 upcoming, 1 in-progress and 1 completed task, its row shows 2 / 1 / 1 and 25 %.
 - Given a project with no tasks, its row shows zero counts and an empty bar (0 %).
-- Given I search "web", only projects whose title contains "web" (case-insensitive) are listed (OQ-085).
+- Given I search "web", only projects whose title or lead name contains "web" (case-insensitive) are listed (OQ-085, OQ-099).
+- Given I search "ana", projects whose title matches come before projects that match only by lead name; each group keeps the selected sort (OQ-099).
+- Given a user lead, the search matches the user's current name, never their email (OQ-102).
+- Given a project created on 3 Oct 2026 and updated on 4 Oct 2026 (in my time zone), its row shows "3 Oct 2026" and "4 Oct 2026" (OQ-100).
 
 ### FR-PRJ-003: View project
 **Priority:** Must
-**Statement:** The project details (title, description, external link, lead), its task statistics
+**Statement:** The project details (title, description, external link, lead, created and last
+modified date and time, OQ-101), its task statistics
 (FR-PRJ-008) and its task list with a status filter (FR-TSK-002). Opening a project that doesn't exist
 or is in the trash shows a "not found" state. If it's in the trash, a "Restore" action is offered
 (FR-TRASH-002).
@@ -99,6 +104,7 @@ or is in the trash shows a "not found" state. If it's in the trash, a "Restore" 
 - Given an external link, it opens in a new tab.
 - Given a project id that doesn't exist or belongs to another user, "not found" is shown.
 - Given a project in my trash, "not found" is shown with a "Restore" action.
+- Given a project created at 2026-10-03T08:00Z and updated at 2026-10-04T12:05Z, and my time zone Europe/Zagreb, the details show "Created 3 October 2026, 10:00" and "Last modified 4 October 2026, 14:05" (OQ-101).
 
 ### FR-PRJ-004: Edit project
 **Priority:** Must
@@ -148,3 +154,5 @@ None.
   % completed, list rows with status counts. Logged time deferred to the time-capture specs.
 - 2026-10-03: Acceptance criteria for FR-PRJ-004/005 (OQ-086).
 - 2026-10-03: Approved by the owner.
+- 2026-10-04: FR-PRJ-002: created/updated dates in the list, search by title or lead name with title matches first (OQ-099, OQ-100, OQ-102). FR-PRJ-003: created and last modified date and time (OQ-101). Back to `review` (feat-prj-dates-lead-search).
+- 2026-10-04: Approved by the owner.
