@@ -9,7 +9,9 @@ tier: haiku
 depends_on: [T-0030]
 feature_spec: specs/06-features/tsk-web.md
 spec_row: T3
-ac_files: []
+ac_files:
+  - { path: web/features/tasks/components/tasks-list.ac.test.tsx, sha256: 4910b762d4b04ca416d427931e8e2a31c105641529835af8ceb22a7b82e3c0ce }
+  - { path: web/features/tasks/components/task-detail.ac.test.tsx, sha256: bd9836ccc4bddc4ffca7869d4a655bd046b37440ca6a2edc1101e9044adeb48c }
 ---
 
 # T-0031: Task lists (project page section and /app/tasks), task detail page, delete and restore

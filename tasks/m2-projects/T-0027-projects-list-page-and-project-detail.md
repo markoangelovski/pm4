@@ -11,7 +11,7 @@ feature_spec: specs/06-features/prj-web.md
 spec_row: T3
 ac_files:
   - { path: web/features/projects/components/projects-list.ac.test.tsx, sha256: 26adef590b175493e42d97c8bb49e37202c923488c6bf71b0446a1ec17341a8e }
-  - { path: web/features/projects/components/project-detail.ac.test.tsx, sha256: 90f25805f46a12baf5211c51fc2ad92f944535e4e914cb7126bd4411add4c22e }
+  - { path: web/features/projects/components/project-detail.ac.test.tsx, sha256: 8a811e529e33dd3856ce107a5d4cc10a57ef86a3e68ff2badbf1c442134b7706 }
 ---
 
 # T-0027: Projects list page and project detail page (stats, delete, restore, not found)

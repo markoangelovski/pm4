@@ -129,19 +129,23 @@ describe("ProjectDetail (feat-prj-web)", () => {
     expect(link).toHaveAttribute("rel", "noopener noreferrer");
     expect(screen.getByText("Marko Angelovski")).toBeInTheDocument();
 
-    expect(screen.getByText("Upcoming").parentElement).toHaveTextContent(
+    // Scoped to the card: the Tasks section below has its own status labels (feat-tsk-web).
+    const stats = within(
+      screen.getByText("Statistics").closest<HTMLElement>("[data-slot=card]")!
+    );
+    expect(stats.getByText("Upcoming").parentElement).toHaveTextContent(
       /Upcoming\s*3/
     );
-    expect(screen.getByText("In progress").parentElement).toHaveTextContent(
+    expect(stats.getByText("In progress").parentElement).toHaveTextContent(
       /In progress\s*1/
     );
-    expect(screen.getAllByText("Completed")[0].parentElement).toHaveTextContent(
+    expect(stats.getAllByText("Completed")[0].parentElement).toHaveTextContent(
       /Completed\s*4/
     );
-    expect(screen.getByText("Total").parentElement).toHaveTextContent(
+    expect(stats.getByText("Total").parentElement).toHaveTextContent(
       /Total\s*8/
     );
-    expect(screen.getByText("50 %")).toBeInTheDocument();
+    expect(stats.getByText("50 %")).toBeInTheDocument();
   });
 
   it("AC-14 FR-PRJ-003 FR-TRASH-002 SCR-021: not found, in the trash with Restore, and error with Retry", async () => {

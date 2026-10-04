@@ -208,6 +208,60 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/tasks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The caller's tasks, optionally filtered by project and status (API-TSK-002). */
+        get: operations["TasksController_list"];
+        put?: never;
+        /** Create a task (API-TSK-001). */
+        post: operations["TasksController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/tasks/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One task (API-TSK-003). */
+        get: operations["TasksController_get"];
+        put?: never;
+        post?: never;
+        /** Move the task to the trash (API-TSK-005). */
+        delete: operations["TasksController_remove"];
+        options?: never;
+        head?: never;
+        /** Change the given fields (API-TSK-004). */
+        patch: operations["TasksController_update"];
+        trace?: never;
+    };
+    "/api/v1/tasks/{id}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Take the task out of the trash (API-TSK-006). */
+        post: operations["TasksController_restore"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -345,6 +399,91 @@ export interface components {
             projectLeadUserId?: string | null;
             /** @description A free-text lead name, ≤ 100 chars; empty after trimming → `null`. */
             projectLeadName?: string | null;
+        };
+        /**
+         * @description Status of the task; absent defaults to `upcoming`. `null` → 400.
+         * @enum {string}
+         */
+        TaskStatus: "upcoming" | "in-progress" | "completed";
+        CreateTaskDto: {
+            /** @description ≤ 2000 chars; empty after trimming → `null`. */
+            description?: string | null;
+            /**
+             * Format: uri
+             * @description Absolute `http(s)://` URL, ≤ 500 chars; empty after trimming → `null`.
+             */
+            externalLink?: string | null;
+            /**
+             * Format: uuid
+             * @description A registered user as the lead; excludes `projectLeadName`.
+             */
+            projectLeadUserId?: string | null;
+            /** @description A free-text lead name, ≤ 100 chars; empty after trimming → `null`. */
+            projectLeadName?: string | null;
+            /** @description Status of the task; absent defaults to `upcoming`. `null` → 400. */
+            status?: components["schemas"]["TaskStatus"];
+            /** @description Work date in `YYYY-MM-DD`; empty after trimming → `null`. */
+            dueDate?: string | null;
+            /**
+             * Format: uuid
+             * @description The project that contains this task.
+             */
+            projectId: string;
+            /** @description 1–200 chars after trimming. */
+            title: string;
+        };
+        RefDto: {
+            id: string | null;
+            title: string;
+            deleted: boolean;
+        };
+        TaskResponseDto: {
+            description: string | null;
+            externalLink: string | null;
+            projectLead: components["schemas"]["ProjectLeadDto"] | null;
+            status: components["schemas"]["TaskStatus"];
+            /** @description Work date, `YYYY-MM-DD` */
+            dueDate: string | null;
+            id: string;
+            project: components["schemas"]["RefDto"];
+            title: string;
+            /** @description ISO 8601 UTC */
+            createdAt: string;
+            /** @description ISO 8601 UTC */
+            updatedAt: string;
+        };
+        TaskListResponseDto: {
+            page: number;
+            pageSize: number;
+            total: number;
+            items: components["schemas"]["TaskResponseDto"][];
+        };
+        UpdateTaskDto: {
+            /**
+             * Format: uuid
+             * @description The project to move the task to; not `null`.
+             */
+            projectId?: string;
+            /** @description 1–200 chars after trimming; not `null`. */
+            title?: string;
+            /** @description ≤ 2000 chars; empty after trimming → `null`. */
+            description?: string | null;
+            /**
+             * Format: uri
+             * @description Absolute `http(s)://` URL, ≤ 500 chars; empty after trimming → `null`.
+             */
+            externalLink?: string | null;
+            /**
+             * Format: uuid
+             * @description A registered user as the lead; excludes `projectLeadName`.
+             */
+            projectLeadUserId?: string | null;
+            /** @description A free-text lead name, ≤ 100 chars; empty after trimming → `null`. */
+            projectLeadName?: string | null;
+            /** @description Status of the task; not `null`. */
+            status?: components["schemas"]["TaskStatus"];
+            /** @description Work date in `YYYY-MM-DD`; empty after trimming → `null`. */
+            dueDate?: string | null;
         };
     };
     responses: never;
@@ -981,6 +1120,327 @@ export interface operations {
             };
             /** @description Not found. */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Unexpected error. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+        };
+    };
+    TasksController_list: {
+        parameters: {
+            query?: {
+                /** @description 1-based page number. */
+                page?: number;
+                /** @description Items per page, 1–100. */
+                pageSize?: number;
+                /** @description Filter to these statuses; absent = no filter; `status=` or an unknown value → 400. */
+                status?: components["schemas"]["TaskStatus"][];
+                /** @description Sort order; `title` compares case-insensitively. Ties break on `id` descending. */
+                sort?: "updatedAt:desc" | "updatedAt:asc" | "dueDate:asc" | "dueDate:desc" | "title:asc" | "title:desc";
+                /** @description Filter to a single project; no value or foreign/trashed project → empty items. */
+                projectId?: string;
+                /** @description Case-insensitive "contains" filter on the title; empty = no filter. */
+                q?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskListResponseDto"];
+                };
+            };
+            /** @description Validation failed: one entry in errors[] per invalid field. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Missing, invalid or expired credentials. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Unexpected error. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+        };
+    };
+    TasksController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTaskDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskResponseDto"];
+                };
+            };
+            /** @description Validation failed: one entry in errors[] per invalid field. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Missing, invalid or expired credentials. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Unexpected error. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+        };
+    };
+    TasksController_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskResponseDto"];
+                };
+            };
+            /** @description Missing, invalid or expired credentials. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Not found. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Unexpected error. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+        };
+    };
+    TasksController_remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Moved to the trash. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing, invalid or expired credentials. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Not found. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Unexpected error. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+        };
+    };
+    TasksController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateTaskDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskResponseDto"];
+                };
+            };
+            /** @description Validation failed: one entry in errors[] per invalid field. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Missing, invalid or expired credentials. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Not found. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Unexpected error. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+        };
+    };
+    TasksController_restore: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Restored, or already active. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing, invalid or expired credentials. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Not found. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Conflict. */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
