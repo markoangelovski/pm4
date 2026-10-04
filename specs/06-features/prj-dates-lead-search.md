@@ -21,7 +21,7 @@ created and last modified. FR-PRJ-002, FR-PRJ-003, API-PRJ-002, SCR-020, SCR-021
 | --- | --- | --- |
 | D1 | `q` matches the title or the lead's name. Title matches come first, then lead-only matches. Each group keeps the selected sort. | OQ-099 (owner, 2026-10-04) |
 | D2 | List: **Created** and **Updated** columns, date only, `d MMM yyyy`, in the user's time zone. | OQ-100 (owner, 2026-10-04) |
-| D3 | Detail: **Created** and **Last modified** rows in *Details*, `d MMMM yyyy, HH:mm`, in the user's time zone. | OQ-101 (owner, 2026-10-04) |
+| D3 | Detail: **Created** and **Last modified** as a small dimmed line below the title (moved from *Details*, owner 2026-10-04), `d MMMM yyyy, HH:mm`, in the user's time zone. | OQ-101 (owner, 2026-10-04) |
 | D4 | The lead search matches the read-model name only, never an email. | OQ-102 (owner, 2026-10-04) |
 | D5 | The API already returns `createdAt`/`updatedAt`, so the dates are web-only. The time zone is `useMe().data.timeZone`, as on the profile page. | Agent |
 | D6 | Projects get their own `q` doc comment, so `openapi.json` and `schema.d.ts` describe the new match. The validation stays the same. | Agent: keeps the contract accurate |
@@ -112,7 +112,7 @@ export function formatDateTime(iso: string, tz: string): string; // "d MMMM yyyy
 | AC-7 | `formatShortDate("2026-10-02T22:30:00.000Z", "Europe/Zagreb")` → "3 Oct 2026"; `formatDateTime` of the same → "3 October 2026, 00:30"; `formatDateTime("2026-01-15T12:05:00.000Z", "Europe/Zagreb")` → "15 January 2026, 13:05" | `web/lib/time/format-date-time.ac.test.ts` | T2 |
 | AC-8 | List: **Created** and **Updated** headers; a project created `2026-10-02T22:30Z` and updated `2026-10-04T12:05Z` (me in Europe/Zagreb) shows "3 Oct 2026" and "4 Oct 2026" in its row | `web/features/projects/components/project-dates.ac.test.tsx` | T2 |
 | AC-9 | List: the search box has the placeholder "Search by title or lead…" | `web/features/projects/components/project-dates.ac.test.tsx` | T2 |
-| AC-10 | Detail: *Details* shows "Created" "3 October 2026, 00:30" and "Last modified" "4 October 2026, 14:05" | `web/features/projects/components/project-dates.ac.test.tsx` | T2 |
+| AC-10 | Detail: shows (below the title, D3) "Created" "3 October 2026, 00:30" and "Last modified" "4 October 2026, 14:05" | `web/features/projects/components/project-dates.ac.test.tsx` | T2 |
 | AC-11 | The contract describes the new `q` in both apps | check | T1, T2 |
 
 Typed stubs (created with the tests, so lint and typecheck pass while the tests fail):

@@ -174,9 +174,23 @@ function ProjectView({
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="flex min-w-0 items-center gap-3">
             <ProjectIcon project={project} className="size-10" />
-            <h1 className="min-w-0 text-2xl font-semibold break-words">
-              {project.title}
-            </h1>
+            <div className="flex min-w-0 flex-col gap-0.5">
+              <h1 className="min-w-0 text-2xl font-semibold break-words">
+                {project.title}
+              </h1>
+              <div className="flex flex-wrap gap-x-3 text-xs text-muted-foreground">
+                <DateStamp
+                  label="Created"
+                  value={project.createdAt}
+                  timeZone={me?.timeZone}
+                />
+                <DateStamp
+                  label="Last modified"
+                  value={project.updatedAt}
+                  timeZone={me?.timeZone}
+                />
+              </div>
+            </div>
           </div>
           <div className="flex gap-2">
             <Button
@@ -230,20 +244,6 @@ function ProjectView({
             <DetailRow label="Project lead">
               <ProjectLeadLabel lead={project.projectLead} />
             </DetailRow>
-            <DetailRow label="Created">
-              {me ? (
-                formatDateTime(project.createdAt, me.timeZone)
-              ) : (
-                <span className="text-muted-foreground">—</span>
-              )}
-            </DetailRow>
-            <DetailRow label="Last modified">
-              {me ? (
-                formatDateTime(project.updatedAt, me.timeZone)
-              ) : (
-                <span className="text-muted-foreground">—</span>
-              )}
-            </DetailRow>
           </CardContent>
         </Card>
 
@@ -252,6 +252,22 @@ function ProjectView({
         </div>
       </div>
     </>
+  );
+}
+
+function DateStamp({
+  label,
+  value,
+  timeZone
+}: {
+  label: string;
+  value: string;
+  timeZone: string | undefined;
+}) {
+  return (
+    <span>
+      <span>{label}</span> {timeZone ? formatDateTime(value, timeZone) : "—"}
+    </span>
   );
 }
 
