@@ -14,8 +14,12 @@ interface NavCollapseProps {
 
 export default function NavCollapse({ menu, className }: NavCollapseProps) {
   const pathname = usePathname();
-  const { state } = useSidebar();
+  const { state, isMobile, setOpenMobile } = useSidebar();
   const isCollapse = state === "collapsed";
+  // On mobile the sidebar is a sheet over the page: close it once a link is followed.
+  const closeOnMobile = () => {
+    if (isMobile) setOpenMobile(false);
+  };
 
   const isActiveRoute = (item: ChildItem): boolean => {
     if (item.url && pathname === item.url) return true;
@@ -63,6 +67,7 @@ export default function NavCollapse({ menu, className }: NavCollapseProps) {
                 <Link
                   key={index}
                   href={item.url || "#"}
+                  onClick={closeOnMobile}
                   target={item.external ? "_blank" : undefined}
                   className={cn(
                     "flex items-center gap-3  rounded-md transition-all duration-200 ease-in-out ",
@@ -106,6 +111,7 @@ export default function NavCollapse({ menu, className }: NavCollapseProps) {
                       <Link
                         key={index}
                         href={sub.url || "#"}
+                        onClick={closeOnMobile}
                         target={sub.external ? "_blank" : undefined}
                         className={cn(
                           "block rounded-md transition-all duration-200 ease-in-out",
