@@ -4,10 +4,15 @@ import { render, screen } from "@testing-library/react";
 import Footer from "./footer";
 
 // next/link applies its own href normalization outside a Next build (next.config isn't loaded in
-// Vitest). A plain anchor keeps the exact href the component passes.
+// Vitest). A plain anchor keeps the exact href the component passes, and exposes `prefetch` as a
+// data attribute so the test can check it.
 vi.mock("next/link", () => ({
-  default: ({ href, ...props }: { href: string } & ComponentProps<"a">) => (
-    <a href={href} {...props} />
+  default: ({
+    href,
+    prefetch,
+    ...props
+  }: { href: string; prefetch?: boolean } & ComponentProps<"a">) => (
+    <a href={href} data-prefetch={String(prefetch)} {...props} />
   )
 }));
 
@@ -31,42 +36,20 @@ describe("Footer", () => {
     expect(normalizedText).toContain("better project management for you");
   });
 
-  it("should have exactly three links with correct hrefs and no target attribute", () => {
+  it("should have exactly one link to the landing page, without a target attribute", () => {
     render(<Footer />);
 
     const links = screen.getAllByRole("link");
 
-    // AC: Exactly three links
-    expect(links).toHaveLength(3);
+    // AC: Exactly one link: PM4 → /
+    expect(links).toHaveLength(1);
+    expect(links[0]).toHaveTextContent("PM4");
+    expect(links[0]).toHaveAttribute("href", "/");
 
-    // Check the links and their hrefs
-    const linkMap = links.map((link) => ({
-      text: link.textContent,
-      href: link.getAttribute("href"),
-      target: link.getAttribute("target")
-    }));
+    // AC: The link has no target attribute
+    expect(links[0]).not.toHaveAttribute("target");
 
-    expect(linkMap).toContainEqual({
-      text: "PM4",
-      href: "/",
-      target: null
-    });
-
-    expect(linkMap).toContainEqual({
-      text: "Terms and Conditions",
-      href: "/terms-and-conditions",
-      target: null
-    });
-
-    expect(linkMap).toContainEqual({
-      text: "Privacy",
-      href: "/privacy",
-      target: null
-    });
-
-    // AC: None of the links have a target attribute
-    links.forEach((link) => {
-      expect(link).not.toHaveAttribute("target");
-    });
+    // The footer is on every page: its link must not prefetch on each navigation
+    expect(links[0]).toHaveAttribute("data-prefetch", "false");
   });
 });
