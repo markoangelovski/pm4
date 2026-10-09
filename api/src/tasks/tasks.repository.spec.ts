@@ -42,3 +42,32 @@ describe("TasksRepository", () => {
     await expect(repository.findById("user-1", "t-1")).resolves.toBeNull();
   });
 });
+
+describe("TasksRepository.update", () => {
+  it("moves the task's time logs when the project changes", async () => {
+    const updates: string[] = [];
+    const tx = {
+      update: () => {
+        const chain: Record<string, unknown> = {};
+        chain.set = (values: Record<string, unknown>) => {
+          updates.push(Object.keys(values).join(","));
+          return chain;
+        };
+        chain.where = () => Promise.resolve();
+        return chain;
+      }
+    };
+    const db = { transaction: (fn: (t: typeof tx) => Promise<void>) => fn(tx) };
+    const module = await Test.createTestingModule({
+      providers: [TasksRepository, { provide: DRIZZLE, useValue: db }]
+    }).compile();
+    const repository = module.get(TasksRepository);
+
+    await repository.update("u", "t", { projectId: "p", title: "x" });
+    expect(updates).toEqual(["projectId,title,updatedAt", "projectId"]);
+
+    updates.length = 0;
+    await repository.update("u", "t", { title: "x" });
+    expect(updates).toEqual(["title,updatedAt"]);
+  });
+});

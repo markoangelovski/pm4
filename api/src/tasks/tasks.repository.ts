@@ -18,6 +18,7 @@ import { DRIZZLE, type DrizzleDb } from "../database/drizzle.js";
 import {
   projects,
   tasks,
+  timeLogs,
   users,
   type TaskStatus
 } from "../database/schema/index.js";
@@ -131,10 +132,19 @@ export class TasksRepository {
     id: string,
     values: Partial<TaskValues>
   ): Promise<void> {
-    await this.db
-      .update(tasks)
-      .set({ ...values, updatedAt: sql`now()` })
-      .where(and(eq(tasks.userId, userId), eq(tasks.id, id)));
+    await this.db.transaction(async (tx) => {
+      await tx
+        .update(tasks)
+        .set({ ...values, updatedAt: sql`now()` })
+        .where(and(eq(tasks.userId, userId), eq(tasks.id, id)));
+      // Moving the task moves its time logs with it (D4).
+      if (values.projectId !== undefined) {
+        await tx
+          .update(timeLogs)
+          .set({ projectId: values.projectId })
+          .where(and(eq(timeLogs.userId, userId), eq(timeLogs.taskId, id)));
+      }
+    });
   }
 
   /**

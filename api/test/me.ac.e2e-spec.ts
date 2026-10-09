@@ -93,6 +93,7 @@ describe("Default-deny guard and GET /api/v1/me (feat-auth-api-session)", () => 
       displayName: "Grace Hopper",
       avatarUrl: "https://lh3.googleusercontent.com/a/grace",
       timeZone: "Europe/Zagreb",
+      dailyTargetMinutes: 420,
       createdAt: user.created_at.toISOString()
     });
   });

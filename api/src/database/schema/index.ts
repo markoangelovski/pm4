@@ -3,3 +3,4 @@
 // time (drizzle-kit reads this file to generate SQL migrations).
 export * from "./users.js";
 export * from "./projects.js";
+export * from "./time.js";

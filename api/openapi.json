@@ -342,6 +342,71 @@
         "tags": [
           "Users"
         ]
+      },
+      "patch": {
+        "operationId": "UsersController_update",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateMeDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed: one entry in errors[] per invalid field.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid or expired credentials.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Change the profile settings (API-USR-002).",
+        "tags": [
+          "Users"
+        ]
       }
     },
     "/api/v1/users": {
@@ -1323,6 +1388,446 @@
           "Tasks"
         ]
       }
+    },
+    "/api/v1/workdays": {
+      "get": {
+        "operationId": "WorkdaysController_list",
+        "parameters": [
+          {
+            "name": "from",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "format": "date",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "format": "date",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkdayListResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed: one entry in errors[] per invalid field.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid or expired credentials.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "The workdays in a date range (API-WD-001).",
+        "tags": [
+          "Workdays"
+        ]
+      }
+    },
+    "/api/v1/workdays/{date}": {
+      "get": {
+        "operationId": "WorkdaysController_getDay",
+        "parameters": [
+          {
+            "name": "date",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "date",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DayResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed: one entry in errors[] per invalid field.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid or expired credentials.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "A whole day: start, total and logs (API-WD-003).",
+        "tags": [
+          "Workdays"
+        ]
+      },
+      "put": {
+        "operationId": "WorkdaysController_setStart",
+        "parameters": [
+          {
+            "name": "date",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "date",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetWorkdayDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkdayResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed: one entry in errors[] per invalid field.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid or expired credentials.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Set the day start (API-WD-002).",
+        "tags": [
+          "Workdays"
+        ]
+      }
+    },
+    "/api/v1/time-logs": {
+      "post": {
+        "operationId": "TimeLogsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTimeLogDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TimeLogResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed: one entry in errors[] per invalid field.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid or expired credentials.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create a time log (API-TLOG-002).",
+        "tags": [
+          "TimeLogs"
+        ]
+      }
+    },
+    "/api/v1/time-logs/{id}": {
+      "patch": {
+        "operationId": "TimeLogsController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTimeLogDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TimeLogResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed: one entry in errors[] per invalid field.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid or expired credentials.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Change the given fields (API-TLOG-004).",
+        "tags": [
+          "TimeLogs"
+        ]
+      },
+      "delete": {
+        "operationId": "TimeLogsController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Deleted."
+          },
+          "401": {
+            "description": "Missing, invalid or expired credentials.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Delete a time log (API-TLOG-006).",
+        "tags": [
+          "TimeLogs"
+        ]
+      }
     }
   },
   "info": {
@@ -1476,6 +1981,10 @@
             "type": "string",
             "description": "IANA time zone, e.g. `Europe/Zagreb`."
           },
+          "dailyTargetMinutes": {
+            "type": "number",
+            "description": "The daily target in minutes (default 420)."
+          },
           "createdAt": {
             "type": "string",
             "description": "ISO 8601 UTC"
@@ -1487,8 +1996,25 @@
           "email",
           "displayName",
           "timeZone",
+          "dailyTargetMinutes",
           "createdAt"
         ]
+      },
+      "UpdateMeDto": {
+        "type": "object",
+        "properties": {
+          "timeZone": {
+            "type": "string",
+            "description": "An IANA time zone, ≤ 64 chars.",
+            "maxLength": 64
+          },
+          "dailyTargetMinutes": {
+            "type": "number",
+            "description": "The daily target in minutes: 15–1440, a multiple of 15.",
+            "minimum": 15,
+            "maximum": 1440
+          }
+        }
       },
       "UserSummaryDto": {
         "type": "object",
@@ -1982,6 +2508,255 @@
             "nullable": true,
             "description": "Work date in `YYYY-MM-DD`; empty after trimming → `null`.",
             "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+          }
+        }
+      },
+      "WorkdaySummaryDto": {
+        "type": "object",
+        "properties": {
+          "workDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "startMinute": {
+            "type": "number"
+          },
+          "totalMinutes": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "workDate",
+          "startMinute",
+          "totalMinutes"
+        ]
+      },
+      "WorkdayListResponseDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WorkdaySummaryDto"
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "TimeLogResponseDto": {
+        "type": "object",
+        "properties": {
+          "workDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "title": {
+            "type": "string",
+            "nullable": true
+          },
+          "project": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RefDto"
+              }
+            ]
+          },
+          "task": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RefDto"
+              }
+            ]
+          },
+          "id": {
+            "type": "string"
+          },
+          "durationMinutes": {
+            "type": "number"
+          },
+          "text": {
+            "type": "string"
+          },
+          "excludeFromStats": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "workDate",
+          "title",
+          "project",
+          "task",
+          "id",
+          "durationMinutes",
+          "text",
+          "excludeFromStats"
+        ]
+      },
+      "DayResponseDto": {
+        "type": "object",
+        "properties": {
+          "workDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "startMinute": {
+            "type": "number",
+            "nullable": true
+          },
+          "logs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TimeLogResponseDto"
+            }
+          },
+          "totalMinutes": {
+            "type": "number",
+            "description": "The sum of all the day's logs, excluded ones too."
+          }
+        },
+        "required": [
+          "workDate",
+          "startMinute",
+          "logs",
+          "totalMinutes"
+        ]
+      },
+      "SetWorkdayDto": {
+        "type": "object",
+        "properties": {
+          "startMinute": {
+            "type": "number",
+            "description": "Minutes after midnight: 0–1425, a multiple of 15.",
+            "minimum": 0,
+            "maximum": 1425
+          }
+        },
+        "required": [
+          "startMinute"
+        ]
+      },
+      "WorkdayResponseDto": {
+        "type": "object",
+        "properties": {
+          "workDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "startMinute": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "workDate",
+          "startMinute"
+        ]
+      },
+      "CreateTimeLogDto": {
+        "type": "object",
+        "properties": {
+          "workDate": {
+            "type": "string",
+            "description": "The work date, `YYYY-MM-DD`; not after today.",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+            "format": "date"
+          },
+          "durationMinutes": {
+            "type": "number",
+            "description": "15–1440 minutes, a multiple of 15.",
+            "minimum": 15,
+            "maximum": 1440
+          },
+          "text": {
+            "type": "string",
+            "description": "1–1000 chars after trimming.",
+            "minLength": 1,
+            "maxLength": 1000
+          },
+          "title": {
+            "type": "string",
+            "nullable": true,
+            "description": "≤ 100 chars; empty after trimming → `null`.",
+            "maxLength": 100
+          },
+          "projectId": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid"
+          },
+          "taskId": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid"
+          },
+          "excludeFromStats": {
+            "type": "boolean",
+            "description": "Absent → `false`; not `null`."
+          },
+          "dayStartMinute": {
+            "type": "number",
+            "description": "The day's start when the date has no workday yet: 0–1425, a multiple of 15.",
+            "minimum": 0,
+            "maximum": 1425
+          }
+        },
+        "required": [
+          "workDate",
+          "durationMinutes",
+          "text"
+        ]
+      },
+      "UpdateTimeLogDto": {
+        "type": "object",
+        "properties": {
+          "workDate": {
+            "type": "string",
+            "description": "Moves the log to this date; not `null`, not after today.",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+            "format": "date"
+          },
+          "durationMinutes": {
+            "type": "number",
+            "description": "15–1440 minutes, a multiple of 15; not `null`.",
+            "minimum": 15,
+            "maximum": 1440
+          },
+          "text": {
+            "type": "string",
+            "description": "1–1000 chars after trimming; not `null`.",
+            "minLength": 1,
+            "maxLength": 1000
+          },
+          "title": {
+            "type": "string",
+            "nullable": true,
+            "description": "≤ 100 chars; empty after trimming or `null` clears it.",
+            "maxLength": 100
+          },
+          "projectId": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid"
+          },
+          "taskId": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid"
+          },
+          "excludeFromStats": {
+            "type": "boolean",
+            "description": "Not `null`."
+          },
+          "dayStartMinute": {
+            "type": "number",
+            "description": "The start of the target date when it has no workday yet.",
+            "minimum": 0,
+            "maximum": 1425
           }
         }
       }
