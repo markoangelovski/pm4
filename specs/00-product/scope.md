@@ -3,7 +3,7 @@ id: prod-scope
 title: Scope and Milestones
 status: draft
 owner: Marko Angelovski
-last_updated: 2026-10-03
+last_updated: 2026-10-07
 related: [prod-vision, req-overview]
 ---
 
@@ -17,8 +17,8 @@ Defines what is in and out of scope for the MVP, and the milestone order that `t
 - Sign in with Google. Accounts are created on first sign-in, restricted by an optional email allow-list (OQ-022). Sign out, and sign out of all devices. Profile with time zone.
 - Projects: create, list, view, edit, delete to trash. Task statistics per project. Project lead as a PM4 user or a free-text name (informational only, OQ-076).
 - Tasks in a project (legacy fields and statuses): create, list/filter, view, edit, change status, move to another project, delete to trash.
-- Time capture: workdays with a start time, and time logs (duration + required note + task/project link),
-  shown sequentially or grouped by project, and fast to enter repeatedly.
+- Time capture: workdays with a start time, and time logs (15-minute durations + required log text, with an optional title, project and task),
+  shown in entry order or grouped by project or task, with pie and bar charts and a calendar of past days.
 - Trash: restore for 31 days, permanent delete, automatic (best-effort) purge afterwards.
 - Dashboard reporting: a date range with total hours, a per-project breakdown, and a line chart of
   hours per day with per-project series.
@@ -54,3 +54,4 @@ Soft-delete *columns and filtering* are built into M2/M3 from the start. M6 adds
 - 2026-09-29: OQ-047: landing page at `/`, app under `/app/`.
 - 2026-10-01: OQ-050: no trailing slashes (`trailingSlash: false`); detail routes `/app/project?id=` and `/app/task?id=` (feat-land-app-route-split).
 - 2026-10-03: Projects: task statistics, project lead as a PM4 user or text (OQ-076); tasks can move between projects (OQ-084).
+- 2026-10-07: Time-capture scope follows the owner's description.

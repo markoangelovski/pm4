@@ -29,7 +29,7 @@ Either way, fix the disagreement. Never ignore it.
 | Public landing page | [01-requirements/landing.md](01-requirements/landing.md) | approved |
 | Projects | [01-requirements/projects.md](01-requirements/projects.md) | approved |
 | Tasks | [01-requirements/tasks.md](01-requirements/tasks.md) | approved |
-| Time capture | [01-requirements/time-logs.md](01-requirements/time-logs.md) | draft |
+| Time capture | [01-requirements/time-logs.md](01-requirements/time-logs.md) | review |
 | Dashboard and reporting | [01-requirements/reporting.md](01-requirements/reporting.md) | draft |
 | Trash and soft delete | [01-requirements/trash.md](01-requirements/trash.md) | draft |
 | Non-functional requirements | [01-requirements/non-functional.md](01-requirements/non-functional.md) | draft |

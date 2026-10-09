@@ -1,143 +1,218 @@
 ---
 id: req-time-logs
 title: Time Capture (Workdays and Time Logs)
-status: draft
+status: approved
 owner: Marko Angelovski
-last_updated: 2026-09-26
-related: [req-tasks, req-reporting, req-trash, api-endpoints, api-data-model]
+last_updated: 2026-10-09
+related: [req-projects, req-tasks, req-reporting, req-trash, api-endpoints, api-data-model, web-screens]
 ---
 
 # Time Capture: Workdays and Time Logs
 
 ## Purpose
-Covers recording time spent. This is PM4's core feature.
-
-## How the user works (OQ-019, owner's description)
-During a day the user switches between several projects, **non-sequentially** and often in short
-intervals. For example:
-
-| # | Project | Duration |
-| --- | --- | --- |
-| 1 | Project 1 | 1 h |
-| 2 | Project 2 | 15 min |
-| 3 | Project 3 | 2 h |
-| 4 | Project 1 | 15 min |
-| 5 | Project 3 | 2 h |
-| 6… | Project 1 / Project 2, alternating | 15 min each |
-
-The user must be able to log **each** of these blocks, describe what was done, and link it to a
-**task or a project**. The day is then viewed either **sequentially** (the blocks in order) or
-**grouped by project** (each project once, with its logs listed under it).
+Recording time spent. This is PM4's core feature. The owner works on several projects through the
+day, and enters one log each time a block of work ends. The app then shows what was worked on, how
+much, and whether any time is missing from the day.
 
 ## Model
-Derived from the owner's description. This **replaces** the legacy three-level Day → Event → Log
-model: each block is one self-contained log, and the link lives on the log.
-
 | Entity | Fields | Rules |
 | --- | --- | --- |
-| **Workday** | workDate, startMinute (0–1439, nullable) | At most one per user per date. Holds the day start time (OQ-021). |
-| **Time log** | workDate, position, durationMinutes, note, link (task \| project \| none?) | **Note required**, plain text, 1–1000 chars. Duration > 0, max per OQ-035. `position` = order within the day. Is a link required? TBD (OQ-020). |
+| **Workday** | `workDate`, `startMinute` | One per user per date. `startMinute` = the time of day the user started working, in 15-minute steps (0–1425). Set with the first log of the day (FR-TLOG-009). |
+| **Time log** | `workDate`, `durationMinutes`, `text`, `title?`, `project?`, `task?`, `excludeFromStats` | `text` and the duration are required. Everything else is optional; `excludeFromStats` defaults to false. |
 
-**Derived clock times (proposed, OQ-036):** if the workday has a start time, each log's start and end
-times are computed rather than stored: log *n* starts at `start + sum(durations of logs 1…n-1)`.
-Example: with a start of 08:00, the table above becomes 08:00–09:00, 09:00–09:15, 09:15–11:15, and so on.
-The day's end time (legacy header) is then the last log's end.
-
-## Legacy behavior (reference only)
-Legacy grouped logs under **events** (a title plus an optional task, with several logs of decimal-hour
-duration), and kept a per-day start time with a "now · start · end" header (`backend_old/src/events`,
-`days`, `frontend_old/src/components/pm/events`, `pm/time/TimeDisplay.tsx`). Carried over: the
-workday start and end header, quarter-hour durations, the task link and the day view. Dropped: the
-event level (see OQ-037).
+- **Log text:** plain text, 1–1000 characters after trimming. It describes what the log is for.
+- **Duration:** minutes, a multiple of 15, 15–1440 (FR-TLOG-010).
+- **Title:** optional, plain text, 1–100 characters after trimming. A short provisional name for the log.
+- **Project / Task:** each optional and independent of the other, with one rule: a log with a task always
+  belongs to **that task's project** (FR-TLOG-004). A log with neither is *unsorted*.
+- **Order:** a day's logs have **no stored or editable order**. They are shown in the order they were
+  entered. A log moved to another date takes its place among that date's logs by its entry time.
+- **Dates:** a log's date is a calendar date in the user's time zone (FR-AUTH-006). It can be today or
+  any past date, never a future one.
+- **Clock times:** per-log start and end times are not shown or stored. Only the day-level figures in FR-TLOG-009 exist.
+- **Excluded from statistics:** a log can be marked as not productive work (e.g. a commute). It still counts as
+  logged time, but not as billable time (FR-TLOG-018). The logs that aren't excluded are the day's **billable** time.
 
 ## Requirements
 
-### FR-TLOG-001: Day view
+### FR-TLOG-001: Day view and calendar
 **Priority:** Must
-**Statement:** A day view (default: today in the user's time zone) shows the logs of the selected
-date and the day total. Previous and next day and a date picker change the date. The selected date and
-view mode are kept in the URL.
+**Statement:** The day view (`/app/time`) shows one date: the workday header (FR-TLOG-009), the charts
+(FR-TLOG-016), the view switch and the day's logs. The date defaults to today in the user's time
+zone. The view switch offers **By project** (the default, FR-TLOG-003), **By task** (FR-TLOG-015) and **Sequential**
+(FR-TLOG-002), in that order. The selected date and view are kept in the URL.
+The date is changed with a calendar picker, previous / next day buttons and a **Today** button. The page
+always names the date being viewed in full (e.g. "Tuesday, 6 October 2026"). The calendar marks the
+days that have logs, and future dates can't be picked.
+**Acceptance criteria:**
+- Given I pick a past date in the calendar, then the URL changes, the heading shows that date, and the list shows that day's logs.
+- Given a day with no logs, then the list shows an empty state (no view switch), and the header shows `—` for the start.
+- Given I open `/app/time` without parameters, then today is shown in the By project view.
 
 ### FR-TLOG-002: Sequential view
 **Priority:** Must
-**Statement:** Lists the day's logs in `position` order. Each row shows the position, the derived
-clock time range (when the day has a start time, OQ-036), the duration, the task and project (or
-"No project"), and the note.
+**Statement:** Lists the day's logs in the order they were entered. Each row shows the title (when set),
+the log text, an **Excluded from statistics** badge (when set), the duration, and the project and task (when set;
+FR-TLOG-014 for deleted ones). Each row has a coloured dot, the colour of its slice in the pie chart (FR-TLOG-016).
 **Acceptance criteria:**
-- Given the 6-block example above, the logs appear in exactly that order, with Project 1 appearing at positions 1 and 4.
+- Given logs entered as "Specs review" (30 min), "Specs audit" (1 h 45 min) and "Chat with coworker" (15 min), the rows appear in exactly that order.
 
 ### FR-TLOG-003: Group-by-project view
 **Priority:** Must
-**Statement:** A toggle switches the day view to show **each project once**, with its subtotal and
-its logs listed under it (in sequential order). Logs without a project go into a "No project"
-group. Groups are sorted by subtotal, descending (TODO: or by first appearance?). Sub-grouping by task
-inside a project: TBD (OQ-038).
+**Statement:** Shows each project **once**, with its log count, its subtotal and its logs under it (in entry order).
+Logs excluded from statistics go into a **Non-prod** group, whatever their project. The other logs without a project
+go into an **Unsorted** group. Project groups are ordered by the first appearance of their project in the day, then
+come **Unsorted** and **Non-prod**. Every group can be expanded and collapsed; all are collapsed when the page opens,
+and one button expands or collapses them all. A row in a group doesn't repeat what the group heading names:
+- in a project group, rows show their task but not the project, and **no title** (a log with a project is
+  recognisable by its project and text);
+- in **Unsorted**, rows show their title;
+- in **Non-prod**, rows show their project and task, and their title only when they have no project.
 **Acceptance criteria:**
-- Given the 6-block example, the grouped view shows 3 groups (Project 1, 2, 3). Project 1's subtotal = 1 h 15 min plus its later 15-min blocks.
-- The sum of the group subtotals equals the day total.
+- Given the three logs above (the first two in project "Manhatan"), the view shows the group "Manhatan" (2 h 15 min) with two logs, and the group "Unsorted" (15 min) with one.
+- Given a log in "Manhatan" marked as excluded from statistics, it is listed under "Non-prod", not under "Manhatan".
+- The group subtotals add up to the day total.
+
+### FR-TLOG-015: Group-by-task view
+**Priority:** Must
+**Statement:** As FR-TLOG-003, but grouped by **task**. A group's heading shows the project name, then the task name.
+Logs without a task (including logs that only have a project) go into **Unsorted**; excluded logs go into **Non-prod**.
+Rows in a task group show neither the project, the task nor the title. Rows in **Unsorted** show their project (when
+set) and their title. Rows in **Non-prod** show their project and task, and their title only when they have no task.
+**Acceptance criteria:**
+- Given the three logs above, the view shows the groups "Manhatan · Specifications 01" (30 min), "Manhatan · Specifications 02" (1 h 45 min) and "Unsorted" (15 min).
+- Given a log with only the project "Manhatan", it is listed under "Unsorted" and its row shows "Manhatan".
 
 ### FR-TLOG-004: Add log
 **Priority:** Must
-**Statement:** The user adds a log with a duration, a **required note** and a link (a searchable
-picker of tasks, and of projects directly). It's appended to the end of the selected day.
+**Statement:** The user adds a log with the **log text** and the **duration** (required) and, optionally, a
+**title**, a **project**, a **task** and **Exclude from statistics** (FR-TLOG-018), for a date (default: the date being
+viewed, or today). Both pickers are searchable. A task is shown prefixed with its project name ("Manhatan ·
+Specifications 01"), and typing matches the task title or the project name. Tasks of every status are offered; tasks
+and projects in the trash are not. Picking a task sets the log's project to the task's project, and locks it. Picking
+a project first narrows the task picker to that project's tasks. Clearing the project clears the task. When the date
+has no workday start yet, the form also asks for it (FR-TLOG-009).
 **Acceptance criteria:**
-- Given an empty note, a field error is shown and nothing is created.
-- Given a task is selected, the log shows the task and its project. Given a project only, it shows the project.
-
-### FR-TLOG-005: Fast repeated logging
-**Priority:** Must
-**Statement:** Because the user switches every ~15 minutes, adding a log must take a few seconds:
-- the add form stays open or can be re-opened with one key or click after saving;
-- the picker offers the **recently used tasks/projects** first;
-- the duration defaults to 15 min (TODO: or to the last used duration?);
-- **"Repeat"** on an existing log creates a new log at the end with the same link (the note is prefilled and editable).
-TODO: confirm the exact shortcuts during screen design.
+- Given an empty text, or no/invalid duration, a field error is shown and nothing is created.
+- Given I pick only a project, the log shows that project and no task.
+- Given I pick a task, the log shows the task's project too, and I can't pick another project for it.
+- Given a log with neither project nor task, it is saved and shown as unsorted.
+- Given I type "tesla" in the task picker, the tasks of the project "Tesla" are listed.
+- Given a future date, the log is rejected.
 
 ### FR-TLOG-006: Edit log
 **Priority:** Must
-**Statement:** The duration, note, link and work date can be edited inline or in a dialog. Moving a log to another date appends it to the end of that date.
-
-### FR-TLOG-007: Reorder and insert logs
-**Priority:** TBD (OQ-036)
-**Statement:** The user can move a log up or down (drag and drop, or buttons), and insert a log at a
-given position (e.g. a forgotten block), so the sequence matches reality.
+**Statement:** On any day, the text, duration, title, project, task, *Exclude from statistics* and date can be edited in a dialog
+(same rules and fields as FR-TLOG-004). When the chosen date has no workday yet, the dialog asks for its start (FR-TLOG-009).
 
 ### FR-TLOG-008: Delete log
 **Priority:** Must
-**Statement:** After confirmation, the log is deleted. Trash vs immediate delete: TBD (OQ-030a).
+**Statement:** After confirmation, the log is deleted **immediately** (no trash). Totals update.
 
-### FR-TLOG-009: Workday start and end
+### FR-TLOG-009: Workday start and day header
 **Priority:** Must
-**Statement:** The day view header shows the current time, the day's start time (editable, 15-minute
-steps) and the end time = start + the day's total. How the start time is set: TBD (OQ-021).
+**Statement:** A date's workday records when the user started working.
+- **Setting it:** when a date has no start yet, the add-log form shows a required field **Day started at**
+  (`HH:mm`, 24-hour, 15-minute steps). It is prefilled with the current time rounded to the nearest 15 minutes
+  when the date is today, and empty for a past date. Saving the first log creates the workday with that start.
+- **Changing it:** the day header's start is editable afterwards (15-minute steps).
+- **The header** shows, in 24-hour `HH:mm` / durations:
+  - **Start**: the day's start time (`—` when none).
+  - **Now**: the current time, kept current while the page is open (today only).
+  - **Logged**: the sum of the day's log durations (e.g. `1h`).
+  - **Start + logged**: the start time plus the logged time (e.g. start 08:00 and 1h → `09:00`). Past midnight it reads
+    e.g. `01:30 (+1 day)`.
+  - **Unlogged** (today only): *now − (start + logged)*, e.g. `17m`. Hidden when it is zero or negative, or when
+    the day has no start. It shows how much time hasn't been logged yet.
+  - **% billable**: the day's billable time (FR-TLOG-018) as a percentage of the daily target (FR-TLOG-017),
+    rounded to a whole number; it can exceed 100 %.
+  - **Overtime**: the billable time above the daily target (`0h` when there is none).
+- Time zone: "today" and "now" are in the user's time zone.
+**Acceptance criteria:**
+- Given start 08:00, now 09:17 and 1 h logged, the header shows `08:00`, `09:17`, `1h`, `09:00` and `Unlogged 17m`.
+- Given it is 08:58 and the day has no start, the form's *Day started at* offers `09:00`.
+- Given a past day, the header shows no *Now* and no *Unlogged*.
+- Given a target of 7 h and 8 h 15 min logged, 1 h of it excluded from statistics, the header shows *Logged* `8h 15m`, *% billable* `104%` and *Overtime* `15m`.
+- Given an empty day, the header shows *Logged* `0m`, *% billable* `0%` and *Overtime* `0h`.
+- Given a day that already has a start, the add-log form has no *Day started at* field.
 
 ### FR-TLOG-010: Duration input
 **Priority:** Must
-**Statement:** Durations are entered in 15-minute steps. Formats and the maximum: TBD (OQ-035). They're
-displayed in one consistent format (TODO: `1.25h` as in legacy, or `1h 15m`?).
+**Statement:** One input accepts a duration in several forms and always stores **minutes**, in 15-minute steps (min 15 min, max 24 h):
+| Input | Meaning |
+| --- | --- |
+| a number with a decimal point or comma (`0.25`, `1,5`) | hours → 15 min, 1 h 30 min |
+| a whole number **below 15** (`1`, `8`) | hours → 1 h, 8 h |
+| a whole number **15 or more** (`15`, `45`, `90`) | minutes → 15 min, 45 min, 1 h 30 min |
+| `1h`, `45m`, `1h 15m`, `1:15` | as written |
+Anything else, or a value that isn't a multiple of 15 minutes (`20`, `0.3`, `0`), or above 24 h, is a field error
+("Use 15-minute steps, from 15 min to 24 h."). Durations are displayed as `1h 15m`, `45m`, `2h` (the existing `formatDuration`).
+**Acceptance criteria:** `0.25` → 15 · `15` → 15 · `1` → 60 · `1.5` → 90 · `45` → 45 · `90` → 90 · `1h 15m` → 75 · `1:15` → 75 · `20` → error · `0` → error · `25h` → error.
 
 ### FR-TLOG-011: Quick log from anywhere
 **Priority:** Should
-**Statement:** A global "Log time" action in the header opens the add-log form for today, from any screen.
+**Statement:** A global **Log time** button in the header opens the add-log form from any screen (date: today).
 
-### FR-TLOG-012: Logs on task and project views
+### FR-TLOG-012: Logs on project and task pages
 **Priority:** Must
-**Statement:** The task view lists all logs linked to the task (newest date first), with its total.
-The project view shows the project total, and its logs grouped by date (TODO: confirm the project view needs the log list).
-
-### FR-TLOG-013: Activity calendar
-**Priority:** Could
-**Statement:** A multi-month calendar highlights the dates that have logs. Clicking a date opens that day (legacy `MultiMonthCalendar`).
+**Statement:** The task page and the project page each have a **Logged time** section with the total hours logged
+(across all days) and the logs, newest date first (entry order within a day), 25 per page. A row shows the date, the
+title or log text, the duration and, on the project page, the task. Clicking a row opens that day.
+The **task** total counts the logs linked to the task. The **project** total counts the logs linked to the project
+directly **and** the logs of all its tasks (a log with a task always carries the task's project, so this is simply the project's logs).
+**Acceptance criteria:**
+- Given 1 h logged on project P directly and 30 min on a task of P, P's page shows 1 h 30 min and the task's page 30 min.
+- Given a task moved to another project, its logs count towards the new project from then on.
 
 ### FR-TLOG-014: Logs keep deleted task/project names
 **Priority:** Must
-**Statement:** If a linked task or project is deleted, the log keeps displaying its name, marked as deleted, and it can't be navigated to (FR-TRASH-006).
+**Statement:** If the linked task or project is deleted (trashed or purged), the log keeps showing its name, marked
+as deleted, as plain text instead of a link (FR-TRASH-006). Hours still count in the totals.
+
+### FR-TLOG-016: Charts
+**Priority:** Must
+**Statement:** The day view shows two charts of the viewed day, for any view:
+- **Pie chart** (*Time by log*): every log is a slice, sized by duration and labelled "Project - Task - Log text"
+  (the parts the log has). The **daily target** (FR-TLOG-017) is the whole pie: the part of the target not yet logged
+  is one grey slice, **Remaining**. When the logged time reaches or exceeds the target there is no grey slice, and the
+  pie is the logged time. The middle shows the logged time and "of" the target, and a legend lists every slice with its duration.
+- **Bar chart** (*Time by project*): one bar per group of the By project view (FR-TLOG-003), including **Unsorted**
+  and **Non-prod**, with the hours logged. In the By task view, one bar per group of that view instead (*Time by task*).
+Both show the label and the duration on hover, and each can be expanded to fill the screen. An empty day shows an empty state.
+**Acceptance criteria:**
+- Given a target of 7 h and logs of 30 min, 1 h 45 min and 15 min, the pie has three coloured slices and a grey one of 4 h 30 min.
+- Given 8 h logged and a target of 7 h, the pie has no grey slice.
+- Given a log "Weekly s Peterom." on the task "Meetings" of "Tesla", its slice is labelled "Tesla - Meetings - Weekly s Peterom."; an unsorted log is labelled by its text alone.
+
+### FR-TLOG-017: Daily target
+**Priority:** Must
+**Statement:** The user sets a **daily target** (hours worked per day) in Settings, in hours with quarter-hour steps
+(0.25–24). The default is **7 h**. It drives the pie chart (FR-TLOG-016) and the header's *% billable* and *Overtime*
+(FR-TLOG-009).
+
+### FR-TLOG-018: Exclude from statistics
+**Priority:** Must
+**Statement:** A log can be marked **Exclude from statistics** when it is added or edited. Such a log still counts in the
+day's *Logged*, *Start + logged* and *Unlogged* figures and in the pie chart, but not in *% billable* or *Overtime*. In the
+grouped views and the bar chart it belongs to **Non-prod** (FR-TLOG-003/015/016), and its row shows an **Excluded from
+statistics** badge.
+**Acceptance criteria:**
+- Given a day with 7 h on projects and 1 h excluded, and a target of 7 h, then *Logged* is `8h`, *% billable* `100%`, *Overtime* `0h`, and the bar chart has a "Non-prod" bar of 1 h.
+
+## Out of scope
+- Ordering, inserting or repeating logs, per-log clock times, break logs, the legacy "event" level.
+- Per-day targets, a date-range view of the day screen, exports.
+- Dashboard reporting over date ranges: [req-reporting](reporting.md).
+
+## Removed requirement IDs (never reused)
+FR-TLOG-005, FR-TLOG-007, FR-TLOG-013.
 
 ## Open questions
-OQ-020, OQ-021, OQ-030, OQ-035, OQ-036, OQ-037, OQ-038
+None.
 
 ## Changelog
-- 2026-09-26: Initial scaffold.
-- 2026-09-26: Updated with owner answers to OQ-001–018 (legacy three-level model).
-- 2026-09-26: OQ-019 answered. Flattened to Workday + Time log, with the link on the log, sequential and group-by-project views, and fast repeated logging.
-- 2026-09-26: OQ-026 resolved: note limit 1000 chars confirmed.
+- 2026-10-07: Rewritten from the owner's time-logging description (OQ-103…OQ-114).
+- 2026-10-09: FR-TLOG-018 *Exclude from statistics* and the Non-prod group; By project is the default view; collapsible groups;
+  what a grouped row shows; header *% billable* and *Overtime*; pie labels and full-screen charts; daily target in hours, default 7 h;
+  task search by title or project name (OQ-115…OQ-121).
+- 2026-10-09: Approved by the owner.

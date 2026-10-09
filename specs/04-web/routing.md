@@ -3,7 +3,7 @@ id: web-routing
 title: Routing and Navigation
 status: approved
 owner: Marko Angelovski
-last_updated: 2026-10-03
+last_updated: 2026-10-09
 related: [web-static-export, web-screens, req-landing, req-auth, feat-land-app-route-split]
 ---
 
@@ -37,18 +37,18 @@ and the client reads `id` with `useSearchParams` (inside `<Suspense>`).
 | `/app/projects?q=&sort=&page=` | SCR-020 Project list | required |
 | `/app/project?id=&status=&q=&sort=&page=` | SCR-021 Project detail (details, task statistics, tasks) | required |
 | `/app/tasks?project=&status=&q=&sort=&page=` | SCR-030 Task list (all projects) | required |
-| `/app/task?id=` | SCR-031 Task detail (its time logs come with M4) | required |
-| `/app/time?date=&view=sequential\|project` | SCR-040 Day view (workday header, logs, view toggle) | required |
+| `/app/task?id=` | SCR-031 Task detail (with its logged time) | required |
+| `/app/time?date=&view=project\|task\|sequential` | SCR-040 Day view (workday header, charts, logs, view switch, calendar); `view` absent = `project` | required |
 | `/app/trash` | SCR-060 Trash | required |
 | `/app/user-profile` | SCR-051 Profile (Google identity, sign out of all devices) | required |
-| `/app/settings` | SCR-050 Settings (time zone) | required |
+| `/app/settings?tab=` | SCR-050 Settings (tabs; `tab` absent = `user`: daily target, time zone) | required |
 
 ## Navigation
 - Sidebar (OQ-054), in sections with a heading (shown in capitals):
   **Dashboard** → Default (`/app`) · **Project management** → Projects, Tasks · **Time** → Logs (`/app/time`).
   A fixed footer at the bottom of the sidebar (stays put while the nav scrolls) holds Trash and Settings.
   The app logo links to `/app`.
-- Header: a global **Log time** button (FR-TLOG-008), the theme toggle and the user's avatar. The avatar
+- Header: a global **Log time** button (FR-TLOG-011), the theme toggle and the user's avatar. The avatar
   opens the **user drawer** (SCR-005) with **Home** (`/app`), **Profile** (`/app/user-profile`) and **Sign out** (OQ-057, OQ-074).
 - Landing page (`/`, FR-LAND-001/002): public, outside the app shell and its auth guard. It has its own
   marketing header with the "Go to app" / "Login" button, not the sidebar.
@@ -113,3 +113,6 @@ and the client reads `id` with `useSearchParams` (inside `<Suspense>`).
 - 2026-10-03: Approved by the owner.
 - 2026-10-03: Query params of the project and task lists; task detail without time logs until M4 (OQ-080). Back to `review` (feat-prj-web, feat-tsk-web).
 - 2026-10-03: Approved by the owner.
+- 2026-10-07: `/app/time` has `view=sequential|project|task`; the settings and task rows follow the time-capture screens. Back to `review`.
+- 2026-10-09: `/app/time` defaults to `view=project`; `/app/settings` has `?tab=` (OQ-120).
+- 2026-10-09: Approved by the owner.

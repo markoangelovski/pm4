@@ -1,6 +1,6 @@
 # M4: Time capture
 
-**Goal:** Workdays and time logs (sequential + group-by-project views, fast repeated entry) end to end.
+**Goal:** Workdays and time logs (By project, By task and Sequential views, charts, the daily target) end to end.
 
 **Exit criteria:** see `specs/00-product/scope.md` → Milestones (M4).
 

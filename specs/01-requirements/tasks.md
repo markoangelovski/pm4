@@ -3,7 +3,7 @@ id: req-tasks
 title: Tasks
 status: approved
 owner: Marko Angelovski
-last_updated: 2026-10-03
+last_updated: 2026-10-07
 related: [req-projects, req-time-logs, req-trash, api-endpoints]
 ---
 
@@ -16,7 +16,7 @@ Covers creating and managing tasks inside a project. Fields and workflow follow 
 **In:** create, list/filter (per project and across projects), view, edit, change status, delete (to
 trash), move to another project (OQ-084), due-date indicator.
 **Out (MVP):** subtasks, dependencies, attachments, comments, priorities, labels, configurable statuses.
-**Deferred:** logged time on tasks (totals, the task's time logs). It comes with the time-capture specs (OQ-080).
+Logged time on the task page: FR-TLOG-012.
 
 ## Fields
 | Field | Required | Rules |
@@ -76,7 +76,7 @@ project filter (OQ-084).
 **Priority:** Must
 **Statement:** The task details: title, project, status, due date, lead, external link (opens in a new
 tab) and description. A missing or deleted task shows "not found", with "Restore" offered if it's in
-the trash (FR-TRASH-003). Logged time is not shown yet (deferred).
+the trash (FR-TRASH-003). Logged time is a separate section (FR-TLOG-012).
 **Acceptance criteria:**
 - Given a task with every field set, then each one is shown, and the project name links to the project's page.
 - Given a task with only the required fields, then the empty optional fields don't show placeholders that look like data (no fake link or date).
@@ -137,3 +137,5 @@ None.
   today or tomorrow. Logged time deferred to the time-capture specs.
 - 2026-10-03: Acceptance criteria for FR-TSK-004/005/006/007 (OQ-086, OQ-087).
 - 2026-10-03: Approved by the owner.
+- 2026-10-07: Logged time points to FR-TLOG-012. Back to `review`.
+- 2026-10-09: Approved by the owner.

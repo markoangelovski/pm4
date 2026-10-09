@@ -3,7 +3,7 @@ id: req-projects
 title: Projects
 status: approved
 owner: Marko Angelovski
-last_updated: 2026-10-04
+last_updated: 2026-10-07
 related: [req-tasks, req-trash, req-time-logs, api-endpoints, api-data-model, sec]
 ---
 
@@ -18,7 +18,7 @@ field that projects and tasks share.
 Per-project task statistics (counts per status, total, % completed). The project's task list with a
 status filter (FR-TSK-002).
 **Out (MVP):** sharing, templates, custom fields, colors. The project lead gets no access (FR-PRJ-007).
-**Deferred:** logged time on projects (totals, breakdowns). It comes with the time-capture specs (OQ-080).
+Logged time on the project page: FR-TLOG-012.
 
 ## Fields
 | Field | Required | Rules |
@@ -133,7 +133,7 @@ deleted too.** Time logs linked to the project or its tasks are **not** deleted 
 **Priority:** Must
 **Statement:** The project view shows, over the project's non-deleted tasks: the count per status
 (upcoming, in progress, completed), the total count and the completed percentage (OQ-080). Logged time
-is not shown yet (deferred).
+is a separate section (FR-TLOG-012).
 **Acceptance criteria:**
 - Given 3 upcoming, 1 in-progress and 4 completed tasks, then the view shows 3 / 1 / 4, total 8, 50 % completed.
 - Given a task I deleted individually, it isn't counted.
@@ -156,3 +156,5 @@ None.
 - 2026-10-03: Approved by the owner.
 - 2026-10-04: FR-PRJ-002: created/updated dates in the list, search by title or lead name with title matches first (OQ-099, OQ-100, OQ-102). FR-PRJ-003: created and last modified date and time (OQ-101). Back to `review` (feat-prj-dates-lead-search).
 - 2026-10-04: Approved by the owner.
+- 2026-10-07: Logged time points to FR-TLOG-012. Back to `review`.
+- 2026-10-09: Approved by the owner.

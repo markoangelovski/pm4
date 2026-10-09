@@ -3,7 +3,7 @@ id: req-trash
 title: Trash and Soft Delete
 status: draft
 owner: Marko Angelovski
-last_updated: 2026-09-27
+last_updated: 2026-10-07
 related: [req-projects, req-tasks, req-time-logs, api-data-model, ADR-0011]
 ---
 
@@ -61,13 +61,14 @@ user's expired items, handling retained names first (data-model.md §Retained na
 everywhere, with the task/project name marked "deleted". Their hours still count in totals.
 
 ### FR-TRASH-007: Time log deletion
-**Priority:** TBD (OQ-030a)
-**Statement:** Whether deleted time logs go to the trash, or are deleted immediately.
+**Priority:** Must
+**Statement:** Deleted time logs are not trashed: they are deleted immediately after confirmation (FR-TLOG-008).
 
 ## Open questions
-OQ-030
+None.
 
 ## Changelog
 - 2026-09-26: Created from the OQ-016 answer.
 - 2026-09-27: OQ-031 resolved: expiry at 31 days, best-effort purge via a per-user BullMQ job when the user opens the app (ADR-0011).
 - 2026-09-27: Owner decision: items stay restorable until the purge actually runs.
+- 2026-10-07: FR-TRASH-007: time logs are deleted immediately (OQ-111).

@@ -43,7 +43,7 @@ workdays with a start time, and quarter-hour logs linked to a task/project (the 
 dropped, OQ-019). The specs describe this explicitly. Everything else carries over only if a spec says so.
 
 ## Open questions
-OQ-019, OQ-020
+None.
 
 ## Changelog
 - 2026-09-26: Initial scaffold.

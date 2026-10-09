@@ -26,7 +26,7 @@ link (`?returnTo=`) on to sign-in.
 **Priority:** Must
 **Statement:** PM4 has a public landing page at `/`. Anyone can open it without signing in. It is
 a marketing page that describes what PM4 is and what it can do. It covers at least projects, tasks,
-time logging with a required note, the dashboard reporting, and the trash (OQ-045):
+time logging with a required log text, the dashboard reporting, and the trash (OQ-045):
 - a **hero** with the product name, a tagline and the same "Go to app" / "Login" call to action as the header;
 - a **feature grid**: projects, tasks, time logs, dashboard, trash;
 - a **footer**.

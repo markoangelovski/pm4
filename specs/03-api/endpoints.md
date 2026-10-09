@@ -3,7 +3,7 @@ id: api-endpoints
 title: API Endpoints
 status: draft
 owner: Marko Angelovski
-last_updated: 2026-10-04
+last_updated: 2026-10-09
 related: [api-conventions, api-data-model, req-auth, req-projects, req-tasks, req-time-logs, req-reporting, req-trash]
 ---
 
@@ -36,7 +36,7 @@ defines its request, response and errors. Paths are relative to `/api/v1` unless
 | API-AUTH-005 | POST | `/auth/logout` `{refreshToken}` | FR-AUTH-004 | specified |
 | API-AUTH-006 | POST | `/auth/logout-all` (bearer) → revokes all of the user's sessions | FR-AUTH-007 | specified |
 | API-USR-001 | GET | `/me` | FR-AUTH-006 | specified |
-| API-USR-002 | PATCH | `/me` `{timeZone}` (with the settings screen, OQ-064) | FR-AUTH-006 | TODO |
+| API-USR-002 | PATCH | `/me` `{timeZone?, dailyTargetMinutes?}` (with the settings screen, OQ-064) | FR-AUTH-006, FR-TLOG-017 | TODO |
 | API-USR-003 | GET | `/users?q=` (project-lead picker, OQ-089) | FR-PRJ-006 | specified |
 | API-PRJ-001 | POST | `/projects` | FR-PRJ-001 | specified |
 | API-PRJ-002 | GET | `/projects?q=&sort=&page=&pageSize=` (with task counts) | FR-PRJ-002 | specified |
@@ -52,18 +52,19 @@ defines its request, response and errors. Paths are relative to `/api/v1` unless
 | API-TSK-005 | DELETE | `/tasks/{id}` (soft) | FR-TSK-007 | specified |
 | API-TSK-006 | POST | `/tasks/{id}/restore` (409 if project in trash; built in M3, OQ-090) | FR-TRASH-003, FR-TSK-004 | specified |
 | API-TSK-007 | DELETE | `/tasks/{id}/permanent` | FR-TRASH-004 | TODO |
-| API-WD-001 | GET | `/workdays?from=&to=` | FR-TLOG-009, FR-TLOG-013 | TODO |
+| API-WD-001 | GET | `/workdays?from=&to=` → `{items: [{workDate, startMinute, totalMinutes}]}` (the calendar's marks) | FR-TLOG-001 | TODO |
 | API-WD-002 | PUT | `/workdays/{date}` `{startMinute}` | FR-TLOG-009 | TODO |
-| API-TLOG-001 | GET | `/time-logs?from=&to=&taskId=&projectId=` (ordered by workDate, position; with task/project ref objects) | FR-TLOG-001/002/003/012 | TODO |
-| API-TLOG-002 | POST | `/time-logs` `{workDate, durationMinutes, note, taskId?, projectId?, position?}` (appends, or inserts at `position`) | FR-TLOG-004/005/007 | TODO |
-| API-TLOG-003 | GET | `/time-logs/{id}` | — | TODO |
-| API-TLOG-004 | PATCH | `/time-logs/{id}` `{durationMinutes?, note?, taskId?, projectId?, workDate?}` | FR-TLOG-006 | TODO |
-| API-TLOG-005 | POST | `/time-logs/{id}/move` `{position}` (renumbers the day) | FR-TLOG-007 | TODO (OQ-036) |
-| API-TLOG-006 | DELETE | `/time-logs/{id}` (renumbers the day) | FR-TLOG-008 | TODO (OQ-030a) |
-| API-TLOG-007 | GET | `/time-logs/recent-links?limit=` (recently used tasks/projects for the picker) | FR-TLOG-005 | TODO |
+| API-WD-003 | GET | `/workdays/{date}` → `Day` (the start, the total and the day's logs in entry order) | FR-TLOG-001/002/003/009/015/016 | TODO |
+| API-TLOG-001 | GET | `/time-logs?projectId=&taskId=&page=&pageSize=` → logs of one project or task, with `totalMinutes` | FR-TLOG-012 | TODO |
+| API-TLOG-002 | POST | `/time-logs` `{workDate, durationMinutes, text, title?, projectId?, taskId?, dayStartMinute?}` | FR-TLOG-004/009 | TODO |
+| API-TLOG-003 | — | (removed) | — | — |
+| API-TLOG-004 | PATCH | `/time-logs/{id}` | FR-TLOG-006 | TODO |
+| API-TLOG-005 | — | (removed) | — | — |
+| API-TLOG-006 | DELETE | `/time-logs/{id}` (immediate) | FR-TLOG-008 | TODO |
+| API-TLOG-007 | — | (removed) | — | — |
 | API-TRASH-001 | GET | `/trash` (projects with nested cascaded tasks, individually deleted tasks, purge dates) | FR-TRASH-001 | TODO |
 | API-RPT-001 | GET | `/reports/summary?from=&to=` → `{totalMinutes, projects: [{project: Ref\|null, minutes}]}` | FR-RPT-002/003 | TODO |
-| API-RPT-002 | GET | `/reports/daily?from=&to=&projectIds=` → `{dates: [...], series: [{key, project: Ref\|null, minutes: [...]}]}` (zero-filled) | FR-RPT-004/005, FR-TLOG-013 | TODO |
+| API-RPT-002 | GET | `/reports/daily?from=&to=&projectIds=` → `{dates: [...], series: [{key, project: Ref\|null, minutes: [...]}]}` (zero-filled) | FR-RPT-004/005 | TODO |
 
 ## Endpoint details
 TODO: write each endpoint using the template once its requirement spec reaches `review`.
@@ -140,7 +141,7 @@ user's email isn't on it (the session is revoked)
 
 ### API-USR-001: Current user
 `GET /me` · Auth: bearer · Implements: FR-AUTH-006
-**200:** `Me` = `{ id: string, email: string, displayName: string, avatarUrl: string | null, timeZone: string, createdAt: string }`
+**200:** `Me` = `{ id: string, email: string, displayName: string, avatarUrl: string | null, timeZone: string, dailyTargetMinutes: number, createdAt: string }`
 **Errors:** 401 (also when the token's user no longer exists)
 
 ### Shared project and task shapes
@@ -253,7 +254,7 @@ tasks without a due date come last in both `dueDate` directions (OQ-085).
 `PATCH /tasks/{id}` · Auth: bearer · Implements: FR-TSK-005, FR-TSK-006
 **Request body:** the create fields, all optional; `projectId`, `title` and `status` may not be `null`.
 A new `projectId` moves the task (it must be the caller's and not in the trash, else `404` `not-found`).
-The time-logs feature (M4) adds moving the task's logs (data-model.md *time_logs*).
+Moving a task also sets the project of its time logs to the new project, in the same transaction (data-model.md *time_logs*).
 **200:** `Task`
 **Errors:** 400 validation · 401 · 404 `not-found` · 404 `in-trash`
 
@@ -269,8 +270,81 @@ Clears the task's `deletedAt`. A task that isn't deleted → `204`, no change.
 **204**
 **Errors:** 401 · 404 `not-found` · 409 `conflict` when the task's project is in the trash (restore the project instead)
 
+### API-USR-002: Update the profile settings
+`PATCH /me` · Auth: bearer · Implements: FR-AUTH-006, FR-TLOG-017
+**Request body:** `{ timeZone?: string, dailyTargetMinutes?: integer }`, all optional, none may be `null`. A new user's `dailyTargetMinutes` is 420 (7 h). `timeZone` must be accepted by
+`Intl.DateTimeFormat` and be ≤ 64 chars. `dailyTargetMinutes`: 15–1440, a multiple of 15.
+**200:** `Me`
+**Errors:** 400 validation · 401
+
+### Shared time-capture shapes
+Used by API-WD-* and API-TLOG-*. Implements [req-time-logs](../01-requirements/time-logs.md).
+
+- **`TimeLog`:** `{ id, workDate: "YYYY-MM-DD", durationMinutes, text, title: string | null, project: Ref | null, task: Ref | null, excludeFromStats: boolean }`.
+  `Ref` as in conventions.md (a deleted or purged entity keeps its title with `deleted: true`, data-model.md *Retained names*).
+  A log with a task always has `project` set (the task's project).
+- **`Day`:** `{ workDate, startMinute: number | null, totalMinutes: number, logs: TimeLog[] }`. `startMinute` is `null` when the date has no workday.
+  `logs` are in entry order (`id` ascending), and all of the date's logs are returned (no pagination).
+- **Inputs:** `text` (1–1000) and `title` (1–100) are trimmed, and an empty `title` is stored as `null`; an empty `text` → `400`.
+  `durationMinutes`: an integer, a multiple of 15, 15–1440. `workDate`: a real calendar date that is **not after today in the caller's time zone**.
+  `startMinute` / `dayStartMinute`: an integer, a multiple of 15, 0–1425. `excludeFromStats`: a boolean (default `false` on `POST`; `null` → `400`). A wrong value → `400` naming the field.
+- **Link input:** `projectId?: uuid | null` and `taskId?: uuid | null`.
+  - With `taskId`: the task must be the caller's and not effectively deleted, else `404` `not-found` ("Task not found."). The log's project becomes the task's project.
+    A `projectId` that differs from the task's → `400` (field `projectId`, "must be the task's project").
+  - With only `projectId`: the project must be the caller's and not in the trash, else `404` `not-found` ("Project not found.").
+  - With neither: an unsorted log.
+  - On `PATCH`, the link is replaced **as a unit** when either field is present (the absent one counts as `null`) and left alone when both are absent.
+    A link that is the log's current one is accepted even when that task or project is in the trash.
+- **Workday start:** `dayStartMinute` on `POST` (and on `PATCH` when `workDate` changes) is **required** when the target date has no workday
+  (`400`, field `dayStartMinute`, "is required when the day has no start time"), and creates it in the same transaction. When the date already has a
+  workday, `dayStartMinute` is ignored.
+- **Ids in paths:** a value that isn't a UUID, or a log/date that doesn't exist for the caller → `404` `…/errors/not-found`. A `{date}` that isn't a real date → `400`.
+
+### API-WD-001: List workdays
+`GET /workdays?from=&to=` · Auth: bearer · Implements: FR-TLOG-001
+**Query:** `from`, `to`: dates, `from` ≤ `to`, at most 366 days apart, else `400`.
+**200:** `{ items: { workDate, startMinute, totalMinutes }[] }`, one per workday in the range, ordered by `workDate`; `totalMinutes` is the sum of its logs (0 when none).
+The calendar marks the dates whose `totalMinutes` > 0.
+**Errors:** 400 validation · 401
+
+### API-WD-002: Set the day start
+`PUT /workdays/{date}` · Auth: bearer · Implements: FR-TLOG-009
+**Request body:** `{ startMinute }`. Creates the workday or replaces its start. `date` must not be after today (`400`).
+**200:** `{ workDate, startMinute }`
+**Errors:** 400 validation · 401
+
+### API-WD-003: Get a day
+`GET /workdays/{date}` · Auth: bearer · Implements: FR-TLOG-001/002/003/009/015/016
+**200:** `Day`. A date with no workday and no logs → `{ workDate, startMinute: null, totalMinutes: 0, logs: [] }`. Any real date is valid, including the future (empty).
+**Errors:** 400 invalid date · 401
+
+### API-TLOG-001: List the logs of a project or task
+`GET /time-logs?projectId=&taskId=&page=&pageSize=` · Auth: bearer · Implements: FR-TLOG-012
+**Query:** exactly one of `projectId`, `taskId` (a UUID), else `400`. Pagination per conventions.md.
+**200:** `{ items: TimeLog[], page, pageSize, total, totalMinutes }`: the caller's logs with that project (which includes the logs of its tasks) or that task,
+ordered by `workDate` descending, then entry order; `totalMinutes` sums **all** matching logs, not only the page. An unknown or foreign id → `items: []`, `totalMinutes: 0`.
+**Errors:** 400 validation · 401
+
+### API-TLOG-002: Create a time log
+`POST /time-logs` · Auth: bearer · Implements: FR-TLOG-004, FR-TLOG-009
+**Request body:** `{ workDate, durationMinutes, text, title?, projectId?, taskId?, excludeFromStats?, dayStartMinute? }` (shapes above).
+**201:** `TimeLog`
+**Errors:** 400 validation · 401 · 404 `not-found` (task or project)
+
+### API-TLOG-004: Update a time log
+`PATCH /time-logs/{id}` · Auth: bearer · Implements: FR-TLOG-006
+**Request body:** `{ workDate?, durationMinutes?, text?, title?, projectId?, taskId?, excludeFromStats?, dayStartMinute? }`; `workDate`, `durationMinutes`, `text` and `excludeFromStats` may not be `null`; `title: null` clears it.
+**200:** `TimeLog`
+**Errors:** 400 validation · 401 · 404 `not-found`
+
+### API-TLOG-006: Delete a time log
+`DELETE /time-logs/{id}` · Auth: bearer · Implements: FR-TLOG-008
+Deletes the row immediately. The workday stays.
+**204**
+**Errors:** 401 · 404 `not-found`
+
 ## Open questions
-OQ-029, OQ-030, OQ-036
+OQ-029
 
 ## Changelog
 - 2026-09-26: Initial scaffold.
@@ -287,3 +361,5 @@ OQ-029, OQ-030, OQ-036
 - 2026-10-03: API-SYS-003 returns the release version stamped by `api-deploy` (OQ-098, feat-ops-release-versions).
 - 2026-10-04: API-PRJ-002 `q` also matches the lead's name, title matches first (OQ-099, OQ-102; feat-prj-dates-lead-search). Needs the owner's approval again.
 - 2026-10-04: The owner approved API-PRJ-002 (as updated) for feat-prj-dates-lead-search.
+- 2026-10-07: Time capture detailed from the owner's description: API-WD-001…003, API-TLOG-001/002/004/006 with the shared time-capture shapes; API-TLOG-003/005/007 removed; `Me.dailyTargetMinutes` and API-USR-002 (OQ-103…OQ-114). `Me` (approved) needs the owner's approval again.
+- 2026-10-09: `TimeLog.excludeFromStats` and its input on API-TLOG-002/004 (OQ-119); the daily target defaults to 420 (OQ-115).
