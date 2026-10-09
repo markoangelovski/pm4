@@ -58,6 +58,7 @@ time logs); `PATCH /me` and `Me.dailyTargetMinutes`; moving a task's logs in `PA
 | --- | --- | --- | --- | --- |
 | api | `api/test/time-logs.ac.e2e-spec.ts` | C | tests | API-TLOG-*, API-WD-* |
 | api | `api/test/me-settings.ac.e2e-spec.ts` | C | tests | API-USR-002 |
+| api | `api/test/me.ac.e2e-spec.ts` | M | tests | AC-3 of feat-auth-api-session: `Me` now has `dailyTargetMinutes` |
 | api | `api/src/database/schema/time.ts` | C | T1 | `workdays`, `timeLogs` |
 | api | `api/src/database/schema/users.ts` | M | T1 | `dailyTargetMinutes` |
 | api | `api/src/database/schema/index.ts` | M | T1 | Export `time.js` |
@@ -235,3 +236,4 @@ None.
 - 2026-10-07: Initial draft.
 - 2026-10-09: `excludeFromStats` (OQ-119); daily target default 420 (OQ-115); API-TLOG-001 moved to the project/task logged-time feature (D8); moving a task's logs lives in `TasksRepository.update` (D4). Ready for review.
 - 2026-10-09: Approved by the owner.
+- 2026-10-09: Test step: the existing `me.ac.e2e-spec.ts` (exact `Me` fields) gains `dailyTargetMinutes`.

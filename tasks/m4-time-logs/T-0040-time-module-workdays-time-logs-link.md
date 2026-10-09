@@ -9,7 +9,8 @@ tier: sonnet
 depends_on: [T-0039]
 feature_spec: specs/06-features/tlog-api.md
 spec_row: T2
-ac_files: []
+ac_files:
+  - { path: api/test/time-logs.ac.e2e-spec.ts, sha256: 8f5b6b9fcbac8222870f10fe74c81212d48560842f55f27d806331e218800f49 }
 ---
 
 # T-0040: time module: workdays, time logs, link and day-start rules, moving a task's logs
