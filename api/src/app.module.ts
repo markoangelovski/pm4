@@ -9,6 +9,7 @@ import { AuthModule } from "./auth/auth.module.js";
 import { UsersModule } from "./users/users.module.js";
 import { ProjectsModule } from "./projects/projects.module.js";
 import { TasksModule } from "./tasks/tasks.module.js";
+import { TimeModule } from "./time/time.module.js";
 
 @Module({
   imports: [
@@ -20,7 +21,8 @@ import { TasksModule } from "./tasks/tasks.module.js";
     AuthModule,
     UsersModule,
     ProjectsModule,
-    TasksModule
+    TasksModule,
+    TimeModule
   ],
   providers: [ProblemDetailsFilter]
 })

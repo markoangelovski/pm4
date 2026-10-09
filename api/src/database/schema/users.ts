@@ -1,7 +1,9 @@
 import {
+  check,
   pgEnum,
   pgTable,
   primaryKey,
+  smallint,
   timestamp,
   uniqueIndex,
   uuid,
@@ -27,9 +29,16 @@ export const users = pgTable(
     email: varchar("email", { length: 254 }).notNull(),
     displayName: varchar("display_name", { length: 100 }).notNull(),
     avatarUrl: varchar("avatar_url", { length: 500 }),
-    timeZone: varchar("time_zone", { length: 64 }).notNull()
+    timeZone: varchar("time_zone", { length: 64 }).notNull(),
+    dailyTargetMinutes: smallint("daily_target_minutes").notNull().default(420)
   },
-  (t) => [uniqueIndex("users_email_lower_key").on(sql`lower(${t.email})`)]
+  (t) => [
+    uniqueIndex("users_email_lower_key").on(sql`lower(${t.email})`),
+    check(
+      "users_daily_target_minutes",
+      sql`${t.dailyTargetMinutes} BETWEEN 15 AND 1440 AND ${t.dailyTargetMinutes} % 15 = 0`
+    )
+  ]
 );
 
 export const userIdentities = pgTable(

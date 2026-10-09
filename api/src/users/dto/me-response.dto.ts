@@ -9,6 +9,8 @@ export class MeResponseDto {
   avatarUrl: string | null;
   /** IANA time zone, e.g. `Europe/Zagreb`. */
   timeZone: string;
+  /** The daily target in minutes (default 420). */
+  dailyTargetMinutes: number;
   /** ISO 8601 UTC */
   createdAt: string;
 }

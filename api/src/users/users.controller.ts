@@ -1,4 +1,4 @@
-import { Controller, Get } from "@nestjs/common";
+import { Body, Controller, Get, Patch } from "@nestjs/common";
 import { ApiBearerAuth } from "@nestjs/swagger";
 import {
   type AuthUser,
@@ -6,6 +6,7 @@ import {
 } from "../common/decorators/current-user/current-user.decorator.js";
 import { ApiProblemResponses } from "../common/decorators/api-problem-responses/api-problem-responses.decorator.js";
 import { MeResponseDto } from "./dto/me-response.dto.js";
+import { UpdateMeDto } from "./dto/update-me.dto.js";
 import { UsersService } from "./users.service.js";
 
 /** `GET /api/v1/me` (API-USR-001). */
@@ -18,5 +19,15 @@ export class UsersController {
   @ApiProblemResponses(401)
   get(@CurrentUser() user: AuthUser): Promise<MeResponseDto> {
     return this.usersService.getMe(user.id);
+  }
+
+  /** Change the profile settings (API-USR-002). */
+  @Patch()
+  @ApiProblemResponses(400, 401)
+  update(
+    @CurrentUser() user: AuthUser,
+    @Body() dto: UpdateMeDto
+  ): Promise<MeResponseDto> {
+    return this.usersService.updateMe(user.id, dto);
   }
 }

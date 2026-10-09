@@ -29,6 +29,7 @@ The web side is feat-tlog-web.
 | D6 | `PATCH /me` is added here, for `dailyTargetMinutes` (default 420) and `timeZone`, which the settings screen edits together. | OQ-106, OQ-115 (owner) |
 | D7 | `excludeFromStats` is stored and returned as is; the API computes no statistics from it in this feature. | OQ-119 (owner) |
 | D8 | `GET /time-logs?projectId=&taskId=` (API-TLOG-001) is not built here; it comes with the logged-time sections of the project and task pages. | Owner (2026-10-09): features documented one screen at a time |
+| D9 | `PATCH /me` treats `timeZone` as sign-in does (`sanitizeTimeZone` in `api/src/auth/auth.service.ts`): it stores the canonical name `Intl` resolves (`europe/zagreb` → `Europe/Zagreb`), and a fixed UTC offset (`+01:00`) → `400`. | Owner (2026-10-09), review |
 
 ## Scope
 **In:** schema and migration for `workdays`, `time_logs`, `users.daily_target_minutes`; the `time` module (workdays and
@@ -66,14 +67,14 @@ time logs); `PATCH /me` and `Me.dailyTargetMinutes`; moving a task's logs in `PA
 | api | `api/src/users/dto/me-response.dto.ts` | M | T1 | `dailyTargetMinutes` |
 | api | `api/src/users/dto/update-me.dto.ts` | C | T1 | Hand-written |
 | api | `api/src/common/validation/minutes.ts` | C | T1 | `MultipleOf15`, `IanaTimeZone` |
-| api | `api/src/users/users.controller.ts`, `users.service.ts`, `users.repository.ts` (+ their `.spec.ts`) | M | T1 | `PATCH /me` |
+| api | `api/src/users/users.controller.ts`, `api/src/users/users.controller.spec.ts`, `api/src/users/users.service.ts`, `api/src/users/users.service.spec.ts`, `api/src/users/users.repository.ts`, `api/src/users/users.repository.spec.ts` | M | T1 | `PATCH /me` |
 | api | `api/src/time/time.module.ts` | C | T2 | `npx nest g module time` |
-| api | `api/src/time/workdays.controller.ts`, `workdays.service.ts` (+ `.spec.ts`) | C | T2 | `npx nest g controller time/workdays --flat`, `g service time/workdays --flat` |
-| api | `api/src/time/time-logs.controller.ts`, `time-logs.service.ts` (+ `.spec.ts`) | C | T2 | same, `time-logs` |
-| api | `api/src/time/time.repository.ts` (+ `.spec.ts`) | C | T2 | `npx nest g provider time/time.repository --flat` |
+| api | `api/src/time/workdays.controller.ts`, `api/src/time/workdays.controller.spec.ts`, `api/src/time/workdays.service.ts`, `api/src/time/workdays.service.spec.ts` | C | T2 | `npx nest g controller time/workdays --flat`, `g service time/workdays --flat` |
+| api | `api/src/time/time-logs.controller.ts`, `api/src/time/time-logs.controller.spec.ts`, `api/src/time/time-logs.service.ts`, `api/src/time/time-logs.service.spec.ts` | C | T2 | same, `time-logs` |
+| api | `api/src/time/time.repository.ts`, `api/src/time/time.repository.spec.ts` | C | T2 | `npx nest g provider time/time.repository --flat` |
 | api | `api/src/time/dto/*.ts` | C | T2 | Hand-written |
 | api | `api/src/app.module.ts` | M | T2 | The CLI adds `TimeModule` |
-| api | `api/src/tasks/tasks.repository.ts` (+ `.spec.ts`) | M | T2 | Move a task's logs (D4) |
+| api | `api/src/tasks/tasks.repository.ts`, `api/src/tasks/tasks.repository.spec.ts` | M | T2 | Move a task's logs (D4) |
 | api | `api/openapi.json` | M | T1, T2 | `npm run openapi:export` |
 
 ## Interfaces
@@ -118,7 +119,7 @@ export class UpdateMeDto {
 // users.controller.ts: @Patch() update(@CurrentUser() user, @Body() dto: UpdateMeDto): Promise<MeResponseDto>
 // users.service.ts: updateMe(userId, dto); MeResponseDto gains `dailyTargetMinutes: number`.
 ```
-`IanaTimeZone` accepts a value when `new Intl.DateTimeFormat("en", { timeZone: value })` doesn't throw. `MultipleOf15` and `IanaTimeZone` are
+`IanaTimeZone` accepts a value when `sanitizeTimeZone(value)` (imported from `api/src/auth/auth.service.ts`) isn't `null`, and `updateMe` stores `sanitizeTimeZone(value)` (D9). `MultipleOf15` and `IanaTimeZone` are
 class-validator constraints in `api/src/common/validation/minutes.ts`, reused by T2 (`@Validate(MultipleOf15)`).
 
 ### DTOs (T2)
@@ -237,3 +238,5 @@ None.
 - 2026-10-09: `excludeFromStats` (OQ-119); daily target default 420 (OQ-115); API-TLOG-001 moved to the project/task logged-time feature (D8); moving a task's logs lives in `TasksRepository.update` (D4). Ready for review.
 - 2026-10-09: Approved by the owner.
 - 2026-10-09: Test step: the existing `me.ac.e2e-spec.ts` (exact `Me` fields) gains `dailyTargetMinutes`.
+- 2026-10-09: Files rows list every path in full, so `pm4 check` reads them.
+- 2026-10-09: Review: D9 (time zones canonicalised like sign-in, offsets rejected).

@@ -42,6 +42,19 @@ export class UsersRepository {
     return user ?? null;
   }
 
+  /** Changes the caller's settings (API-USR-002); `null` when the user doesn't exist. */
+  async updateSettings(
+    id: string,
+    changes: { timeZone?: string; dailyTargetMinutes?: number }
+  ): Promise<User | null> {
+    const [user] = await this.db
+      .update(users)
+      .set({ ...changes, updatedAt: sql`now()` })
+      .where(eq(users.id, id))
+      .returning();
+    return user ?? null;
+  }
+
   /** A user picked as a project lead: id and current name only (never the email, OQ-077). */
   async findLeadUser(
     id: string

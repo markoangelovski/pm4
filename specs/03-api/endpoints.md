@@ -36,7 +36,7 @@ defines its request, response and errors. Paths are relative to `/api/v1` unless
 | API-AUTH-005 | POST | `/auth/logout` `{refreshToken}` | FR-AUTH-004 | specified |
 | API-AUTH-006 | POST | `/auth/logout-all` (bearer) → revokes all of the user's sessions | FR-AUTH-007 | specified |
 | API-USR-001 | GET | `/me` | FR-AUTH-006 | specified |
-| API-USR-002 | PATCH | `/me` `{timeZone?, dailyTargetMinutes?}` (with the settings screen, OQ-064) | FR-AUTH-006, FR-TLOG-017 | TODO |
+| API-USR-002 | PATCH | `/me` `{timeZone?, dailyTargetMinutes?}` (with the settings screen, OQ-064) | FR-AUTH-006, FR-TLOG-017 | specified |
 | API-USR-003 | GET | `/users?q=` (project-lead picker, OQ-089) | FR-PRJ-006 | specified |
 | API-PRJ-001 | POST | `/projects` | FR-PRJ-001 | specified |
 | API-PRJ-002 | GET | `/projects?q=&sort=&page=&pageSize=` (with task counts) | FR-PRJ-002 | specified |
@@ -52,15 +52,15 @@ defines its request, response and errors. Paths are relative to `/api/v1` unless
 | API-TSK-005 | DELETE | `/tasks/{id}` (soft) | FR-TSK-007 | specified |
 | API-TSK-006 | POST | `/tasks/{id}/restore` (409 if project in trash; built in M3, OQ-090) | FR-TRASH-003, FR-TSK-004 | specified |
 | API-TSK-007 | DELETE | `/tasks/{id}/permanent` | FR-TRASH-004 | TODO |
-| API-WD-001 | GET | `/workdays?from=&to=` → `{items: [{workDate, startMinute, totalMinutes}]}` (the calendar's marks) | FR-TLOG-001 | TODO |
-| API-WD-002 | PUT | `/workdays/{date}` `{startMinute}` | FR-TLOG-009 | TODO |
-| API-WD-003 | GET | `/workdays/{date}` → `Day` (the start, the total and the day's logs in entry order) | FR-TLOG-001/002/003/009/015/016 | TODO |
+| API-WD-001 | GET | `/workdays?from=&to=` → `{items: [{workDate, startMinute, totalMinutes}]}` (the calendar's marks) | FR-TLOG-001 | specified |
+| API-WD-002 | PUT | `/workdays/{date}` `{startMinute}` | FR-TLOG-009 | specified |
+| API-WD-003 | GET | `/workdays/{date}` → `Day` (the start, the total and the day's logs in entry order) | FR-TLOG-001/002/003/009/015/016 | specified |
 | API-TLOG-001 | GET | `/time-logs?projectId=&taskId=&page=&pageSize=` → logs of one project or task, with `totalMinutes` | FR-TLOG-012 | TODO |
-| API-TLOG-002 | POST | `/time-logs` `{workDate, durationMinutes, text, title?, projectId?, taskId?, dayStartMinute?}` | FR-TLOG-004/009 | TODO |
+| API-TLOG-002 | POST | `/time-logs` `{workDate, durationMinutes, text, title?, projectId?, taskId?, dayStartMinute?}` | FR-TLOG-004/009 | specified |
 | API-TLOG-003 | — | (removed) | — | — |
-| API-TLOG-004 | PATCH | `/time-logs/{id}` | FR-TLOG-006 | TODO |
+| API-TLOG-004 | PATCH | `/time-logs/{id}` | FR-TLOG-006 | specified |
 | API-TLOG-005 | — | (removed) | — | — |
-| API-TLOG-006 | DELETE | `/time-logs/{id}` (immediate) | FR-TLOG-008 | TODO |
+| API-TLOG-006 | DELETE | `/time-logs/{id}` (immediate) | FR-TLOG-008 | specified |
 | API-TLOG-007 | — | (removed) | — | — |
 | API-BOOK-001 | GET | `/bookings?from=&to=` → `{items: BookingLog[]}` (logs worked in the range, and logs booked into it) | FR-BOOK-001/002/003 | TODO |
 | API-BOOK-002 | PUT | `/bookings` `{logIds, bookingDate}` → `{items: BookingLog[]}` (book, re-date or remove, one or many logs) | FR-BOOK-004/005 | TODO |
@@ -275,7 +275,7 @@ Clears the task's `deletedAt`. A task that isn't deleted → `204`, no change.
 ### API-USR-002: Update the profile settings
 `PATCH /me` · Auth: bearer · Implements: FR-AUTH-006, FR-TLOG-017
 **Request body:** `{ timeZone?: string, dailyTargetMinutes?: integer }`, all optional, none may be `null`. A new user's `dailyTargetMinutes` is 420 (7 h). `timeZone` must be accepted by
-`Intl.DateTimeFormat` and be ≤ 64 chars. `dailyTargetMinutes`: 15–1440, a multiple of 15.
+`Intl.DateTimeFormat`, be ≤ 64 chars and not be a fixed UTC offset; it is stored in the canonical form `Intl` resolves, as at sign-in. `dailyTargetMinutes`: 15–1440, a multiple of 15.
 **200:** `Me`
 **Errors:** 400 validation · 401
 
@@ -407,3 +407,4 @@ None.
 - 2026-10-09: `TimeLog.excludeFromStats` and its input on API-TLOG-002/004 (OQ-119); the daily target defaults to 420 (OQ-115).
 - 2026-10-09: `BookingLog`, API-BOOK-001/002; API-TLOG-004 removes the booking of a log that becomes unbookable (feat-book-api, OQ-122…OQ-125).
 - 2026-10-09: API-RPT-001 is `GET /reports/dashboard` with `ReportDay` and `ReportProject`; API-RPT-002 removed (OQ-127, OQ-129; feat-rpt-api).
+- 2026-10-09: API-USR-002: `timeZone` is canonicalised and fixed UTC offsets are rejected, as at sign-in (feat-tlog-api D9).

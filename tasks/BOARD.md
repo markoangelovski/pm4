@@ -42,8 +42,8 @@
 | [T-0036](m1-auth/T-0036-release-script-workflow-version-stamp-tag.md) | Release script, workflow version/stamp/tag steps, frozen 0.0.0 versions | M1 | infra | M | done | — |
 | [T-0037](m2-projects/T-0037-project-search-also-matches-the-lead.md) | Project search also matches the lead's name, title matches first (API-PRJ-002 q) | M2 | api | S | done | — |
 | [T-0038](m2-projects/T-0038-project-dates-in-the-list-and.md) | Project dates in the list and detail, the lead-search placeholder, regenerated API types | M2 | web | S | done | T-0037 |
-| [T-0039](m4-time-logs/T-0039-schema-migration-workdays-time-logs-users.md) | Schema + migration (workdays, time_logs, users.daily_target_minutes) and PATCH /me | M4 | api | S | ready | — |
-| [T-0040](m4-time-logs/T-0040-time-module-workdays-time-logs-link.md) | time module: workdays, time logs, link and day-start rules, moving a task's logs | M4 | api | L | blocked | T-0039 |
+| [T-0039](m4-time-logs/T-0039-schema-migration-workdays-time-logs-users.md) | Schema + migration (workdays, time_logs, users.daily_target_minutes) and PATCH /me | M4 | api | S | done | — |
+| [T-0040](m4-time-logs/T-0040-time-module-workdays-time-logs-link.md) | time module: workdays, time logs, link and day-start rules, moving a task's logs | M4 | api | L | done | T-0039 |
 | [T-0041](m4-time-logs/T-0041-data-hooks-features-time-api-ts.md) | Data hooks (features/time/api.ts) and useUpdateMe | M4 | web | S | blocked | — |
 | [T-0042](m4-time-logs/T-0042-log-dialog-date-field-project-and.md) | Log dialog, date field, project and task pickers, header **Log time** button | M4 | web | M | blocked | T-0041 |
 | [T-0043](m4-time-logs/T-0043-day-view-header-day-picker-with.md) | Day view: header, day picker with calendar, charts, rows, grouped views, delete | M4 | web | L | blocked | T-0041, T-0042 |
