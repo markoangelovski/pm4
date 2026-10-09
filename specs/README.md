@@ -31,7 +31,7 @@ Either way, fix the disagreement. Never ignore it.
 | Tasks | [01-requirements/tasks.md](01-requirements/tasks.md) | approved |
 | Time capture | [01-requirements/time-logs.md](01-requirements/time-logs.md) | approved |
 | Bookings | [01-requirements/bookings.md](01-requirements/bookings.md) | approved |
-| Dashboard and reporting | [01-requirements/reporting.md](01-requirements/reporting.md) | draft |
+| Dashboard and reporting | [01-requirements/reporting.md](01-requirements/reporting.md) | approved |
 | Trash and soft delete | [01-requirements/trash.md](01-requirements/trash.md) | draft |
 | Non-functional requirements | [01-requirements/non-functional.md](01-requirements/non-functional.md) | draft |
 | System overview | [02-architecture/system-overview.md](02-architecture/system-overview.md) | approved |

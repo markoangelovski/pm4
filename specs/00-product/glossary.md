@@ -31,6 +31,7 @@ Use these terms consistently in specs, code, UI copy and API names.
 | Excluded from statistics / Non-prod | A log that counts as logged time but not as billable time (e.g. a commute); the grouped views collect such logs in the **Non-prod** group | `excludeFromStats` | — |
 | Billable time | A day's logged time without the logs excluded from statistics | — | — |
 | % billable / Overtime | Billable time as a percentage of the daily target / billable time above the daily target | — | — |
+| Worked / Booked / Target (dashboard) | For a date range: the hours of its logs / the part of them whose logs are booked (counted on the day worked) / its workdays × the daily target | `workedMinutes`, `bookedMinutes` | — |
 | Duration | Time spent, stored as **integer minutes** | `durationMinutes` | `duration` (decimal hours) |
 | Work date | The user's local calendar date the work belongs to (`YYYY-MM-DD`) | `workDate` | `day` |
 | Trash | Soft-deleted projects and tasks. Restorable for 31 days, then purged. | `/trash` | — |
@@ -49,3 +50,4 @@ Use these terms consistently in specs, code, UI copy and API names.
 - 2026-10-07: Time-capture terms rewritten from the owner's description: no position, added log text, title, unsorted, daily target.
 - 2026-10-09: Excluded from statistics, Non-prod, billable time, % billable and overtime; the daily target defaults to 7 h; By project is the default view.
 - 2026-10-09: Added *Booking*.
+- 2026-10-09: Added the dashboard's *Worked / Booked / Target*.

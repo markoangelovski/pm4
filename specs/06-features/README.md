@@ -42,3 +42,5 @@ A feature spec links to those. It doesn't copy them.
 | Time logging web: the Logs day view, log dialog, charts and settings | [tlog-web.md](tlog-web.md) | M4 | approved |
 | Bookings API: booking dates on time logs | [book-api.md](book-api.md) | M4 | approved |
 | Bookings web: the Bookings page | [book-web.md](book-web.md) | M4 | approved |
+| Dashboard API: the dashboard report | [rpt-api.md](rpt-api.md) | M5 | approved |
+| Dashboard web: the dashboard page | [rpt-web.md](rpt-web.md) | M5 | approved |

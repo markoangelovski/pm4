@@ -33,7 +33,7 @@ and the client reads `id` with `useSearchParams` (inside `<Suspense>`).
 | `/?returnTo=` | SCR-003 Landing page (marketing, "Go to app" / "Login" header button) | public |
 | `/auth/sign-in?returnTo=` | SCR-001 Sign in (Google) | public |
 | `/auth/callback?code=&returnTo=` | SCR-002 OAuth callback (token exchange, then redirect) | public |
-| `/app` | SCR-010 Dashboard (range, total, breakdown, chart) | required |
+| `/app?from=&to=` | SCR-010 Dashboard (count tiles, workday chart, worked / target / booked, running totals, hours by project); `from`/`to` absent, invalid or over 366 days apart = this month | required |
 | `/app/projects?q=&sort=&page=` | SCR-020 Project list | required |
 | `/app/project?id=&status=&q=&sort=&page=` | SCR-021 Project detail (details, task statistics, tasks) | required |
 | `/app/tasks?project=&status=&q=&sort=&page=` | SCR-030 Task list (all projects) | required |
@@ -118,3 +118,4 @@ and the client reads `id` with `useSearchParams` (inside `<Suspense>`).
 - 2026-10-09: `/app/time` defaults to `view=project`; `/app/settings` has `?tab=` (OQ-120).
 - 2026-10-09: Approved by the owner.
 - 2026-10-09: `/app/bookings?from=&to=` and its sidebar link under **Time** (OQ-125). Back to `review`.
+- 2026-10-09: `/app?from=&to=`, the dashboard range (OQ-130). Back to `review`.

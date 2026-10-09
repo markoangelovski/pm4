@@ -8,12 +8,17 @@ and link to where the decision now lives. Resolved items stay here for history.
 
 | ID | Question | Proposal | Area | Blocks |
 | --- | --- | --- | --- | --- |
-| OQ-029 | Reporting details. (a) Should logs with no project show as a **"No project"** bucket in the breakdown and chart? (b) Should logs of deleted projects show under the retained name, marked "(deleted)"? (c) Is the hours-per-day chart **on the dashboard**, sharing one date-range control with the total and breakdown? (d) In per-project mode, should the chart also draw a "Total" line? | (a) yes (b) yes (c) yes, one range picker, default = current month (d) yes, toggleable | product | req-reporting |
 
 ## Resolved
 
 | ID | Question (short) | Answer | Recorded in |
 | --- | --- | --- | --- |
+| OQ-126 | Is the per-project line chart (a project multi-select, one line per project, a toggleable Total line) still wanted? | **Owner (2026-10-09):** no, dropped. The dashboard shows **Hours by project** bars instead. (Replaces OQ-029d and the old FR-RPT-005.) | req-reporting |
+| OQ-127 | On which day a booked log counts on the dashboard | **Owner (2026-10-09):** the day it was **worked**, whatever its booking date ("of the work done in the range, how much is booked"). The Bookings page counts by booking date (OQ-122), so their totals can differ. | req-reporting §Shared rules, API-RPT-001 |
+| OQ-128 | Weekends in the per-day workday chart | **Owner (2026-10-09):** a Saturday or Sunday with no start time and no logs is left out; one with work is shown. | FR-RPT-003 |
+| OQ-129 | The dashboard's API | **Owner (2026-10-09):** one aggregate endpoint, `GET /reports/dashboard?from=&to=` (per-day and per-project minutes); the project and task counts reuse the list endpoints. Replaces the planned `/reports/summary` and `/reports/daily`. | API-RPT-001 |
+| OQ-130 | A custom range longer than 366 days | **Owner (2026-10-09):** **Apply** stays disabled with the hint "Pick at most 366 days."; such a range in the URL falls back to this month. | FR-RPT-001, SCR-010 |
+| OQ-029 | Reporting details: (a) a bucket for logs with no project, (b) deleted projects, (c) the chart's place and range, (d) a Total line in per-project mode | (a) yes: **Unsorted**, and **Non-prod** for logs excluded from statistics (b) yes, the retained name and "(deleted)" (c) on the dashboard, one range picker, default the current month (d) obsolete, the per-project mode is dropped (OQ-126) | req-reporting |
 | OQ-122 | What a Bookings project row's *Hours booked* counts | **Owner (2026-10-09):** the hours booked **to that day**: the row's own logs booked to that day plus logs of other days booked to it, so the rows add up to *Booked total*. A log booked to another day shows 0 h booked on its own day, with its booking date. | FR-BOOK-003, SCR-045 |
 | OQ-123 | Which booking dates are allowed | **Owner (2026-10-09):** any date up to today in the user's zone, also before the work date; no future dates. | FR-BOOK-004, API-BOOK-002 |
 | OQ-124 | A booked log is edited | **Owner (2026-10-09):** the booking stays through edits of the text, title, duration, date or task; it is removed when the log stops being bookable (excluded from statistics, or no project). | FR-BOOK-006, API-TLOG-004 |

@@ -21,8 +21,8 @@ Defines what is in and out of scope for the MVP, and the milestone order that `t
   shown in entry order or grouped by project or task, with pie and bar charts and a calendar of past days.
 - Bookings: a booking date on each log, and a page that lists a date range day by day with the hours worked and booked per project, to book logs one by one or per project.
 - Trash: restore for 31 days, permanent delete, automatic (best-effort) purge afterwards.
-- Dashboard reporting: a date range with total hours, a per-project breakdown, and a line chart of
-  hours per day with per-project series.
+- Dashboard: project and task counts, and for a date range the workdays' start times, the hours worked against the daily target,
+  the booked hours, running totals and the hours per project.
 
 ## Out of scope (MVP)
 - Sharing, teams, roles (single user per account). A project lead who is a PM4 user gets no access.
@@ -43,7 +43,7 @@ Each milestone corresponds to a folder in `tasks/`.
 | M2 | Projects | Project CRUD end to end (delete = soft delete) | FR-PRJ-* done |
 | M3 | Tasks | Task CRUD and status workflow end to end | FR-TSK-* done |
 | M4 | Time capture | Workdays and time logs end to end (all three views), bookings | FR-TLOG-*, FR-BOOK-* done |
-| M5 | Reporting | Dashboard totals, breakdown, hours-per-day chart | FR-RPT-* done |
+| M5 | Reporting | Dashboard: counts, workday chart, worked / target / booked, running totals, hours by project | FR-RPT-* done |
 | M6 | Trash | Trash view, restore, permanent delete, background purge (ADR-0011) | FR-TRASH-* done |
 
 Soft-delete *columns and filtering* are built into M2/M3 from the start. M6 adds the trash UI, restore, purge and retained-name handling.
@@ -57,3 +57,4 @@ Soft-delete *columns and filtering* are built into M2/M3 from the start. M6 adds
 - 2026-10-03: Projects: task statistics, project lead as a PM4 user or text (OQ-076); tasks can move between projects (OQ-084).
 - 2026-10-07: Time-capture scope follows the owner's description.
 - 2026-10-09: Bookings join M4.
+- 2026-10-09: The dashboard follows the owner's Dashboard screen; the per-project line chart is dropped (OQ-126).

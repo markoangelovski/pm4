@@ -65,8 +65,8 @@ defines its request, response and errors. Paths are relative to `/api/v1` unless
 | API-BOOK-001 | GET | `/bookings?from=&to=` → `{items: BookingLog[]}` (logs worked in the range, and logs booked into it) | FR-BOOK-001/002/003 | TODO |
 | API-BOOK-002 | PUT | `/bookings` `{logIds, bookingDate}` → `{items: BookingLog[]}` (book, re-date or remove, one or many logs) | FR-BOOK-004/005 | TODO |
 | API-TRASH-001 | GET | `/trash` (projects with nested cascaded tasks, individually deleted tasks, purge dates) | FR-TRASH-001 | TODO |
-| API-RPT-001 | GET | `/reports/summary?from=&to=` → `{totalMinutes, projects: [{project: Ref\|null, minutes}]}` | FR-RPT-002/003 | TODO |
-| API-RPT-002 | GET | `/reports/daily?from=&to=&projectIds=` → `{dates: [...], series: [{key, project: Ref\|null, minutes: [...]}]}` (zero-filled) | FR-RPT-004/005 | TODO |
+| API-RPT-001 | GET | `/reports/dashboard?from=&to=` → `{days: ReportDay[], projects: ReportProject[]}` (worked and booked minutes per day and per project) | FR-RPT-002…006 | TODO |
+| API-RPT-002 | — | (removed, OQ-129) | — | — |
 
 ## Endpoint details
 TODO: write each endpoint using the template once its requirement spec reaches `review`.
@@ -369,8 +369,24 @@ in one transaction, all or nothing.
 isn't bookable → field `logIds`, "contains a log that can't be booked") · 401 · 404 `not-found` ("Time log not found.") when any id isn't the caller's
 log; nothing changes on any error.
 
+### API-RPT-001: Dashboard report
+`GET /reports/dashboard?from=&to=` · Auth: bearer · Implements: FR-RPT-002…006 ([req-reporting](../01-requirements/reporting.md))
+**Query:** `from`, `to`: dates, `from` ≤ `to`, at most 366 days apart, else `400`. Future dates are allowed (they have nothing).
+**200:** `{ days: ReportDay[], projects: ReportProject[] }`, computed from the caller's workdays and logs whose date is in the range:
+- **`ReportDay`:** `{ workDate, startMinute: number | null, workedMinutes, bookedMinutes }`, one per date that has a workday or a log, ordered by
+  `workDate`. `workedMinutes` sums all of the date's logs (excluded ones too); `bookedMinutes` sums those with a booking date, whatever it is (OQ-127).
+  `startMinute` is `null` for a date with logs but no workday.
+- **`ReportProject`:** `{ kind: "project" | "unsorted" | "nonprod", project: Ref | null, workedMinutes, bookedMinutes }`. A log excluded from statistics
+  counts under `nonprod`; else a log without a project (and no retained project name) under `unsorted`; else under its project: one row per
+  `project_id`, and per retained name for purged projects (data-model.md *Retained names*). `project` is the `Ref` (trashed or purged → `deleted: true`),
+  `null` for `unsorted` and `nonprod`, whose `bookedMinutes` is always 0. Order: the `project` rows by `workedMinutes` descending, then title, then
+  `unsorted`, then `nonprod`. Rows with no logs aren't returned.
+
+Empty range → `{ days: [], projects: [] }`. The project and task counts of FR-RPT-002 come from API-PRJ-002 and API-TSK-002 (`total`).
+**Errors:** 400 validation · 401
+
 ## Open questions
-OQ-029
+None.
 
 ## Changelog
 - 2026-09-26: Initial scaffold.
@@ -390,3 +406,4 @@ OQ-029
 - 2026-10-07: Time capture detailed from the owner's description: API-WD-001…003, API-TLOG-001/002/004/006 with the shared time-capture shapes; API-TLOG-003/005/007 removed; `Me.dailyTargetMinutes` and API-USR-002 (OQ-103…OQ-114). `Me` (approved) needs the owner's approval again.
 - 2026-10-09: `TimeLog.excludeFromStats` and its input on API-TLOG-002/004 (OQ-119); the daily target defaults to 420 (OQ-115).
 - 2026-10-09: `BookingLog`, API-BOOK-001/002; API-TLOG-004 removes the booking of a log that becomes unbookable (feat-book-api, OQ-122…OQ-125).
+- 2026-10-09: API-RPT-001 is `GET /reports/dashboard` with `ReportDay` and `ReportProject`; API-RPT-002 removed (OQ-127, OQ-129; feat-rpt-api).
