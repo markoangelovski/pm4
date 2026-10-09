@@ -14,6 +14,10 @@ and link to where the decision now lives. Resolved items stay here for history.
 
 | ID | Question (short) | Answer | Recorded in |
 | --- | --- | --- | --- |
+| OQ-122 | What a Bookings project row's *Hours booked* counts | **Owner (2026-10-09):** the hours booked **to that day**: the row's own logs booked to that day plus logs of other days booked to it, so the rows add up to *Booked total*. A log booked to another day shows 0 h booked on its own day, with its booking date. | FR-BOOK-003, SCR-045 |
+| OQ-123 | Which booking dates are allowed | **Owner (2026-10-09):** any date up to today in the user's zone, also before the work date; no future dates. | FR-BOOK-004, API-BOOK-002 |
+| OQ-124 | A booked log is edited | **Owner (2026-10-09):** the booking stays through edits of the text, title, duration, date or task; it is removed when the log stops being bookable (excluded from statistics, or no project). | FR-BOOK-006, API-TLOG-004 |
+| OQ-125 | Is the Bookings range kept in the URL? | **Owner (2026-10-09):** yes, `?from=&to=`; without them the current month up to today; at most 366 days. | FR-BOOK-001, SCR-045, routing.md |
 | OQ-115 | The default daily target, and how it is entered | **Owner (2026-10-09):** **7 h** (`users.daily_target_minutes` default 420), entered in Settings as hours in 0.25 steps (0.25–24). (Replaces the 8 h of OQ-106.) | FR-TLOG-017, SCR-050 |
 | OQ-116 | What typing in the log dialog's task picker matches | **Owner (2026-10-09):** the task title **or** the project name. The picker loads up to 100 tasks once and filters them in the browser (like the project picker); no API change. | FR-TLOG-004, SCR-041 |
 | OQ-117 | Does an Unsorted row in the By task view show its project? | **Owner (2026-10-09):** yes. | FR-TLOG-015, SCR-042 |

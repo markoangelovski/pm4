@@ -39,13 +39,14 @@ and the client reads `id` with `useSearchParams` (inside `<Suspense>`).
 | `/app/tasks?project=&status=&q=&sort=&page=` | SCR-030 Task list (all projects) | required |
 | `/app/task?id=` | SCR-031 Task detail (with its logged time) | required |
 | `/app/time?date=&view=project\|task\|sequential` | SCR-040 Day view (workday header, charts, logs, view switch, calendar); `view` absent = `project` | required |
+| `/app/bookings?from=&to=` | SCR-045 Bookings (per-day figures, project rows, booking dates); `from`/`to` absent or invalid = the current month up to today | required |
 | `/app/trash` | SCR-060 Trash | required |
 | `/app/user-profile` | SCR-051 Profile (Google identity, sign out of all devices) | required |
 | `/app/settings?tab=` | SCR-050 Settings (tabs; `tab` absent = `user`: daily target, time zone) | required |
 
 ## Navigation
 - Sidebar (OQ-054), in sections with a heading (shown in capitals):
-  **Dashboard** → Default (`/app`) · **Project management** → Projects, Tasks · **Time** → Logs (`/app/time`).
+  **Dashboard** → Default (`/app`) · **Project management** → Projects, Tasks · **Time** → Logs (`/app/time`), Bookings (`/app/bookings`).
   A fixed footer at the bottom of the sidebar (stays put while the nav scrolls) holds Trash and Settings.
   The app logo links to `/app`.
 - Header: a global **Log time** button (FR-TLOG-011), the theme toggle and the user's avatar. The avatar
@@ -116,3 +117,4 @@ and the client reads `id` with `useSearchParams` (inside `<Suspense>`).
 - 2026-10-07: `/app/time` has `view=sequential|project|task`; the settings and task rows follow the time-capture screens. Back to `review`.
 - 2026-10-09: `/app/time` defaults to `view=project`; `/app/settings` has `?tab=` (OQ-120).
 - 2026-10-09: Approved by the owner.
+- 2026-10-09: `/app/bookings?from=&to=` and its sidebar link under **Time** (OQ-125). Back to `review`.

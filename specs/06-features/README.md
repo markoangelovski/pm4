@@ -38,5 +38,7 @@ A feature spec links to those. It doesn't copy them.
 | Tasks web: task lists, inline status, due-date badges, task detail and the task dialog | [tsk-web.md](tsk-web.md) | M3 | approved |
 | Automatic release versions from git tags and conventional commits | [ops-release-versions.md](ops-release-versions.md) | M1 | approved |
 | Projects: created/updated dates and search by project lead | [prj-dates-lead-search.md](prj-dates-lead-search.md) | M2 | approved |
-| Time logging API: workdays, time logs, the daily target | [tlog-api.md](tlog-api.md) | M4 | review |
-| Time logging web: the Logs day view, log dialog, charts and settings | [tlog-web.md](tlog-web.md) | M4 | review |
+| Time logging API: workdays, time logs, the daily target | [tlog-api.md](tlog-api.md) | M4 | approved |
+| Time logging web: the Logs day view, log dialog, charts and settings | [tlog-web.md](tlog-web.md) | M4 | approved |
+| Bookings API: booking dates on time logs | [book-api.md](book-api.md) | M4 | approved |
+| Bookings web: the Bookings page | [book-web.md](book-web.md) | M4 | approved |

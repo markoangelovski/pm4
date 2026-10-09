@@ -62,6 +62,8 @@ defines its request, response and errors. Paths are relative to `/api/v1` unless
 | API-TLOG-005 | — | (removed) | — | — |
 | API-TLOG-006 | DELETE | `/time-logs/{id}` (immediate) | FR-TLOG-008 | TODO |
 | API-TLOG-007 | — | (removed) | — | — |
+| API-BOOK-001 | GET | `/bookings?from=&to=` → `{items: BookingLog[]}` (logs worked in the range, and logs booked into it) | FR-BOOK-001/002/003 | TODO |
+| API-BOOK-002 | PUT | `/bookings` `{logIds, bookingDate}` → `{items: BookingLog[]}` (book, re-date or remove, one or many logs) | FR-BOOK-004/005 | TODO |
 | API-TRASH-001 | GET | `/trash` (projects with nested cascaded tasks, individually deleted tasks, purge dates) | FR-TRASH-001 | TODO |
 | API-RPT-001 | GET | `/reports/summary?from=&to=` → `{totalMinutes, projects: [{project: Ref\|null, minutes}]}` | FR-RPT-002/003 | TODO |
 | API-RPT-002 | GET | `/reports/daily?from=&to=&projectIds=` → `{dates: [...], series: [{key, project: Ref\|null, minutes: [...]}]}` (zero-filled) | FR-RPT-004/005 | TODO |
@@ -334,6 +336,7 @@ ordered by `workDate` descending, then entry order; `totalMinutes` sums **all** 
 ### API-TLOG-004: Update a time log
 `PATCH /time-logs/{id}` · Auth: bearer · Implements: FR-TLOG-006
 **Request body:** `{ workDate?, durationMinutes?, text?, title?, projectId?, taskId?, excludeFromStats?, dayStartMinute? }`; `workDate`, `durationMinutes`, `text` and `excludeFromStats` may not be `null`; `title: null` clears it.
+An update that leaves the log unbookable (excluded from statistics, or neither a project nor a task) also removes its booking (FR-BOOK-006); any other update keeps it.
 **200:** `TimeLog`
 **Errors:** 400 validation · 401 · 404 `not-found`
 
@@ -342,6 +345,29 @@ ordered by `workDate` descending, then entry order; `totalMinutes` sums **all** 
 Deletes the row immediately. The workday stays.
 **204**
 **Errors:** 401 · 404 `not-found`
+
+### Shared booking shapes
+Used by API-BOOK-*. Implements [req-bookings](../01-requirements/bookings.md).
+
+- **`BookingLog`:** `TimeLog` plus `bookingDate: "YYYY-MM-DD" | null`. `TimeLog` and `Day` themselves don't carry the booking.
+- **Bookable:** a log with `excludeFromStats` false and a `project` (a deleted one too). Only bookable logs have a `bookingDate`.
+
+### API-BOOK-001: List a booking range
+`GET /bookings?from=&to=` · Auth: bearer · Implements: FR-BOOK-001/002/003
+**Query:** `from`, `to`: dates, `from` ≤ `to`, at most 366 days apart, else `400`.
+**200:** `{ items: BookingLog[] }`: the caller's logs whose `workDate` **or** `bookingDate` is in the range, ordered by `workDate`, then entry order
+(`id`). No pagination. A log worked before the range but booked into it is included; so is a log worked in the range but booked outside it.
+**Errors:** 400 validation · 401
+
+### API-BOOK-002: Set the booking date of logs
+`PUT /bookings` · Auth: bearer · Implements: FR-BOOK-004, FR-BOOK-005
+**Request body:** `{ logIds: uuid[], bookingDate: "YYYY-MM-DD" | null }`. `logIds`: 1–100 UUIDs (repeats allowed). `bookingDate`: a real date **not
+after today in the caller's time zone** (it may be before the logs' work dates), or `null` to remove the booking. Sets every listed log's booking date
+in one transaction, all or nothing.
+**200:** `{ items: BookingLog[] }`, the listed logs after the change (each once), in `id` order.
+**Errors:** 400 validation (`bookingDate` in the future or not a date; `logIds` empty, over 100 or not UUIDs; a non-null `bookingDate` for a log that
+isn't bookable → field `logIds`, "contains a log that can't be booked") · 401 · 404 `not-found` ("Time log not found.") when any id isn't the caller's
+log; nothing changes on any error.
 
 ## Open questions
 OQ-029
@@ -363,3 +389,4 @@ OQ-029
 - 2026-10-04: The owner approved API-PRJ-002 (as updated) for feat-prj-dates-lead-search.
 - 2026-10-07: Time capture detailed from the owner's description: API-WD-001…003, API-TLOG-001/002/004/006 with the shared time-capture shapes; API-TLOG-003/005/007 removed; `Me.dailyTargetMinutes` and API-USR-002 (OQ-103…OQ-114). `Me` (approved) needs the owner's approval again.
 - 2026-10-09: `TimeLog.excludeFromStats` and its input on API-TLOG-002/004 (OQ-119); the daily target defaults to 420 (OQ-115).
+- 2026-10-09: `BookingLog`, API-BOOK-001/002; API-TLOG-004 removes the booking of a log that becomes unbookable (feat-book-api, OQ-122…OQ-125).

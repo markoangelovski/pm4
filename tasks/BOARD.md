@@ -1,6 +1,6 @@
 # Task Board
 
-**Next free ID:** T-0045
+**Next free ID:** T-0048
 
 | ID | Title | Milestone | App | Size | Status | Depends on |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -48,5 +48,8 @@
 | [T-0042](m4-time-logs/T-0042-log-dialog-date-field-project-and.md) | Log dialog, date field, project and task pickers, header **Log time** button | M4 | web | M | blocked | T-0041 |
 | [T-0043](m4-time-logs/T-0043-day-view-header-day-picker-with.md) | Day view: header, day picker with calendar, charts, rows, grouped views, delete | M4 | web | L | blocked | T-0041, T-0042 |
 | [T-0044](m4-time-logs/T-0044-settings-page-with-the-user-settings.md) | Settings page with the User settings tab | M4 | web | S | blocked | T-0041 |
+| [T-0045](m4-time-logs/T-0045-booking-date-column-and-migration-get.md) | booking_date column and migration, GET/PUT /bookings, clearing the booking in PATCH /time-logs | M4 | api | M | blocked | — |
+| [T-0046](m4-time-logs/T-0046-booking-hooks-features-bookings-api-ts.md) | Booking hooks (features/bookings/api.ts) | M4 | web | S | blocked | — |
+| [T-0047](m4-time-logs/T-0047-bookings-page-range-in-the-url.md) | Bookings page: range in the URL, day sections with the collapsible table, booking cell, Book all, route and sidebar link | M4 | web | L | blocked | T-0046 |
 
 Milestones M2–M6 have no tasks yet, and M1 has only the landing route split so far. They're created with the `write-task` skill once their specs are approved.

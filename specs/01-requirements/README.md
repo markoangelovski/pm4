@@ -3,7 +3,7 @@ id: req-overview
 title: Requirements Overview
 status: draft
 owner: Marko Angelovski
-last_updated: 2026-09-27
+last_updated: 2026-10-09
 related: [prod-scope]
 ---
 
@@ -20,6 +20,7 @@ Explains how requirements are written, and indexes the requirement specs.
 | Projects | PRJ | [projects.md](projects.md) |
 | Tasks | TSK | [tasks.md](tasks.md) |
 | Time capture | TLOG | [time-logs.md](time-logs.md) |
+| Bookings | BOOK | [bookings.md](bookings.md) |
 | Dashboard and reporting | RPT | [reporting.md](reporting.md) |
 | Trash and soft delete | TRASH | [trash.md](trash.md) |
 | Non-functional | NFR | [non-functional.md](non-functional.md) |
@@ -43,3 +44,4 @@ before the spec can move to `review`.
 ## Changelog
 - 2026-09-26: Initial scaffold.
 - 2026-09-27: Added the public landing page area (LAND).
+- 2026-10-09: Added the bookings area (BOOK).

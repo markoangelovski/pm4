@@ -123,6 +123,7 @@ One row per logged block of work (req-time-logs §Model).
 | Column | Type | Constraints |
 | --- | --- | --- |
 | work_date | date | not null, not in the future (checked by the service, in the user's zone) |
+| booking_date | date | null = not booked; not in the future (checked by the service); set only on a bookable log (FR-BOOK-004, OQ-123) |
 | duration_minutes | smallint | not null, 15–1440, a multiple of 15 |
 | exclude_from_stats | boolean | not null, default false (FR-TLOG-018) |
 | id | uuid | PK (v7) |
@@ -139,9 +140,11 @@ Invariants:
 - Project-only link: `task_id` null, `project_id` set. Unlinked (*unsorted*) logs: both null.
 - A project's logged time is `SUM(duration_minutes) WHERE project_id = …`, which covers its direct logs and its tasks' logs.
 - A day's logs are read in `id` order (entry order).
+- `booking_date` is set only while the log is bookable: `exclude_from_stats` false and a project (`project_id` or `deleted_project_title`). An update that makes the log unbookable sets it to null in the same `UPDATE` (FR-BOOK-006).
 
 Indexes: `(user_id, work_date, id)` (day view, calendar marks), `(task_id) WHERE task_id IS NOT NULL`,
-`(project_id) WHERE project_id IS NOT NULL` (task/project sections and totals, and FK SET NULL on purge).
+`(project_id) WHERE project_id IS NOT NULL` (task/project sections and totals, and FK SET NULL on purge),
+`(user_id, booking_date) WHERE booking_date IS NOT NULL` (the Bookings range: logs booked into it from outside it, API-BOOK-001).
 
 ## Retained names (FR-TRASH-006)
 - **While trashed:** the FK still points to the row. The API returns `{id, title, deleted: true}` via a join.
@@ -157,10 +160,10 @@ Row ≈ 24 B header + data + 4 B line pointer, plus index entries (~32–40 B pe
 
 | Table | ~Data/row | Indexes/row | ~Total/row |
 | --- | --- | --- | --- |
-| time_logs (avg text 80 chars, linked) | 175 B | pkey + (user, date, id) + task + project ≈ 140 B | ~320 B |
+| time_logs (avg text 80 chars, linked, booked) | 179 B | pkey + (user, date, id) + task + project + (user, booking date) ≈ 170 B | ~355 B |
 
-A heavy user who switches often (20 logs/day, 250 days/yr) ≈ 5,000 logs ≈ **1.6 MB/yr**, or ~2.5 MB/yr
-with bloat and history overhead. **0.5 GB ≈ 200 user-years.** Dropping the legacy event level saves a
+A heavy user who switches often (20 logs/day, 250 days/yr) ≈ 5,000 logs ≈ **1.8 MB/yr**, or ~2.8 MB/yr
+with bloat and history overhead. **0.5 GB ≈ 180 user-years.** Dropping the legacy event level saves a
 row and ~4 index entries per block. Keys are UUIDv7 (16 B, OQ-027).
 
 ## Migrations
@@ -182,3 +185,4 @@ None.
 - 2026-10-03: The owner approved the `projects` and `tasks` tables and *Project lead* for feat-prj-api and feat-tsk-api.
 - 2026-10-07: Time logs reworked from the owner's description: no `position`, a `title`, `note` → `text`, `users.daily_target_minutes`, workdays always have a start (OQ-103…OQ-114). `users` needs the owner's approval again.
 - 2026-10-09: `time_logs.exclude_from_stats` (OQ-119); `users.daily_target_minutes` defaults to 420 (OQ-115).
+- 2026-10-09: `time_logs.booking_date` and its partial index (feat-book-api, OQ-122…OQ-125).

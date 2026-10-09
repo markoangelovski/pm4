@@ -22,6 +22,7 @@ Use these terms consistently in specs, code, UI copy and API names.
 | External link | A URL to an external tracker item (Jira, GitHub, etc.) | `externalLink` | `jiraLink` |
 | Workday | One calendar date for the user, with the time the user started working (15-minute steps), set with the date's first log. | `Workday`, `/workdays` | Day |
 | Time log (log) | One block of work on a work date: a duration and a **required** log text, plus an optional title, project and task. Shown in the order entered. | `TimeLog`, `/time-logs` | Event + Log (merged) |
+| Booking | The date a log's hours are booked to in the user's external system; a log is *booked* when it has one. Only logs with a project that aren't excluded from statistics can be booked. | `bookingDate`, `/bookings` | — |
 | Group-by-project / Group-by-task / Sequential view | The ways of showing a day's logs: grouped by project (the default) or by task, or in the order entered | `view=project\|task\|sequential` | — |
 | Unsorted | The group of logs without a project (project view) or without a task (task view) | — | — |
 | Log text | The required plain-text description on a log | `TimeLog.text` | `Log.title` |
@@ -47,3 +48,4 @@ Use these terms consistently in specs, code, UI copy and API names.
 - 2026-10-03: Project lead can be a PM4 user or a free-text name (OQ-076).
 - 2026-10-07: Time-capture terms rewritten from the owner's description: no position, added log text, title, unsorted, daily target.
 - 2026-10-09: Excluded from statistics, Non-prod, billable time, % billable and overtime; the daily target defaults to 7 h; By project is the default view.
+- 2026-10-09: Added *Booking*.

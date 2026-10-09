@@ -29,7 +29,8 @@ Either way, fix the disagreement. Never ignore it.
 | Public landing page | [01-requirements/landing.md](01-requirements/landing.md) | approved |
 | Projects | [01-requirements/projects.md](01-requirements/projects.md) | approved |
 | Tasks | [01-requirements/tasks.md](01-requirements/tasks.md) | approved |
-| Time capture | [01-requirements/time-logs.md](01-requirements/time-logs.md) | review |
+| Time capture | [01-requirements/time-logs.md](01-requirements/time-logs.md) | approved |
+| Bookings | [01-requirements/bookings.md](01-requirements/bookings.md) | approved |
 | Dashboard and reporting | [01-requirements/reporting.md](01-requirements/reporting.md) | draft |
 | Trash and soft delete | [01-requirements/trash.md](01-requirements/trash.md) | draft |
 | Non-functional requirements | [01-requirements/non-functional.md](01-requirements/non-functional.md) | draft |
@@ -88,7 +89,7 @@ related: [api-endpoints, ADR-0001]
 | Open question | `OQ-###` | `OQ-004` | `open-questions.md` |
 | Task | `T-####` | `T-0012` | `../tasks/` |
 
-Area codes: `AUTH` auth/accounts · `LAND` public landing page · `PRJ` projects · `TSK` tasks · `TLOG` time capture (workdays, time logs) · `RPT` reporting · `TRASH` trash/soft delete · `SYS` system.
+Area codes: `AUTH` auth/accounts · `LAND` public landing page · `PRJ` projects · `TSK` tasks · `TLOG` time capture (workdays, time logs) · `BOOK` bookings · `RPT` reporting · `TRASH` trash/soft delete · `SYS` system.
 IDs are never reused or renumbered. Removed items are marked `(removed)`.
 
 ### Placeholders
