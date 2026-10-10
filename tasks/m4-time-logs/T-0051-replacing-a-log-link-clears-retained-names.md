@@ -3,7 +3,7 @@ id: T-0051
 title: Replacing a time log's link clears the retained names of a purged task or project
 milestone: M4
 app: api
-status: ready
+status: done
 size: S
 tier: haiku
 depends_on: [T-0045]
@@ -49,9 +49,32 @@ ac_files: []
 ## Implementation notes
 _Implementer: what changed, and anything the reviewer should look at._
 
+- `time.repository.ts`: `TimeLogValues` gains optional `deletedTaskTitle` / `deletedProjectTitle`.
+- `time-logs.service.ts` (`update`): inside `if (linkReplaced)`, both retained names are set to `null`.
+  The D5 block is unchanged.
+- `time-logs.service.spec.ts`: the two link-replacing tests expect the cleared names; added the
+  purged-project unlink test (`projectId: null` → names and booking cleared).
+- `openapi.json` unchanged (`npm run openapi:export`, no diff). No migration.
+
+`node scripts/pm4.mjs check T-0051`:
+```
+pm4 check T-0051
+  ac hashes: none recorded
+  scope: ok
+  api lint: ok (9s)
+  api format:check: ok (2s)
+  api typecheck: ok (4s)
+  api test: ok (6s)
+  api test:e2e: ok (27s)
+  api build: ok (5s)
+
+PASS T-0051
+```
+
 ### Attempts
 | # | Tier | Result | Summary |
 | --- | --- | --- | --- |
+| 1 | haiku | PASS | Edits as above; unit spec 11/11, `pm4 check` PASS, OpenAPI unchanged. |
 
 ## Review
 _The owner's review (quick lane), or `review-feature`'s verdict._

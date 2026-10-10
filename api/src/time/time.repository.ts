@@ -20,6 +20,10 @@ export interface TimeLogValues {
   projectId: string | null;
   /** Only the update path sets it (D5); `create` never books a log. */
   bookingDate?: string | null;
+  /** Only the update path sets it: a replaced link drops the retained task title. */
+  deletedTaskTitle?: string | null;
+  /** Only the update path sets it: a replaced link drops the retained project title. */
+  deletedProjectTitle?: string | null;
 }
 
 /** The result of setting the booking date of several logs. */

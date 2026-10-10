@@ -129,6 +129,25 @@ describe("TimeLogsService", () => {
       expect(values()).toEqual({
         taskId: null,
         projectId: null,
+        deletedTaskTitle: null,
+        deletedProjectTitle: null,
+        bookingDate: null
+      });
+    });
+
+    it("a purged-project log unlinked with projectId null → retained names and booking cleared", async () => {
+      repository.findLog.mockResolvedValue({
+        ...booked,
+        projectId: null,
+        deletedProjectTitle: "Old project",
+        deletedTaskTitle: "Old task"
+      });
+      await service.update("u", ID, { projectId: null });
+      expect(values()).toEqual({
+        taskId: null,
+        projectId: null,
+        deletedTaskTitle: null,
+        deletedProjectTitle: null,
         bookingDate: null
       });
     });
@@ -143,7 +162,12 @@ describe("TimeLogsService", () => {
       repository.findLog.mockResolvedValue(booked);
       projects.findOwned.mockResolvedValue({ id: OTHER });
       await service.update("u", ID, { projectId: OTHER });
-      expect(values()).toEqual({ taskId: null, projectId: OTHER });
+      expect(values()).toEqual({
+        taskId: null,
+        projectId: OTHER,
+        deletedTaskTitle: null,
+        deletedProjectTitle: null
+      });
     });
 
     it("a purged-project log keeps its booking through an edit", async () => {
