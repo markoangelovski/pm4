@@ -9,7 +9,9 @@ tier: sonnet
 depends_on: [T-0046]
 feature_spec: specs/06-features/book-web.md
 spec_row: T2
-ac_files: []
+ac_files:
+  - { path: web/features/bookings/components/bookings-view.ac.test.tsx, sha256: b9cdefe50bdf5d6bd98656d367ce3ba8ae19064da8fe5715e6c540e2d777a6e4 }
+  - { path: web/app/(dashboard-layout)/layout/vertical/sidebar/sidebaritems.ac.test.ts, sha256: 2422d19bca8b745876b92f776e186e8aad3dbcf772d13166f8d5d49881a98c12 }
 ---
 
 # T-0047: Bookings page: range in the URL, day sections with the collapsible table, booking cell, Book all, route and sidebar link

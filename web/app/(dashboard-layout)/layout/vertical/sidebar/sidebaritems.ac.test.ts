@@ -8,7 +8,7 @@ const shape = (menu: MenuItem[]) =>
   ]);
 
 describe("Sidebar items (feat-shell-sidebar-sections)", () => {
-  it("AC-1 OQ-054: the default export is grouped into Dashboard, Project management and Time", () => {
+  it("AC-1 OQ-054 (feat-book-web AC-12): the default export is grouped into Dashboard, Project management and Time; Time lists Logs, then Bookings", () => {
     expect(shape(SidebarContent)).toEqual([
       ["Dashboard", [["dashboard", "Default", "/app"]]],
       [
@@ -18,7 +18,13 @@ describe("Sidebar items (feat-shell-sidebar-sections)", () => {
           ["tasks", "Tasks", "/app/tasks"]
         ]
       ],
-      ["Time", [["time", "Logs", "/app/time"]]]
+      [
+        "Time",
+        [
+          ["time", "Logs", "/app/time"],
+          ["bookings", "Bookings", "/app/bookings"]
+        ]
+      ]
     ]);
   });
 
@@ -36,7 +42,7 @@ describe("Sidebar items (feat-shell-sidebar-sections)", () => {
     ]);
   });
 
-  it("AC-3 OQ-054: both exports together link every app route exactly once", () => {
+  it("AC-3 OQ-054 (feat-book-web AC-12): both exports together link every app route exactly once", () => {
     const urls = [...SidebarContent, ...footerItems]
       .flatMap((section) => section.items ?? [])
       .map((item) => item.url);
@@ -46,6 +52,7 @@ describe("Sidebar items (feat-shell-sidebar-sections)", () => {
         "/app/projects",
         "/app/tasks",
         "/app/time",
+        "/app/bookings",
         "/app/trash",
         "/app/settings"
       ].sort()

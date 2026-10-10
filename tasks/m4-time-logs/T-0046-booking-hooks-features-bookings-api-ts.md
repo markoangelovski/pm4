@@ -3,13 +3,14 @@ id: T-0046
 title: Booking hooks (features/bookings/api.ts)
 milestone: M4
 app: web
-status: blocked
+status: ready
 size: S
 tier: haiku
 depends_on: []
 feature_spec: specs/06-features/book-web.md
 spec_row: T1
-ac_files: []
+ac_files:
+  - { path: web/features/bookings/api.ac.test.tsx, sha256: 4808eae28b17b2a5fc0aea3a67c951df7c5a8daf369179fe07601160e583fada }
 ---
 
 # T-0046: Booking hooks (features/bookings/api.ts)

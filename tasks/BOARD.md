@@ -49,7 +49,7 @@
 | [T-0043](m4-time-logs/T-0043-day-view-header-day-picker-with.md) | Day view: header, day picker with calendar, charts, rows, grouped views, delete | M4 | web | L | done | T-0041, T-0042 |
 | [T-0044](m4-time-logs/T-0044-settings-page-with-the-user-settings.md) | Settings page with the User settings tab | M4 | web | S | done | T-0041 |
 | [T-0045](m4-time-logs/T-0045-booking-date-column-and-migration-get.md) | booking_date column and migration, GET/PUT /bookings, clearing the booking in PATCH /time-logs | M4 | api | M | done | — |
-| [T-0046](m4-time-logs/T-0046-booking-hooks-features-bookings-api-ts.md) | Booking hooks (features/bookings/api.ts) | M4 | web | S | blocked | — |
+| [T-0046](m4-time-logs/T-0046-booking-hooks-features-bookings-api-ts.md) | Booking hooks (features/bookings/api.ts) | M4 | web | S | ready | — |
 | [T-0047](m4-time-logs/T-0047-bookings-page-range-in-the-url.md) | Bookings page: range in the URL, day sections with the collapsible table, booking cell, Book all, route and sidebar link | M4 | web | L | blocked | T-0046 |
 | [T-0048](m5-reporting/T-0048-dashboard-report-get-reports-dashboard-its.md) | Dashboard report: GET /reports/dashboard, its DTOs and two repository queries | M5 | api | M | blocked | — |
 | [T-0049](m5-reporting/T-0049-dashboard-hooks-features-dashboard-api-ts.md) | Dashboard hooks (features/dashboard/api.ts): the report and the counts | M5 | web | S | blocked | — |
