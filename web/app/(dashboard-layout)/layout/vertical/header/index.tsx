@@ -1,6 +1,6 @@
 "use client";
 
-import { PanelLeft, Clock } from "lucide-react";
+import { PanelLeft } from "lucide-react";
 import FullLogo from "../../shared/logo/full-logo";
 import Profile from "../../shared/header/profile";
 import LightDark from "../../shared/header/light-dark";
@@ -8,6 +8,7 @@ import { useSidebar } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
+import { LogTimeButton } from "@/features/time/components/log-time-button";
 
 const Header = () => {
   const { toggleSidebar } = useSidebar();
@@ -39,11 +40,7 @@ const Header = () => {
           </div>
 
           <div className="flex sm:gap-2 gap-1 items-center">
-            {/* TODO(M4): wire up the real "log a time entry" flow (FR-TLOG-008) */}
-            <Button variant="outline" size="sm" disabled className="gap-2">
-              <Clock className="size-4" />
-              <span className="hidden sm:inline">Log time</span>
-            </Button>
+            <LogTimeButton />
             <LightDark />
             <Profile />
           </div>

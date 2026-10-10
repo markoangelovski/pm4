@@ -10,8 +10,8 @@ depends_on: [T-0025]
 feature_spec: specs/06-features/prj-web.md
 spec_row: T2
 ac_files:
-  - { path: web/features/users/components/project-lead-field.ac.test.tsx, sha256: a5433abfad58114695be151101b14f985aae0533b52cf07d3c893d8fcf5a694e }
-  - { path: web/features/projects/components/project-form-dialog.ac.test.tsx, sha256: 2d21d63503689e99232bfea5028b312ea85e49a5f6525e6f8cef021391e22bad }
+  - { path: web/features/users/components/project-lead-field.ac.test.tsx, sha256: ff74b0ced3347cecdccfcfe1c467484a5623d010d46bdb8ab7d38ebfe43c0750 }
+  - { path: web/features/projects/components/project-form-dialog.ac.test.tsx, sha256: 80c5adfb9b7366d0db238665b4f5fb2829b6db727df117f1105899e8c8f3d1ef }
 ---
 
 # T-0026: ProjectLeadField, ProjectLeadLabel and the project create/edit dialog

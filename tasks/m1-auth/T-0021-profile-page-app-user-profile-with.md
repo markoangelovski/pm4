@@ -11,7 +11,7 @@ feature_spec: specs/06-features/shell-user-menu.md
 spec_row: T2
 ac_files:
   - { path: web/lib/time/format-date.ac.test.ts, sha256: 1726060e69211e84e8df905f2b1ce59645dd1a99cdf84750f4c798d9e677fb33 }
-  - { path: web/features/users/components/user-profile.ac.test.tsx, sha256: ca17d74dd39aa700bc40f225edf98c8802caa54c6490a491ecfbfb5ef37680ea }
+  - { path: web/features/users/components/user-profile.ac.test.tsx, sha256: bb0e1aeff9082ecd465bdf0ffb5d7134a8dc708ebaa6503a898bd24e04e97657 }
 ---
 
 # T-0021: Profile page /app/user-profile with sign out of all devices

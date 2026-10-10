@@ -11,7 +11,7 @@ feature_spec: specs/06-features/prj-dates-lead-search.md
 spec_row: T2
 ac_files:
   - { path: web/lib/time/format-date-time.ac.test.ts, sha256: 49c2c7b4687fe776d557a0c430fe2a3d1e9f429621a50cf5c6e18dca7eae9c69 }
-  - { path: web/features/projects/components/project-dates.ac.test.tsx, sha256: ea21fe4785540c60c23a994abd5a90c01466b792e0daffeb763a9a7a3c56994e }
+  - { path: web/features/projects/components/project-dates.ac.test.tsx, sha256: d94e1deb074634d52f54cdbd3333ef4c1d86add6e4165dc29a094e42b36a2f9a }
 ---
 
 # T-0038: Project dates in the list and detail, the lead-search placeholder, regenerated API types

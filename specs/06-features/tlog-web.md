@@ -3,7 +3,7 @@ id: feat-tlog-web
 title: "Time logging web: the Logs day view, the log dialog, charts and settings"
 status: approved
 owner: Marko Angelovski
-last_updated: 2026-10-09
+last_updated: 2026-10-10
 milestone: M4
 requirements: [FR-TLOG-001, FR-TLOG-002, FR-TLOG-003, FR-TLOG-004, FR-TLOG-006, FR-TLOG-008, FR-TLOG-009, FR-TLOG-010, FR-TLOG-011, FR-TLOG-014, FR-TLOG-015, FR-TLOG-016, FR-TLOG-017, FR-TLOG-018, SCR-040, SCR-041, SCR-042, SCR-043, SCR-050]
 related: [req-time-logs, web-screens, web-routing, web-conventions, ADR-0009, feat-tlog-api, feat-tsk-web, OQ-103, OQ-104, OQ-105, OQ-107, OQ-108, OQ-109, OQ-110, OQ-111, OQ-112, OQ-113, OQ-114, OQ-115, OQ-116, OQ-117, OQ-118, OQ-119, OQ-120, OQ-121]
@@ -258,7 +258,7 @@ timers (2026-10-07 09:17 in Zagreb). "The owner's logs": "Specs review" 30 min (
 | AC-18 | Empty day → "No logs for this day" with **Log time**, no tabs, and "Nothing logged yet." for the charts; error → "Couldn't load the day." with **Retry**; picking a past calendar date sets `?date=`; Next and Today are disabled on today; **Today** returns; a future `?date=` renders today; days with `totalMinutes > 0` are marked | `web/features/time/components/day-view.ac.test.tsx` | T3 |
 | AC-19 | Changing the start in the header sends `PUT /workdays/{date}` with the chosen minute; a day without a start shows `—` and no select; saving a log for another date from the heading's dialog moves the view to that date (D8) | `web/features/time/components/day-view.ac.test.tsx` | T3 |
 | AC-20 | Charts: the legend lists the four slice labels of AC-7 and "Remaining" `3h 30m`, the middle shows `3h 30m` and "of 7h"; the bar card is titled "Time by project", "Time by task" for `?view=task`; **Expand** opens a dialog with the chart | `web/features/time/components/day-view.ac.test.tsx` | T3 |
-| AC-21 | Settings: `/app/settings` shows the **User settings** tab with `7` (target 420 from `useMe`) and the zone; Save changes and Reset are disabled until a change; `20` or `0.3` shows "Enter a value between 0.25 and 24, in steps of 0.25." and keeps Save disabled; `7.5` → `PATCH /me {dailyTargetMinutes: 450}` only, toast "Settings saved"; Reset restores the saved values; a failure → toast "Couldn't save the settings." | `web/features/settings/components/user-settings.ac.test.tsx` | T4 |
+| AC-21 | Settings: `/app/settings` shows the **User settings** tab with `7` (target 420 from `useMe`) and the zone; Save changes and Reset are disabled until a change; `25` or `0.3` shows "Enter a value between 0.25 and 24, in steps of 0.25." and keeps Save disabled; `7.5` → `PATCH /me {dailyTargetMinutes: 450}` only, toast "Settings saved"; Reset restores the saved values; a failure → toast "Couldn't save the settings." | `web/features/settings/components/user-settings.ac.test.tsx` | T4 |
 | AC-22 | The build has the pages `/app/time` and `/app/settings` | `check` | T4 |
 
 Typed stubs (created with the tests, so lint and typecheck pass while the tests fail):
@@ -288,3 +288,4 @@ None.
   pie labels and full-screen charts, task search by title or project name, settings tabs with the target in hours (OQ-115…OQ-121). The logged-time sections of the
   project and task pages move to a later feature. Ready for review.
 - 2026-10-09: Approved by the owner.
+- 2026-10-10: Acceptance tests written; AC-21's invalid example `20` → `25` (20 h is within 0.25–24).

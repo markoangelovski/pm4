@@ -135,7 +135,8 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        patch?: never;
+        /** Change the profile settings (API-USR-002). */
+        patch: operations["UsersController_update"];
         trace?: never;
     };
     "/api/v1/users": {
@@ -262,6 +263,76 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/workdays": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The workdays in a date range (API-WD-001). */
+        get: operations["WorkdaysController_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workdays/{date}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A whole day: start, total and logs (API-WD-003). */
+        get: operations["WorkdaysController_getDay"];
+        /** Set the day start (API-WD-002). */
+        put: operations["WorkdaysController_setStart"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/time-logs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create a time log (API-TLOG-002). */
+        post: operations["TimeLogsController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/time-logs/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete a time log (API-TLOG-006). */
+        delete: operations["TimeLogsController_remove"];
+        options?: never;
+        head?: never;
+        /** Change the given fields (API-TLOG-004). */
+        patch: operations["TimeLogsController_update"];
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -314,8 +385,16 @@ export interface components {
             displayName: string;
             /** @description IANA time zone, e.g. `Europe/Zagreb`. */
             timeZone: string;
+            /** @description The daily target in minutes (default 420). */
+            dailyTargetMinutes: number;
             /** @description ISO 8601 UTC */
             createdAt: string;
+        };
+        UpdateMeDto: {
+            /** @description An IANA time zone, ≤ 64 chars. */
+            timeZone?: string;
+            /** @description The daily target in minutes: 15–1440, a multiple of 15. */
+            dailyTargetMinutes?: number;
         };
         UserSummaryDto: {
             avatarUrl: string | null;
@@ -484,6 +563,85 @@ export interface components {
             status?: components["schemas"]["TaskStatus"];
             /** @description Work date in `YYYY-MM-DD`; empty after trimming → `null`. */
             dueDate?: string | null;
+        };
+        WorkdaySummaryDto: {
+            /** Format: date */
+            workDate: string;
+            startMinute: number;
+            totalMinutes: number;
+        };
+        WorkdayListResponseDto: {
+            items: components["schemas"]["WorkdaySummaryDto"][];
+        };
+        TimeLogResponseDto: {
+            /** Format: date */
+            workDate: string;
+            title: string | null;
+            project: components["schemas"]["RefDto"] | null;
+            task: components["schemas"]["RefDto"] | null;
+            id: string;
+            durationMinutes: number;
+            text: string;
+            excludeFromStats: boolean;
+        };
+        DayResponseDto: {
+            /** Format: date */
+            workDate: string;
+            startMinute: number | null;
+            logs: components["schemas"]["TimeLogResponseDto"][];
+            /** @description The sum of all the day's logs, excluded ones too. */
+            totalMinutes: number;
+        };
+        SetWorkdayDto: {
+            /** @description Minutes after midnight: 0–1425, a multiple of 15. */
+            startMinute: number;
+        };
+        WorkdayResponseDto: {
+            /** Format: date */
+            workDate: string;
+            startMinute: number;
+        };
+        CreateTimeLogDto: {
+            /**
+             * Format: date
+             * @description The work date, `YYYY-MM-DD`; not after today.
+             */
+            workDate: string;
+            /** @description 15–1440 minutes, a multiple of 15. */
+            durationMinutes: number;
+            /** @description 1–1000 chars after trimming. */
+            text: string;
+            /** @description ≤ 100 chars; empty after trimming → `null`. */
+            title?: string | null;
+            /** Format: uuid */
+            projectId?: string | null;
+            /** Format: uuid */
+            taskId?: string | null;
+            /** @description Absent → `false`; not `null`. */
+            excludeFromStats?: boolean;
+            /** @description The day's start when the date has no workday yet: 0–1425, a multiple of 15. */
+            dayStartMinute?: number;
+        };
+        UpdateTimeLogDto: {
+            /**
+             * Format: date
+             * @description Moves the log to this date; not `null`, not after today.
+             */
+            workDate?: string;
+            /** @description 15–1440 minutes, a multiple of 15; not `null`. */
+            durationMinutes?: number;
+            /** @description 1–1000 chars after trimming; not `null`. */
+            text?: string;
+            /** @description ≤ 100 chars; empty after trimming or `null` clears it. */
+            title?: string | null;
+            /** Format: uuid */
+            projectId?: string | null;
+            /** Format: uuid */
+            taskId?: string | null;
+            /** @description Not `null`. */
+            excludeFromStats?: boolean;
+            /** @description The start of the target date when it has no workday yet. */
+            dayStartMinute?: number;
         };
     };
     responses: never;
@@ -759,6 +917,56 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MeResponseDto"];
+                };
+            };
+            /** @description Missing, invalid or expired credentials. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Unexpected error. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+        };
+    };
+    UsersController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateMeDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MeResponseDto"];
+                };
+            };
+            /** @description Validation failed: one entry in errors[] per invalid field. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
                 };
             };
             /** @description Missing, invalid or expired credentials. */
@@ -1441,6 +1649,322 @@ export interface operations {
             };
             /** @description Conflict. */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Unexpected error. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+        };
+    };
+    WorkdaysController_list: {
+        parameters: {
+            query: {
+                from: string;
+                to: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkdayListResponseDto"];
+                };
+            };
+            /** @description Validation failed: one entry in errors[] per invalid field. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Missing, invalid or expired credentials. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Unexpected error. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+        };
+    };
+    WorkdaysController_getDay: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                date: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DayResponseDto"];
+                };
+            };
+            /** @description Validation failed: one entry in errors[] per invalid field. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Missing, invalid or expired credentials. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Unexpected error. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+        };
+    };
+    WorkdaysController_setStart: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                date: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetWorkdayDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkdayResponseDto"];
+                };
+            };
+            /** @description Validation failed: one entry in errors[] per invalid field. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Missing, invalid or expired credentials. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Unexpected error. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+        };
+    };
+    TimeLogsController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTimeLogDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TimeLogResponseDto"];
+                };
+            };
+            /** @description Validation failed: one entry in errors[] per invalid field. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Missing, invalid or expired credentials. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Not found. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Unexpected error. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+        };
+    };
+    TimeLogsController_remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing, invalid or expired credentials. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Not found. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Unexpected error. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+        };
+    };
+    TimeLogsController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateTimeLogDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TimeLogResponseDto"];
+                };
+            };
+            /** @description Validation failed: one entry in errors[] per invalid field. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Missing, invalid or expired credentials. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Not found. */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
