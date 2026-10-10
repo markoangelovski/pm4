@@ -10,7 +10,7 @@ depends_on: [T-0029]
 feature_spec: specs/06-features/tsk-web.md
 spec_row: T2
 ac_files:
-  - { path: web/features/tasks/components/task-form-dialog.ac.test.tsx, sha256: 988ce996c5fd242d620db81636b0ae190d1454c26dd71abaf514ead099788f86 }
+  - { path: web/features/tasks/components/task-form-dialog.ac.test.tsx, sha256: 76d5b3b617bf01f71d35499a6744dc92434c614d404ebcb842772abbe6f8d177 }
 ---
 
 # T-0030: Task create/edit dialog with the project picker and due-date field

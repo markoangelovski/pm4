@@ -1,6 +1,7 @@
 import {
   useMutation,
   useQuery,
+  useQueryClient,
   type UseMutationResult,
   type UseQueryResult
 } from "@tanstack/react-query";
@@ -40,6 +41,24 @@ export function useSignOutEverywhere(): UseMutationResult<void, Error, void> {
         throw new Error("POST /api/v1/auth/logout-all failed");
     },
     onSuccess: () => signOut()
+  });
+}
+
+/** API-USR-002: PATCH /me, then setQueryData(userKeys.me()). */
+export function useUpdateMe(): UseMutationResult<
+  Me,
+  Error,
+  { timeZone?: string; dailyTargetMinutes?: number }
+> {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: {
+      timeZone?: string;
+      dailyTargetMinutes?: number;
+    }) => unwrap(await apiClient.PATCH("/api/v1/me", { body: input })) as Me,
+    onSuccess: (me) => {
+      queryClient.setQueryData(userKeys.me(), me);
+    }
   });
 }
 

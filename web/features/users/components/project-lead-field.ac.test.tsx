@@ -26,6 +26,7 @@ const me: Me = {
   displayName: "Marko Angelovski",
   avatarUrl: null,
   timeZone: "Europe/Zagreb",
+  dailyTargetMinutes: 420,
   createdAt: "2026-10-02T22:30:00.000Z"
 };
 

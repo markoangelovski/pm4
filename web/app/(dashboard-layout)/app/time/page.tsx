@@ -1,10 +1,15 @@
 import type { Metadata } from "next";
-import { PagePlaceholder } from "@/app/components/shared/page-placeholder";
+import { Suspense } from "react";
+import { DayView } from "@/features/time/components/day-view";
 
 export const metadata: Metadata = {
-  title: "Time"
+  title: "Logs"
 };
 
 export default function TimePage() {
-  return <PagePlaceholder title="Time" milestone="M3" />;
+  return (
+    <Suspense fallback={null}>
+      <DayView />
+    </Suspense>
+  );
 }

@@ -10,9 +10,9 @@ depends_on: [T-0019]
 feature_spec: specs/06-features/shell-user-menu.md
 spec_row: T1
 ac_files:
-  - { path: web/features/users/api.ac.test.tsx, sha256: 5969cda02bdcf62eb1ac8c23965b5b0d2185cac5a1a57fd6ab50716b7c4ce548 }
+  - { path: web/features/users/api.ac.test.tsx, sha256: 06266442dbaafcd2830063ce59b0b49192923845dc275e83da8f0e6b11dda730 }
   - { path: web/features/users/components/user-avatar.ac.test.tsx, sha256: 6378c92a9213e659c23f9a1b6daf8e022983212d0dad5bec2c947f9e07907b1c }
-  - { path: web/app/(dashboard-layout)/layout/shared/header/profile.ac.test.tsx, sha256: 9be82fdf6fa1998efe22e3dd1365ca4c684027d8919088ffb3af882f0fc7516e }
+  - { path: web/app/(dashboard-layout)/layout/shared/header/profile.ac.test.tsx, sha256: d1ec388b3a1ae5cafc7a3c828ab95a86d86902c29da31ad396fb063fa583d61e }
 ---
 
 # T-0020: User drawer: useMe, useSignOutEverywhere, UserAvatar and the header drawer

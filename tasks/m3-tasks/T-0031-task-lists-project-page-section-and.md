@@ -10,8 +10,8 @@ depends_on: [T-0030]
 feature_spec: specs/06-features/tsk-web.md
 spec_row: T3
 ac_files:
-  - { path: web/features/tasks/components/tasks-list.ac.test.tsx, sha256: 4910b762d4b04ca416d427931e8e2a31c105641529835af8ceb22a7b82e3c0ce }
-  - { path: web/features/tasks/components/task-detail.ac.test.tsx, sha256: bd9836ccc4bddc4ffca7869d4a655bd046b37440ca6a2edc1101e9044adeb48c }
+  - { path: web/features/tasks/components/tasks-list.ac.test.tsx, sha256: 53a16b5b908a8f6a56ef8fb6156164b14dcba36247b7069f9e6582980059a592 }
+  - { path: web/features/tasks/components/task-detail.ac.test.tsx, sha256: eec29da17dd050079f938612d41c4d2968497b43b1539c460c8b9da4d7a01710 }
 ---
 
 # T-0031: Task lists (project page section and /app/tasks), task detail page, delete and restore
