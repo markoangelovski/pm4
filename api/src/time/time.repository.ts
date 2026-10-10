@@ -1,5 +1,5 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { and, asc, eq, gte, lte, sql } from "drizzle-orm";
+import { and, asc, eq, gte, inArray, lte, or, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { DRIZZLE, type DrizzleDb } from "../database/drizzle.js";
 import {
@@ -18,7 +18,15 @@ export interface TimeLogValues {
   title: string | null;
   taskId: string | null;
   projectId: string | null;
+  /** Only the update path sets it (D5); `create` never books a log. */
+  bookingDate?: string | null;
 }
+
+/** The result of setting the booking date of several logs. */
+export type SetBookingResult =
+  | { status: "ok"; rows: TimeLogRow[] }
+  | { status: "not-found" }
+  | { status: "not-bookable" };
 
 /** A day start to create together with a log. */
 export interface DayStart {
@@ -30,6 +38,7 @@ export interface DayStart {
 export interface TimeLogRow {
   id: string;
   workDate: string;
+  bookingDate: string | null;
   durationMinutes: number;
   excludeFromStats: boolean;
   text: string;
@@ -148,6 +157,69 @@ export class TimeRepository {
       .orderBy(asc(timeLogs.id));
   }
 
+  /** Logs worked or booked in `[from, to]`, ordered by work date, then entry order (API-BOOK-001). */
+  async listBookingRange(
+    userId: string,
+    from: string,
+    to: string
+  ): Promise<TimeLogRow[]> {
+    return this.selectRows(this.db)
+      .where(
+        and(
+          eq(timeLogs.userId, userId),
+          or(
+            and(gte(timeLogs.workDate, from), lte(timeLogs.workDate, to)),
+            and(gte(timeLogs.bookingDate, from), lte(timeLogs.bookingDate, to))
+          )
+        )
+      )
+      .orderBy(asc(timeLogs.workDate), asc(timeLogs.id));
+  }
+
+  /**
+   * Sets (or clears, for `null`) the booking date of every listed log in one
+   * transaction (API-BOOK-002). Nothing changes unless every log is the caller's
+   * and, for a date, every log is bookable.
+   */
+  async setBookingDate(
+    userId: string,
+    ids: string[],
+    bookingDate: string | null
+  ): Promise<SetBookingResult> {
+    const unique = [...new Set(ids)];
+    return this.db.transaction(async (tx) => {
+      const locked = await tx
+        .select({
+          id: timeLogs.id,
+          excludeFromStats: timeLogs.excludeFromStats,
+          projectId: timeLogs.projectId,
+          deletedProjectTitle: timeLogs.deletedProjectTitle
+        })
+        .from(timeLogs)
+        .where(and(eq(timeLogs.userId, userId), inArray(timeLogs.id, unique)))
+        .for("update");
+      if (locked.length < unique.length) return { status: "not-found" };
+      if (
+        bookingDate !== null &&
+        locked.some(
+          (row) =>
+            row.excludeFromStats ||
+            (row.projectId === null && row.deletedProjectTitle === null)
+        )
+      ) {
+        return { status: "not-bookable" };
+      }
+      await tx
+        .update(timeLogs)
+        .set({ bookingDate })
+        .where(and(eq(timeLogs.userId, userId), inArray(timeLogs.id, unique)));
+      const rows = await this.selectRows(tx)
+        .where(and(eq(timeLogs.userId, userId), inArray(timeLogs.id, unique)))
+        .orderBy(asc(timeLogs.id));
+      return { status: "ok", rows };
+    });
+  }
+
   /** The workdays in `[from, to]` with the sum of their logs. */
   async listWorkdays(
     userId: string,
@@ -181,11 +253,12 @@ export class TimeRepository {
       .orderBy(asc(workdays.workDate));
   }
 
-  private selectRows() {
-    return this.db
+  private selectRows(db: Pick<DrizzleDb, "select"> = this.db) {
+    return db
       .select({
         id: timeLogs.id,
         workDate: timeLogs.workDate,
+        bookingDate: timeLogs.bookingDate,
         durationMinutes: timeLogs.durationMinutes,
         excludeFromStats: timeLogs.excludeFromStats,
         text: timeLogs.text,

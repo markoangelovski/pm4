@@ -3,7 +3,7 @@ id: feat-book-api
 title: "Bookings API: booking dates on time logs"
 status: approved
 owner: Marko Angelovski
-last_updated: 2026-10-09
+last_updated: 2026-10-10
 milestone: M4
 requirements: [FR-BOOK-001, FR-BOOK-002, FR-BOOK-003, FR-BOOK-004, FR-BOOK-005, FR-BOOK-006, API-BOOK-001, API-BOOK-002, API-TLOG-004]
 related: [req-bookings, api-endpoints, api-data-model, feat-tlog-api, feat-book-web, OQ-122, OQ-123, OQ-124, OQ-125]
@@ -52,11 +52,11 @@ update which makes a log unbookable removes its booking. Column: [data-model.md 
 | api | `api/test/bookings.ac.e2e-spec.ts` | C | tests | API-BOOK-*, the API-TLOG-004 rule |
 | api | `api/src/database/schema/time.ts` | M | T1 | `bookingDate`, index |
 | api | `api/drizzle/0004_*.sql`, `api/drizzle/meta/*` | C/M | T1 | `npm run db:generate` |
-| api | `api/src/time/bookings.controller.ts`, `bookings.service.ts` (+ `.spec.ts`) | C | T1 | `npx nest g controller time/bookings --flat`, `npx nest g service time/bookings --flat` |
+| api | `api/src/time/bookings.controller.ts`, `api/src/time/bookings.service.ts`, `api/src/time/bookings.service.spec.ts` | C | T1 | `npx nest g controller time/bookings --flat`, `npx nest g service time/bookings --flat` |
 | api | `api/src/time/time.module.ts` | M | T1 | The CLI adds the controller and service |
-| api | `api/src/time/dto/booking-log-response.dto.ts`, `dto/set-booking.dto.ts` | C | T1 | Hand-written |
-| api | `api/src/time/time.repository.ts` (+ `.spec.ts`) | M | T1 | `bookingDate` in `TimeLogRow`, two methods |
-| api | `api/src/time/time-logs.service.ts` (+ `.spec.ts`) | M | T1 | D5; export the mapping and "today" helpers if they are private |
+| api | `api/src/time/dto/booking-log-response.dto.ts`, `api/src/time/dto/set-booking.dto.ts` | C | T1 | Hand-written |
+| api | `api/src/time/time.repository.ts`, `api/src/time/time.repository.spec.ts` | M | T1 | `bookingDate` in `TimeLogRow`, two methods |
+| api | `api/src/time/time-logs.service.ts`, `api/src/time/time-logs.service.spec.ts` | M | T1 | D5; export the mapping and "today" helpers if they are private |
 | api | `api/openapi.json` | M | T1 | `npm run openapi:export` |
 
 ## Interfaces
@@ -157,3 +157,4 @@ None.
 
 ## Changelog
 - 2026-10-09: Initial draft from the owner's Bookings screen (OQ-122…OQ-125). Ready for review.
+- 2026-10-10: Files table: every path spelled out in full so the scope check matches them (no behavior change).

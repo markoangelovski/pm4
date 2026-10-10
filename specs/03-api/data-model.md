@@ -3,7 +3,7 @@ id: api-data-model
 title: Data Model
 status: draft
 owner: Marko Angelovski
-last_updated: 2026-10-09
+last_updated: 2026-10-10
 related: [api-conventions, prod-glossary, req-projects, req-tasks, req-time-logs, req-trash, ADR-0008]
 ---
 
@@ -151,6 +151,8 @@ Indexes: `(user_id, work_date, id)` (day view, calendar marks), `(task_id) WHERE
 - **On purge/permanent delete** (in one transaction): first
   `UPDATE time_logs SET deleted_task_title = t.title WHERE task_id = …` (and the same for projects,
   including the tasks of a purged project), then delete. The FKs then set `task_id`/`project_id` to NULL.
+- Replacing a log's link (`taskId` or `projectId` in API-TLOG-004) sets both `deleted_task_title` and
+  `deleted_project_title` to null in the same `UPDATE`: the retained names describe the purged link, not the new one.
 - Read model: `task = task_id ? {id, title, deleted} : deleted_task_title ? {id: null, title: deleted_task_title, deleted: true} : null`.
   The snapshot columns cost nothing until a purge happens.
 - Reports group purged projects by `deleted_project_title` (OQ-029b).
@@ -186,3 +188,4 @@ None.
 - 2026-10-07: Time logs reworked from the owner's description: no `position`, a `title`, `note` → `text`, `users.daily_target_minutes`, workdays always have a start (OQ-103…OQ-114). `users` needs the owner's approval again.
 - 2026-10-09: `time_logs.exclude_from_stats` (OQ-119); `users.daily_target_minutes` defaults to 420 (OQ-115).
 - 2026-10-09: `time_logs.booking_date` and its partial index (feat-book-api, OQ-122…OQ-125).
+- 2026-10-10: Replacing a log's link clears its retained names (owner, from the feat-book-api review).

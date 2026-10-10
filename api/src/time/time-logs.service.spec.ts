@@ -107,4 +107,53 @@ describe("TimeLogsService", () => {
     ).rejects.toBeInstanceOf(BadRequestException);
     expect(repository.updateLog).not.toHaveBeenCalled();
   });
+
+  describe("update clears the booking when the log becomes unbookable (D5)", () => {
+    const PROJECT = "0190a000-0000-7000-8000-0000000000a1";
+    const OTHER = "0190a000-0000-7000-8000-0000000000a2";
+    const booked = {
+      id: ID,
+      workDate: "2020-01-01",
+      taskId: null,
+      projectId: PROJECT,
+      deletedProjectTitle: null,
+      excludeFromStats: false,
+      bookingDate: "2020-01-02"
+    };
+    const values = () =>
+      repository.updateLog.mock.calls[0][2] as Record<string, unknown>;
+
+    it("taskId and projectId both null → bookingDate null", async () => {
+      repository.findLog.mockResolvedValue(booked);
+      await service.update("u", ID, { taskId: null, projectId: null });
+      expect(values()).toEqual({
+        taskId: null,
+        projectId: null,
+        bookingDate: null
+      });
+    });
+
+    it("excludeFromStats true → bookingDate null", async () => {
+      repository.findLog.mockResolvedValue(booked);
+      await service.update("u", ID, { excludeFromStats: true });
+      expect(values()).toEqual({ excludeFromStats: true, bookingDate: null });
+    });
+
+    it("a move to another project keeps the booking", async () => {
+      repository.findLog.mockResolvedValue(booked);
+      projects.findOwned.mockResolvedValue({ id: OTHER });
+      await service.update("u", ID, { projectId: OTHER });
+      expect(values()).toEqual({ taskId: null, projectId: OTHER });
+    });
+
+    it("a purged-project log keeps its booking through an edit", async () => {
+      repository.findLog.mockResolvedValue({
+        ...booked,
+        projectId: null,
+        deletedProjectTitle: "Old project"
+      });
+      await service.update("u", ID, { text: "y" });
+      expect(values()).toEqual({ text: "y" });
+    });
+  });
 });

@@ -1828,6 +1828,159 @@
           "TimeLogs"
         ]
       }
+    },
+    "/api/v1/bookings": {
+      "get": {
+        "operationId": "BookingsController_list",
+        "parameters": [
+          {
+            "name": "from",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "format": "date",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "format": "date",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookingListResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed: one entry in errors[] per invalid field.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid or expired credentials.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "The logs worked or booked in a date range (API-BOOK-001).",
+        "tags": [
+          "Bookings"
+        ]
+      },
+      "put": {
+        "operationId": "BookingsController_set",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetBookingDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookingListResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed: one entry in errors[] per invalid field.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid or expired credentials.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Book, re-date or unbook one or many logs (API-BOOK-002).",
+        "tags": [
+          "Bookings"
+        ]
+      }
     }
   },
   "info": {
@@ -2759,6 +2912,106 @@
             "maximum": 1425
           }
         }
+      },
+      "BookingLogResponseDto": {
+        "type": "object",
+        "properties": {
+          "workDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "title": {
+            "type": "string",
+            "nullable": true
+          },
+          "project": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RefDto"
+              }
+            ]
+          },
+          "task": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RefDto"
+              }
+            ]
+          },
+          "bookingDate": {
+            "type": "string",
+            "nullable": true,
+            "format": "date",
+            "example": "2026-10-07"
+          },
+          "id": {
+            "type": "string"
+          },
+          "durationMinutes": {
+            "type": "number"
+          },
+          "text": {
+            "type": "string"
+          },
+          "excludeFromStats": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "workDate",
+          "title",
+          "project",
+          "task",
+          "bookingDate",
+          "id",
+          "durationMinutes",
+          "text",
+          "excludeFromStats"
+        ]
+      },
+      "BookingListResponseDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BookingLogResponseDto"
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "SetBookingDto": {
+        "type": "object",
+        "properties": {
+          "logIds": {
+            "description": "1–100 time log ids; repeats are allowed.",
+            "minItems": 1,
+            "maxItems": 100,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "bookingDate": {
+            "type": "string",
+            "nullable": true,
+            "description": "A date not after today in the caller's zone, or `null` to remove the booking. Absent → 400.",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+            "format": "date"
+          }
+        },
+        "required": [
+          "logIds",
+          "bookingDate"
+        ]
       }
     }
   }
