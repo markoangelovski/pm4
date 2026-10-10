@@ -176,11 +176,12 @@ export class TimeLogsService {
       );
       values.workDate = dto.workDate;
     }
-    if (dto.taskId !== undefined || dto.projectId !== undefined) {
-      Object.assign(
-        values,
-        await this.resolveLink(userId, dto.taskId, dto.projectId, log)
-      );
+    const linkReplaced =
+      dto.taskId !== undefined || dto.projectId !== undefined;
+    let link: Link | null = null;
+    if (linkReplaced) {
+      link = await this.resolveLink(userId, dto.taskId, dto.projectId, log);
+      Object.assign(values, link);
     }
     if (dto.durationMinutes !== undefined) {
       values.durationMinutes = dto.durationMinutes;
@@ -190,6 +191,13 @@ export class TimeLogsService {
     if (dto.excludeFromStats !== undefined) {
       values.excludeFromStats = dto.excludeFromStats;
     }
+
+    // D5 / FR-BOOK-006: a log that becomes unbookable loses its booking.
+    const excluded = dto.excludeFromStats ?? log.excludeFromStats;
+    const hasProject = link
+      ? link.projectId !== null
+      : log.projectId !== null || log.deletedProjectTitle !== null;
+    if (excluded || !hasProject) values.bookingDate = null;
 
     await this.timeRepository.updateLog(userId, id, values, dayStart);
     return this.get(userId, id);

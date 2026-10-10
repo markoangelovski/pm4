@@ -1,0 +1,2 @@
+ALTER TABLE "time_logs" ADD COLUMN "booking_date" date;--> statement-breakpoint
+CREATE INDEX "time_logs_user_booking" ON "time_logs" USING btree ("user_id","booking_date") WHERE "time_logs"."booking_date" IS NOT NULL;

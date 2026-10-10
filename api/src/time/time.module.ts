@@ -8,10 +8,12 @@ import { TimeLogsService } from "./time-logs.service.js";
 import { TimeRepository } from "./time.repository.js";
 import { WorkdaysController } from "./workdays.controller.js";
 import { WorkdaysService } from "./workdays.service.js";
+import { BookingsController } from "./bookings.controller.js";
+import { BookingsService } from "./bookings.service.js";
 
 @Module({
   imports: [DatabaseModule, UsersModule, ProjectsModule, TasksModule],
-  controllers: [WorkdaysController, TimeLogsController],
-  providers: [WorkdaysService, TimeLogsService, TimeRepository]
+  controllers: [WorkdaysController, TimeLogsController, BookingsController],
+  providers: [WorkdaysService, TimeLogsService, TimeRepository, BookingsService]
 })
 export class TimeModule {}
