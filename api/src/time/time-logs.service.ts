@@ -182,6 +182,8 @@ export class TimeLogsService {
     if (linkReplaced) {
       link = await this.resolveLink(userId, dto.taskId, dto.projectId, log);
       Object.assign(values, link);
+      values.deletedTaskTitle = null;
+      values.deletedProjectTitle = null;
     }
     if (dto.durationMinutes !== undefined) {
       values.durationMinutes = dto.durationMinutes;
