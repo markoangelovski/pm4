@@ -1,5 +1,13 @@
-import type { UseQueryResult } from "@tanstack/react-query";
+import {
+  keepPreviousData,
+  useQuery,
+  type UseQueryResult
+} from "@tanstack/react-query";
+import { useProjects } from "@/features/projects/api";
+import { useTasks } from "@/features/tasks/api";
 import { timeKeys } from "@/features/time/api";
+import { apiClient } from "@/lib/api/client";
+import { unwrap } from "@/lib/api/problem";
 import type { DashboardReport } from "./stats";
 
 export type { DashboardReport } from "./stats";
@@ -17,14 +25,23 @@ export interface TaskCounts {
   completed: number;
 }
 
-/** API-RPT-001: GET /reports/dashboard?from=&to=. */
+/** API-RPT-001: GET /reports/dashboard?from=&to=. staleTime 0; keepPreviousData. */
 export function useDashboardReport(
   from: string,
   to: string
 ): UseQueryResult<DashboardReport, Error> {
-  void from;
-  void to;
-  throw new Error("not implemented (feat-rpt-web)");
+  return useQuery({
+    queryKey: reportKeys.dashboard(from, to),
+    queryFn: async ({ signal }) =>
+      unwrap(
+        await apiClient.GET("/api/v1/reports/dashboard", {
+          params: { query: { from, to } },
+          signal
+        })
+      ) as DashboardReport,
+    staleTime: 0,
+    placeholderData: keepPreviousData
+  });
 }
 
 /** The user's project count: the total of a one-row project list. */
@@ -32,7 +49,13 @@ export function useProjectCount(): {
   count: number | undefined;
   isError: boolean;
 } {
-  throw new Error("not implemented (feat-rpt-web)");
+  const projects = useProjects({
+    q: "",
+    sort: "updatedAt:desc",
+    page: 1,
+    pageSize: 1
+  });
+  return { count: projects.data?.total, isError: projects.isError };
 }
 
 /** The user's task count per status: the total of a one-row task list per status. */
@@ -40,5 +63,23 @@ export function useTaskCounts(): {
   counts: TaskCounts | undefined;
   isError: boolean;
 } {
-  throw new Error("not implemented (feat-rpt-web)");
+  const common = {
+    q: "",
+    sort: "updatedAt:desc",
+    page: 1,
+    pageSize: 1
+  } as const;
+  const upcoming = useTasks({ ...common, statuses: ["upcoming"] });
+  const inProgress = useTasks({ ...common, statuses: ["in-progress"] });
+  const completed = useTasks({ ...common, statuses: ["completed"] });
+  const all = [upcoming, inProgress, completed];
+  const counts =
+    upcoming.data && inProgress.data && completed.data
+      ? {
+          upcoming: upcoming.data.total,
+          "in-progress": inProgress.data.total,
+          completed: completed.data.total
+        }
+      : undefined;
+  return { counts, isError: all.some((q) => q.isError) };
 }

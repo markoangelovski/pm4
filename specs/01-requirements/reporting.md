@@ -74,8 +74,8 @@ in Logs. A **Table** tab lists the same days or weeks: date, start, worked, book
 ### FR-RPT-004: Worked, target and booked
 **Priority:** Must
 **Statement:** The range's **Worked**, **Target** ("N days × 7h") and **Booked** side by side; one bar that shows worked, the
-booked part inside it, and a mark at the target; how far worked is over or under the target ("No workdays in this range yet."
-when the target is 0); **Worked of target** and **Booked of worked** as percentages (rounded down) with their hours, "Xh still to
+booked part inside it, and a mark at the target; how far worked is over or under the target ("On target" when they are equal, "No workdays in
+this range yet." when the target is 0); **Worked of target** and **Booked of worked** as percentages (rounded down) with their hours, "Xh still to
 book" or "Everything is booked".
 **Acceptance criteria:**
 - Given 10 workdays, a 7 h target, 72 h 30 m worked and 60 h booked, then Target is `70h`, "2h 30m over target", *Worked of
