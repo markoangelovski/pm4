@@ -1610,6 +1610,105 @@
       }
     },
     "/api/v1/time-logs": {
+      "get": {
+        "operationId": "TimeLogsController_list",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "1-based page number.",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "description": "Items per page, 1–100.",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 25,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "projectId",
+            "required": false,
+            "in": "query",
+            "description": "The project whose logs (its tasks' too) to list.",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "taskId",
+            "required": false,
+            "in": "query",
+            "description": "The task whose logs to list.",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TimeLogListResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed: one entry in errors[] per invalid field.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid or expired credentials.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "One page of a project's or task's logs, with totals (API-TLOG-001).",
+        "tags": [
+          "TimeLogs"
+        ]
+      },
       "post": {
         "operationId": "TimeLogsController_create",
         "parameters": [],
@@ -2419,6 +2518,10 @@
               }
             ]
           },
+          "loggedMinutes": {
+            "type": "integer",
+            "description": "Minutes of all the project's logs, computed (OQ-132)."
+          },
           "id": {
             "type": "string"
           },
@@ -2441,6 +2544,7 @@
           "description",
           "externalLink",
           "projectLead",
+          "loggedMinutes",
           "id",
           "title",
           "taskCounts",
@@ -2630,6 +2734,10 @@
             "nullable": true,
             "description": "Work date, `YYYY-MM-DD`"
           },
+          "loggedMinutes": {
+            "type": "integer",
+            "description": "Minutes of all the task's logs, computed (OQ-132)."
+          },
           "id": {
             "type": "string"
           },
@@ -2654,6 +2762,7 @@
           "projectLead",
           "status",
           "dueDate",
+          "loggedMinutes",
           "id",
           "project",
           "title",
@@ -2888,6 +2997,102 @@
           "startMinute"
         ]
       },
+      "BookingLogResponseDto": {
+        "type": "object",
+        "properties": {
+          "workDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "title": {
+            "type": "string",
+            "nullable": true
+          },
+          "project": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RefDto"
+              }
+            ]
+          },
+          "task": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RefDto"
+              }
+            ]
+          },
+          "bookingDate": {
+            "type": "string",
+            "nullable": true,
+            "format": "date",
+            "example": "2026-10-07"
+          },
+          "id": {
+            "type": "string"
+          },
+          "durationMinutes": {
+            "type": "number"
+          },
+          "text": {
+            "type": "string"
+          },
+          "excludeFromStats": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "workDate",
+          "title",
+          "project",
+          "task",
+          "bookingDate",
+          "id",
+          "durationMinutes",
+          "text",
+          "excludeFromStats"
+        ]
+      },
+      "TimeLogListResponseDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BookingLogResponseDto"
+            }
+          },
+          "page": {
+            "type": "integer"
+          },
+          "pageSize": {
+            "type": "integer"
+          },
+          "total": {
+            "type": "integer"
+          },
+          "totalMinutes": {
+            "type": "integer",
+            "description": "Minutes of all the matching logs, not only this page."
+          },
+          "bookedMinutes": {
+            "type": "integer",
+            "description": "Minutes of the matching logs that have a booking date."
+          }
+        },
+        "required": [
+          "items",
+          "page",
+          "pageSize",
+          "total",
+          "totalMinutes",
+          "bookedMinutes"
+        ]
+      },
       "CreateTimeLogDto": {
         "type": "object",
         "properties": {
@@ -2990,66 +3195,6 @@
             "maximum": 1425
           }
         }
-      },
-      "BookingLogResponseDto": {
-        "type": "object",
-        "properties": {
-          "workDate": {
-            "type": "string",
-            "format": "date"
-          },
-          "title": {
-            "type": "string",
-            "nullable": true
-          },
-          "project": {
-            "nullable": true,
-            "type": "object",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/RefDto"
-              }
-            ]
-          },
-          "task": {
-            "nullable": true,
-            "type": "object",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/RefDto"
-              }
-            ]
-          },
-          "bookingDate": {
-            "type": "string",
-            "nullable": true,
-            "format": "date",
-            "example": "2026-10-07"
-          },
-          "id": {
-            "type": "string"
-          },
-          "durationMinutes": {
-            "type": "number"
-          },
-          "text": {
-            "type": "string"
-          },
-          "excludeFromStats": {
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "workDate",
-          "title",
-          "project",
-          "task",
-          "bookingDate",
-          "id",
-          "durationMinutes",
-          "text",
-          "excludeFromStats"
-        ]
       },
       "BookingListResponseDto": {
         "type": "object",

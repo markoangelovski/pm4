@@ -39,6 +39,7 @@ const project: Project = {
   externalLink: "https://example.com/board",
   projectLead: { kind: "text", user: null, name: "Bob" },
   taskCounts: { upcoming: 0, inProgress: 0, completed: 0, total: 0 },
+  loggedMinutes: 0,
   createdAt: "2026-10-03T08:00:00.000Z",
   updatedAt: "2026-10-03T08:00:00.000Z"
 };

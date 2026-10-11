@@ -11,6 +11,8 @@ import { ProjectsService } from "../projects/projects.service.js";
 import { TasksService } from "../tasks/tasks.service.js";
 import { UsersRepository } from "../users/users.repository.js";
 import { CreateTimeLogDto } from "./dto/create-time-log.dto.js";
+import { ListTimeLogsQueryDto } from "./dto/list-time-logs-query.dto.js";
+import { TimeLogListResponseDto } from "./dto/time-log-list-response.dto.js";
 import { TimeLogResponseDto } from "./dto/time-log-response.dto.js";
 import { UpdateTimeLogDto } from "./dto/update-time-log.dto.js";
 import {
@@ -106,7 +108,7 @@ interface Link {
   projectId: string | null;
 }
 
-/** Time logs (API-TLOG-002/004/006), always the caller's own. */
+/** Time logs (API-TLOG-001/002/004/006), always the caller's own. */
 @Injectable()
 export class TimeLogsService {
   constructor(
@@ -115,6 +117,16 @@ export class TimeLogsService {
     private readonly tasksService: TasksService,
     private readonly projectsService: ProjectsService
   ) {}
+
+  // eslint-disable-next-line @typescript-eslint/require-await
+  async list(
+    userId: string,
+    query: ListTimeLogsQueryDto
+  ): Promise<TimeLogListResponseDto> {
+    void userId;
+    void query;
+    throw new Error("not implemented (feat-proto-sync-web)");
+  }
 
   async create(
     userId: string,

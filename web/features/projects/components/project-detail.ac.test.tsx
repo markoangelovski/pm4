@@ -61,6 +61,7 @@ const website: Project = {
     name: me.displayName
   },
   taskCounts: { upcoming: 3, inProgress: 1, completed: 4, total: 8 },
+  loggedMinutes: 0,
   createdAt: "2026-10-03T08:00:00.000Z",
   updatedAt: "2026-10-03T08:00:00.000Z"
 };
@@ -228,5 +229,59 @@ describe("ProjectDetail (feat-prj-web)", () => {
     // Let any refetch the delete might trigger run, then check none did.
     await new Promise((resolve) => setTimeout(resolve, 50));
     expect(detailCalls()).toBe(before);
+  });
+});
+
+describe("ProjectDetail logged time (feat-proto-sync-web)", () => {
+  const timeLogQueries = () =>
+    api.GET.mock.calls
+      .filter(([path]) => path === "/api/v1/time-logs")
+      .map(
+        ([, init]) =>
+          (init as { params: { query: Record<string, unknown> } }).params.query
+      );
+
+  beforeEach(() => {
+    Object.values(api).forEach((fn) => fn.mockReset());
+    routeGet();
+    const projectRoutes = api.GET.getMockImplementation()!;
+    api.GET.mockImplementation(async (path: string, init?: unknown) => {
+      if (path === "/api/v1/time-logs") {
+        return {
+          data: {
+            items: [],
+            page: 1,
+            pageSize: 25,
+            total: 0,
+            totalMinutes: 0,
+            bookedMinutes: 0
+          },
+          response: res(200)
+        };
+      }
+      return projectRoutes(path, init);
+    });
+  });
+
+  it("AC-15 FR-TLOG-012 SCR-021 SCR-044: the project page shows Logged time for the project, not while it's in the trash", async () => {
+    detailResult = () => ({ data: website, response: res(200) });
+    const view = renderDetail();
+    expect(await screen.findByText("Logged time")).toBeInTheDocument();
+    await waitFor(() =>
+      expect(timeLogQueries()).toContainEqual(
+        expect.objectContaining({ projectId: "p1", page: 1 })
+      )
+    );
+    expect(timeLogQueries().every((q) => !("taskId" in q))).toBe(true);
+    view.unmount();
+
+    api.GET.mockClear();
+    detailResult = () => notFound("in-trash");
+    renderDetail();
+    expect(
+      await screen.findByText("This project is in the trash")
+    ).toBeInTheDocument();
+    expect(screen.queryByText("Logged time")).toBeNull();
+    expect(timeLogQueries()).toEqual([]);
   });
 });

@@ -85,9 +85,7 @@ describe("dashboard range (feat-rpt-web)", () => {
     expect(isRangeTooLong({ from: "2025-10-08", to: "2026-10-09" })).toBe(
       false
     );
-    expect(isRangeTooLong({ from: "2025-10-07", to: "2026-10-09" })).toBe(
-      true
-    );
+    expect(isRangeTooLong({ from: "2025-10-07", to: "2026-10-09" })).toBe(true);
 
     expect(rangeLabel(october)).toBe("October 2026");
     expect(rangeLabel({ from: "2026-09-01", to: "2026-10-09" })).toBe(
@@ -186,8 +184,7 @@ describe("dashboard stats (feat-rpt-web)", () => {
 
     // 63 days → by week.
     expect(
-      buckets(dayStats({ from: "2026-08-01", to: "2026-10-02" }, []), TARGET)
-        .by
+      buckets(dayStats({ from: "2026-08-01", to: "2026-10-02" }, []), TARGET).by
     ).toBe("week");
   });
 

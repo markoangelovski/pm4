@@ -299,12 +299,15 @@ describe("BookingsView (feat-book-web)", () => {
     expect(screen.getAllByText("Today")).toHaveLength(1);
   });
 
-  it("AC-8 FR-BOOK-003 FR-BOOK-005 SCR-045: collapsed columns, group order, Book all only with unbooked logs, a row click expands", async () => {
+  it("AC-8 AC-17 FR-BOOK-003 FR-BOOK-005 SCR-045: collapsed columns (blank headers over the expanded-only columns), group order, Book all only with unbooked logs and in the row in both states, a row click expands", async () => {
     renderView();
     await loaded();
     const sixth = "2026-10-06";
     expect(headers(sixth)).toEqual([
       "Projects",
+      "",
+      "",
+      "",
       "Hours worked",
       "Hours booked"
     ]);
@@ -361,9 +364,17 @@ describe("BookingsView (feat-book-web)", () => {
         name: "Collapse project"
       })
     ).toHaveAttribute("aria-expanded", "true");
+    expect(
+      within(rowOf(sixth, "PM Internal")).getByRole("button", {
+        name: "Book all"
+      })
+    ).toBeInTheDocument();
     expect(rowOf(sixth, "Internal planning")).toBeTruthy();
     expect(headers("2026-10-07")).toEqual([
       "Projects",
+      "",
+      "",
+      "",
       "Hours worked",
       "Hours booked"
     ]);
@@ -376,6 +387,9 @@ describe("BookingsView (feat-book-web)", () => {
     await waitFor(() =>
       expect(headers(sixth)).toEqual([
         "Projects",
+        "",
+        "",
+        "",
         "Hours worked",
         "Hours booked"
       ])
@@ -450,7 +464,9 @@ describe("BookingsView (feat-book-web)", () => {
     );
 
     fireEvent.click(
-      within(rowOf(seventh, "Anthropic")).getByRole("button", { name: "Book all" })
+      within(rowOf(seventh, "Anthropic")).getByRole("button", {
+        name: "Book all"
+      })
     );
     await waitFor(() =>
       expect(lastPut()).toEqual({ logIds: ["f"], bookingDate: "2026-10-07" })
