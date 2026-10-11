@@ -3,7 +3,7 @@ id: req-time-logs
 title: Time Capture (Workdays and Time Logs)
 status: approved
 owner: Marko Angelovski
-last_updated: 2026-10-09
+last_updated: 2026-10-11
 related: [req-projects, req-tasks, req-reporting, req-trash, api-endpoints, api-data-model, web-screens]
 ---
 
@@ -156,13 +156,15 @@ Anything else, or a value that isn't a multiple of 15 minutes (`20`, `0.3`, `0`)
 ### FR-TLOG-012: Logs on project and task pages
 **Priority:** Must
 **Statement:** The task page and the project page each have a **Logged time** section with the total hours logged
-(across all days) and the logs, newest date first (entry order within a day), 25 per page. A row shows the date, the
-title or log text, the duration and, on the project page, the task. Clicking a row opens that day.
+(across all days), the booked part of it (logs with a booking date, FR-BOOK-004), and the logs, newest date first (entry
+order within a day), 25 per page. A row shows the work date (a link that opens that day), the log text (OQ-135), on the
+project page the task, the booking date (if booked) and the duration.
 The **task** total counts the logs linked to the task. The **project** total counts the logs linked to the project
 directly **and** the logs of all its tasks (a log with a task always carries the task's project, so this is simply the project's logs).
 **Acceptance criteria:**
 - Given 1 h logged on project P directly and 30 min on a task of P, P's page shows 1 h 30 min and the task's page 30 min.
 - Given a task moved to another project, its logs count towards the new project from then on.
+- Given 1 h 30 min on P of which a 1 h log is booked, P's section shows the total 1 h 30 min and booked 1 h, and the booked row shows its booking date.
 
 ### FR-TLOG-014: Logs keep deleted task/project names
 **Priority:** Must
@@ -182,7 +184,7 @@ Both show the label and the duration on hover, and each can be expanded to fill 
 **Acceptance criteria:**
 - Given a target of 7 h and logs of 30 min, 1 h 45 min and 15 min, the pie has three coloured slices and a grey one of 4 h 30 min.
 - Given 8 h logged and a target of 7 h, the pie has no grey slice.
-- Given a log "Weekly s Peterom." on the task "Meetings" of "Tesla", its slice is labelled "Tesla - Meetings - Weekly s Peterom."; an unsorted log is labelled by its text alone.
+- Given a log "Weekly with Peter." on the task "Meetings" of "Tesla", its slice is labelled "Tesla - Meetings - Weekly with Peter."; an unsorted log is labelled by its text alone.
 
 ### FR-TLOG-017: Daily target
 **Priority:** Must
@@ -216,3 +218,5 @@ None.
   what a grouped row shows; header *% billable* and *Overtime*; pie labels and full-screen charts; daily target in hours, default 7 h;
   task search by title or project name (OQ-115…OQ-121).
 - 2026-10-09: Approved by the owner.
+- 2026-10-11: FR-TLOG-012: the booked total and each log's booking date; the row shows the log text, and its date links to the day (OQ-135, prototype `fa9a030`). Sample names renamed (OQ-136). Back to `review` (feat-proto-sync-web).
+- 2026-10-11: Approved by the owner.

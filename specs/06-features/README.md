@@ -46,3 +46,4 @@ A feature spec links to those. It doesn't copy them.
 | Bookings web: the Bookings page | [book-web.md](book-web.md) | M4 | approved |
 | Dashboard API: the dashboard report | [rpt-api.md](rpt-api.md) | M5 | approved |
 | Dashboard web: the dashboard page | [rpt-web.md](rpt-web.md) | M5 | approved |
+| Prototype sync: logged time on projects and tasks, Dashboard and Bookings from the prototype | [proto-sync-web.md](proto-sync-web.md) | M4 | approved |

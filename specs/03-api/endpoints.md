@@ -3,7 +3,7 @@ id: api-endpoints
 title: API Endpoints
 status: draft
 owner: Marko Angelovski
-last_updated: 2026-10-09
+last_updated: 2026-10-11
 related: [api-conventions, api-data-model, req-auth, req-projects, req-tasks, req-time-logs, req-reporting, req-trash]
 ---
 
@@ -39,7 +39,7 @@ defines its request, response and errors. Paths are relative to `/api/v1` unless
 | API-USR-002 | PATCH | `/me` `{timeZone?, dailyTargetMinutes?}` (with the settings screen, OQ-064) | FR-AUTH-006, FR-TLOG-017 | specified |
 | API-USR-003 | GET | `/users?q=` (project-lead picker, OQ-089) | FR-PRJ-006 | specified |
 | API-PRJ-001 | POST | `/projects` | FR-PRJ-001 | specified |
-| API-PRJ-002 | GET | `/projects?q=&sort=&page=&pageSize=` (with task counts) | FR-PRJ-002 | specified |
+| API-PRJ-002 | GET | `/projects?q=&sort=&page=&pageSize=` (with task counts and logged minutes) | FR-PRJ-002 | specified |
 | API-PRJ-003 | GET | `/projects/{id}` | FR-PRJ-003, FR-PRJ-008 | specified |
 | API-PRJ-004 | PATCH | `/projects/{id}` | FR-PRJ-004 | specified |
 | API-PRJ-005 | DELETE | `/projects/{id}` (soft) | FR-PRJ-005 | specified |
@@ -55,7 +55,7 @@ defines its request, response and errors. Paths are relative to `/api/v1` unless
 | API-WD-001 | GET | `/workdays?from=&to=` → `{items: [{workDate, startMinute, totalMinutes}]}` (the calendar's marks) | FR-TLOG-001 | specified |
 | API-WD-002 | PUT | `/workdays/{date}` `{startMinute}` | FR-TLOG-009 | specified |
 | API-WD-003 | GET | `/workdays/{date}` → `Day` (the start, the total and the day's logs in entry order) | FR-TLOG-001/002/003/009/015/016 | specified |
-| API-TLOG-001 | GET | `/time-logs?projectId=&taskId=&page=&pageSize=` → logs of one project or task, with `totalMinutes` | FR-TLOG-012 | TODO |
+| API-TLOG-001 | GET | `/time-logs?projectId=&taskId=&page=&pageSize=` → logs of one project or task (`BookingLog`), with `totalMinutes` and `bookedMinutes` | FR-TLOG-012 | specified |
 | API-TLOG-002 | POST | `/time-logs` `{workDate, durationMinutes, text, title?, projectId?, taskId?, dayStartMinute?}` | FR-TLOG-004/009 | specified |
 | API-TLOG-003 | — | (removed) | — | — |
 | API-TLOG-004 | PATCH | `/time-logs/{id}` | FR-TLOG-006 | specified |
@@ -165,11 +165,15 @@ Used by API-USR-003, API-PRJ-* and API-TSK-*. Implements the field tables in
   The lead user's email is never included (OQ-077).
 - **`TaskCounts`:** `{ upcoming: number, inProgress: number, completed: number, total: number }` over the
   project's tasks that aren't individually deleted. The completed percentage is left to the client.
+- **`loggedMinutes`** (OQ-132): an integer, the sum of `durationMinutes` of the caller's time logs, excluded ones too, computed
+  in the query and never stored (data-model.md *time_logs*). A project's covers every log with that project, so its tasks' logs as
+  well, including those of tasks in the trash; a task's covers the logs linked to it. `0` when there are none. It equals
+  API-TLOG-001's `totalMinutes` for the same project or task.
 - **`Project`:** `{ id, title, description: string | null, externalLink: string | null, projectLead: ProjectLead | null,
-  taskCounts: TaskCounts, createdAt, updatedAt }` (instants ISO 8601 UTC).
+  taskCounts: TaskCounts, loggedMinutes, createdAt, updatedAt }` (instants ISO 8601 UTC).
 - **`Task`:** `{ id, project: Ref, title, description: string | null, externalLink: string | null,
   projectLead: ProjectLead | null, status: "upcoming" | "in-progress" | "completed", dueDate: string | null,
-  createdAt, updatedAt }`. `Ref` = `{ id, title, deleted }` (conventions.md *Responses*), `deleted: false` here.
+  loggedMinutes, createdAt, updatedAt }`. `Ref` = `{ id, title, deleted }` (conventions.md *Responses*), `deleted: false` here.
 - **Ids in paths:** a value that isn't a UUID → `404` `…/errors/not-found` (never `400`, never a database error).
 - **In the trash:** reading or changing a soft-deleted project, or an effectively deleted task, by id → `404`
   `…/errors/in-trash`. For a task, the Problem Details body also has `projectId: string` and
@@ -322,9 +326,13 @@ The calendar marks the dates whose `totalMinutes` > 0.
 
 ### API-TLOG-001: List the logs of a project or task
 `GET /time-logs?projectId=&taskId=&page=&pageSize=` · Auth: bearer · Implements: FR-TLOG-012
-**Query:** exactly one of `projectId`, `taskId` (a UUID), else `400`. Pagination per conventions.md.
-**200:** `{ items: TimeLog[], page, pageSize, total, totalMinutes }`: the caller's logs with that project (which includes the logs of its tasks) or that task,
-ordered by `workDate` descending, then entry order; `totalMinutes` sums **all** matching logs, not only the page. An unknown or foreign id → `items: []`, `totalMinutes: 0`.
+**Query:** exactly one of `projectId`, `taskId` (a UUID), else `400` (both or neither: field `projectId`, "exactly one of projectId and taskId is
+required"). `page`, `pageSize` as in *Lists* above (`q` isn't accepted). A trashed project or task is still listed (the detail pages show its section only
+when it isn't in the trash).
+**200:** `{ items: BookingLog[], page, pageSize, total, totalMinutes, bookedMinutes }`: the caller's logs with that project (which includes the logs of its
+tasks) or that task, ordered by `workDate` descending, then entry order (`id` ascending). `totalMinutes` sums **all** matching logs, not only the page;
+`bookedMinutes` sums those with a `bookingDate`. An unknown or foreign id → `items: []`, `total: 0`, `totalMinutes: 0`, `bookedMinutes: 0`. A page past the
+end → `items: []` with the real totals. `BookingLog`: *Shared booking shapes* below.
 **Errors:** 400 validation · 401
 
 ### API-TLOG-002: Create a time log
@@ -349,7 +357,7 @@ Deletes the row immediately. The workday stays.
 ### Shared booking shapes
 Used by API-BOOK-*. Implements [req-bookings](../01-requirements/bookings.md).
 
-- **`BookingLog`:** `TimeLog` plus `bookingDate: "YYYY-MM-DD" | null`. `TimeLog` and `Day` themselves don't carry the booking.
+- **`BookingLog`:** `TimeLog` plus `bookingDate: "YYYY-MM-DD" | null`. `TimeLog` and `Day` themselves don't carry the booking. Also the item of API-TLOG-001.
 - **Bookable:** a log with `excludeFromStats` false and a `project` (a deleted one too). Only bookable logs have a `bookingDate`.
 
 ### API-BOOK-001: List a booking range
@@ -408,3 +416,5 @@ None.
 - 2026-10-09: `BookingLog`, API-BOOK-001/002; API-TLOG-004 removes the booking of a log that becomes unbookable (feat-book-api, OQ-122…OQ-125).
 - 2026-10-09: API-RPT-001 is `GET /reports/dashboard` with `ReportDay` and `ReportProject`; API-RPT-002 removed (OQ-127, OQ-129; feat-rpt-api).
 - 2026-10-09: API-USR-002: `timeZone` is canonicalised and fixed UTC offsets are rejected, as at sign-in (feat-tlog-api D9).
+- 2026-10-11: `loggedMinutes` on `Project` and `Task` (OQ-132); API-TLOG-001 returns `BookingLog` items and `bookedMinutes`, and spells out its
+  validation (feat-proto-sync-web, prototype `fa9a030`). `Project`, `Task` and API-TLOG-001 need the owner's approval.
