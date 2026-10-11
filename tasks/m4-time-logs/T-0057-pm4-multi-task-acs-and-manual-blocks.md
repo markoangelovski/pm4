@@ -3,7 +3,7 @@ id: T-0057
 title: pm4 handles ACs of several tasks and keeps manual blocks
 milestone: M4
 app: infra
-status: review
+status: done
 size: S
 tier: haiku
 depends_on: []

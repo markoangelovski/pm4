@@ -1,6 +1,6 @@
 # Task Board
 
-**Next free ID:** T-0059
+**Next free ID:** T-0060
 
 | ID | Title | Milestone | App | Size | Status | Depends on |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -60,7 +60,8 @@
 | [T-0054](m4-time-logs/T-0054-loggedminutes-on-projects-and-tasks-get.md) | loggedMinutes on projects and tasks, GET /time-logs (API-TLOG-001), openapi:export | M4 | api | M | done | — |
 | [T-0055](m4-time-logs/T-0055-logged-time-on-the-web-usetimelogs.md) | Logged time on the web: useTimeLogs and the invalidations (D3), the prototype api.ts twins without proposed types, the Logged column and Logged time section from the prototype | M4 | web | M | done | T-0054 |
 | [T-0056](m4-time-logs/T-0056-dashboard-and-bookings-components-from-the.md) | Dashboard and Bookings components from the prototype; format / format:check cover features and proto | M4 | web | M | done | T-0055 |
-| [T-0057](m4-time-logs/T-0057-pm4-multi-task-acs-and-manual-blocks.md) | pm4 handles ACs of several tasks and keeps manual blocks | M4 | infra | S | review | — |
+| [T-0057](m4-time-logs/T-0057-pm4-multi-task-acs-and-manual-blocks.md) | pm4 handles ACs of several tasks and keeps manual blocks | M4 | infra | S | done | — |
 | [T-0058](m4-time-logs/T-0058-pm4-twins-check.md) | pm4 compares production files with their prototype twins (pm4 twins, in check) | M4 | infra | S | review | T-0057 |
+| [T-0059](m4-time-logs/T-0059-retire-proto-sync-web-twin-checks.md) | Retire proto-sync-web's own twin checks (AC-18, AC-19, AC-22); the twin check covers them | M4 | spec | S | review | T-0058 |
 
 Milestones M2–M6 have no tasks yet, and M1 has only the landing route split so far. They're created with the `write-task` skill once their specs are approved.
