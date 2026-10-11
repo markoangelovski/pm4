@@ -253,7 +253,8 @@ function loadSpec(specPath) {
     });
   }
 
-  // Acceptance criteria: AC → { task, tests: [paths], manual, check }.
+  // Acceptance criteria: AC → { tasks, task, tests: [paths], manual, check }. `tasks` are all the rows its Task cells
+  // name; `task` is the last of them, since the AC can only pass once all of them are in (check skips it until then).
   const acs = new Map();
   const acSecs = secs.filter((s) => /^(acceptance criteria|acceptance tests|edge cases)/i.test(s.title));
   for (const s of acSecs) {
@@ -264,13 +265,13 @@ function loadSpec(specPath) {
       const cTask = col(t, "Task");
       t.rows.forEach((r) => {
         for (const ac of acRefs(r[cAc])) {
-          const e = acs.get(ac) ?? { tests: [], manual: false, check: false, task: undefined };
+          const e = acs.get(ac) ?? { tests: [], manual: false, check: false, tasks: [] };
           const testCell = cTest >= 0 ? r[cTest] : "";
           // In the old Acceptance-tests table the "Test" column is the description; only `.ac.` paths count.
           e.tests.push(...codeSpans(testCell).filter((p) => /\.ac\./.test(p)));
           if (cTest >= 0 && /manual/i.test(testCell)) e.manual = true;
           if (cTest >= 0 && /\bcheck\b|DoD command/i.test(testCell)) e.check = true;
-          if (cTask >= 0 && taskRefs(r[cTask])[0]) e.task ??= taskRefs(r[cTask])[0];
+          if (cTask >= 0) e.tasks.push(...taskRefs(r[cTask]));
           acs.set(ac, e);
         }
       });
@@ -280,10 +281,14 @@ function loadSpec(specPath) {
   for (const r of rows) {
     for (const ac of acRefs(r.doneWhen)) {
       const e = acs.get(ac);
-      if (e && !e.task) e.task = r.row;
+      if (e && !e.tasks.length) e.tasks.push(r.row);
     }
   }
-  for (const e of acs.values()) e.tests = unique(e.tests);
+  for (const e of acs.values()) {
+    e.tests = unique(e.tests);
+    e.tasks = unique(e.tasks).sort((a, b) => (order.get(a) ?? Infinity) - (order.get(b) ?? Infinity));
+    e.task = e.tasks.at(-1);
+  }
 
   // Checks: the first bash block of "Checks" (or the old "Definition of done"), chunked by "# AC-n" comments.
   const checks = [];
@@ -394,7 +399,7 @@ function readiness(task) {
   if (task.spec) {
     const spec = loadSpec(task.spec);
     if (spec.status !== "approved") reasons.push(`feature spec is ${spec.status}, not approved`);
-    const needsTests = [...spec.acs.values()].some((e) => e.task === task.row && e.tests.length);
+    const needsTests = [...spec.acs.values()].some((e) => e.tasks.includes(task.row) && e.tests.length);
     if (needsTests && !task.acFiles.length) reasons.push("no acceptance tests recorded yet (write-acceptance-tests, then pm4 hash)");
   }
   for (const e of task.acFiles) {
@@ -404,10 +409,10 @@ function readiness(task) {
   return reasons;
 }
 
-// After a status change: blocked tasks whose blockers are gone become ready.
-function refreshBlocked() {
-  for (const f of allTaskFiles()) {
-    const t = loadTask(f);
+// Blocked candidates whose blockers are gone become ready. Callers pass only tasks a change could have unblocked,
+// so a task blocked by hand (implement-task's BLOCKED: spec) stays blocked until someone sets its status.
+function refreshBlocked(candidates) {
+  for (const t of candidates) {
     if (t.status === "blocked" && t.spec && readiness(t).length === 0) {
       setStatus(t, "ready");
       console.log(`${t.id}: blocked → ready`);
@@ -504,7 +509,7 @@ function cmdHash(specPath) {
   if (!tasks.length) die(`no tasks for ${spec.path} (run pm4 tasks first)`);
   let missing = false;
   for (const t of tasks) {
-    const paths = unique([...spec.acs.values()].filter((e) => e.task === t.row).flatMap((e) => e.tests));
+    const paths = unique([...spec.acs.values()].filter((e) => e.tasks.includes(t.row)).flatMap((e) => e.tests));
     const entries = [];
     for (const p of paths) {
       if (!exists(p)) {
@@ -517,7 +522,7 @@ function cmdHash(specPath) {
     write(t.path, writeAcFiles(read(t.path), entries));
     console.log(`${t.id} (${t.row}): ${entries.map((e) => e.path).join(", ") || "no acceptance test files"}`);
   }
-  refreshBlocked();
+  refreshBlocked(tasks.map((t) => loadTask(t.path)));
   if (missing) process.exit(1);
 }
 
@@ -535,9 +540,14 @@ function cmdReady(id) {
 function cmdStatus(id, status) {
   if (!STATUSES.includes(status)) die(`status must be one of ${STATUSES.join(", ")}`);
   const t = loadTask(id);
+  const satisfies = (s) => ["review", "done"].includes(s);
+  const before = t.status;
   setStatus(t, status);
   console.log(`${t.id}: ${status}`);
-  refreshBlocked();
+  // Only a dependency that just became satisfied can unblock its dependents.
+  if (!satisfies(before) && satisfies(status)) {
+    refreshBlocked(allTaskFiles().map(loadTask).filter((d) => d.deps.includes(t.id)));
+  }
 }
 
 function cmdBrief(id) {
@@ -545,7 +555,7 @@ function cmdBrief(id) {
   if (!t.spec) die(`${t.id} has no feature_spec; its task file is the whole brief`);
   const spec = loadSpec(t.spec);
   const row = spec.rows.find((r) => r.row === t.row) ?? die(`${t.id}: row ${t.row} not in ${spec.path}`);
-  const myAcs = new Set([...spec.acs].filter(([, e]) => e.task === t.row).map(([ac]) => ac));
+  const myAcs = new Set([...spec.acs].filter(([, e]) => e.tasks.includes(t.row)).map(([ac]) => ac));
   const out = [];
   const add = (s) => out.push(s.trimEnd());
 
