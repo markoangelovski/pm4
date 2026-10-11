@@ -3,7 +3,7 @@ id: req-projects
 title: Projects
 status: approved
 owner: Marko Angelovski
-last_updated: 2026-10-07
+last_updated: 2026-10-11
 related: [req-tasks, req-trash, req-time-logs, api-endpoints, api-data-model, sec]
 ---
 
@@ -81,13 +81,14 @@ and a project lead (suggested: the signed-in user).
 ### FR-PRJ-002: List projects
 **Priority:** Must
 **Statement:** A paginated list of the user's non-deleted projects. Each row shows the title, the
-project lead, the task counts per status, a small completed-percentage bar (OQ-083), and the created
-and updated dates (OQ-100). Can be searched by title or project lead name, with title matches listed
+project lead, the task counts per status, a small completed-percentage bar (OQ-083), the logged time
+(the project's total, FR-TLOG-012; OQ-132) and the created and updated dates (OQ-100). Can be searched by title or project lead name, with title matches listed
 first (OQ-099, OQ-102), and sorted by title, created date or updated date (default: updated, descending).
 **Acceptance criteria:**
 - Given projects in the trash, they don't appear in the list.
 - Given a project with 2 upcoming, 1 in-progress and 1 completed task, its row shows 2 / 1 / 1 and 25 %.
 - Given a project with no tasks, its row shows zero counts and an empty bar (0 %).
+- Given 1 h logged on a project directly and 30 min on one of its tasks, its row shows 1h 30m logged; with nothing logged, `—`.
 - Given I search "web", only projects whose title or lead name contains "web" (case-insensitive) are listed (OQ-085, OQ-099).
 - Given I search "ana", projects whose title matches come before projects that match only by lead name; each group keeps the selected sort (OQ-099).
 - Given a user lead, the search matches the user's current name, never their email (OQ-102).
@@ -158,3 +159,5 @@ None.
 - 2026-10-04: Approved by the owner.
 - 2026-10-07: Logged time points to FR-TLOG-012. Back to `review`.
 - 2026-10-09: Approved by the owner.
+- 2026-10-11: FR-PRJ-002: the list shows each project's logged time (OQ-132, feat-proto-sync-web). Back to `review`.
+- 2026-10-11: Approved by the owner.
