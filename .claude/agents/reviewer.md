@@ -21,9 +21,9 @@ your effort on judgment.
    - *Interfaces* and every *Acceptance criteria* row, especially cases the tests check weakly;
    - risks: user scoping and cross-user `404`, token handling, storage rules, time semantics,
      static-export constraints, concurrency;
-   - promoted prototype files (`P` rows): diff each against its prototype twin
-     (`git diff --no-index web/proto/<path> web/<path>`). They may differ only in the data wiring the spec lists;
-     any other UI difference is drift. No production file imports `@/proto/*`;
+   - prototype twins: the `twins` lines of `pm4 check` show whether the changed production files equal their
+     prototype twins. Report each `twins warning` as a minor finding (the prototype is ahead, or a pair drifted).
+     Check that no production file imports `@/proto/*`;
    - the non-⚙ items of `specs/05-quality/definition-of-done.md`.
 4. Manual ACs (`manual` in the table): say what the owner must verify by hand.
 
