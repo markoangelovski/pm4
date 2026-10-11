@@ -46,7 +46,7 @@ The web side is feat-rpt-web.
 | App | File | C/M | Task | Notes |
 | --- | --- | --- | --- | --- |
 | api | `api/test/reports.ac.e2e-spec.ts` | C | tests | Acceptance tests |
-| api | `api/src/time/reports.controller.ts`, `reports.service.ts` (+ `.spec.ts`) | C | T1 | `npx nest g controller time/reports --flat`, `npx nest g service time/reports --flat` |
+| api | `api/src/time/reports.controller.ts`, `api/src/time/reports.service.ts` (+ `.spec.ts`) | C | T1 | `npx nest g controller time/reports --flat`, `npx nest g service time/reports --flat` |
 | api | `api/src/time/time.module.ts` | M | T1 | The CLI adds the controller and service |
 | api | `api/src/time/dto/dashboard-report-response.dto.ts` | C | T1 | Hand-written |
 | api | `api/src/time/time.repository.ts` (+ `.spec.ts`) | M | T1 | Two methods; export `toRef` if it is private |
@@ -162,3 +162,4 @@ None.
 
 ## Changelog
 - 2026-10-09: Initial draft from the owner's Dashboard screen (OQ-127, OQ-129). Ready for review.
+- 2026-10-11: Files row: the full path of `reports.service.ts` (T-0048's scope check read the bare name as `api/reports.service.ts`).

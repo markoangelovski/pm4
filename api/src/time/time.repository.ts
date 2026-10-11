@@ -8,6 +8,7 @@ import {
   timeLogs,
   workdays
 } from "../database/schema/index.js";
+import type { ReportProjectKind } from "./dto/dashboard-report-response.dto.js";
 
 /** The writable columns of a time log. */
 export interface TimeLogValues {
@@ -59,6 +60,25 @@ export interface TimeLogRow {
 }
 
 const taskProject = alias(projects, "task_project");
+
+/** One dashboard day: its workday start (if any) and the sums of its logs. */
+export interface ReportDayRow {
+  workDate: string;
+  startMinute: number | null;
+  workedMinutes: number;
+  bookedMinutes: number;
+}
+
+/** One dashboard project row: a `kind` group, with the retained name for purged projects. */
+export interface ReportProjectRow {
+  kind: ReportProjectKind;
+  projectId: string | null;
+  projectTitle: string | null;
+  projectDeletedAt: Date | null;
+  deletedProjectTitle: string | null;
+  workedMinutes: number;
+  bookedMinutes: number;
+}
 
 /** Data access for `workdays` and `time_logs`. Every method is scoped by `userId`. */
 @Injectable()
@@ -255,6 +275,84 @@ export class TimeRepository {
       )
       .groupBy(workdays.userId, workdays.workDate, workdays.startMinute)
       .orderBy(asc(workdays.workDate));
+  }
+
+  /** The workdays and logs of `[from, to]` per date (API-RPT-001 `days`). */
+  async reportDays(
+    userId: string,
+    from: string,
+    to: string
+  ): Promise<ReportDayRow[]> {
+    const result = await this.db.execute<{
+      work_date: string;
+      start_minute: number | null;
+      worked: number;
+      booked: number;
+    }>(sql`
+      WITH l AS (
+        SELECT work_date, SUM(duration_minutes)::int AS worked,
+               COALESCE(SUM(duration_minutes) FILTER (WHERE booking_date IS NOT NULL), 0)::int AS booked
+        FROM time_logs
+        WHERE user_id = ${userId} AND work_date BETWEEN ${from}::date AND ${to}::date
+        GROUP BY work_date
+      ), w AS (
+        SELECT work_date, start_minute FROM workdays
+        WHERE user_id = ${userId} AND work_date BETWEEN ${from}::date AND ${to}::date
+      )
+      SELECT COALESCE(w.work_date, l.work_date)::text AS work_date, w.start_minute,
+             COALESCE(l.worked, 0) AS worked, COALESCE(l.booked, 0) AS booked
+      FROM w FULL JOIN l ON l.work_date = w.work_date
+      ORDER BY 1
+    `);
+    return result.rows.map((row) => ({
+      workDate: row.work_date,
+      startMinute: row.start_minute,
+      workedMinutes: row.worked,
+      bookedMinutes: row.booked
+    }));
+  }
+
+  /** The logs of `[from, to]` grouped by project, retained name or kind (API-RPT-001 `projects`). */
+  async reportProjects(
+    userId: string,
+    from: string,
+    to: string
+  ): Promise<ReportProjectRow[]> {
+    const result = await this.db.execute<{
+      kind: ReportProjectKind;
+      project_id: string | null;
+      deleted_project_title: string | null;
+      project_title: string | null;
+      project_deleted_at: Date | null;
+      worked: number;
+      booked: number;
+    }>(sql`
+      SELECT g.kind, g.project_id, g.deleted_project_title, p.title AS project_title,
+             p.deleted_at AS project_deleted_at,
+             SUM(g.duration_minutes)::int AS worked,
+             COALESCE(SUM(g.duration_minutes) FILTER (WHERE g.booking_date IS NOT NULL), 0)::int AS booked
+      FROM (
+        SELECT duration_minutes, booking_date,
+               CASE WHEN exclude_from_stats THEN 'nonprod'
+                    WHEN project_id IS NULL AND deleted_project_title IS NULL THEN 'unsorted'
+                    ELSE 'project' END AS kind,
+               CASE WHEN NOT exclude_from_stats THEN project_id END AS project_id,
+               CASE WHEN NOT exclude_from_stats AND project_id IS NULL THEN deleted_project_title END AS deleted_project_title
+        FROM time_logs
+        WHERE user_id = ${userId} AND work_date BETWEEN ${from}::date AND ${to}::date
+      ) g
+      LEFT JOIN projects p ON p.id = g.project_id
+      GROUP BY g.kind, g.project_id, g.deleted_project_title, p.title, p.deleted_at
+    `);
+    return result.rows.map((row) => ({
+      kind: row.kind,
+      projectId: row.project_id,
+      projectTitle: row.project_title,
+      projectDeletedAt: row.project_deleted_at,
+      deletedProjectTitle: row.deleted_project_title,
+      workedMinutes: row.worked,
+      bookedMinutes: row.booked
+    }));
   }
 
   private selectRows(db: Pick<DrizzleDb, "select"> = this.db) {

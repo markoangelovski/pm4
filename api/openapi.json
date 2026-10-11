@@ -1981,6 +1981,84 @@
           "Bookings"
         ]
       }
+    },
+    "/api/v1/reports/dashboard": {
+      "get": {
+        "operationId": "ReportsController_dashboard",
+        "parameters": [
+          {
+            "name": "from",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "format": "date",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "format": "date",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardReportResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed: one entry in errors[] per invalid field.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid or expired credentials.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Worked and booked minutes per day and per project in a date range (API-RPT-001).",
+        "tags": [
+          "Reports"
+        ]
+      }
     }
   },
   "info": {
@@ -3011,6 +3089,99 @@
         "required": [
           "logIds",
           "bookingDate"
+        ]
+      },
+      "ReportDayDto": {
+        "type": "object",
+        "properties": {
+          "workDate": {
+            "type": "string",
+            "format": "date",
+            "example": "2026-10-06"
+          },
+          "startMinute": {
+            "type": "number",
+            "nullable": true,
+            "description": "Minutes after midnight, or `null` for a date with logs but no workday.",
+            "example": 540
+          },
+          "workedMinutes": {
+            "type": "number",
+            "example": 315
+          },
+          "bookedMinutes": {
+            "type": "number",
+            "example": 120
+          }
+        },
+        "required": [
+          "workDate",
+          "startMinute",
+          "workedMinutes",
+          "bookedMinutes"
+        ]
+      },
+      "ReportProjectKind": {
+        "type": "string",
+        "enum": [
+          "project",
+          "unsorted",
+          "nonprod"
+        ]
+      },
+      "ReportProjectDto": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ReportProjectKind"
+              }
+            ]
+          },
+          "project": {
+            "nullable": true,
+            "description": "The project `Ref` (trashed or purged → `deleted: true`); `null` for `unsorted` and `nonprod`.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RefDto"
+              }
+            ]
+          },
+          "workedMinutes": {
+            "type": "number"
+          },
+          "bookedMinutes": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "kind",
+          "project",
+          "workedMinutes",
+          "bookedMinutes"
+        ]
+      },
+      "DashboardReportResponseDto": {
+        "type": "object",
+        "properties": {
+          "days": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReportDayDto"
+            }
+          },
+          "projects": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReportProjectDto"
+            }
+          }
+        },
+        "required": [
+          "days",
+          "projects"
         ]
       }
     }
