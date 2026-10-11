@@ -1,5 +1,17 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { and, asc, eq, gte, inArray, lte, or, sql } from "drizzle-orm";
+import {
+  and,
+  asc,
+  count,
+  desc,
+  eq,
+  gte,
+  inArray,
+  lte,
+  or,
+  sql,
+  type SQL
+} from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { DRIZZLE, type DrizzleDb } from "../database/drizzle.js";
 import {
@@ -198,6 +210,52 @@ export class TimeRepository {
         )
       )
       .orderBy(asc(timeLogs.workDate), asc(timeLogs.id));
+  }
+
+  /** API-TLOG-001: one page of a project's or task's logs (workDate desc, then id asc) and the totals over all of them. */
+  async listLogs(
+    userId: string,
+    filter: { projectId: string } | { taskId: string },
+    page: number,
+    pageSize: number
+  ): Promise<{
+    rows: TimeLogRow[];
+    total: number;
+    totalMinutes: number;
+    bookedMinutes: number;
+  }> {
+    const link: SQL =
+      "projectId" in filter
+        ? eq(timeLogs.projectId, filter.projectId)
+        : eq(timeLogs.taskId, filter.taskId);
+    const where = and(eq(timeLogs.userId, userId), link);
+    const [rows, [totals]] = await Promise.all([
+      this.selectRows(this.db)
+        .where(where)
+        .orderBy(desc(timeLogs.workDate), asc(timeLogs.id))
+        .limit(pageSize)
+        .offset((page - 1) * pageSize),
+      this.db
+        .select({
+          total: count(),
+          totalMinutes:
+            sql<number>`coalesce(sum(${timeLogs.durationMinutes}), 0)`.mapWith(
+              Number
+            ),
+          bookedMinutes:
+            sql<number>`coalesce(sum(${timeLogs.durationMinutes}) FILTER (WHERE ${timeLogs.bookingDate} IS NOT NULL), 0)`.mapWith(
+              Number
+            )
+        })
+        .from(timeLogs)
+        .where(where)
+    ]);
+    return {
+      rows,
+      total: totals.total,
+      totalMinutes: totals.totalMinutes,
+      bookedMinutes: totals.bookedMinutes
+    };
   }
 
   /**

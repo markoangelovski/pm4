@@ -1,12 +1,26 @@
 "use client";
 
-import { Fragment, useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { format, parseISO } from "date-fns";
-import { Bookmark, ChevronRight, ListTodo } from "lucide-react";
+import {
+  flexRender,
+  getCoreRowModel,
+  getExpandedRowModel,
+  useReactTable,
+  type ColumnDef,
+  type ExpandedState,
+  type Row
+} from "@tanstack/react-table";
+import { BookmarkCheck, ChevronRight, ListTodo } from "lucide-react";
 import { toast } from "sonner";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger
+} from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -15,310 +29,414 @@ import {
   TableHeader,
   TableRow
 } from "@/components/ui/table";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger
-} from "@/components/ui/tooltip";
 import { ProjectIcon } from "@/features/projects/components/project-icon";
-import type { Ref } from "@/features/time/types";
-import { routes } from "@/lib/routes";
 import { formatDuration, formatWorkDate } from "@/lib/time";
+import { routes } from "@/lib/routes";
 import { cn } from "@/lib/utils";
 import { useSetBooking } from "../api";
 import type { BookingDay, BookingEntry, BookingGroup } from "../days";
 import { BookingCell, bookedTone } from "./booking-cell";
 
+/** A table row: one group of the day (a project, Unsorted or Non-prod) with its log rows as `subRows`, or one log row. */
+interface BookingRow {
+  id: string;
+  group: BookingGroup;
+  entry?: BookingEntry;
+  subRows?: BookingRow[];
+}
+
+const rowsOf = (day: BookingDay): BookingRow[] =>
+  day.groups.map((group) => ({
+    id: `${day.workDate}:${group.key}`,
+    group,
+    subRows: group.entries.map((entry) => ({
+      id: entry.incoming ? `${day.workDate}:in:${entry.log.id}` : entry.log.id,
+      group,
+      entry
+    }))
+  }));
+
 const hours = (minutes: number) =>
   minutes === 0 ? "0h" : formatDuration(minutes);
 
-const FIGURES: {
-  key: "logged" | "billable" | "overtime" | "bookedCurrent" | "bookedExternal" | "bookedTotal";
-  label: string;
-  hint?: string;
-}[] = [
-  { key: "logged", label: "Logged" },
-  { key: "billable", label: "Billable" },
-  { key: "overtime", label: "Overtime" },
-  {
-    key: "bookedCurrent",
-    label: "Booked current",
-    hint: "Hours of this day's own logs that are booked to this day."
-  },
-  {
-    key: "bookedExternal",
-    label: "Booked from external",
-    hint: "Hours of logs worked on other days that are booked to this day."
-  },
-  {
-    key: "bookedTotal",
-    label: "Booked total",
-    hint: "Booked current plus Booked from external: all hours booked to this day."
-  }
-];
-
-function RefName({
-  item,
-  href,
-  icon
+function Stat({
+  label,
+  value,
+  hint
 }: {
-  item: Ref;
-  href: string;
-  icon?: React.ReactNode;
+  label: string;
+  value: string;
+  hint?: string;
 }) {
   return (
-    <span className="inline-flex min-w-0 items-center gap-2">
-      {icon}
-      {item.deleted || !item.id ? (
-        <>
-          <span className="truncate">{item.title}</span>
-          <span className="text-muted-foreground">(deleted)</span>
-        </>
-      ) : (
+    <Card className="border rounded-md! bg-primary/5 ring-primary/20">
+      <CardContent className="flex flex-col gap-1 py-0">
+        {hint ? (
+          <Tooltip>
+            <TooltipTrigger
+              render={<p tabIndex={0} />}
+              className="w-fit cursor-help text-sm text-muted-foreground underline decoration-dotted underline-offset-4"
+            >
+              {label}
+            </TooltipTrigger>
+            <TooltipContent>{hint}</TooltipContent>
+          </Tooltip>
+        ) : (
+          <p className="text-sm text-muted-foreground">{label}</p>
+        )}
+        <p className="text-2xl font-semibold tabular-nums tracking-tight">
+          {value}
+        </p>
+      </CardContent>
+    </Card>
+  );
+}
+
+/** A log's task: the task icon and an underlined link (deleted tasks are plain text). */
+function LogTask({ row }: { row: BookingRow }) {
+  const task = row.entry?.log.task;
+  if (!task) return <span className="text-muted-foreground">—</span>;
+  return (
+    <span className="flex items-center gap-1.5">
+      <ListTodo className="size-4 shrink-0 text-muted-foreground" />
+      {task.id && !task.deleted ? (
         <Link
-          href={`${href}?id=${item.id}`}
-          className="truncate hover:underline"
+          href={`${routes.app.task}?id=${task.id}`}
+          className="truncate font-medium underline underline-offset-2 hover:text-primary"
         >
-          {item.title}
+          {task.title}
         </Link>
+      ) : (
+        <span className="truncate text-muted-foreground">
+          {task.title} <span className="italic">(deleted)</span>
+        </span>
       )}
     </span>
   );
 }
 
-function GroupName({ group }: { group: BookingGroup }) {
-  if (group.kind === "unsorted") return <span>Unsorted</span>;
-  if (group.kind === "nonprod") return <span>Non-prod</span>;
-  const project = group.project!;
-  return (
-    <RefName
-      item={project}
-      href={routes.app.project}
-      icon={
-        project.id ? (
-          <ProjectIcon project={{ id: project.id }} className="size-5 rounded-md" />
-        ) : null
-      }
-    />
-  );
-}
-
-function LogRow({
-  entry,
-  kind,
-  today
+/** Books every unbooked log of the project's day to that day (FR-BOOK-005). Null when there is nothing to book. */
+function BookAllButton({
+  group,
+  workDate
 }: {
-  entry: BookingEntry;
-  kind: BookingGroup["kind"];
-  today: string;
+  group: BookingGroup;
+  workDate: string;
 }) {
-  const { log } = entry;
-  let booking: React.ReactNode = null;
-  if (entry.incoming) {
-    booking = (
-      <span
-        className={cn(
-          "inline-flex items-center gap-1.5 whitespace-nowrap",
-          bookedTone(false)
-        )}
-        title="Edit this booking from the day the log was worked"
-      >
-        <Bookmark className="size-4" />
-        Worked on {formatWorkDate(log.workDate)}
-      </span>
-    );
-  } else if (kind === "unsorted") {
-    booking = (
-      <span className="text-muted-foreground">
-        Add the log to a Project or Task
-      </span>
-    );
-  } else if (kind === "project") {
-    booking = <BookingCell log={log} max={today} />;
-  }
+  const set = useSetBooking();
+  if (group.kind !== "project" || !group.unbookedIds.length) return null;
   return (
-    <TableRow className="bg-muted/30">
-      <TableCell />
-      <TableCell>
-        {log.task ? (
-          <RefName
-            item={log.task}
-            href={routes.app.task}
-            icon={<ListTodo className="size-4 shrink-0 text-muted-foreground" />}
-          />
-        ) : (
-          "—"
-        )}
-      </TableCell>
-      <TableCell className="max-w-64">
-        <span className="block truncate" title={log.text}>
-          {log.text}
-        </span>
-      </TableCell>
-      <TableCell>{booking}</TableCell>
-      <TableCell className="tabular-nums">{hours(entry.worked)}</TableCell>
-      <TableCell className="tabular-nums">{hours(entry.booked)}</TableCell>
-    </TableRow>
+    <Button
+      className="shrink-0 cursor-pointer rounded-md!"
+      disabled={set.isPending}
+      onClick={() =>
+        set.mutate(
+          { logIds: group.unbookedIds, bookingDate: workDate },
+          { onError: () => toast.error("Couldn't save the booking.") }
+        )
+      }
+    >
+      Book all
+    </Button>
   );
 }
 
-/** One date (SCR-045): the heading, the six figures and the table of groups. */
+const GROUP_TITLES = { unsorted: "Unsorted", nonprod: "Non-prod" } as const;
+
+/** The group's name: a live project links to its page; a deleted one is plain text with "(deleted)"; Unsorted and Non-prod have no icon. */
+function GroupName({ group }: { group: BookingGroup }) {
+  if (group.kind !== "project")
+    return (
+      <span className="truncate font-medium">{GROUP_TITLES[group.kind]}</span>
+    );
+  const project = group.project!;
+  if (!project.id || project.deleted)
+    return (
+      <span className="truncate font-medium">
+        {project.title}{" "}
+        <span className="font-normal italic text-muted-foreground">
+          (deleted)
+        </span>
+      </span>
+    );
+  return (
+    <>
+      <ProjectIcon
+        project={{ id: project.id }}
+        className="size-5 shrink-0 rounded-md"
+      />
+      <Link
+        href={`${routes.app.project}?id=${project.id}`}
+        className="truncate font-medium underline underline-offset-2 hover:text-primary"
+      >
+        {project.title}
+      </Link>
+    </>
+  );
+}
+
+function ProjectCell({ row }: { row: Row<BookingRow> }) {
+  return (
+    <div className="flex items-center gap-2">
+      <button
+        type="button"
+        aria-expanded={row.getIsExpanded()}
+        aria-label={row.getIsExpanded() ? "Collapse project" : "Expand project"}
+        onClick={row.getToggleExpandedHandler()}
+        className="cursor-pointer hover:text-primary"
+      >
+        <ChevronRight
+          className={cn(
+            "size-4 shrink-0 transition-transform",
+            row.getIsExpanded() && "rotate-90"
+          )}
+        />
+      </button>
+      <GroupName group={row.original.group} />
+    </div>
+  );
+}
+
+/**
+ * Six fixed columns, so widths never change. A collapsed project row spans Project + Tasks + Logs and keeps its
+ * Booking date cell, so Book all stays in the same place whether the row is expanded or not.
+ */
+const columns: ColumnDef<BookingRow>[] = [
+  {
+    id: "project",
+    header: "Project",
+    cell: ({ row }) => (row.depth === 0 ? <ProjectCell row={row} /> : null)
+  },
+  {
+    id: "tasks",
+    header: "Tasks",
+    cell: ({ row }) => (row.depth === 0 ? null : <LogTask row={row.original} />)
+  },
+  {
+    id: "logs",
+    header: "Logs",
+    cell: ({ row }) =>
+      row.original.entry ? (
+        <p className="truncate text-sm" title={row.original.entry.log.text}>
+          {row.original.entry.log.text}
+        </p>
+      ) : null
+  },
+  {
+    id: "booking",
+    header: "Booking date",
+    cell: ({ row, table }) => {
+      const { group, entry } = row.original;
+      const { today, workDate } = table.options.meta as {
+        today: string;
+        workDate: string;
+      };
+      if (!entry) return <BookAllButton group={group} workDate={workDate} />;
+      if (group.kind === "nonprod") return null;
+      if (group.kind === "unsorted")
+        return (
+          <span className="text-sm text-muted-foreground">
+            Add the log to a Project or Task
+          </span>
+        );
+      if (entry.incoming) {
+        return (
+          <span
+            className={cn(
+              "flex items-center gap-1.5 text-sm font-medium",
+              bookedTone(false)
+            )}
+            title="Edit this booking from the day the log was worked"
+          >
+            <BookmarkCheck className="size-4 shrink-0" />
+            <span className="truncate">
+              Worked on {formatWorkDate(entry.log.workDate)}
+            </span>
+          </span>
+        );
+      }
+      return <BookingCell log={entry.log} max={today} />;
+    }
+  },
+  {
+    id: "worked",
+    header: "Hours worked",
+    meta: { align: "right" },
+    cell: ({ row }) => (
+      <span className="tabular-nums">
+        {hours((row.original.entry ?? row.original.group).worked)}
+      </span>
+    )
+  },
+  {
+    id: "booked",
+    header: "Hours booked",
+    meta: { align: "right" },
+    cell: ({ row }) => (
+      <span className="tabular-nums">
+        {hours((row.original.entry ?? row.original.group).booked)}
+      </span>
+    )
+  }
+];
+
+/** Column widths (the `logs` column takes the rest). */
+const WIDTHS = ["18%", "16%", undefined, "20rem", "8rem", "8rem"];
+
+/** Headers left blank while every row is collapsed (kept as cells, so the column widths don't change). */
+const BLANK_WHEN_COLLAPSED = ["tasks", "logs", "booking"];
+/** A collapsed project row keeps its Booking date cell (Book all). */
+const HIDDEN_IN_COLLAPSED_ROW = ["tasks", "logs"];
+
+const alignOf = (meta: unknown) =>
+  (meta as { align?: "right" } | undefined)?.align;
+
+/** One listed day of the Bookings range (SCR-045): the heading, six figure cards, then a row per group, expandable to its logs. */
 export function DaySection({
   day,
+  isToday,
   today
 }: {
   day: BookingDay;
+  isToday: boolean;
   today: string;
 }) {
-  const [open, setOpen] = useState<string[]>([]);
-  const set = useSetBooking();
-  const expandedLayout = open.length > 0;
-  const toggle = (key: string) =>
-    setOpen((o) => (o.includes(key) ? o.filter((k) => k !== key) : [...o, key]));
-  const bookAll = (group: BookingGroup) =>
-    set.mutate(
-      { logIds: group.unbookedIds, bookingDate: day.workDate },
-      { onError: () => toast.error("Couldn't save the booking.") }
-    );
+  const [expanded, setExpanded] = useState<ExpandedState>({});
+  const data = useMemo(() => rowsOf(day), [day]);
+  const table = useReactTable({
+    data,
+    columns,
+    state: { expanded },
+    onExpandedChange: setExpanded,
+    getRowId: (r) => r.id,
+    getSubRows: (r) => r.subRows,
+    getRowCanExpand: (r) => r.depth === 0,
+    meta: { today, workDate: day.workDate },
+    getCoreRowModel: getCoreRowModel(),
+    getExpandedRowModel: getExpandedRowModel()
+  });
+
+  const anyOpen = table
+    .getRowModel()
+    .rows.some((r) => r.depth === 0 && r.getIsExpanded());
 
   return (
-    <section aria-label={day.workDate} className="space-y-3">
-      <div className="flex items-center gap-2 rounded-md bg-muted px-4 py-2">
-        <h2 className="text-base font-semibold">
-          {format(parseISO(day.workDate), "EEEE, d MMMM yyyy")}
-        </h2>
-        {day.workDate === today ? (
-          <span className="rounded-md bg-primary/10 px-1.5 py-0.5 text-xs font-medium text-primary">
-            Today
-          </span>
+    <section
+      aria-label={day.workDate}
+      className="overflow-hidden rounded-lg bg-card"
+    >
+      <h2 className="flex items-baseline gap-2 bg-primary/10 px-4 py-3 text-lg font-semibold tracking-tight">
+        {format(parseISO(day.workDate), "EEEE, d MMMM yyyy")}
+        {isToday ? (
+          <span className="text-xs font-normal text-primary">Today</span>
         ) : null}
-      </div>
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
-        {FIGURES.map((f) => (
-          <Card key={f.key} className="gap-1 border rounded-md! px-4 py-3">
-            <div className="text-xs text-muted-foreground">
-              {f.hint ? (
-                <Tooltip>
-                  <TooltipTrigger
-                    className="cursor-help underline decoration-dotted underline-offset-4"
-                  >
-                    {f.label}
-                  </TooltipTrigger>
-                  <TooltipContent>{f.hint}</TooltipContent>
-                </Tooltip>
-              ) : (
-                f.label
-              )}
-            </div>
-            <div className="text-lg font-semibold tabular-nums">
-              {hours(day[f.key])}
-            </div>
-          </Card>
-        ))}
-      </div>
-      <Card className="border rounded-md! py-0">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              {expandedLayout ? (
-                <>
-                  <TableHead>Project</TableHead>
-                  <TableHead>Tasks</TableHead>
-                  <TableHead>Logs</TableHead>
-                  <TableHead>Booking date</TableHead>
-                </>
-              ) : (
-                <TableHead>Projects</TableHead>
-              )}
-              <TableHead>Hours worked</TableHead>
-              <TableHead>Hours booked</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {day.groups.map((group) => {
-              const isOpen = open.includes(group.key);
-              const showBookAll =
-                group.kind === "project" && group.unbookedIds.length > 0;
-              const bookAllButton = showBookAll ? (
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  className="cursor-pointer"
-                  disabled={set.isPending}
-                  onClick={() => bookAll(group)}
-                >
-                  Book all
-                </Button>
-              ) : null;
-              return (
-                <Fragment key={group.key}>
+      </h2>
+      <div className="space-y-4 p-4">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 xl:grid-cols-6">
+          <Stat label="Logged" value={hours(day.logged)} />
+          <Stat label="Billable" value={hours(day.billable)} />
+          <Stat label="Overtime" value={hours(day.overtime)} />
+          <Stat
+            label="Booked current"
+            value={hours(day.bookedCurrent)}
+            hint="Hours of this day's own logs that are booked to this day."
+          />
+          <Stat
+            label="Booked from external"
+            value={hours(day.bookedExternal)}
+            hint="Hours of logs worked on other days that are booked to this day."
+          />
+          <Stat
+            label="Booked total"
+            value={hours(day.bookedTotal)}
+            hint="Booked current plus Booked from external: all hours booked to this day."
+          />
+        </div>
+        <div className="overflow-x-auto rounded-md border">
+          <Table>
+            <colgroup>
+              {WIDTHS.map((w, i) => (
+                <col key={i} style={{ width: w }} />
+              ))}
+            </colgroup>
+            <TableHeader>
+              {table.getHeaderGroups().map((group) => (
+                <TableRow key={group.id}>
+                  {group.headers.map((h) => {
+                    const blank =
+                      !anyOpen && BLANK_WHEN_COLLAPSED.includes(h.column.id);
+                    return (
+                      <TableHead
+                        key={h.id}
+                        className="px-4 font-semibold text-foreground"
+                      >
+                        {blank
+                          ? null
+                          : !anyOpen && h.column.id === "project"
+                            ? "Projects"
+                            : flexRender(
+                                h.column.columnDef.header,
+                                h.getContext()
+                              )}
+                      </TableHead>
+                    );
+                  })}
+                </TableRow>
+              ))}
+            </TableHeader>
+            <TableBody>
+              {table.getRowModel().rows.map((row) => {
+                const collapsed = row.depth === 0 && !row.getIsExpanded();
+                return (
                   <TableRow
-                    className="cursor-pointer"
-                    onClick={(e) => {
-                      if (
-                        (e.target as HTMLElement).closest(
-                          "a, button, input, [role=dialog]"
-                        )
-                      )
-                        return;
-                      toggle(group.key);
-                    }}
-                  >
-                    <TableCell>
-                      <div className="flex items-center gap-2 font-medium">
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon-sm"
-                          className="cursor-pointer"
-                          aria-label={
-                            isOpen ? "Collapse project" : "Expand project"
+                    key={row.id}
+                    className={cn(
+                      "transition-colors",
+                      row.depth === 0
+                        ? "cursor-pointer hover:bg-primary/10"
+                        : "bg-muted/30 hover:bg-muted/50"
+                    )}
+                    onClick={
+                      row.depth === 0
+                        ? (e) => {
+                            if (
+                              !(e.target as HTMLElement).closest(
+                                "a,button,input,[role=dialog]"
+                              )
+                            )
+                              row.toggleExpanded();
                           }
-                          aria-expanded={isOpen}
-                          onClick={() => toggle(group.key)}
+                        : undefined
+                    }
+                  >
+                    {row.getVisibleCells().map((cell) => {
+                      const id = cell.column.id;
+                      if (collapsed && HIDDEN_IN_COLLAPSED_ROW.includes(id))
+                        return null;
+                      return (
+                        <TableCell
+                          key={cell.id}
+                          colSpan={collapsed && id === "project" ? 3 : 1}
+                          className={cn(
+                            "px-4",
+                            alignOf(cell.column.columnDef.meta) === "right" &&
+                              "whitespace-nowrap"
+                          )}
                         >
-                          <ChevronRight
-                            className={cn(
-                              "transition-transform",
-                              isOpen && "rotate-90"
-                            )}
-                          />
-                        </Button>
-                        <GroupName group={group} />
-                        {!expandedLayout ? bookAllButton : null}
-                      </div>
-                    </TableCell>
-                    {expandedLayout ? (
-                      <>
-                        <TableCell />
-                        <TableCell />
-                        <TableCell>{bookAllButton}</TableCell>
-                      </>
-                    ) : null}
-                    <TableCell className="tabular-nums">
-                      {hours(group.worked)}
-                    </TableCell>
-                    <TableCell className="tabular-nums">
-                      {hours(group.booked)}
-                    </TableCell>
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext()
+                          )}
+                        </TableCell>
+                      );
+                    })}
                   </TableRow>
-                  {isOpen
-                    ? group.entries.map((entry) => (
-                        <LogRow
-                          key={entry.log.id}
-                          entry={entry}
-                          kind={group.kind}
-                          today={today}
-                        />
-                      ))
-                    : null}
-                </Fragment>
-              );
-            })}
-          </TableBody>
-        </Table>
-      </Card>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </div>
+      </div>
     </section>
   );
 }

@@ -53,6 +53,9 @@ export interface TaskInput {
   dueDate: string | null;
 }
 
+/** Declared here, not imported from features/time/api, which imports this file. timeKeys.logs(). */
+const TIME_LOGS_KEY = ["time", "logs"] as const;
+
 export const taskKeys = {
   all: ["tasks"] as const,
   lists: () => [...taskKeys.all, "list"] as const,
@@ -141,7 +144,7 @@ function cachedTask(queryClient: QueryClient, id: string): Task | undefined {
   return undefined;
 }
 
-/** API-TSK-004. onSuccess: setQueryData(detail); invalidate lists(), the old and new project details, projectKeys.lists(). */
+/** API-TSK-004. onSuccess: setQueryData(detail); invalidate lists(), the old and new project details, projectKeys.lists(), the logs (the Logged time section shows the task). */
 export function useUpdateTask(
   id: string
 ): UseMutationResult<Task, Error, TaskInput> {
@@ -169,7 +172,8 @@ export function useUpdateTask(
             queryKey: projectKeys.detail(projectId)
           })
         ),
-        queryClient.invalidateQueries({ queryKey: projectKeys.lists() })
+        queryClient.invalidateQueries({ queryKey: projectKeys.lists() }),
+        queryClient.invalidateQueries({ queryKey: TIME_LOGS_KEY })
       ]);
     }
   });

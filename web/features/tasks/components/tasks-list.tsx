@@ -69,6 +69,7 @@ import { useTasks, TASK_SORTS, type TaskSort } from "@/features/tasks/api";
 import { useDebouncedValue } from "@/lib/use-debounced-value";
 import { useMe } from "@/features/users/api";
 import { formatShortDate } from "@/lib/time";
+import { LoggedTotal } from "@/features/time/components/logged-total";
 import { routes } from "@/lib/routes";
 import { cn } from "@/lib/utils";
 
@@ -309,6 +310,7 @@ export function TasksList({
               <TableHead>Status</TableHead>
               <TableHead>Due date</TableHead>
               <TableHead>Project lead</TableHead>
+              <TableHead>Logged</TableHead>
               <TableHead>Created</TableHead>
               <TableHead className="pr-4">Updated</TableHead>
             </TableRow>
@@ -364,6 +366,9 @@ export function TasksList({
                   </TableCell>
                   <TableCell className="whitespace-nowrap">
                     <ProjectLeadLabel lead={task.projectLead} />
+                  </TableCell>
+                  <TableCell className="whitespace-nowrap">
+                    <LoggedTotal minutes={task.loggedMinutes} />
                   </TableCell>
                   <TableCell className="whitespace-nowrap">
                     {me ? (
@@ -492,6 +497,7 @@ function TableSkeleton({ showProject }: { showProject: boolean }) {
           <Skeleton className="h-7 w-32" />
           <Skeleton className="h-4 w-24" />
           <Skeleton className="h-4 w-28" />
+          <Skeleton className="h-4" />
           <Skeleton className="h-4 w-20" />
           <Skeleton className="h-4 w-20" />
         </div>

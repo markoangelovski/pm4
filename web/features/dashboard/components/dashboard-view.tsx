@@ -29,8 +29,13 @@ import { RangePicker } from "./range-picker";
 import { RunningTotals } from "./running-totals";
 import { WorkdayChart } from "./workday-chart";
 
-/** The dashboard page body (SCR-010): the range in the URL, count tiles and four report cards. */
-export function DashboardView(): React.JSX.Element {
+/** Series colors (validated categorical slots, light and dark steps): worked blue, booked aqua, start orange. */
+const COLORS =
+  "[--dash-worked:#2a78d6] [--dash-booked:#1baf7a] [--dash-start:#eb6834] " +
+  "dark:[--dash-worked:#3987e5] dark:[--dash-booked:#199e70] dark:[--dash-start:#d95926]";
+
+/** The dashboard page body (SCR-010): counts, then the range's workdays and hours. The range is in the URL (`from`, `to`); default this month. */
+export function DashboardView() {
   const me = useMe();
   const timeZone = me.data?.timeZone ?? "UTC";
   const target = me.data?.dailyTargetMinutes ?? 0;
@@ -71,8 +76,8 @@ export function DashboardView(): React.JSX.Element {
   const loading = !failed && (!me.data || !data || !stats);
 
   return (
-    <div className="space-y-4 [--dash-booked:#1baf7a] [--dash-start:#eb6834] [--dash-worked:#2a78d6] dark:[--dash-booked:#199e70] dark:[--dash-start:#d95926] dark:[--dash-worked:#3987e5]">
-      <div className="flex flex-wrap items-start justify-between gap-3">
+    <div className={`space-y-4 ${COLORS}`}>
+      <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
           <p className="text-sm text-muted-foreground">{rangeLabel(range)}</p>
@@ -135,7 +140,7 @@ export function DashboardView(): React.JSX.Element {
             />
           </div>
           <div className="min-w-0 xl:col-span-4">
-            <HoursSummary totals={stats.totals} targetMinutes={target} />
+            <HoursSummary t={stats.totals} targetMinutes={target} />
           </div>
           <div className="min-w-0 xl:col-span-7">
             <RunningTotals points={stats.running} />

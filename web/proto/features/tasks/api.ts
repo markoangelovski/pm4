@@ -13,9 +13,8 @@ import { TASK_STATUSES, type TaskStatus } from "@/proto/features/tasks/status";
 import { apiClient } from "@/proto/mock/client";
 import { isApiError, unwrap, unwrapVoid } from "@/lib/api/problem";
 import type { components } from "@/lib/api/schema";
-import type { TaskResponseDto } from "./proposed-types";
 
-type TaskResponse = TaskResponseDto;
+type TaskResponse = components["schemas"]["TaskResponseDto"];
 /** D14: a task's project is never purged, so its `Ref.id` is never null (endpoints.md *Task*). */
 export type Task = Omit<TaskResponse, "project"> & {
   project: { id: string; title: string; deleted: boolean };
@@ -53,6 +52,9 @@ export interface TaskInput {
   status: TaskStatus;
   dueDate: string | null;
 }
+
+/** Declared here, not imported from features/time/api, which imports this file. timeKeys.logs(). */
+const TIME_LOGS_KEY = ["time", "logs"] as const;
 
 export const taskKeys = {
   all: ["tasks"] as const,
@@ -142,7 +144,7 @@ function cachedTask(queryClient: QueryClient, id: string): Task | undefined {
   return undefined;
 }
 
-/** API-TSK-004. onSuccess: setQueryData(detail); invalidate lists(), the old and new project details, projectKeys.lists(). */
+/** API-TSK-004. onSuccess: setQueryData(detail); invalidate lists(), the old and new project details, projectKeys.lists(), the logs (the Logged time section shows the task). */
 export function useUpdateTask(
   id: string
 ): UseMutationResult<Task, Error, TaskInput> {
@@ -170,7 +172,8 @@ export function useUpdateTask(
             queryKey: projectKeys.detail(projectId)
           })
         ),
-        queryClient.invalidateQueries({ queryKey: projectKeys.lists() })
+        queryClient.invalidateQueries({ queryKey: projectKeys.lists() }),
+        queryClient.invalidateQueries({ queryKey: TIME_LOGS_KEY })
       ]);
     }
   });

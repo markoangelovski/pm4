@@ -13,8 +13,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "api:types": "openapi-typescript ../api/openapi.json -o lib/api/schema.d.ts",
-    "format": "prettier --write app components hooks lib \"*.ts\" \"*.mjs\"",
-    "format:check": "prettier --check app components hooks lib \"*.ts\" \"*.mjs\""
+    "format": "prettier --write app components features hooks lib proto \"*.ts\" \"*.mjs\"",
+    "format:check": "prettier --check app components features hooks lib proto \"*.ts\" \"*.mjs\""
   },
   "dependencies": {
     "@base-ui/react": "^1.4.0",

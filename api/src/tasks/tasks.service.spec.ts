@@ -29,6 +29,7 @@ function row(overrides: Partial<TaskRow> = {}): TaskRow {
     createdAt: new Date("2026-10-01T08:00:00.000Z"),
     updatedAt: new Date("2026-10-02T08:00:00.000Z"),
     deletedAt: null,
+    loggedMinutes: 0,
     ...overrides
   };
 }

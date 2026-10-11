@@ -3,10 +3,13 @@ import {
   useMutation,
   useQuery,
   useQueryClient,
+  type QueryClient,
   type UseMutationResult,
   type UseQueryResult
 } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
+import { projectKeys } from "@/features/projects/api";
+import { taskKeys } from "@/features/tasks/api";
 import { apiClient } from "@/lib/api/client";
 import { unwrap, unwrapVoid } from "@/lib/api/problem";
 import type { components } from "@/lib/api/schema";
@@ -51,9 +54,17 @@ export function useTimeLogs(
   filter: TimeLogFilter,
   page: number
 ): UseQueryResult<TimeLogList, Error> {
-  void filter;
-  void page;
-  throw new Error("not implemented (feat-proto-sync-web)");
+  return useQuery({
+    queryKey: timeKeys.logList(filter, page),
+    queryFn: async ({ signal }) =>
+      unwrap(
+        await apiClient.GET("/api/v1/time-logs", {
+          params: { query: { ...filter, page, pageSize: TIME_LOG_PAGE_SIZE } },
+          signal
+        })
+      ),
+    placeholderData: keepPreviousData
+  });
 }
 
 /** API-WD-003. */
@@ -88,7 +99,16 @@ export function useWorkdays(
   });
 }
 
-/** API-TLOG-002; invalidates timeKeys.all (D3). */
+/** D3: a log change refreshes the time, project and task queries (the logged totals live on the projects and tasks). */
+function refreshAfterLogChange(queryClient: QueryClient) {
+  return Promise.all([
+    queryClient.invalidateQueries({ queryKey: timeKeys.all }),
+    queryClient.invalidateQueries({ queryKey: projectKeys.all }),
+    queryClient.invalidateQueries({ queryKey: taskKeys.all })
+  ]);
+}
+
+/** API-TLOG-002; invalidates timeKeys.all, projectKeys.all and taskKeys.all (D3). */
 export function useCreateLog(): UseMutationResult<
   TimeLog,
   Error,
@@ -100,11 +120,11 @@ export function useCreateLog(): UseMutationResult<
       unwrap(
         await apiClient.POST("/api/v1/time-logs", { body: input })
       ) as TimeLog,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: timeKeys.all })
+    onSuccess: () => refreshAfterLogChange(queryClient)
   });
 }
 
-/** API-TLOG-004; invalidates timeKeys.all (D3); sends projectId/taskId only when present in the input (D9). */
+/** API-TLOG-004; invalidates timeKeys.all, projectKeys.all and taskKeys.all (D3); sends projectId/taskId only when present in the input (D9). */
 export function useUpdateLog(
   id: string
 ): UseMutationResult<TimeLog, Error, TimeLogInput> {
@@ -117,11 +137,11 @@ export function useUpdateLog(
           body: input
         })
       ) as TimeLog,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: timeKeys.all })
+    onSuccess: () => refreshAfterLogChange(queryClient)
   });
 }
 
-/** API-TLOG-006; invalidates timeKeys.all (D3). */
+/** API-TLOG-006; invalidates timeKeys.all, projectKeys.all and taskKeys.all (D3). */
 export function useDeleteLog(): UseMutationResult<void, Error, TimeLog> {
   const queryClient = useQueryClient();
   return useMutation({
@@ -131,7 +151,7 @@ export function useDeleteLog(): UseMutationResult<void, Error, TimeLog> {
           params: { path: { id: log.id } }
         })
       ),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: timeKeys.all })
+    onSuccess: () => refreshAfterLogChange(queryClient)
   });
 }
 

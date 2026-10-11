@@ -210,10 +210,11 @@ excluded from statistics. One log of user B on B's own project.
 | AC-15 | The project page shows **Logged time** and requests `/api/v1/time-logs?projectId=<id>…`; not while the project is in the trash | `web/features/projects/components/project-detail.ac.test.tsx` | T2 |
 | AC-16 | The task page shows **Logged time** and requests `?taskId=<id>…`; not while the task is in the trash | `web/features/tasks/components/task-detail.ac.test.tsx` | T2 |
 | AC-17 | Bookings, all rows collapsed → headers `Projects`, `""`, `""`, `""`, `Hours worked`, `Hours booked`; expanding a row → `Project`, `Tasks`, `Logs`, `Booking date`, `Hours worked`, `Hours booked`; **Book all** stays in the row in both states | `web/features/bookings/components/bookings-view.ac.test.tsx` | T3 |
-| AC-18 | The replaced production components equal their prototype twins apart from imports and Prettier | check | T2, T3 |
+| AC-18 | T2's replaced production components and promoted files equal their prototype twins apart from imports and Prettier | check | T2 |
 | AC-19 | The prototype `api.ts` twins equal production apart from the client import; no `proposed-types.ts` is left | check | T2 |
 | AC-20 | `format:check` covers `features` and `proto`, and passes | check | T3 |
 | AC-21 | No old sample name in specs or tests (D7): the test writer greps the old names (kept outside the repo) and finds none | manual | T1 |
+| AC-22 | T3's replaced Dashboard and Bookings components equal their prototype twins apart from imports and Prettier | check | T3 |
 
 Typed stubs: *Contract stubs* above.
 
@@ -226,7 +227,7 @@ for f in features/projects/components/projects-list.tsx features/projects/compon
          features/time/components/logged-time-section.tsx features/time/components/logged-total.tsx; do
   diff <(sed 's#@/proto/#@/#g' "proto/$f" | npx prettier --stdin-filepath "$f") "$f"
 done
-# AC-18: T3's components equal their prototype twins
+# AC-22: T3's components equal their prototype twins
 cd web
 for f in features/dashboard/components/{dashboard-view,hours-summary,kpi-tiles,project-hours,range-picker,running-totals,workday-chart}.tsx \
          features/bookings/components/{bookings-view,day-section,booking-cell,range-field}.tsx; do
@@ -256,3 +257,4 @@ None. OQ-131…OQ-137 are resolved.
 ## Changelog
 - 2026-10-11: Initial draft from prototype `fa9a030` (OQ-131…OQ-137). Ready for review.
 - 2026-10-11: Approved by the owner.
+- 2026-10-11: AC-18 split: T2's components stay AC-18, T3's become AC-22, so each task's `pm4 check` runs only its own comparison (owner).

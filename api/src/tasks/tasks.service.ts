@@ -185,7 +185,7 @@ export class TasksService {
       projectLead: this.projectLeadService.toDto(row),
       status: row.status,
       dueDate: row.dueDate,
-      loggedMinutes: 0,
+      loggedMinutes: row.loggedMinutes,
       createdAt: row.createdAt.toISOString(),
       updatedAt: row.updatedAt.toISOString()
     };

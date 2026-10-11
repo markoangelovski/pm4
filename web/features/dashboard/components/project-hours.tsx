@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import { FolderKanban } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ProjectIcon } from "@/features/projects/components/project-icon";
-import { routes } from "@/lib/routes";
 import { formatDuration } from "@/lib/time";
+import { routes } from "@/lib/routes";
 import type { ReportProject } from "../stats";
 
 function Name({ row }: { row: ReportProject }) {
@@ -36,17 +37,16 @@ function Name({ row }: { row: ReportProject }) {
   );
 }
 
-/** SCR-010 / FR-RPT-006: hours by project, in API order. */
-export function ProjectHours({
-  rows
-}: {
-  rows: ReportProject[];
-}): React.JSX.Element {
+/** SCR-010 / FR-RPT-006: worked hours per project in the range (API order), the booked part inside each bar. Unsorted and Non-prod can't be booked. */
+export function ProjectHours({ rows }: { rows: ReportProject[] }) {
   const max = Math.max(0, ...rows.map((r) => r.workedMinutes));
   return (
     <Card className="h-full gap-0! border rounded-md! py-0!">
       <CardHeader className="flex h-11 flex-row items-center justify-between border-b px-4 py-0! pb-0!">
-        <CardTitle className="text-sm">Hours by project</CardTitle>
+        <CardTitle className="flex items-center gap-2 text-sm">
+          <FolderKanban size={16} className="text-muted-foreground" /> Hours by
+          project
+        </CardTitle>
         <div className="flex items-center gap-3 text-xs text-muted-foreground">
           <span className="flex items-center gap-1">
             <span
@@ -79,7 +79,10 @@ export function ProjectHours({
                   ? Math.min((row.bookedMinutes / row.workedMinutes) * 100, 100)
                   : 0;
               return (
-                <li key={row.project?.id ?? `${row.kind}-${i}`} className="space-y-1.5">
+                <li
+                  key={row.project?.id ?? `${row.kind}-${i}`}
+                  className="space-y-1.5"
+                >
                   <div className="flex items-center justify-between gap-3 text-sm">
                     <Name row={row} />
                     <span className="flex shrink-0 items-baseline gap-2 tabular-nums">
