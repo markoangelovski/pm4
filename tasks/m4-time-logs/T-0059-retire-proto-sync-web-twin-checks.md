@@ -3,7 +3,7 @@ id: T-0059
 title: Retire proto-sync-web's own twin checks (AC-18, AC-19, AC-22); the twin check covers them
 milestone: M4
 app: spec
-status: review
+status: done
 size: S
 tier: opus
 depends_on: [T-0058]
