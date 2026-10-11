@@ -16,5 +16,6 @@ argument-hint: <specs/06-features/file.md | T-####>
    - `approve` → leave it in `review`. Tell the owner the feature is ready for their review. After
      reviewing, the owner sets `done` (`pm4 status <T> done`) and commits the feature.
    - `changes-requested` → `pm4 status <T> in-progress`, and offer `implement-task <T>` with the
-     findings, at the same tier, or one tier up if a finding is a design problem.
+     findings, at the same tier, or one tier up if a finding is a design problem. A finding that changes UI
+     is fixed in the prototype twin too (add it to *Files* if it isn't there), so the prototype stays ahead.
 5. Show the owner the verdict and findings. Don't commit (AGENTS.md §3).

@@ -18,17 +18,24 @@ questions · Changelog. Requirements get one ID each (`FR-<AREA>-###`, `NFR-###`
 
 ## Feature specs (`specs/06-features/`)
 1. Copy `specs/06-features/_TEMPLATE.md` and follow its comment, including the size budget.
-2. **Ground it in the code, cheaply.** Open the files you already know directly. Use `Explore`
+2. **Web UI: start from the confirmed prototype** (`specs/04-web/prototype.md`). If the feature adds or changes
+   UI and the owner hasn't confirmed and committed a prototype for it, stop and offer `prototype` first. Set
+   `prototype:` to that commit's SHA. Take the UI from the prototype files and don't restate it: list each promoted
+   file as a `P` row in *Files*, put its mock `api.ts` under *Read first*, and write in *Interfaces → Web* only the
+   delta to production (the real hooks with the mock's names and shapes, each `@/proto/mock/` import to replace,
+   auth, error mapping, URL state). The API shapes come from the prototype's `proposed-types.ts`.
+3. **Ground it in the code, cheaply.** Open the files you already know directly. Use `Explore`
    (`model: haiku`) only for wide searches. Every path in *Read first* and *Files* must exist, or be
    created by a row in *Files*.
-3. Update the layer specs it depends on first (`03-api/endpoints.md`, `03-api/data-model.md`,
+4. Update the layer specs it depends on first (`03-api/endpoints.md`, `03-api/data-model.md`,
    `04-web/screens.md`), then link their anchors. Don't copy them into the feature spec.
-4. Fill *Interfaces* until no design decision is left, and tag each subsection with its tasks.
-5. Write each edge case as an *Acceptance criteria* row with its exact expected result, test file and task.
-6. Split *Tasks* per `task-routing.md`: haiku first, sonnet or opus only on a named trigger, a one-line reason
+5. Fill *Interfaces* until no design decision is left, and tag each subsection with its tasks.
+6. Write each edge case as an *Acceptance criteria* row with its exact expected result, test file and task.
+7. Split *Tasks* per `task-routing.md`: haiku first, sonnet or opus only on a named trigger, a one-line reason
    for each, and no task smaller than a subagent context is worth. Write *Read first* and *Interfaces* so a
-   haiku task is typing: every file names the pattern it copies or has its signatures spelled out.
-7. Ask the owner about every unknown as you go (`AskUserQuestion`, batched), and record each one as
+   haiku task is typing: every file names the pattern it copies or has its signatures spelled out. A promoted
+   prototype screen is one haiku task (promote + wire), unless an opus trigger applies.
+8. Ask the owner about every unknown as you go (`AskUserQuestion`, batched), and record each one as
    `OQ-###` in `specs/open-questions.md` with its answer. The spec stays `draft` until *Open questions*
    is empty. Then set `review`, and tell the owner what to look at.
 

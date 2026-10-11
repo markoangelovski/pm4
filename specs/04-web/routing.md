@@ -3,8 +3,8 @@ id: web-routing
 title: Routing and Navigation
 status: approved
 owner: Marko Angelovski
-last_updated: 2026-10-09
-related: [web-static-export, web-screens, req-landing, req-auth, feat-land-app-route-split]
+last_updated: 2026-10-11
+related: [web-static-export, web-screens, web-prototype, req-landing, req-auth, feat-land-app-route-split, ADR-0012]
 ---
 
 # Routing and Navigation
@@ -43,6 +43,7 @@ and the client reads `id` with `useSearchParams` (inside `<Suspense>`).
 | `/app/trash` | SCR-060 Trash | required |
 | `/app/user-profile` | SCR-051 Profile (Google identity, sign out of all devices) | required |
 | `/app/settings?tab=` | SCR-050 Settings (tabs; `tab` absent = `user`: daily target, time zone) | required |
+| `/proto/app/**` | UI prototype twins of the `/app/**` routes (same params). **Dev server on localhost only**, not in the build: in production it's the not-found page (`prototype.md`, ADR-0012) | mocked (always signed in) |
 
 ## Navigation
 - Sidebar (OQ-054), in sections with a heading (shown in capitals):
@@ -119,3 +120,5 @@ and the client reads `id` with `useSearchParams` (inside `<Suspense>`).
 - 2026-10-09: Approved by the owner.
 - 2026-10-09: `/app/bookings?from=&to=` and its sidebar link under **Time** (OQ-125). Back to `review`.
 - 2026-10-09: `/app?from=&to=`, the dashboard range (OQ-130). Back to `review`.
+- 2026-10-11: `/proto/app/**` prototype routes, dev only (ADR-0012). Back to `review`.
+- 2026-10-11: Approved by the owner.

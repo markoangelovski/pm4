@@ -16,6 +16,8 @@ A feature spec links to those. It doesn't copy them.
   links are approved too. Approval can be per item: the owner may approve individual `FR-…`/`API-…`
   entries of a spec that stays `draft` for other reasons. Record that in that spec's changelog
   ("The owner approved FR-AUTH-001, … for feat-…"), which counts as approval for those items.
+- A feature with web UI is written from the owner's confirmed UI prototype (`04-web/prototype.md`, ADR-0012):
+  the spec states only the delta from prototype to production, and its web tasks promote prototype files (`P` rows).
 - Small changes don't need a feature spec: see the quick lane in `05-quality/task-routing.md#lanes`.
 - Implementers never read the whole spec. They read `node scripts/pm4.mjs brief <T-####>`, so keep
   what they need in the sections the brief includes (see the template's comment).

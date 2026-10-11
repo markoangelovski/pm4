@@ -3,8 +3,8 @@ id: web-conventions
 title: Web Conventions
 status: approved
 owner: Marko Angelovski
-last_updated: 2026-10-03
-related: [web-static-export, web-template, web-routing, qa-code-style, ADR-0009, ADR-0010, feat-land-app-route-split]
+last_updated: 2026-10-11
+related: [web-static-export, web-template, web-routing, web-prototype, qa-code-style, ADR-0009, ADR-0010, ADR-0012, feat-land-app-route-split]
 ---
 
 # Web Conventions
@@ -22,6 +22,7 @@ app/
       page.tsx                 #   dashboard `/app` (FR-RPT-*)
       projects/  project/  tasks/  task/  time/  trash/  settings/
   auth/sign-in/  auth/callback/  # outside the shell and outside `/app`
+  proto/                       # UI prototype routes `/proto/app/**`: page.dev.tsx / layout.dev.tsx, dev only (prototype.md)
 components/ui/                 # shadcn primitives (edit only for global changes)
 features/<domain>/             # projects, tasks, time, reports, trash, auth
   api.ts                       #   query-key factory + useQuery/useMutation hooks
@@ -32,6 +33,7 @@ lib/routes.ts                  # every internal route path (no hard-coded path l
 lib/auth/return-to.ts          # `returnTo` validation and the landing / sign-in / post-sign-in hrefs
 lib/time/                      # time-zone-aware helpers: today(), monthRange(), formatDuration(), parseDuration()
 lib/utils.ts
+proto/                         # UI prototype code, mirroring this tree; never imported by real code (prototype.md)
 ```
 
 ## Components (shadcn)
@@ -106,3 +108,5 @@ lib/utils.ts
 - 2026-10-02: Public endpoints get no token; only a rejected refresh signs out (OQ-067). Back to `review` (feat-auth-web-session).
 - 2026-10-03: Approved by the owner.
 - 2026-10-03: Links styled as buttons are a plain `<Link>` with `buttonVariants(...)`, never a Base UI button part's `render` (dev console warning on the landing page; `nativeButton={false}` would give the link `role="button"`; T-0032).
+- 2026-10-11: `app/proto/` and `proto/`: the dev-only UI prototype (ADR-0012). Back to `review`.
+- 2026-10-11: Approved by the owner.

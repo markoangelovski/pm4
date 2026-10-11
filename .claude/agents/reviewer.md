@@ -21,10 +21,13 @@ your effort on judgment.
    - *Interfaces* and every *Acceptance criteria* row, especially cases the tests check weakly;
    - risks: user scoping and cross-user `404`, token handling, storage rules, time semantics,
      static-export constraints, concurrency;
+   - promoted prototype files (`P` rows): diff each against its prototype twin
+     (`git diff --no-index web/proto/<path> web/<path>`). They may differ only in the data wiring the spec lists;
+     any other UI difference is drift. No production file imports `@/proto/*`;
    - the non-⚙ items of `specs/05-quality/definition-of-done.md`.
 4. Manual ACs (`manual` in the table): say what the owner must verify by hand.
 
 Output:
 - **Verdict:** `approve` or `changes-requested`, per task.
-- **Findings:** numbered, each with its task, severity (blocker / major / minor), evidence (`file:line` or command output) and a suggested fix.
+- **Findings:** numbered, each with its task, severity (blocker / major / minor), evidence (`file:line` or command output) and a suggested fix. A fix that changes UI names both the production file and its prototype twin (the prototype stays ahead).
 - **Tier feedback:** one line per task on whether its tier was right.

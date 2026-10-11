@@ -17,6 +17,9 @@ yourself unless something goes wrong. The script and the subagent's report are e
 
 ## 2. Delegate
 - `node scripts/pm4.mjs status $ARGUMENTS in-progress`.
+- `node scripts/pm4.mjs promote $ARGUMENTS`. It copies the task's prototype files (`P` rows) into place and
+  prints what's left for the implementer; it does nothing for a task without `P` rows. On a retry, skip it
+  (the files are already there).
 - `app: api` → `api-engineer`, `app: web` → `web-engineer`, with `model` = the task's `tier`.
   `infra`/`spec` tasks: do them yourself, or ask the owner.
 - Prompt: "Implement `$ARGUMENTS`. Follow your agent instructions. Never stage, commit or push." On a

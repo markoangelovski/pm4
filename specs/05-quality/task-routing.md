@@ -3,8 +3,8 @@ id: qa-task-routing
 title: Task Routing and Escalation
 status: review
 owner: Marko Angelovski
-last_updated: 2026-10-04
-related: [qa-testing, qa-dod, feat-template]
+last_updated: 2026-10-11
+related: [qa-testing, qa-dod, feat-template, web-prototype, ADR-0012]
 ---
 
 # Task Routing and Escalation
@@ -18,7 +18,12 @@ typing, and scripts (`scripts/pm4.mjs`) do the bookkeeping.
 | Lane | Use when | Flow |
 | --- | --- | --- |
 | **Quick** | One app, ≤ 3 files, size S. The behavior is already in an approved spec, or it's a bug fix with an obvious expected result, or tooling/docs. No new pattern, no auth/security logic, no contract or schema change | The main session writes a quick-lane task file (`tasks/_TEMPLATE.md`) → `implement-task` → `pm4 check` → the owner reviews the diff. No feature spec, no Opus review (unless the tier is opus) |
-| **Feature** | Everything else | `write-spec` → owner approves → `write-task` (`pm4 tasks`) → `write-acceptance-tests` (+ `pm4 hash`) → owner commits → `implement-task` per task → `review-feature` → owner commits |
+| **Feature** | Everything else | *(web UI only)* `prototype` → owner confirms → owner commits → `write-spec` → owner approves → `write-task` (`pm4 tasks`) → `write-acceptance-tests` (+ `pm4 hash`) → owner commits → `implement-task` per task (`pm4 promote` first) → `review-feature` → owner commits |
+
+**Prototype first.** A feature that adds or changes web UI starts in the UI prototype
+(`specs/04-web/prototype.md`), including later changes to screens already promoted: the prototype stays ahead
+of the app. API-only features, and quick-lane changes with no visible UI change, skip it. A quick-lane change
+that does change UI is made in the prototype twin too (both files in the task's `files:`).
 
 If the main session already has the files in context and the change is a few lines, it makes the
 change itself. Delegating costs a fresh subagent context, which is more than the change.
@@ -26,11 +31,11 @@ change itself. Delegating costs a fresh subagent context, which is more than the
 ## Roles
 | Role | Model | Does |
 | --- | --- | --- |
-| Main session | opus | Specs, acceptance tests and quick-lane task files (inline, so it can ask the owner directly); orchestrates `implement-task` |
+| Main session | opus | The UI prototype (with the owner), specs, acceptance tests and quick-lane task files (inline, so it can ask the owner directly); orchestrates `implement-task` |
 | Implementer | tier on the task | Code for one task (`api-engineer` / `web-engineer`), from `pm4 brief` |
 | Reviewer | opus | One review per feature: the diff against the spec, risks, DoD |
 | Explorer | haiku (built-in `Explore`) | Wide codebase searches only. Read a known file directly |
-| `scripts/pm4.mjs` | — | Task files, BOARD, hashes, readiness, briefs, scope check, gates |
+| `scripts/pm4.mjs` | — | Task files, BOARD, hashes, readiness, briefs, prototype promotion, scope check, gates |
 
 ## Choosing a tier
 **Haiku first.** Every task starts at `haiku` unless one of the triggers below applies. Escalation
@@ -48,6 +53,9 @@ Rules of thumb:
 - When a pattern appears for the first time, make it its own (opus) task. Later tasks copy it at haiku.
 - Don't split below what one subagent context handles well: every task costs a fresh context
   (roughly 10–15k tokens before any work). Two small edits to the same files are one task.
+- **Promoting a confirmed prototype screen is haiku** ("promote `proto/…`; wire per *Interfaces*"): the
+  prototype made the UI decisions, and the spec lists the delta. One task per screen (promote + wire), not
+  separate UI and data tasks. An opus trigger in the wiring (e.g. the first `api.ts` of a domain) still applies.
 - A contract change is two tasks: the `api` task (exports `openapi.json`), then a `web` task that depends on it.
 - Write a one-line reason next to every tier: for haiku, the pattern it copies (e.g. "copy `x.dto.ts`");
   for sonnet or opus, the trigger.
@@ -73,3 +81,4 @@ The implementer stops and returns one of:
   review per feature. `BLOCKED: test`. Each `FAILED` climbs one tier. Mechanical steps moved to `scripts/pm4.mjs`.
 - 2026-10-04: Haiku first. Every task starts at haiku unless an opus or sonnet trigger applies; the
   file-count and size limits on haiku are gone. Escalation unchanged.
+- 2026-10-11: Prototype first for web UI (ADR-0012); promoting a confirmed prototype screen is a haiku task.

@@ -7,6 +7,7 @@
 //   node scripts/pm4.mjs ready  <T-####>             can this task start? (spec approved, deps, tests, hashes)
 //   node scripts/pm4.mjs status <T-####> <status>    set status in the task file and BOARD, unblock dependents
 //   node scripts/pm4.mjs brief  <T-####>             the slice of the feature spec an implementer needs
+//   node scripts/pm4.mjs promote <T-####>            copy the task's prototype files (Files rows marked P) into place
 //   node scripts/pm4.mjs check  <T-####> [--no-gates]          scope, hashes, gates, spec checks for one task
 //   node scripts/pm4.mjs check  --feature <spec> [--no-gates]  the same for a whole feature (review)
 //
@@ -241,12 +242,14 @@ function loadSpec(specPath) {
     const cApp = col(ft, "App");
     const cFile = col(ft, "File");
     const cTask = col(ft, "Task");
+    const cKind = col(ft, "C/M");
     ft.rows.forEach((r, i) => {
       const app = r[cApp];
       const paths = codeSpans(r[cFile])
         .filter((s) => s.includes("/") || s.includes("."))
         .map((s) => (app && !s.startsWith(`${app}/`) && !s.startsWith(".") ? `${app}/${s}` : s));
-      files.push({ tasks: taskRefs(r[cTask]), tests: /test/i.test(r[cTask]), paths, line: ft.rowLines[i] });
+      const kind = cKind >= 0 ? (r[cKind] ?? "").trim().toUpperCase() : "";
+      files.push({ tasks: taskRefs(r[cTask]), tests: /test/i.test(r[cTask]), kind, paths, line: ft.rowLines[i] });
     });
   }
 
@@ -607,6 +610,47 @@ function cmdBrief(id) {
   console.log(out.join("\n"));
 }
 
+// Promotion (specs/04-web/prototype.md): copy each prototype file of the task's P rows to its production path,
+// rewriting "@/proto/…" imports to "@/…" (except "@/proto/mock/…", which only the implementer can replace).
+// An existing target is never overwritten: the spec says how to apply prototype changes to it.
+const PROTO_IMPORT = /(["'])@\/proto\/(?!mock\/)/g;
+
+function cmdPromote(id) {
+  const t = loadTask(id);
+  if (!t.spec) die(`${t.id} has no feature_spec; nothing to promote`);
+  const spec = loadSpec(t.spec);
+  const rows = spec.files.filter((f) => f.kind === "P" && f.tasks.includes(t.row));
+  if (!rows.length) {
+    console.log(`${t.id}: no prototype files to promote`);
+    return;
+  }
+  let problems = 0;
+  for (const f of rows) {
+    const [src, dst] = f.paths;
+    if (f.paths.length !== 2 || !/\/(app\/)?proto\//.test(src) || /\/(app\/)?proto\//.test(dst) || /\.dev\.tsx?$/.test(dst)) {
+      console.log(`BAD ROW (expected \`proto/…\` → \`<production path>\`): ${f.line.trim()}`);
+      problems++;
+      continue;
+    }
+    if (!exists(src)) {
+      console.log(`MISSING ${src}`);
+      problems++;
+      continue;
+    }
+    if (exists(dst)) {
+      console.log(`exists   ${dst} (not overwritten: apply the prototype change per Interfaces)`);
+      continue;
+    }
+    const code = read(src).replace(PROTO_IMPORT, "$1@/");
+    fs.mkdirSync(path.dirname(path.resolve(ROOT, dst)), { recursive: true });
+    write(dst, code);
+    const left = code.split("\n").flatMap((l, i) => (/["']@\/proto\//.test(l) ? [`    ${dst}:${i + 1}  ${l.trim()}`] : []));
+    console.log(`promoted ${src} → ${dst}`);
+    if (left.length) console.log(`  still imports the prototype (replace per Interfaces):\n${left.join("\n")}`);
+  }
+  if (problems) process.exit(1);
+}
+
 function gitChanged() {
   const r = spawnSync("git", ["status", "--porcelain=v1", "-uall", "-z"], { cwd: ROOT, encoding: "utf8" });
   const parts = r.stdout.split("\0").filter(Boolean);
@@ -768,10 +812,13 @@ switch (cmd) {
   case "brief":
     cmdBrief(args[0] ?? die("usage: brief <T-####>"));
     break;
+  case "promote":
+    cmdPromote(args[0] ?? die("usage: promote <T-####>"));
+    break;
   case "check":
     cmdCheck(args);
     break;
   default:
-    console.log(fs.readFileSync(fileURLToPath(import.meta.url), "utf8").split("\n").slice(1, 13).join("\n").replace(/^\/\/ ?/gm, ""));
+    console.log(fs.readFileSync(fileURLToPath(import.meta.url), "utf8").split("\n").slice(1, 14).join("\n").replace(/^\/\/ ?/gm, ""));
     process.exit(cmd ? 2 : 0);
 }

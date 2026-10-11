@@ -20,6 +20,7 @@ single-user-per-account project management app. Users create **projects** and **
 | `tasks/` | Implementation backlog (`BOARD.md` = index) | — |
 | `scripts/pm4.mjs` | Workflow helper: task files, hashes, briefs, scope check and gates (`node scripts/pm4.mjs`) | — |
 | `web/` | Frontend: Next.js static export + shadcn (own `AGENTS.md`) | GitHub Pages (`https://pm4.angelovski.top`) |
+| `web/proto/`, `web/app/proto/` | UI prototype at `/proto/app/**`: mocked session and data, dev server only (ADR-0012) | never deployed |
 | `api/` | Backend: NestJS + Drizzle (own `AGENTS.md`) | Azure Web App (`*.azurewebsites.net`) |
 | `.github/workflows/` | `ci.yml` (PR checks), `web-deploy.yml`, `api-deploy.yml` (path-filtered + manual) | — |
 | `frontend_old/`, `backend_old/` | **Legacy** PM4 (own git repos, git-ignored). **Read-only reference.** | — |
@@ -58,6 +59,9 @@ behavior. Add an entry to `specs/open-questions.md` and ask the user (implemente
 - **Frontend is a static site** (`output: "export"`) on GitHub Pages, served from the domain root.
   There is no Node server at runtime: no Route Handlers, Server Actions, middleware/proxy, ISR,
   `cookies()`/`headers()`, image optimization or request-time rendering. → `specs/04-web/static-export.md`
+- **The UI prototype never reaches production.** Real code never imports `@/proto/*`, prototype routes are
+  `page.dev.tsx` files that `next build` ignores, and the build fails on any prototype trace in `out/`.
+  → `specs/04-web/prototype.md`
 - **The backend owns all data and business rules.** Postgres (Neon) through Drizzle. Redis (Redis Cloud)
   for sessions, OAuth state and rate limiting. → `specs/02-architecture/system-overview.md`
 - **Cross-site auth.** The web app and the API are different sites, so there are no cookie sessions.
@@ -109,18 +113,19 @@ These apply to every agent implementing a task, whatever its model.
 
 ## 6. Workflow
 
-Spec → acceptance tests → implement → review. Small changes take the **quick lane** (a task file,
-no feature spec, no Opus review). Details: `specs/05-quality/task-routing.md#lanes`.
+Prototype (web UI) → spec → acceptance tests → implement → review. Small changes take the **quick lane** (a
+task file, no feature spec, no Opus review). Details: `specs/05-quality/task-routing.md#lanes`.
 
 | Step | Who | Skill |
 | --- | --- | --- |
+| *Web UI only:* build the screen in the UI prototype until the owner confirms it, then **owner commits** | Main session (Opus) with the owner | `prototype` |
 | Write the feature spec (reads code first; no open questions left) | Main session (Opus), owner approves | `write-spec` |
 | Create task files from the spec's task list | Script (`pm4 tasks`) | `write-task` |
 | Write the acceptance tests (+ typed stubs), then **owner commits** | Main session (Opus) | `write-acceptance-tests` |
-| Implement each task | Tier on the task: Haiku / Sonnet / Opus | `implement-task` |
+| Implement each task (`pm4 promote` copies confirmed prototype files first) | Tier on the task: Haiku / Sonnet / Opus | `implement-task` |
 | Review the whole feature, then **owner commits** | Opus reviewer | `review-feature` |
 
-Commit points keep each diff reviewable: the working tree is clean before the first task, tasks of
+Commit points keep each diff reviewable: the confirmed prototype is its own commit, the working tree is clean before the first task, tasks of
 one feature build up uncommitted (`pm4 check` allows earlier tasks' files), and the owner commits the
 feature after the review.
 
@@ -140,4 +145,5 @@ Contract: `api/` → `npm run openapi:export`; `web/` → `npm run api:types`. B
 **Project**: a container for tasks. **Task**: a unit of work in a project. **Workday**: a user's
 calendar day, with an optional start time. **Time log**: one block of work on a date (duration +
 required note + task/project link), ordered by position and shown sequentially or grouped by project.
-**Trash**: soft-deleted projects and tasks, purged after 31 days. Full glossary: `specs/00-product/glossary.md`.
+**Trash**: soft-deleted projects and tasks, purged after 31 days. **Prototype**: the dev-only, mock-backed twin
+of the app at `/proto/app/**`, where UI is decided before it's specified. Full glossary: `specs/00-product/glossary.md`.

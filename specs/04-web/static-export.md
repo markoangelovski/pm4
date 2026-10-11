@@ -3,8 +3,8 @@ id: web-static-export
 title: Static Export Constraints
 status: approved
 owner: Marko Angelovski
-last_updated: 2026-10-02
-related: [ADR-0001, web-template, web-routing, arch-deployment]
+last_updated: 2026-10-11
+related: [ADR-0001, ADR-0012, web-template, web-routing, web-prototype, arch-deployment]
 ---
 
 # Static Export Constraints
@@ -36,6 +36,12 @@ docs:
   `cacheComponents`, so it's out too. Neither is in the baseline above.
 - `reactCompiler` (with `experimental.turbopackRustReactCompiler`) **works**: the build succeeds
   and the served `out/` renders correctly. Kept in the baseline above.
+
+## Prototype routes stay out of the build (ADR-0012)
+`next.config.ts` exports a function of the build phase. Only in `PHASE_DEVELOPMENT_SERVER` does it add the
+`dev.tsx` page extension (`pageExtensions: ["tsx", "ts", "dev.tsx"]`, otherwise `["tsx", "ts"]`), so the
+prototype's `page.dev.tsx` / `layout.dev.tsx` files are routes in `next dev` and ignored by `next build`.
+Never give a `/proto` route a plain `page.tsx`. Details: `prototype.md#separation-no-trace-in-production`.
 
 ## URLs without trailing slashes (OQ-050)
 `trailingSlash: false` makes the export write `out/<route>.html` (the dashboard is `out/app.html`), and
@@ -80,6 +86,7 @@ user-specific is fetched at build time.
 1. `npm run build` succeeds and produces `out/`.
 2. Serve `out/` statically from the root (e.g. `npx serve out`, which serves `x.html` at `/x` like Pages), then hard-refresh on a deep route
    (e.g. `/app/project?id=…`): the page loads, with no 404 and no missing assets.
+3. The build's `postbuild` check passes: no `out/proto`, and no `pm4-proto-only` marker anywhere in `out/` (`prototype.md`).
 
 ## Open questions
 —
@@ -100,3 +107,5 @@ user-specific is fetched at build time.
 - 2026-10-01: OQ-050: no trailing slashes (`trailingSlash: false`); detail routes `/app/project?id=` and `/app/task?id=`. Back to `review` (feat-land-app-route-split).
 - 2026-10-01: Approved by the owner.
 - 2026-10-02: Known risk widened from `/app` to every page (Next writes route data into `out/<route>/`), found at T-0008.
+- 2026-10-11: Prototype routes are dev-only page extensions; the build checks that no prototype code ships (ADR-0012). Back to `review`.
+- 2026-10-11: Approved by the owner.

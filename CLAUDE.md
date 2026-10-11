@@ -27,6 +27,7 @@ editing acceptance tests, specs, agent config, the board and the other app.
 
 ### Skills (`.claude/skills/` → symlink to `.agents/skills/`)
 
+- `prototype`: build or change a screen in the UI prototype with the owner, in the main session (Opus)
 - `write-spec`: create or update a spec. Feature specs use `specs/06-features/_TEMPLATE.md`
 - `write-task <feature-spec>`: create task files from an approved feature spec (runs `pm4 tasks`)
 - `write-acceptance-tests <feature-spec>`: the test-first step (ends with `pm4 hash`)
@@ -36,6 +37,7 @@ editing acceptance tests, specs, agent config, the board and the other app.
 ### Conventions for Claude
 
 - Inside `web/` or `api/`, also follow that folder's `AGENTS.md`.
+- Build the UI prototype inline in the main session (no subagent). Open only the screen's prototype files.
 - Run `implement-task` from the main session (Opus). It orchestrates; the subagent does the coding.
 - Keep the orchestrator lean: don't read the feature spec during `implement-task` unless a task fails.
   The `pm4` output and the subagent's report are enough.

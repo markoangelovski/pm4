@@ -19,6 +19,9 @@ Rules:
 - Static export only: no Route Handlers, Server Actions, middleware, `[id]` segments or request-time
   data. Check `web/node_modules/next/dist/docs/` before using a Next API you're unsure of.
 - Components use hooks from `features/<domain>/api.ts`, never `fetch`. Dates go through `lib/time`.
+- Promoted files (`P` rows) are already copied from the prototype. Change only the delta the brief lists
+  (mainly the remaining `@/proto/mock/` imports). Keep markup, copy and structure as promoted. Never import
+  `@/proto/*` from production code.
 - If the UI needs something the API doesn't offer → `BLOCKED: spec`. Don't work around it.
 - Never edit acceptance tests (`*.ac.*`), specs or `.claude/`. You may add ordinary `*.test.ts(x)` tests.
 - Don't add, remove or upgrade dependencies (the shadcn CLI installing a component's own deps is fine).

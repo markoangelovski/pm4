@@ -12,6 +12,7 @@ Either way, fix the disagreement. Never ignore it.
 | Implementing an API task | Task file → `03-api/*` → relevant `01-requirements/*` → `02-architecture/security.md` |
 | Implementing a web task | Task file → `04-web/static-export.md` → `04-web/*` → relevant `01-requirements/*` → `03-api/endpoints.md` |
 | Implementing a task from a feature spec | Task file → its feature spec in `06-features/` → only the files under its *Read first* |
+| Building a UI prototype | `04-web/prototype.md` → `04-web/conventions.md` → `04-web/screens.md` |
 | Writing specs | This file → `open-questions.md` → the spec you are changing |
 
 ## Index and status
@@ -48,6 +49,7 @@ Either way, fix the disagreement. Never ignore it.
 | Web conventions | [04-web/conventions.md](04-web/conventions.md) | approved |
 | Routing and navigation | [04-web/routing.md](04-web/routing.md) | approved |
 | Screens | [04-web/screens.md](04-web/screens.md) | approved |
+| UI prototype | [04-web/prototype.md](04-web/prototype.md) | approved |
 | Testing strategy | [05-quality/testing.md](05-quality/testing.md) | draft |
 | Code style | [05-quality/code-style.md](05-quality/code-style.md) | draft |
 | Definition of Done | [05-quality/definition-of-done.md](05-quality/definition-of-done.md) | review |

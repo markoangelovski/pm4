@@ -12,6 +12,10 @@ Next.js (App Router) built as a **static export** (`output: "export"`) and deplo
 Pages at the domain root. There is **no Node server at runtime**. All data comes from the NestJS
 API (`../api/`) over `NEXT_PUBLIC_API_BASE_URL`, fetched in the browser.
 
+It also holds the **UI prototype** (ADR-0012, `../specs/04-web/prototype.md`): twins of the app screens at
+`/proto/app/**`, backed by a mocked session and in-memory data, served by `next dev` only. UI is built and
+confirmed there first, then promoted into the real app.
+
 Base: the `next-shadcn-dashboard` template (ADR-0005), adapted in T-0002 — demo features, the
 Route Handlers, SWR and the template's own contexts are gone; the shell (sidebar, header, theme)
 stays.
@@ -37,6 +41,7 @@ app/
   layout.tsx                    # root layout: metadata (noindex), ThemeProvider, QueryProvider
   page.tsx                       # public landing page `/` (SCR-003), own header, no sidebar
   auth/sign-in/  auth/callback/  # outside the authenticated shell
+  proto/                         # prototype routes /proto/app/**: layout.dev.tsx + app/<route>/page.dev.tsx (dev only)
   (dashboard-layout)/            # authenticated shell (sidebar + header), wraps `/app/**` only
     layout.tsx                   #   wraps the shell in AuthGuard (features/auth)
     app/                         #   the `/app` URL segment
@@ -60,6 +65,8 @@ features/<domain>/               # data-driven work per conventions.md: api.ts (
                                   # schemas.ts (zod), components/. First one: features/system/
                                   # (API version query + VersionBadge); features/auth/ (AuthGuard,
                                   # AuthCallback, SignInState, useSignOut); add domains as implemented
+proto/                           # UI prototype, mirroring this tree (proto/features/<domain>/…, proto/lib/routes.ts);
+                                  # proto/features/<domain>/api.ts = mock hooks; proto/mock/ = session, store, seed, shell
 ```
 
 ## Rules specific to this app
@@ -76,6 +83,10 @@ Full detail: `../specs/04-web/static-export.md` and `../specs/04-web/conventions
 - **Data layer.** Hooks and query-key factories live in `features/<domain>/api.ts`. Mutations
   invalidate the precise keys they affect. `lib/api/schema.d.ts` is generated (`npm run api:types`)
   from `../api/openapi.json`; never edit it by hand. Auth headers and refresh-on-401 go in `lib/api/client.ts` only (M1).
+- **Prototype.** Production code never imports `@/proto/*` (ESLint enforces it); the prototype never imports
+  `@/features/*`, `@/lib/api/client` or `@/lib/auth/*`. A promoted file starts as an exact copy of its prototype
+  twin (`node ../scripts/pm4.mjs promote <T-####>` made it): change only what the brief's delta lists, mainly
+  replacing `@/proto/mock/…` imports. Keep the markup, copy and structure as promoted.
 - **Time.** Work dates are `YYYY-MM-DD` strings, handled as calendar arithmetic (see the comments in
   `lib/time/index.ts`). Keep the Europe/Zagreb midnight and DST cases in `lib/time/index.test.ts`.
 
@@ -118,11 +129,14 @@ The **first** of each pattern becomes the reference; its task is opus or sonnet
 | Typed stub for unwritten code | `lib/time/index.ts` → `parseDuration` | Signature + `throw new Error("not implemented (…)")` |
 | Component test with router mocks | `app/components/shared/view-id-guard.test.tsx` | `vi.mock("next/navigation", …)` |
 | shadcn polymorphism | any `components/ui/*.tsx` | Base UI's `render={<X />}`, not `asChild` |
+| Promoted prototype component | its twin under `proto/` (the brief's `P` rows) | Same exports and hook calls; the real `features/<domain>/api.ts` has the mock's names and shapes |
 
 ## Never
 - Never edit `*.ac.test.ts(x)` (acceptance tests) unless you are the test writer.
 - Never hand-write or copy code into `components/ui/`. Use `npx shadcn@latest add`.
 - Never call `fetch` or `apiClient` from a component. Never compute a date with `toISOString()`.
+- Never import `@/proto/*` outside `proto/` and `app/proto/`. Never name a `/proto` route file `page.tsx` or
+  `layout.tsx` (only `*.dev.tsx`), and never put prototype mocks into a production path.
 - Never add `route.ts`, Server Actions, middleware or `[param]` segments. Never add a Next config
   option without a static-export build check.
 - Never edit `lib/api/schema.d.ts` by hand. Run `npm run api:types`.
