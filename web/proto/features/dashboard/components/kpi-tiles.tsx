@@ -16,6 +16,7 @@ import {
 } from "@/proto/features/tasks/status";
 import { formatClock } from "@/lib/time/clock";
 import { routes } from "@/proto/lib/routes";
+import type { TaskCounts } from "../api";
 import type { Totals } from "../stats";
 
 const BAR: Record<(typeof TASK_STATUSES)[number], string> = {
@@ -59,12 +60,6 @@ function Tile({
   ) : (
     body
   );
-}
-
-export interface TaskCounts {
-  upcoming: number;
-  "in-progress": number;
-  completed: number;
 }
 
 const DASH = "—";

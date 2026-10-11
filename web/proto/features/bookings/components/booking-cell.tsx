@@ -2,11 +2,13 @@
 
 import { useState } from "react";
 import { BookmarkCheck, Check, Pencil, X } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { DateField } from "@/proto/features/time/components/date-field";
-import { useBookingActions } from "@/proto/mock/hooks";
 import { formatWorkDate } from "@/lib/time";
 import { cn } from "@/lib/utils";
+import { useSetBooking } from "../api";
+import type { BookingLog } from "../days";
 
 /** Dark green when a log is booked to the day it was worked, dark yellow when booked to another day. */
 export const bookedTone = (sameDay: boolean) =>
@@ -14,21 +16,21 @@ export const bookedTone = (sameDay: boolean) =>
     ? "text-green-700 dark:text-green-400"
     : "text-yellow-700 dark:text-yellow-500";
 
-/** A log's booking: pick a date and Book it, or (once booked) edit the date or remove the booking. */
-export function BookingCell({
-  logId,
-  workDate,
-  bookingDate,
-  max
-}: {
-  logId: string;
-  workDate: string;
-  bookingDate: string | null;
-  max: string;
-}) {
-  const { book, unbook } = useBookingActions();
+/** A bookable log's booking (FR-BOOK-004): pick a date and Book it, or (once booked) edit the date or remove the booking. Changes save at once. */
+export function BookingCell({ log, max }: { log: BookingLog; max: string }) {
+  const set = useSetBooking();
+  const { workDate, bookingDate } = log;
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(bookingDate ?? workDate);
+
+  const save = (date: string | null, onDone?: () => void) =>
+    set.mutate(
+      { logIds: [log.id], bookingDate: date },
+      {
+        onSuccess: onDone,
+        onError: () => toast.error("Couldn't save the booking.")
+      }
+    );
 
   if (bookingDate && !editing) {
     return (
@@ -48,6 +50,7 @@ export function BookingCell({
             size="icon-sm"
             className="cursor-pointer"
             aria-label="Edit booking date"
+            disabled={set.isPending}
             onClick={() => {
               setDraft(bookingDate);
               setEditing(true);
@@ -60,7 +63,8 @@ export function BookingCell({
             size="icon-sm"
             className="cursor-pointer"
             aria-label="Remove booking"
-            onClick={() => unbook(logId)}
+            disabled={set.isPending}
+            onClick={() => save(null, () => setDraft(workDate))}
           >
             <X />
           </Button>
@@ -80,10 +84,8 @@ export function BookingCell({
             size="icon"
             className="cursor-pointer"
             aria-label="Save booking date"
-            onClick={() => {
-              book(logId, draft);
-              setEditing(false);
-            }}
+            disabled={set.isPending}
+            onClick={() => save(draft, () => setEditing(false))}
           >
             <Check />
           </Button>
@@ -92,6 +94,7 @@ export function BookingCell({
             variant="outline"
             className="cursor-pointer"
             aria-label="Cancel"
+            disabled={set.isPending}
             onClick={() => setEditing(false)}
           >
             <X />
@@ -100,7 +103,8 @@ export function BookingCell({
       ) : (
         <Button
           className="cursor-pointer rounded-md!"
-          onClick={() => book(logId, draft)}
+          disabled={set.isPending}
+          onClick={() => save(draft)}
         >
           Book
         </Button>

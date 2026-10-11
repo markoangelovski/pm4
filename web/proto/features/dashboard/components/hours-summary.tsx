@@ -1,6 +1,12 @@
 "use client";
 
-import { CircleCheck, Hourglass, Scale, TrendingUp } from "lucide-react";
+import {
+  CircleCheck,
+  Hourglass,
+  Scale,
+  Target,
+  TrendingUp
+} from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatDuration } from "@/lib/time";
 import { cn } from "@/lib/utils";
@@ -168,15 +174,19 @@ export function HoursSummary({
             diff >= 0 && "bg-primary/5"
           )}
         >
-          {diff >= 0 ? (
+          {t.workdays > 0 && diff === 0 ? (
+            <Target className="size-4 shrink-0" />
+          ) : diff >= 0 ? (
             <TrendingUp className="size-4 shrink-0" />
           ) : (
             <Hourglass className="size-4 shrink-0 text-amber-600 dark:text-amber-400" />
           )}
           <span>
-            {t.target === 0 ? (
+            {t.workdays === 0 ? (
               "No workdays in this range yet."
-            ) : diff >= 0 ? (
+            ) : diff === 0 ? (
+              "On target"
+            ) : diff > 0 ? (
               <>
                 <span className="font-semibold">{hours(diff)}</span> over target
               </>

@@ -22,6 +22,7 @@ import { formatWorkDate } from "@/lib/time";
 import {
   PRESET_LABELS,
   RANGE_PRESETS,
+  isRangeTooLong,
   matchPreset,
   presetRange,
   type DateRange,
@@ -38,21 +39,23 @@ const ITEMS = [
   { value: CUSTOM, label: "Custom range" }
 ];
 
-/** A preset select (This month by default) and the range as a calendar popover; the calendar applies a custom range. */
+/** The range control (SCR-010): a preset select (This month by default) and the range as a calendar popover; the calendar applies a custom range of at most 366 days (OQ-130). */
 export function RangePicker({
   value,
   today,
-  timeZone,
   onChange
 }: {
   value: DateRange;
   today: string;
-  timeZone: string;
   onChange: (range: DateRange) => void;
 }) {
-  const preset = matchPreset(value, today, timeZone);
+  const preset = matchPreset(value, today);
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState<DayPickerRange | undefined>();
+  const start = draft?.from ? iso(draft.from) : null;
+  const end = draft?.from ? iso(draft.to ?? draft.from) : null;
+  const tooLong =
+    start !== null && end !== null && isRangeTooLong({ from: start, to: end });
 
   const openCalendar = (o: boolean) => {
     if (o) setDraft({ from: parseISO(value.from), to: parseISO(value.to) });
@@ -66,7 +69,7 @@ export function RangePicker({
         value={preset ?? CUSTOM}
         onValueChange={(v) => {
           if (v === CUSTOM) openCalendar(true);
-          else if (v) onChange(presetRange(v as RangePreset, today, timeZone));
+          else if (v) onChange(presetRange(v as RangePreset, today));
         }}
       >
         <SelectTrigger aria-label="Time range" className="w-40 cursor-pointer">
@@ -110,19 +113,19 @@ export function RangePicker({
           />
           <div className="flex items-center justify-between gap-2 border-t p-3">
             <span className="text-sm text-muted-foreground">
-              {draft?.from ? formatWorkDate(iso(draft.from)) : "Start date"} –{" "}
+              {start ? formatWorkDate(start) : "Start date"} –{" "}
               {draft?.to ? formatWorkDate(iso(draft.to)) : "End date"}
+              {tooLong ? (
+                <span className="block">Pick at most 366 days.</span>
+              ) : null}
             </span>
             <Button
               size="sm"
               className="cursor-pointer"
-              disabled={!draft?.from}
+              disabled={!start || tooLong}
               onClick={() => {
-                if (!draft?.from) return;
-                onChange({
-                  from: iso(draft.from),
-                  to: iso(draft.to ?? draft.from)
-                });
+                if (!start || !end || tooLong) return;
+                onChange({ from: start, to: end });
                 setOpen(false);
               }}
             >

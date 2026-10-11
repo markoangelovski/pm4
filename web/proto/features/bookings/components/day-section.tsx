@@ -13,13 +13,13 @@ import {
   type Row
 } from "@tanstack/react-table";
 import { BookmarkCheck, ChevronRight, ListTodo } from "lucide-react";
+import { toast } from "sonner";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger
 } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
-import { useBookingActions } from "@/proto/mock/hooks";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   Table,
@@ -33,8 +33,28 @@ import { ProjectIcon } from "@/proto/features/projects/components/project-icon";
 import { formatDuration, formatWorkDate } from "@/lib/time";
 import { routes } from "@/proto/lib/routes";
 import { cn } from "@/lib/utils";
-import type { BookingRow, DayFigures } from "../month";
+import { useSetBooking } from "../api";
+import type { BookingDay, BookingEntry, BookingGroup } from "../days";
 import { BookingCell, bookedTone } from "./booking-cell";
+
+/** A table row: one group of the day (a project, Unsorted or Non-prod) with its log rows as `subRows`, or one log row. */
+interface BookingRow {
+  id: string;
+  group: BookingGroup;
+  entry?: BookingEntry;
+  subRows?: BookingRow[];
+}
+
+const rowsOf = (day: BookingDay): BookingRow[] =>
+  day.groups.map((group) => ({
+    id: `${day.workDate}:${group.key}`,
+    group,
+    subRows: group.entries.map((entry) => ({
+      id: entry.incoming ? `${day.workDate}:in:${entry.log.id}` : entry.log.id,
+      group,
+      entry
+    }))
+  }));
 
 const hours = (minutes: number) =>
   minutes === 0 ? "0h" : formatDuration(minutes);
@@ -74,7 +94,7 @@ function Stat({
 
 /** A log's task: the task icon and an underlined link (deleted tasks are plain text). */
 function LogTask({ row }: { row: BookingRow }) {
-  const task = row.log?.task;
+  const task = row.entry?.log.task;
   if (!task) return <span className="text-muted-foreground">—</span>;
   return (
     <span className="flex items-center gap-1.5">
@@ -95,23 +115,24 @@ function LogTask({ row }: { row: BookingRow }) {
   );
 }
 
-/** Books every unbooked log of the project's day to that day. Null when there is nothing to book. */
-function BookAllButton({ row }: { row: BookingRow }) {
-  const { bookMany } = useBookingActions();
-  const unbooked =
-    row.group === "project"
-      ? (row.subRows ?? []).filter(
-          (l) => l.log && !l.incomingFrom && !l.bookingDate
-        )
-      : [];
-  if (!unbooked.length) return null;
+/** Books every unbooked log of the project's day to that day (FR-BOOK-005). Null when there is nothing to book. */
+function BookAllButton({
+  group,
+  workDate
+}: {
+  group: BookingGroup;
+  workDate: string;
+}) {
+  const set = useSetBooking();
+  if (group.kind !== "project" || !group.unbookedIds.length) return null;
   return (
     <Button
       className="shrink-0 cursor-pointer rounded-md!"
+      disabled={set.isPending}
       onClick={() =>
-        bookMany(
-          unbooked.map((l) => l.log!.id),
-          unbooked[0].log!.workDate
+        set.mutate(
+          { logIds: group.unbookedIds, bookingDate: workDate },
+          { onError: () => toast.error("Couldn't save the booking.") }
         )
       }
     >
@@ -120,8 +141,41 @@ function BookAllButton({ row }: { row: BookingRow }) {
   );
 }
 
+const GROUP_TITLES = { unsorted: "Unsorted", nonprod: "Non-prod" } as const;
+
+/** The group's name: a live project links to its page; a deleted one is plain text with "(deleted)"; Unsorted and Non-prod have no icon. */
+function GroupName({ group }: { group: BookingGroup }) {
+  if (group.kind !== "project")
+    return (
+      <span className="truncate font-medium">{GROUP_TITLES[group.kind]}</span>
+    );
+  const project = group.project!;
+  if (!project.id || project.deleted)
+    return (
+      <span className="truncate font-medium">
+        {project.title}{" "}
+        <span className="font-normal italic text-muted-foreground">
+          (deleted)
+        </span>
+      </span>
+    );
+  return (
+    <>
+      <ProjectIcon
+        project={{ id: project.id }}
+        className="size-5 shrink-0 rounded-md"
+      />
+      <Link
+        href={`${routes.app.project}?id=${project.id}`}
+        className="truncate font-medium underline underline-offset-2 hover:text-primary"
+      >
+        {project.title}
+      </Link>
+    </>
+  );
+}
+
 function ProjectCell({ row }: { row: Row<BookingRow> }) {
-  const r = row.original;
   return (
     <div className="flex items-center gap-2">
       <button
@@ -138,22 +192,7 @@ function ProjectCell({ row }: { row: Row<BookingRow> }) {
           )}
         />
       </button>
-      {r.projectId ? (
-        <ProjectIcon
-          project={{ id: r.projectId }}
-          className="size-5 shrink-0 rounded-md"
-        />
-      ) : null}
-      {r.projectId ? (
-        <Link
-          href={`${routes.app.project}?id=${r.projectId}`}
-          className="truncate font-medium underline underline-offset-2 hover:text-primary"
-        >
-          {r.project}
-        </Link>
-      ) : (
-        <span className="truncate font-medium">{r.project}</span>
-      )}
+      <GroupName group={row.original.group} />
     </div>
   );
 }
@@ -177,9 +216,9 @@ const columns: ColumnDef<BookingRow>[] = [
     id: "logs",
     header: "Logs",
     cell: ({ row }) =>
-      row.original.log ? (
-        <p className="truncate text-sm" title={row.original.log.text}>
-          {row.original.log.text}
+      row.original.entry ? (
+        <p className="truncate text-sm" title={row.original.entry.log.text}>
+          {row.original.entry.log.text}
         </p>
       ) : null
   },
@@ -187,17 +226,20 @@ const columns: ColumnDef<BookingRow>[] = [
     id: "booking",
     header: "Booking date",
     cell: ({ row, table }) => {
-      const r = row.original;
-      if (row.depth === 0) return <BookAllButton row={r} />;
-      if (!r.log) return null;
-      if (r.group === "nonprod") return null;
-      if (r.group === "unsorted")
+      const { group, entry } = row.original;
+      const { today, workDate } = table.options.meta as {
+        today: string;
+        workDate: string;
+      };
+      if (!entry) return <BookAllButton group={group} workDate={workDate} />;
+      if (group.kind === "nonprod") return null;
+      if (group.kind === "unsorted")
         return (
           <span className="text-sm text-muted-foreground">
             Add the log to a Project or Task
           </span>
         );
-      if (r.incomingFrom) {
+      if (entry.incoming) {
         return (
           <span
             className={cn(
@@ -208,19 +250,12 @@ const columns: ColumnDef<BookingRow>[] = [
           >
             <BookmarkCheck className="size-4 shrink-0" />
             <span className="truncate">
-              Worked on {formatWorkDate(r.incomingFrom)}
+              Worked on {formatWorkDate(entry.log.workDate)}
             </span>
           </span>
         );
       }
-      return (
-        <BookingCell
-          logId={r.log.id}
-          workDate={r.log.workDate}
-          bookingDate={r.bookingDate ?? null}
-          max={(table.options.meta as { today: string }).today}
-        />
-      );
+      return <BookingCell log={entry.log} max={today} />;
     }
   },
   {
@@ -228,7 +263,9 @@ const columns: ColumnDef<BookingRow>[] = [
     header: "Hours worked",
     meta: { align: "right" },
     cell: ({ row }) => (
-      <span className="tabular-nums">{hours(row.original.minutes)}</span>
+      <span className="tabular-nums">
+        {hours((row.original.entry ?? row.original.group).worked)}
+      </span>
     )
   },
   {
@@ -236,12 +273,14 @@ const columns: ColumnDef<BookingRow>[] = [
     header: "Hours booked",
     meta: { align: "right" },
     cell: ({ row }) => (
-      <span className="tabular-nums">{hours(row.original.booked)}</span>
+      <span className="tabular-nums">
+        {hours((row.original.entry ?? row.original.group).booked)}
+      </span>
     )
   }
 ];
 
-/** Column widths (the `logs` column takes the rest). Inline: Tailwind doesn't scan the prototype. */
+/** Column widths (the `logs` column takes the rest). */
 const WIDTHS = ["18%", "16%", undefined, "20rem", "8rem", "8rem"];
 
 /** Headers left blank while every row is collapsed (kept as cells, so the column widths don't change). */
@@ -252,18 +291,18 @@ const HIDDEN_IN_COLLAPSED_ROW = ["tasks", "logs"];
 const alignOf = (meta: unknown) =>
   (meta as { align?: "right" } | undefined)?.align;
 
-/** One day of the Bookings range: figure cards, then a row per project that has logs, expandable to its logs. */
+/** One listed day of the Bookings range (SCR-045): the heading, six figure cards, then a row per group, expandable to its logs. */
 export function DaySection({
   day,
   isToday,
   today
 }: {
-  day: DayFigures;
+  day: BookingDay;
   isToday: boolean;
   today: string;
 }) {
   const [expanded, setExpanded] = useState<ExpandedState>({});
-  const data = useMemo(() => day.projects, [day.projects]);
+  const data = useMemo(() => rowsOf(day), [day]);
   const table = useReactTable({
     data,
     columns,
@@ -272,7 +311,7 @@ export function DaySection({
     getRowId: (r) => r.id,
     getSubRows: (r) => r.subRows,
     getRowCanExpand: (r) => r.depth === 0,
-    meta: { today },
+    meta: { today, workDate: day.workDate },
     getCoreRowModel: getCoreRowModel(),
     getExpandedRowModel: getExpandedRowModel()
   });
@@ -309,7 +348,7 @@ export function DaySection({
           />
           <Stat
             label="Booked total"
-            value={hours(day.bookedCurrent + day.bookedExternal)}
+            value={hours(day.bookedTotal)}
             hint="Booked current plus Booked from external: all hours booked to this day."
           />
         </div>

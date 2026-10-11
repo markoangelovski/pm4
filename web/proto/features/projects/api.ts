@@ -8,10 +8,13 @@ import {
 } from "@tanstack/react-query";
 import { apiClient } from "@/proto/mock/client";
 import { isApiError, unwrap, unwrapVoid } from "@/lib/api/problem";
-import type { components } from "@/lib/api/schema";
+import type {
+  ProjectListResponseDto,
+  ProjectResponseDto
+} from "./proposed-types";
 
-export type Project = components["schemas"]["ProjectResponseDto"];
-export type ProjectList = components["schemas"]["ProjectListResponseDto"];
+export type Project = ProjectResponseDto;
+export type ProjectList = ProjectListResponseDto;
 
 /** The sorts the UI offers. */
 export const PROJECT_SORTS = [
@@ -64,7 +67,7 @@ export function useProjects(
           },
           signal
         })
-      );
+      ) as ProjectList;
     },
     placeholderData: keepPreviousData
   });
@@ -83,7 +86,7 @@ export function useProject(
           params: { path: { id } },
           signal
         })
-      ),
+      ) as Project,
     // The app default is one retry; a missing or trashed project won't appear on a retry.
     retry: (failureCount, error) => !isApiError(error, 404) && failureCount < 1,
     enabled
@@ -99,7 +102,9 @@ export function useCreateProject(): UseMutationResult<
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (input: ProjectInput) =>
-      unwrap(await apiClient.POST("/api/v1/projects", { body: input })),
+      unwrap(
+        await apiClient.POST("/api/v1/projects", { body: input })
+      ) as Project,
     onSuccess: (project) => {
       queryClient.setQueryData(projectKeys.detail(project.id), project);
       return queryClient.invalidateQueries({ queryKey: projectKeys.lists() });
@@ -119,7 +124,7 @@ export function useUpdateProject(
           params: { path: { id } },
           body: input
         })
-      ),
+      ) as Project,
     onSuccess: (project) => {
       queryClient.setQueryData(projectKeys.detail(project.id), project);
       return queryClient.invalidateQueries({ queryKey: projectKeys.lists() });

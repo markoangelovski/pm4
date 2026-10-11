@@ -1,19 +1,27 @@
 "use client";
 
+import { useMemo } from "react";
 import { parseAsString, useQueryStates } from "nuqs";
-import { parseISO } from "date-fns";
-import { useProjects } from "@/proto/features/projects/api";
-import { useTasks } from "@/proto/features/tasks/api";
-import type { TaskStatus } from "@/proto/features/tasks/status";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import {
-  useBookings,
-  useDayStarts,
-  useLogsInRange,
-  useMeSettings
-} from "@/proto/mock/hooks";
+  Empty,
+  EmptyContent,
+  EmptyHeader,
+  EmptyTitle
+} from "@/components/ui/empty";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useMe } from "@/proto/features/users/api";
 import { today as todayIn } from "@/lib/time";
-import { eachDay, presetRange, rangeLabel, type DateRange } from "../range";
-import { buckets, byProject, dayStats, running, totals } from "../stats";
+import { useDashboardReport, useProjectCount, useTaskCounts } from "../api";
+import {
+  parseRange,
+  presetRange,
+  rangeLabel,
+  weekdaysSoFar,
+  type DateRange
+} from "../range";
+import { buckets, dayStats, running, totals } from "../stats";
 import { HoursSummary } from "./hours-summary";
 import { KpiTiles } from "./kpi-tiles";
 import { ProjectHours } from "./project-hours";
@@ -21,125 +29,127 @@ import { RangePicker } from "./range-picker";
 import { RunningTotals } from "./running-totals";
 import { WorkdayChart } from "./workday-chart";
 
-const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
-
 /** Series colors (validated categorical slots, light and dark steps): worked blue, booked aqua, start orange. */
 const COLORS =
   "[--dash-worked:#2a78d6] [--dash-booked:#1baf7a] [--dash-start:#eb6834] " +
   "dark:[--dash-worked:#3987e5] dark:[--dash-booked:#199e70] dark:[--dash-start:#d95926]";
 
-function useTaskCount(status: TaskStatus): number | undefined {
-  return useTasks({
-    statuses: [status],
-    q: "",
-    sort: "updatedAt:desc",
-    page: 1,
-    pageSize: 1
-  }).data?.total;
-}
-
-/** Prototype: `/app`. Counts, then the range's workdays and hours. The range is in the URL (`from`, `to`); default this month. */
+/** The dashboard page body (SCR-010): counts, then the range's workdays and hours. The range is in the URL (`from`, `to`); default this month. */
 export function DashboardView() {
-  const { timeZone, dailyTargetMinutes } = useMeSettings();
+  const me = useMe();
+  const timeZone = me.data?.timeZone ?? "UTC";
+  const target = me.data?.dailyTargetMinutes ?? 0;
   const today = todayIn(timeZone);
-  const [params, setParams] = useQueryStates(
+  const [query, setQuery] = useQueryStates(
     { from: parseAsString, to: parseAsString },
     { history: "replace" }
   );
-  const fallback = presetRange("this-month", today, timeZone);
-  const range: DateRange =
-    params.from &&
-    params.to &&
-    DATE_RE.test(params.from) &&
-    DATE_RE.test(params.to) &&
-    params.from <= params.to
-      ? { from: params.from, to: params.to }
-      : fallback;
-  const setRange = (r: DateRange) =>
-    setParams(
-      r.from === fallback.from && r.to === fallback.to
+  const range = useMemo(
+    () => parseRange(query.from, query.to, today),
+    [query.from, query.to, today]
+  );
+  const report = useDashboardReport(range.from, range.to);
+  const projectCount = useProjectCount();
+  const taskCounts = useTaskCounts();
+  const data = report.data;
+
+  const stats = useMemo(() => {
+    if (!data) return undefined;
+    const days = dayStats(range, data.days);
+    return {
+      totals: totals(days, target),
+      buckets: buckets(days, target),
+      running: running(days, target, today)
+    };
+  }, [data, range, target, today]);
+
+  const onChange = (next: DateRange) => {
+    const def = presetRange("this-month", today);
+    void setQuery(
+      next.from === def.from && next.to === def.to
         ? { from: null, to: null }
-        : r
+        : next
     );
+  };
 
-  const projects = useProjects({
-    q: "",
-    sort: "updatedAt:desc",
-    page: 1,
-    pageSize: 1
-  }).data?.total;
-  const upcoming = useTaskCount("upcoming");
-  const inProgress = useTaskCount("in-progress");
-  const completed = useTaskCount("completed");
-  const tasks =
-    upcoming !== undefined &&
-    inProgress !== undefined &&
-    completed !== undefined
-      ? { upcoming, "in-progress": inProgress, completed }
-      : undefined;
-
-  const logs = useLogsInRange(range.from, range.to);
-  const starts = useDayStarts(range.from, range.to);
-  const bookings = useBookings();
-
-  const days = dayStats(eachDay(range), logs, starts, bookings);
-  const t = totals(days, dailyTargetMinutes);
-  const chart = buckets(days, dailyTargetMinutes);
-  const points = running(days, dailyTargetMinutes, today);
-  const projectRows = byProject(logs, bookings);
-  const weekdays = days.filter(
-    (d) =>
-      d.workDate <= today && ![0, 6].includes(parseISO(d.workDate).getDay())
-  ).length;
+  const failed = report.isError || me.isError;
+  const loading = !failed && (!me.data || !data || !stats);
 
   return (
     <div className={`space-y-4 ${COLORS}`}>
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
-          <p className="text-sm text-muted-foreground">
-            {rangeLabel(range, timeZone)}
-          </p>
+          <p className="text-sm text-muted-foreground">{rangeLabel(range)}</p>
         </div>
-        <RangePicker
-          value={range}
-          today={today}
-          timeZone={timeZone}
-          onChange={setRange}
-        />
+        <RangePicker value={range} today={today} onChange={onChange} />
       </div>
       <KpiTiles
-        projects={projects}
-        projectsError={false}
-        tasks={tasks}
-        tasksError={false}
+        projects={projectCount.count}
+        projectsError={projectCount.isError}
+        tasks={taskCounts.counts}
+        tasksError={taskCounts.isError}
         projectsWithTime={
-          projectRows.filter((r) => r.kind === "project").length
+          data
+            ? data.projects.filter((p) => p.kind === "project").length
+            : undefined
         }
-        totals={t}
-        reportError={false}
-        weekdays={weekdays}
+        totals={stats?.totals}
+        reportError={failed}
+        weekdays={weekdaysSoFar(range, today)}
       />
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
-        <div className="min-w-0 xl:col-span-8">
-          <WorkdayChart
-            items={chart.items}
-            by={chart.by}
-            targetMinutes={dailyTargetMinutes}
-            avgStart={t.avgStart}
-            today={today}
-          />
+      {failed ? (
+        <Card className="border rounded-md!">
+          <Empty>
+            <EmptyHeader>
+              <EmptyTitle>Couldn&apos;t load the dashboard.</EmptyTitle>
+            </EmptyHeader>
+            <EmptyContent>
+              <Button
+                variant="outline"
+                className="cursor-pointer"
+                onClick={() => {
+                  if (me.isError) void me.refetch();
+                  if (report.isError) void report.refetch();
+                }}
+              >
+                Retry
+              </Button>
+            </EmptyContent>
+          </Empty>
+        </Card>
+      ) : loading || !data || !stats ? (
+        <div
+          className="grid grid-cols-1 gap-4 xl:grid-cols-12"
+          aria-busy="true"
+        >
+          <Skeleton className="h-96 xl:col-span-8" />
+          <Skeleton className="h-96 xl:col-span-4" />
+          <Skeleton className="h-80 xl:col-span-7" />
+          <Skeleton className="h-80 xl:col-span-5" />
         </div>
-        <div className="min-w-0 xl:col-span-4">
-          <HoursSummary t={t} targetMinutes={dailyTargetMinutes} />
+      ) : (
+        <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
+          <div className="min-w-0 xl:col-span-8">
+            <WorkdayChart
+              items={stats.buckets.items}
+              by={stats.buckets.by}
+              targetMinutes={target}
+              avgStart={stats.totals.avgStart}
+              today={today}
+            />
+          </div>
+          <div className="min-w-0 xl:col-span-4">
+            <HoursSummary t={stats.totals} targetMinutes={target} />
+          </div>
+          <div className="min-w-0 xl:col-span-7">
+            <RunningTotals points={stats.running} />
+          </div>
+          <div className="min-w-0 xl:col-span-5">
+            <ProjectHours rows={data.projects} />
+          </div>
         </div>
-        <div className="min-w-0 xl:col-span-7">
-          <RunningTotals points={points} />
-        </div>
-        <div className="min-w-0 xl:col-span-5">
-          <ProjectHours rows={projectRows} />
-        </div>
-      </div>
+      )}
     </div>
   );
 }

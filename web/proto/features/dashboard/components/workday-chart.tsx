@@ -43,12 +43,6 @@ const Y_WIDTH = 52;
 const hours = (m: number) => (m === 0 ? "0h" : formatDuration(m));
 const hourTick = (m: number) => `${m / 60}h`;
 const clock = (m: number | null) => (m === null ? "—" : formatClock(m));
-/** Sat/Sun in a `YYYY-MM-DD` work date (calendar arithmetic, no time zone involved). */
-const isWeekend = (date: string) => {
-  const [y, m, d] = date.split("-").map(Number);
-  const day = new Date(y, m - 1, d).getDay();
-  return day === 0 || day === 6;
-};
 
 /** The start axis: whole hours around the earliest and latest start (08:00–10:00 when there is none). */
 function startDomain(items: Bucket[]): [number, number] {
@@ -162,7 +156,7 @@ function Legend({
  * synced panels instead of one chart with two y-axes: clock time and duration don't share a scale.
  */
 export function WorkdayChart({
-  items: allItems,
+  items,
   by,
   targetMinutes,
   avgStart,
@@ -175,8 +169,6 @@ export function WorkdayChart({
   today: string;
 }) {
   const router = useRouter();
-  const items =
-    by === "day" ? allItems.filter((b) => !isWeekend(b.date)) : allItems;
   const [view, setView] = useState<"chart" | "table">("chart");
   const [lo, hi] = startDomain(items);
   const startTicks = Array.from(

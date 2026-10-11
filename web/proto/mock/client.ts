@@ -4,6 +4,7 @@
 import createClient from "openapi-fetch";
 import type { components, paths } from "@/lib/api/schema";
 import type { TimeLog } from "@/proto/features/time/types";
+import { today } from "@/lib/time";
 import { getMockState, mock, nextId } from "./store";
 
 /** Every mock response waits this long, so loading states show. */
@@ -39,11 +40,17 @@ function paged<T>(items: T[], q: URLSearchParams) {
   };
 }
 
-function withCounts(p: Project): Project {
-  const own = getMockState().tasks.filter((t) => t.project.id === p.id);
-  const n = (s: Status) => own.filter((t) => t.status === s).length;
+const sumMinutes = (logs: TimeLog[]) =>
+  logs.reduce((t, l) => t + l.durationMinutes, 0);
+
+/** API-PRJ-002/003: the task counts and the logged minutes (the project's logs, its tasks' included). */
+function withCounts(p: Project) {
+  const s = getMockState();
+  const own = s.tasks.filter((t) => t.project.id === p.id);
+  const n = (st: Status) => own.filter((t) => t.status === st).length;
   return {
     ...p,
+    loggedMinutes: sumMinutes(s.logs.filter((l) => l.project?.id === p.id)),
     taskCounts: {
       upcoming: n("upcoming"),
       inProgress: n("in-progress"),
@@ -104,6 +111,14 @@ function projects(
   return json(withCounts(p));
 }
 
+/** API-TSK-002/003: the task plus its logged minutes. */
+const withLogged = (t: Task) => ({
+  ...t,
+  loggedMinutes: sumMinutes(
+    getMockState().logs.filter((l) => l.task?.id === t.id)
+  )
+});
+
 function tasks(
   method: string,
   id: string | undefined,
@@ -121,7 +136,7 @@ function tasks(
         project: { id: project.id, title: project.title, deleted: false }
       } as Task;
       mock.setTasks([...all, t]);
-      return json(t, 201);
+      return json(withLogged(t), 201);
     }
     const s = (q.get("q") ?? "").toLowerCase();
     const st = q.getAll("status");
@@ -131,7 +146,7 @@ function tasks(
         (!q.get("projectId") || t.project.id === q.get("projectId")) &&
         (st.length === 0 || st.includes(t.status))
     );
-    return json(paged(list, q));
+    return json(paged(list.map(withLogged), q));
   }
   const t = all.find((x) => x.id === id);
   if (!t) return notFound();
@@ -142,9 +157,9 @@ function tasks(
   if (method === "PATCH") {
     const next = { ...t, ...body } as Task;
     mock.setTasks(all.map((x) => (x.id === id ? next : x)));
-    return json(next);
+    return json(withLogged(next));
   }
-  return json(t);
+  return json(withLogged(t));
 }
 
 function workdays(
@@ -172,7 +187,53 @@ function workdays(
   return json(dayOf(date));
 }
 
-function timeLogs(method: string, id: string | undefined, body: Body) {
+/** Only logs of a project (or task) that aren't excluded from statistics can be booked. */
+const isBookable = (l: TimeLog) => !l.excludeFromStats && l.project !== null;
+
+/** A log with its booking date (API-BOOK-001 / API-TLOG-001 items). */
+function withBooking(l: TimeLog) {
+  const b = getMockState().bookings[l.id];
+  return { ...l, bookingDate: isBookable(l) && b ? b : null };
+}
+
+/** API-TLOG-001: one project's (its tasks' included) or one task's logs, newest date first. */
+function listLogs(q: URLSearchParams) {
+  const projectId = q.get("projectId");
+  const taskId = q.get("taskId");
+  if (!projectId === !taskId)
+    return problem(
+      400,
+      "Bad Request",
+      "Pass exactly one of projectId, taskId."
+    );
+  const s = getMockState();
+  const all = s.logs
+    .map((l, i) => ({ l, i }))
+    .filter(({ l }) =>
+      taskId ? l.task?.id === taskId : l.project?.id === projectId
+    )
+    .sort((a, b) =>
+      a.l.workDate === b.l.workDate
+        ? a.i - b.i
+        : a.l.workDate < b.l.workDate
+          ? 1
+          : -1
+    )
+    .map(({ l }) => withBooking(l));
+  return json({
+    ...paged(all, q),
+    totalMinutes: sumMinutes(all),
+    bookedMinutes: sumMinutes(all.filter((l) => l.bookingDate !== null))
+  });
+}
+
+function timeLogs(
+  method: string,
+  id: string | undefined,
+  q: URLSearchParams,
+  body: Body
+) {
+  if (method === "GET" && !id) return listLogs(q);
   const s = getMockState();
   const task = s.tasks.find((t) => t.id === body.taskId);
   const project = task
@@ -212,6 +273,116 @@ function timeLogs(method: string, id: string | undefined, body: Body) {
   return json(old);
 }
 
+const byDateThenId = (a: TimeLog, b: TimeLog) =>
+  a.workDate === b.workDate
+    ? a.id.localeCompare(b.id)
+    : a.workDate < b.workDate
+      ? -1
+      : 1;
+
+/** API-BOOK-001 (GET) and API-BOOK-002 (PUT). */
+function bookings(method: string, q: URLSearchParams, body: Body) {
+  const s = getMockState();
+  if (method === "PUT") {
+    const ids = [...new Set((body.logIds as string[] | undefined) ?? [])];
+    const date = (body.bookingDate as string | null | undefined) ?? null;
+    const logs = ids.map((i) => s.logs.find((l) => l.id === i));
+    if (logs.some((l) => !l))
+      return problem(404, "Not Found", "Time log not found.");
+    if (date !== null && date > today(s.me.timeZone))
+      return problem(400, "Bad Request", "bookingDate is in the future.");
+    if (date !== null && logs.some((l) => !isBookable(l!)))
+      return problem(
+        400,
+        "Bad Request",
+        "logIds contains a log that can't be booked."
+      );
+    if (date === null) ids.forEach((i) => mock.unbook(i));
+    else mock.bookMany(ids, date);
+    return json({
+      items: logs
+        .map((l) => withBooking(l!))
+        .sort((a, b) => a.id.localeCompare(b.id))
+    });
+  }
+  const from = q.get("from") ?? "";
+  const to = q.get("to") ?? "";
+  const items = s.logs
+    .map(withBooking)
+    .filter(
+      (l) =>
+        (l.workDate >= from && l.workDate <= to) ||
+        (l.bookingDate !== null && l.bookingDate >= from && l.bookingDate <= to)
+    )
+    .sort(byDateThenId);
+  return json({ items });
+}
+
+/** API-RPT-001: worked and booked minutes per day and per project of the range. */
+function dashboard(q: URLSearchParams) {
+  const s = getMockState();
+  const from = q.get("from") ?? "";
+  const to = q.get("to") ?? "";
+  const inRange = (d: string) => d >= from && d <= to;
+  const logs = s.logs.filter((l) => inRange(l.workDate)).map(withBooking);
+  const dates = [
+    ...new Set([
+      ...Object.keys(s.starts).filter(inRange),
+      ...logs.map((l) => l.workDate)
+    ])
+  ].sort();
+  const days = dates.map((workDate) => {
+    const own = logs.filter((l) => l.workDate === workDate);
+    return {
+      workDate,
+      startMinute: s.starts[workDate] ?? null,
+      workedMinutes: sumMinutes(own),
+      bookedMinutes: sumMinutes(own.filter((l) => l.bookingDate !== null))
+    };
+  });
+  type Row = {
+    kind: "project" | "unsorted" | "nonprod";
+    project: TimeLog["project"];
+    workedMinutes: number;
+    bookedMinutes: number;
+  };
+  const rows = new Map<string, Row>();
+  for (const l of logs) {
+    const kind = l.excludeFromStats
+      ? "nonprod"
+      : l.project
+        ? "project"
+        : "unsorted";
+    const key =
+      kind === "project"
+        ? (l.project!.id ?? `deleted:${l.project!.title}`)
+        : kind;
+    const row = rows.get(key) ?? {
+      kind,
+      project: kind === "project" ? l.project : null,
+      workedMinutes: 0,
+      bookedMinutes: 0
+    };
+    row.workedMinutes += l.durationMinutes;
+    if (kind === "project" && l.bookingDate !== null)
+      row.bookedMinutes += l.durationMinutes;
+    rows.set(key, row);
+  }
+  const all = [...rows.values()];
+  const projects = [
+    ...all
+      .filter((r) => r.kind === "project")
+      .sort(
+        (a, b) =>
+          b.workedMinutes - a.workedMinutes ||
+          a.project!.title.localeCompare(b.project!.title)
+      ),
+    ...all.filter((r) => r.kind === "unsorted"),
+    ...all.filter((r) => r.kind === "nonprod")
+  ];
+  return json({ days, projects });
+}
+
 /** Answers one API request from the store. */
 function handle(
   method: string,
@@ -248,7 +419,11 @@ function handle(
     case "workdays":
       return workdays(method, id, q, body);
     case "time-logs":
-      return timeLogs(method, id, body);
+      return timeLogs(method, id, q, body);
+    case "bookings":
+      return bookings(method, q, body);
+    case "reports":
+      return id === "dashboard" ? dashboard(q) : notFound();
   }
   return problem(
     501,
