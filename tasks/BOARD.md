@@ -1,6 +1,6 @@
 # Task Board
 
-**Next free ID:** T-0053
+**Next free ID:** T-0054
 
 | ID | Title | Milestone | App | Size | Status | Depends on |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -56,5 +56,6 @@
 | [T-0050](m5-reporting/T-0050-dashboard-page-range-picker-in-the.md) | Dashboard page: range picker in the URL, count tiles, workday chart and table, worked / target / booked, running totals, hours by project | M5 | web | L | done | T-0049 |
 | [T-0051](m4-time-logs/T-0051-replacing-a-log-link-clears-retained-names.md) | Replacing a time log's link clears the retained names of a purged task or project | M4 | api | S | done | T-0045 |
 | [T-0052](m0-foundation/T-0052-prototype-separation-guards.md) | Prototype separation guards (dev-only routes, import rules, build check) | M0 | web | S | done | — |
+| [T-0053](m0-foundation/T-0053-migrate-confirmed-prototype.md) | Migrate the confirmed UI prototype to the prototype layout (dev-only routes, twins, mock client) | M0 | web | L | done | T-0052 |
 
 Milestones M2–M6 have no tasks yet, and M1 has only the landing route split so far. They're created with the `write-task` skill once their specs are approved.
