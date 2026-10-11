@@ -61,6 +61,7 @@ describe("ProjectsService", () => {
       externalLink: null,
       projectLead: null,
       taskCounts: { upcoming: 2, inProgress: 1, completed: 1, total: 4 },
+      loggedMinutes: 0,
       createdAt: "2026-10-01T08:00:00.000Z",
       updatedAt: "2026-10-02T08:00:00.000Z"
     });

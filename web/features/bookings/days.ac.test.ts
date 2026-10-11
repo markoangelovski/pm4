@@ -225,7 +225,9 @@ describe("Bookings day logic (feat-book-web)", () => {
   });
 
   it("AC-5 FR-BOOK-001 FR-BOOK-004 OQ-125: isBookable, defaultRange, parseRange and rangeLabel", () => {
-    expect(isBookable({ excludeFromStats: true, project: anthropic })).toBe(false);
+    expect(isBookable({ excludeFromStats: true, project: anthropic })).toBe(
+      false
+    );
     expect(isBookable({ excludeFromStats: false, project: null })).toBe(false);
     expect(
       isBookable({

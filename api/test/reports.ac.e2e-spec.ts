@@ -171,7 +171,9 @@ describe("Dashboard report API (feat-rpt-api)", () => {
     const anthropic = await insertProject(user.id, { title: "Anthropic" });
     const nvidia = await insertProject(user.id, { title: "Nvidia" });
     const internal = await insertProject(user.id, { title: "PM Internal" });
-    const meetings = await insertTask(user.id, anthropic.id, { title: "Meetings" });
+    const meetings = await insertTask(user.id, anthropic.id, {
+      title: "Meetings"
+    });
     const development = await insertTask(user.id, nvidia.id, {
       title: "Development"
     });

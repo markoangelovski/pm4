@@ -25,6 +25,9 @@ export class ProjectResponseDto {
   @ApiProperty({ type: ProjectLeadDto, nullable: true })
   projectLead: ProjectLeadDto | null;
   taskCounts: TaskCountsDto;
+  /** Minutes of all the project's logs, computed (OQ-132). */
+  @ApiProperty({ type: "integer" })
+  loggedMinutes: number;
   /** ISO 8601 UTC */
   createdAt: string;
   /** ISO 8601 UTC */

@@ -57,6 +57,7 @@ const project = (id: string, title: string): Project => ({
   externalLink: null,
   projectLead: null,
   taskCounts: { upcoming: 0, inProgress: 0, completed: 0, total: 0 },
+  loggedMinutes: 0,
   createdAt: "2026-09-01T08:00:00.000Z",
   updatedAt: "2026-09-01T08:00:00.000Z"
 });
@@ -73,6 +74,7 @@ const task = (over: Partial<Task>): Task => ({
   projectLead: null,
   status: "upcoming",
   dueDate: null,
+  loggedMinutes: 0,
   createdAt: "2026-09-20T08:00:00.000Z",
   updatedAt: "2026-09-28T08:00:00.000Z",
   ...over
@@ -408,5 +410,48 @@ describe("TasksList (feat-tsk-web)", () => {
       screen.getByRole("link", { name: "Write the docs" })
     ).toBeInTheDocument();
     expect(listQueries()).toHaveLength(gets);
+  });
+});
+
+/** The cell of `row` under the column header `name`. */
+function cellUnder(row: HTMLElement, name: string) {
+  const index = screen
+    .getAllByRole("columnheader")
+    .findIndex((h) => h.textContent === name);
+  expect(index, name).toBeGreaterThanOrEqual(0);
+  return within(row).getAllByRole("cell")[index];
+}
+
+describe("TasksList logged time (feat-proto-sync-web)", () => {
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-10-03T10:00:00.000Z"));
+    Object.values(api).forEach((fn) => fn.mockReset());
+    nav.push.mockReset();
+    routeGet();
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("AC-14 FR-TSK-002 FR-TSK-003 SCR-021 SCR-030: a Logged column with each task's logged time, — when nothing is logged, in a project's tasks and in all tasks", async () => {
+    listResult = () => ({
+      data: page([
+        { ...t1, loggedMinutes: 30 },
+        { ...t2, loggedMinutes: 0 }
+      ]),
+      response: res(200)
+    });
+
+    for (const props of [{ project: website }, {}]) {
+      const view = renderList(props);
+      const logged = (
+        await screen.findByRole("link", { name: "Write the docs" })
+      ).closest("tr")!;
+      const none = screen.getByRole("link", { name: "Ship it" }).closest("tr")!;
+      expect(cellUnder(logged, "Logged")).toHaveTextContent("30m");
+      expect(cellUnder(none, "Logged")).toHaveTextContent("—");
+      view.unmount();
+    }
   });
 });

@@ -53,7 +53,7 @@ export const MOCK_TASKS: TaskRef[] = [
 
 const STATUSES: Status[] = ["upcoming", "in-progress", "completed"];
 
-/** The API shapes of the projects and tasks above (task counts are computed by the mock client). */
+/** The API shapes of the projects and tasks above (task counts and logged minutes are computed by the mock client). */
 export const seedProjects = (): Project[] =>
   MOCK_PROJECTS.map((p) => ({
     id: p.id,
@@ -62,6 +62,7 @@ export const seedProjects = (): Project[] =>
     externalLink: null,
     projectLead: lead,
     taskCounts: { upcoming: 0, inProgress: 0, completed: 0, total: 0 },
+    loggedMinutes: 0,
     createdAt: now,
     updatedAt: now
   }));
@@ -76,6 +77,7 @@ export const seedTasks = (): Task[] =>
     status: STATUSES[i % 3],
     dueDate: i % 2 ? format(addDays(new Date(), i), "yyyy-MM-dd") : null,
     project: { id: t.project.id, title: t.project.title, deleted: false },
+    loggedMinutes: 0,
     createdAt: now,
     updatedAt: now
   }));

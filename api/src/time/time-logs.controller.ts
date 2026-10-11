@@ -2,11 +2,13 @@ import {
   Body,
   Controller,
   Delete,
+  Get,
   HttpCode,
   HttpStatus,
   Param,
   Patch,
-  Post
+  Post,
+  Query
 } from "@nestjs/common";
 import { ApiBearerAuth, ApiNoContentResponse } from "@nestjs/swagger";
 import { ApiProblemResponses } from "../common/decorators/api-problem-responses/api-problem-responses.decorator.js";
@@ -15,15 +17,27 @@ import {
   CurrentUser
 } from "../common/decorators/current-user/current-user.decorator.js";
 import { CreateTimeLogDto } from "./dto/create-time-log.dto.js";
+import { ListTimeLogsQueryDto } from "./dto/list-time-logs-query.dto.js";
+import { TimeLogListResponseDto } from "./dto/time-log-list-response.dto.js";
 import { TimeLogResponseDto } from "./dto/time-log-response.dto.js";
 import { UpdateTimeLogDto } from "./dto/update-time-log.dto.js";
 import { TimeLogsService } from "./time-logs.service.js";
 
-/** `/api/v1/time-logs` (API-TLOG-002/004/006). */
+/** `/api/v1/time-logs` (API-TLOG-001/002/004/006). */
 @ApiBearerAuth("bearer")
 @Controller("time-logs")
 export class TimeLogsController {
   constructor(private readonly timeLogsService: TimeLogsService) {}
+
+  /** One page of a project's or task's logs, with totals (API-TLOG-001). */
+  @Get()
+  @ApiProblemResponses(400, 401)
+  list(
+    @CurrentUser() user: AuthUser,
+    @Query() query: ListTimeLogsQueryDto
+  ): Promise<TimeLogListResponseDto> {
+    return this.timeLogsService.list(user.id, query);
+  }
 
   /** Create a time log (API-TLOG-002). */
   @Post()

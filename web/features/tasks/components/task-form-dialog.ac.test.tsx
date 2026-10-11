@@ -40,6 +40,7 @@ const project = (id: string, title: string): Project => ({
   externalLink: null,
   projectLead: null,
   taskCounts: { upcoming: 0, inProgress: 0, completed: 0, total: 0 },
+  loggedMinutes: 0,
   createdAt: "2026-10-01T08:00:00.000Z",
   updatedAt: "2026-10-01T08:00:00.000Z"
 });
@@ -56,6 +57,7 @@ const task: Task = {
   projectLead: { kind: "text", user: null, name: "Bob" },
   status: "in-progress",
   dueDate: "2026-10-20",
+  loggedMinutes: 0,
   createdAt: "2026-10-01T08:00:00.000Z",
   updatedAt: "2026-10-01T08:00:00.000Z"
 };

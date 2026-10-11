@@ -305,7 +305,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** One page of a project's or task's logs, with totals (API-TLOG-001). */
+        get: operations["TimeLogsController_list"];
         put?: never;
         /** Create a time log (API-TLOG-002). */
         post: operations["TimeLogsController_create"];
@@ -482,6 +483,8 @@ export interface components {
             description: string | null;
             externalLink: string | null;
             projectLead: components["schemas"]["ProjectLeadDto"] | null;
+            /** @description Minutes of all the project's logs, computed (OQ-132). */
+            loggedMinutes: number;
             id: string;
             title: string;
             taskCounts: components["schemas"]["TaskCountsDto"];
@@ -558,6 +561,8 @@ export interface components {
             status: components["schemas"]["TaskStatus"];
             /** @description Work date, `YYYY-MM-DD` */
             dueDate: string | null;
+            /** @description Minutes of all the task's logs, computed (OQ-132). */
+            loggedMinutes: number;
             id: string;
             project: components["schemas"]["RefDto"];
             title: string;
@@ -636,6 +641,32 @@ export interface components {
             workDate: string;
             startMinute: number;
         };
+        BookingLogResponseDto: {
+            /** Format: date */
+            workDate: string;
+            title: string | null;
+            project: components["schemas"]["RefDto"] | null;
+            task: components["schemas"]["RefDto"] | null;
+            /**
+             * Format: date
+             * @example 2026-10-07
+             */
+            bookingDate: string | null;
+            id: string;
+            durationMinutes: number;
+            text: string;
+            excludeFromStats: boolean;
+        };
+        TimeLogListResponseDto: {
+            items: components["schemas"]["BookingLogResponseDto"][];
+            page: number;
+            pageSize: number;
+            total: number;
+            /** @description Minutes of all the matching logs, not only this page. */
+            totalMinutes: number;
+            /** @description Minutes of the matching logs that have a booking date. */
+            bookedMinutes: number;
+        };
         CreateTimeLogDto: {
             /**
              * Format: date
@@ -677,22 +708,6 @@ export interface components {
             excludeFromStats?: boolean;
             /** @description The start of the target date when it has no workday yet. */
             dayStartMinute?: number;
-        };
-        BookingLogResponseDto: {
-            /** Format: date */
-            workDate: string;
-            title: string | null;
-            project: components["schemas"]["RefDto"] | null;
-            task: components["schemas"]["RefDto"] | null;
-            /**
-             * Format: date
-             * @example 2026-10-07
-             */
-            bookingDate: string | null;
-            id: string;
-            durationMinutes: number;
-            text: string;
-            excludeFromStats: boolean;
         };
         BookingListResponseDto: {
             items: components["schemas"]["BookingLogResponseDto"][];
@@ -1877,6 +1892,61 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["WorkdayResponseDto"];
+                };
+            };
+            /** @description Validation failed: one entry in errors[] per invalid field. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Missing, invalid or expired credentials. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Unexpected error. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+        };
+    };
+    TimeLogsController_list: {
+        parameters: {
+            query?: {
+                /** @description 1-based page number. */
+                page?: number;
+                /** @description Items per page, 1–100. */
+                pageSize?: number;
+                /** @description The project whose logs (its tasks' too) to list. */
+                projectId?: string;
+                /** @description The task whose logs to list. */
+                taskId?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TimeLogListResponseDto"];
                 };
             };
             /** @description Validation failed: one entry in errors[] per invalid field. */

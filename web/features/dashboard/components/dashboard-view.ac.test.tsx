@@ -188,8 +188,7 @@ const projectsTile = () =>
   document.querySelector('a[href="/app/projects"]') as HTMLElement;
 const tasksTile = () =>
   document.querySelector('a[href="/app/tasks"]') as HTMLElement;
-const workdaysTile = () =>
-  around(/Days with a start time/, "Workdays");
+const workdaysTile = () => around(/Days with a start time/, "Workdays");
 const avgStartTile = () => around(/^Earliest/, "Average start");
 const summaryCard = () => around("Sum of all logs", "Booked of worked");
 const runningCard = () => around("Running totals", "Booked");
@@ -251,9 +250,7 @@ describe("DashboardView (feat-rpt-web)", () => {
       screen.getByRole("heading", { name: "Dashboard" })
     ).toBeInTheDocument();
     expect(screen.getByText("October 2026")).toBeInTheDocument();
-    expect(screen.getByLabelText("Time range")).toHaveTextContent(
-      "This month"
-    );
+    expect(screen.getByLabelText("Time range")).toHaveTextContent("This month");
     expect(requestedRanges()).toEqual(["2026-10-01..2026-10-31"]);
 
     await waitFor(() => expect(projectsTile()).toHaveTextContent("12"));
@@ -292,9 +289,7 @@ describe("DashboardView (feat-rpt-web)", () => {
     ).toBeInTheDocument();
 
     await chooseRange("This month");
-    await waitFor(() =>
-      expect(lastParam(view.onUrlUpdate, "from")).toBeNull()
-    );
+    await waitFor(() => expect(lastParam(view.onUrlUpdate, "from")).toBeNull());
     expect(lastParam(view.onUrlUpdate, "to")).toBeNull();
     view.unmount();
 
@@ -359,7 +354,13 @@ describe("DashboardView (feat-rpt-web)", () => {
     await loaded();
     const card = projectsCard();
     const text = card.textContent ?? "";
-    const order = ["Anthropic", "Nvidia", "PM Internal", "Unsorted", "Non-prod"];
+    const order = [
+      "Anthropic",
+      "Nvidia",
+      "PM Internal",
+      "Unsorted",
+      "Non-prod"
+    ];
     const positions = order.map((name) => text.indexOf(name));
     expect(positions.every((p) => p >= 0)).toBe(true);
     expect([...positions].sort((a, b) => a - b)).toEqual(positions);

@@ -61,6 +61,7 @@ const docs: Task = {
   projectLead: { kind: "text", user: null, name: "Bob Builder" },
   status: "upcoming",
   dueDate: "2026-10-02",
+  loggedMinutes: 0,
   createdAt: "2026-10-01T08:00:00.000Z",
   updatedAt: "2026-10-02T08:00:00.000Z"
 };
@@ -307,5 +308,65 @@ describe("TaskDetail (feat-tsk-web)", () => {
     // Let any refetch the delete might trigger run, then check none did.
     await new Promise((resolve) => setTimeout(resolve, 50));
     expect(detailCalls()).toBe(before);
+  });
+});
+
+describe("TaskDetail logged time (feat-proto-sync-web)", () => {
+  const timeLogQueries = () =>
+    api.GET.mock.calls
+      .filter(([path]) => path === "/api/v1/time-logs")
+      .map(
+        ([, init]) =>
+          (init as { params: { query: Record<string, unknown> } }).params.query
+      );
+
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-10-03T10:00:00.000Z"));
+    Object.values(api).forEach((fn) => fn.mockReset());
+    routeGet();
+    const taskRoutes = api.GET.getMockImplementation()!;
+    api.GET.mockImplementation(async (path: string, init?: unknown) => {
+      if (path === "/api/v1/time-logs") {
+        return {
+          data: {
+            items: [],
+            page: 1,
+            pageSize: 25,
+            total: 0,
+            totalMinutes: 0,
+            bookedMinutes: 0
+          },
+          response: res(200)
+        };
+      }
+      return taskRoutes(path, init);
+    });
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("AC-16 FR-TLOG-012 SCR-031 SCR-044: the task page shows Logged time for the task, not while it's in the trash", async () => {
+    detailResult = () => ({ data: docs, response: res(200) });
+    const view = renderDetail();
+    expect(await screen.findByText("Logged time")).toBeInTheDocument();
+    await waitFor(() =>
+      expect(timeLogQueries()).toContainEqual(
+        expect.objectContaining({ taskId: "t1", page: 1 })
+      )
+    );
+    expect(timeLogQueries().every((q) => !("projectId" in q))).toBe(true);
+    view.unmount();
+
+    api.GET.mockClear();
+    detailResult = () =>
+      notFound("in-trash", { projectId: "p1", projectInTrash: false });
+    renderDetail();
+    expect(
+      await screen.findByText("This task is in the trash")
+    ).toBeInTheDocument();
+    expect(screen.queryByText("Logged time")).toBeNull();
+    expect(timeLogQueries()).toEqual([]);
   });
 });

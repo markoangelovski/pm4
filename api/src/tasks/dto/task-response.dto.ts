@@ -31,6 +31,10 @@ export class TaskResponseDto {
   @ApiProperty({ type: String, nullable: true })
   dueDate: string | null;
 
+  /** Minutes of all the task's logs, computed (OQ-132). */
+  @ApiProperty({ type: "integer" })
+  loggedMinutes: number;
+
   /** ISO 8601 UTC */
   createdAt: string;
 

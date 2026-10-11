@@ -56,6 +56,7 @@ const website: Project = {
   externalLink: null,
   projectLead: { kind: "text", user: null, name: "Bob Builder" },
   taskCounts: { upcoming: 2, inProgress: 1, completed: 1, total: 4 },
+  loggedMinutes: 0,
   createdAt: "2026-10-03T08:00:00.000Z",
   updatedAt: "2026-10-03T08:00:00.000Z"
 };
@@ -220,5 +221,46 @@ describe("ProjectsList (feat-prj-web)", () => {
     expect(
       screen.queryByRole("link", { name: /next/i })
     ).not.toBeInTheDocument();
+  });
+});
+
+/** The cell of `row` under the column header `name`. */
+function cellUnder(row: HTMLElement, name: string) {
+  const index = screen
+    .getAllByRole("columnheader")
+    .findIndex((h) => h.textContent === name);
+  expect(index, name).toBeGreaterThanOrEqual(0);
+  return within(row).getAllByRole("cell")[index];
+}
+
+describe("ProjectsList logged time (feat-proto-sync-web)", () => {
+  beforeEach(() => {
+    Object.values(api).forEach((fn) => fn.mockReset());
+    nav.push.mockReset();
+    nav.replace.mockReset();
+    routeGet();
+  });
+
+  it("AC-13 FR-PRJ-002 SCR-020: a Logged column with each project's logged time, — when nothing is logged", async () => {
+    const mobile: Project = {
+      ...website,
+      id: "p2",
+      title: "Mobile app",
+      loggedMinutes: 0
+    };
+    listResult = () => ({
+      data: page([{ ...website, loggedMinutes: 105 }, mobile]),
+      response: res(200)
+    });
+    renderList();
+
+    const logged = (
+      await screen.findByRole("link", { name: "Website" })
+    ).closest("tr")!;
+    const none = screen
+      .getByRole("link", { name: "Mobile app" })
+      .closest("tr")!;
+    expect(cellUnder(logged, "Logged")).toHaveTextContent("1h 45m");
+    expect(cellUnder(none, "Logged")).toHaveTextContent("—");
   });
 });

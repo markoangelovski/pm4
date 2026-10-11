@@ -51,7 +51,8 @@ const ok = () => new Response(null, { status: 200 });
 function routeGet() {
   GET.mockImplementation(async (path: string) => {
     if (path === "/api/v1/me") return { data: me, response: ok() };
-    if (path === "/api/v1/users") return { data: { items: found }, response: ok() };
+    if (path === "/api/v1/users")
+      return { data: { items: found }, response: ok() };
     throw new Error(`unexpected GET ${path}`);
   });
 }

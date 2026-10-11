@@ -40,6 +40,7 @@ interface TaskBody {
   projectLead: LeadBody | null;
   status: TaskStatusValue;
   dueDate: string | null;
+  loggedMinutes: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -179,6 +180,7 @@ describe("Tasks API (feat-tsk-api)", () => {
       projectLead: null,
       status: "upcoming",
       dueDate: null,
+      loggedMinutes: 0,
       createdAt: response.body.createdAt,
       updatedAt: response.body.updatedAt
     });
