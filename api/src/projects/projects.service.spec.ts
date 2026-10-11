@@ -22,6 +22,7 @@ function row(overrides: Partial<ProjectRow> = {}): ProjectRow {
     updatedAt: new Date("2026-10-02T08:00:00.000Z"),
     deletedAt: null,
     counts: { upcoming: 2, inProgress: 1, completed: 1 },
+    loggedMinutes: 0,
     ...overrides
   };
 }

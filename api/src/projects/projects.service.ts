@@ -122,7 +122,7 @@ export class ProjectsService {
         completed,
         total: upcoming + inProgress + completed
       },
-      loggedMinutes: 0,
+      loggedMinutes: row.loggedMinutes,
       createdAt: row.createdAt.toISOString(),
       updatedAt: row.updatedAt.toISOString()
     };

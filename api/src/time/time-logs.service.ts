@@ -118,14 +118,44 @@ export class TimeLogsService {
     private readonly projectsService: ProjectsService
   ) {}
 
-  // eslint-disable-next-line @typescript-eslint/require-await
   async list(
     userId: string,
     query: ListTimeLogsQueryDto
   ): Promise<TimeLogListResponseDto> {
-    void userId;
-    void query;
-    throw new Error("not implemented (feat-proto-sync-web)");
+    const { projectId, taskId } = query;
+    let filter: { projectId: string } | { taskId: string };
+    if (projectId !== undefined && taskId === undefined) {
+      filter = { projectId };
+    } else if (taskId !== undefined && projectId === undefined) {
+      filter = { taskId };
+    } else {
+      throw new BadRequestException({
+        errors: [
+          {
+            field: "projectId",
+            message: "exactly one of projectId and taskId is required"
+          }
+        ]
+      });
+    }
+    const { rows, total, totalMinutes, bookedMinutes } =
+      await this.timeRepository.listLogs(
+        userId,
+        filter,
+        query.page,
+        query.pageSize
+      );
+    return {
+      items: rows.map((row) => ({
+        ...toTimeLogDto(row),
+        bookingDate: row.bookingDate
+      })),
+      page: query.page,
+      pageSize: query.pageSize,
+      total,
+      totalMinutes,
+      bookedMinutes
+    };
   }
 
   async create(

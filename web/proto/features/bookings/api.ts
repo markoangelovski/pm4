@@ -37,7 +37,7 @@ export function useBookingRange(
   });
 }
 
-/** API-BOOK-002: PUT /bookings, returns data.items; invalidates bookingKeys.all. */
+/** API-BOOK-002: PUT /bookings, returns data.items; invalidates bookingKeys.all and timeKeys.logs(). */
 export function useSetBooking(): UseMutationResult<
   BookingLog[],
   Error,
@@ -55,6 +55,9 @@ export function useSetBooking(): UseMutationResult<
       return data.items as BookingLog[];
     },
     onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: bookingKeys.all })
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: bookingKeys.all }),
+        queryClient.invalidateQueries({ queryKey: timeKeys.logs() })
+      ])
   });
 }

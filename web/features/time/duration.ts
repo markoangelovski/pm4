@@ -1,6 +1,5 @@
 export type DurationParse =
-  | { ok: true; minutes: number }
-  | { ok: false; error: string };
+  { ok: true; minutes: number } | { ok: false; error: string };
 
 const STEP_ERROR = "Use 15-minute steps, from 15 min to 24 h.";
 
@@ -18,7 +17,10 @@ export function parseDurationInput(value: string): DurationParse {
     minutes = n < 15 ? n * 60 : n;
   } else if ((m = text.match(/^(\d+):(\d{2})$/))) {
     minutes = Number(m[1]) * 60 + Number(m[2]);
-  } else if ((m = text.match(/^(?:(\d+)\s*h)?\s*(?:(\d+)\s*m)?$/)) && (m[1] || m[2])) {
+  } else if (
+    (m = text.match(/^(?:(\d+)\s*h)?\s*(?:(\d+)\s*m)?$/)) &&
+    (m[1] || m[2])
+  ) {
     minutes = Number(m[1] ?? 0) * 60 + Number(m[2] ?? 0);
   }
 

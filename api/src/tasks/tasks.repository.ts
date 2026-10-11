@@ -51,6 +51,8 @@ export interface TaskRow extends LeadRow {
   createdAt: Date;
   updatedAt: Date;
   deletedAt: Date | null;
+  /** Minutes of all the caller's logs on the task (OQ-132). */
+  loggedMinutes: number;
 }
 
 const lead = alias(users, "lead");
@@ -191,7 +193,12 @@ export class TasksRepository {
         dueDate: tasks.dueDate,
         createdAt: tasks.createdAt,
         updatedAt: tasks.updatedAt,
-        deletedAt: tasks.deletedAt
+        deletedAt: tasks.deletedAt,
+        loggedMinutes:
+          sql<number>`(SELECT coalesce(sum(${timeLogs.durationMinutes}), 0) FROM ${timeLogs}
+          WHERE ${timeLogs.userId} = ${userId} AND ${timeLogs.taskId} = ${tasks.id})`.mapWith(
+            Number
+          )
       })
       .from(tasks)
       .innerJoin(projects, eq(tasks.projectId, projects.id))

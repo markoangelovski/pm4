@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { parseAsString, useQueryStates } from "nuqs";
-import { CalendarCheck } from "lucide-react";
+import { CalendarX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
@@ -27,8 +27,8 @@ import {
 import { DaySection } from "./day-section";
 import { RangeField } from "./range-field";
 
-/** The Bookings page body (SCR-045): the range in the URL, then one section per listed day. */
-export function BookingsView(): React.JSX.Element {
+/** The Bookings page body (SCR-045): the range in the URL (default: this month up to today), then one section per listed day, oldest first. */
+export function BookingsView() {
   const me = useMe();
   const timeZone = me.data?.timeZone ?? "UTC";
   const target = me.data?.dailyTargetMinutes ?? 0;
@@ -61,17 +61,19 @@ export function BookingsView(): React.JSX.Element {
   const loading = !failed && (!me.data || !data);
 
   return (
-    <div className="space-y-4">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Bookings</h1>
-        <p className="text-sm text-muted-foreground">{rangeLabel(range)}</p>
+    <div className="space-y-6">
+      <div className="space-y-3">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Bookings</h1>
+          <p className="text-sm text-muted-foreground">{rangeLabel(range)}</p>
+        </div>
+        <RangeField
+          key={`${range.from}:${range.to}`}
+          applied={range}
+          max={today}
+          onSubmit={submit}
+        />
       </div>
-      <RangeField
-        key={`${range.from}:${range.to}`}
-        applied={range}
-        max={today}
-        onSubmit={submit}
-      />
       {failed ? (
         <Card className="border rounded-md!">
           <Empty>
@@ -94,7 +96,7 @@ export function BookingsView(): React.JSX.Element {
         </Card>
       ) : loading ? (
         <div className="space-y-4" aria-busy="true">
-          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-12 w-full" />
           <Skeleton className="h-20 w-full" />
           <Skeleton className="h-48 w-full" />
         </div>
@@ -103,7 +105,7 @@ export function BookingsView(): React.JSX.Element {
           <Empty>
             <EmptyHeader>
               <EmptyMedia variant="icon">
-                <CalendarCheck />
+                <CalendarX />
               </EmptyMedia>
               <EmptyTitle>No logs in this range</EmptyTitle>
               <EmptyDescription>
@@ -113,11 +115,14 @@ export function BookingsView(): React.JSX.Element {
           </Empty>
         </Card>
       ) : (
-        <div className="space-y-6">
-          {days.map((day) => (
-            <DaySection key={day.workDate} day={day} today={today} />
-          ))}
-        </div>
+        days.map((d) => (
+          <DaySection
+            key={d.workDate}
+            day={d}
+            isToday={d.workDate === today}
+            today={today}
+          />
+        ))
       )}
     </div>
   );

@@ -15,7 +15,7 @@ import {
 import { alias } from "drizzle-orm/pg-core";
 import { escapeLike } from "../common/sql/escape-like.js";
 import { DRIZZLE, type DrizzleDb } from "../database/drizzle.js";
-import { projects, tasks, users } from "../database/schema/index.js";
+import { projects, tasks, timeLogs, users } from "../database/schema/index.js";
 import type { LeadRow } from "../users/project-lead.service.js";
 import type { ProjectSort } from "./dto/list-projects-query.dto.js";
 
@@ -38,6 +38,8 @@ export interface ProjectRow extends LeadRow {
   updatedAt: Date;
   deletedAt: Date | null;
   counts: { upcoming: number; inProgress: number; completed: number };
+  /** Minutes of all the caller's logs on the project (OQ-132). */
+  loggedMinutes: number;
 }
 
 const lead = alias(users, "lead");
@@ -195,7 +197,12 @@ export class ProjectsRepository {
         deletedAt: projects.deletedAt,
         upcoming: sql<number>`coalesce(${c.upcoming}, 0)`.mapWith(Number),
         inProgress: sql<number>`coalesce(${c.inProgress}, 0)`.mapWith(Number),
-        completed: sql<number>`coalesce(${c.completed}, 0)`.mapWith(Number)
+        completed: sql<number>`coalesce(${c.completed}, 0)`.mapWith(Number),
+        loggedMinutes:
+          sql<number>`(SELECT coalesce(sum(${timeLogs.durationMinutes}), 0) FROM ${timeLogs}
+          WHERE ${timeLogs.userId} = ${userId} AND ${timeLogs.projectId} = ${projects.id})`.mapWith(
+            Number
+          )
       })
       .from(projects)
       .leftJoin(lead, eq(lead.id, projects.projectLeadUserId))

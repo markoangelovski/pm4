@@ -36,7 +36,10 @@ export function leadToInput(value: LeadValue): {
     return { projectLeadUserId: value.user.id, projectLeadName: null };
   }
   const name = value?.kind === "text" ? value.name.trim() : "";
-  return { projectLeadUserId: null, projectLeadName: name === "" ? null : name };
+  return {
+    projectLeadUserId: null,
+    projectLeadName: name === "" ? null : name
+  };
 }
 
 /** new URL() parses and the protocol is http: or https:. */

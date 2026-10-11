@@ -26,7 +26,13 @@ import { DeleteTaskDialog } from "@/features/tasks/components/delete-task-dialog
 import { DueDateBadge } from "@/features/tasks/components/due-date-badge";
 import { TaskFormDialog } from "@/features/tasks/components/task-form-dialog";
 import { TaskStatusSelect } from "@/features/tasks/components/task-status-select";
-import { useTask, useRestoreTask, taskKeys, type Task } from "@/features/tasks/api";
+import {
+  useTask,
+  useRestoreTask,
+  taskKeys,
+  type Task
+} from "@/features/tasks/api";
+import { LoggedTimeSection } from "@/features/time/components/logged-time-section";
 import { formatDateTime } from "@/lib/time";
 import { isApiError } from "@/lib/api/problem";
 import { routes } from "@/lib/routes";
@@ -64,7 +70,10 @@ export function TaskDetail() {
   if (query.isPending) {
     body = <DetailSkeleton />;
   } else if (isApiError(error, 404, "in-trash")) {
-    const problem = error.problem as { projectInTrash?: boolean; projectId?: string } | null;
+    const problem = error.problem as {
+      projectInTrash?: boolean;
+      projectId?: string;
+    } | null;
     const projectInTrash = problem?.projectInTrash === true;
     if (projectInTrash) {
       const projectId = problem?.projectId;
@@ -86,10 +95,11 @@ export function TaskDetail() {
                 onClick={() =>
                   restoreProject.mutate(projectId, {
                     onSuccess: () => {
-                      void queryClient.invalidateQueries({ queryKey: taskKeys.detail(id) });
+                      void queryClient.invalidateQueries({
+                        queryKey: taskKeys.detail(id)
+                      });
                     },
-                    onError: () =>
-                      toast.error("Couldn't restore the project.")
+                    onError: () => toast.error("Couldn't restore the project.")
                   })
                 }
                 className="cursor-pointer"
@@ -118,8 +128,7 @@ export function TaskDetail() {
               disabled={restore.isPending}
               onClick={() =>
                 restore.mutate(id, {
-                  onError: () =>
-                    toast.error("Couldn't restore the task.")
+                  onError: () => toast.error("Couldn't restore the task.")
                 })
               }
               className="cursor-pointer"
@@ -299,6 +308,8 @@ function TaskView({
           </DetailRow>
         </CardContent>
       </Card>
+
+      <LoggedTimeSection taskId={task.id} />
     </>
   );
 }

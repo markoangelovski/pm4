@@ -62,6 +62,7 @@ import {
 import { completionPercent } from "@/features/projects/stats";
 import { useMe } from "@/features/users/api";
 import { formatShortDate } from "@/lib/time";
+import { LoggedTotal } from "@/features/time/components/logged-total";
 import { useDebouncedValue } from "@/lib/use-debounced-value";
 import { routes } from "@/lib/routes";
 
@@ -221,6 +222,7 @@ export function ProjectsList() {
                   <TableHead>Project lead</TableHead>
                   <TableHead>Tasks</TableHead>
                   <TableHead>Completed</TableHead>
+                  <TableHead>Logged</TableHead>
                   <TableHead>Created</TableHead>
                   <TableHead className="pr-4">Updated</TableHead>
                 </TableRow>
@@ -243,6 +245,9 @@ export function ProjectsList() {
                         </TableCell>
                         <TableCell>
                           <Skeleton className="h-4 w-32" />
+                        </TableCell>
+                        <TableCell>
+                          <Skeleton className="h-4" />
                         </TableCell>
                         <TableCell>
                           <Skeleton className="h-4 w-20" />
@@ -295,6 +300,9 @@ export function ProjectsList() {
                                 {percent} %
                               </span>
                             </div>
+                          </TableCell>
+                          <TableCell className="whitespace-nowrap">
+                            <LoggedTotal minutes={project.loggedMinutes} />
                           </TableCell>
                           <TableCell className="whitespace-nowrap">
                             {me ? (

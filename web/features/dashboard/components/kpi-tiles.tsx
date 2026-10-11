@@ -11,8 +11,8 @@ import {
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TASK_STATUSES, TASK_STATUS_LABELS } from "@/features/tasks/status";
-import { routes } from "@/lib/routes";
 import { formatClock } from "@/lib/time/clock";
+import { routes } from "@/lib/routes";
 import type { TaskCounts } from "../api";
 import type { Totals } from "../stats";
 
@@ -94,11 +94,13 @@ export function KpiTiles({
         href={routes.app.projects}
         value={projectsError ? DASH : projects}
         footer={
-          projectsWithTime === undefined
-            ? reportError
-              ? null
-              : <Skeleton className="h-3 w-32" />
-            : `${projectsWithTime} with time logged in this range`
+          projectsWithTime === undefined ? (
+            reportError ? null : (
+              <Skeleton className="h-3 w-32" />
+            )
+          ) : (
+            `${projectsWithTime} with time logged in this range`
+          )
         }
       />
       <Tile

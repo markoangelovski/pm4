@@ -3,14 +3,17 @@ import {
   useMutation,
   useQuery,
   useQueryClient,
+  type QueryClient,
   type UseMutationResult,
   type UseQueryResult
 } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
+import { projectKeys } from "@/proto/features/projects/api";
+import { taskKeys } from "@/proto/features/tasks/api";
 import { apiClient } from "@/proto/mock/client";
 import { unwrap, unwrapVoid } from "@/lib/api/problem";
+import type { components } from "@/lib/api/schema";
 import { nowMinute } from "@/lib/time/clock";
-import type { GetTimeLogs, TimeLogListResponseDto } from "./proposed-types";
 import type { Day, TimeLog, TimeLogInput } from "./types";
 
 export type {
@@ -23,16 +26,16 @@ export type {
   TimeLogInput
 } from "./types";
 
+export interface WorkdayList {
+  items: { workDate: string; startMinute: number; totalMinutes: number }[];
+}
+
 /** API-TLOG-001: one page of a project's or task's logs, with their booking dates and the totals. */
-export type TimeLogList = TimeLogListResponseDto;
+export type TimeLogList = components["schemas"]["TimeLogListResponseDto"];
 export type TimeLogFilter = { projectId: string } | { taskId: string };
 
 /** The Logged time section's page size (SCR-044). */
 export const TIME_LOG_PAGE_SIZE = 25;
-
-export interface WorkdayList {
-  items: { workDate: string; startMinute: number; totalMinutes: number }[];
-}
 
 export const timeKeys = {
   all: ["time"] as const,
@@ -54,9 +57,8 @@ export function useTimeLogs(
   return useQuery({
     queryKey: timeKeys.logList(filter, page),
     queryFn: async ({ signal }) =>
-      // API-TLOG-001 isn't in lib/api/schema yet: typed by proposed-types.ts until `npm run api:types`.
       unwrap(
-        await (apiClient.GET as unknown as GetTimeLogs)("/api/v1/time-logs", {
+        await apiClient.GET("/api/v1/time-logs", {
           params: { query: { ...filter, page, pageSize: TIME_LOG_PAGE_SIZE } },
           signal
         })
@@ -97,7 +99,16 @@ export function useWorkdays(
   });
 }
 
-/** API-TLOG-002; invalidates timeKeys.all (D3). */
+/** D3: a log change refreshes the time, project and task queries (the logged totals live on the projects and tasks). */
+function refreshAfterLogChange(queryClient: QueryClient) {
+  return Promise.all([
+    queryClient.invalidateQueries({ queryKey: timeKeys.all }),
+    queryClient.invalidateQueries({ queryKey: projectKeys.all }),
+    queryClient.invalidateQueries({ queryKey: taskKeys.all })
+  ]);
+}
+
+/** API-TLOG-002; invalidates timeKeys.all, projectKeys.all and taskKeys.all (D3). */
 export function useCreateLog(): UseMutationResult<
   TimeLog,
   Error,
@@ -109,11 +120,11 @@ export function useCreateLog(): UseMutationResult<
       unwrap(
         await apiClient.POST("/api/v1/time-logs", { body: input })
       ) as TimeLog,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: timeKeys.all })
+    onSuccess: () => refreshAfterLogChange(queryClient)
   });
 }
 
-/** API-TLOG-004; invalidates timeKeys.all (D3); sends projectId/taskId only when present in the input (D9). */
+/** API-TLOG-004; invalidates timeKeys.all, projectKeys.all and taskKeys.all (D3); sends projectId/taskId only when present in the input (D9). */
 export function useUpdateLog(
   id: string
 ): UseMutationResult<TimeLog, Error, TimeLogInput> {
@@ -126,11 +137,11 @@ export function useUpdateLog(
           body: input
         })
       ) as TimeLog,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: timeKeys.all })
+    onSuccess: () => refreshAfterLogChange(queryClient)
   });
 }
 
-/** API-TLOG-006; invalidates timeKeys.all (D3). */
+/** API-TLOG-006; invalidates timeKeys.all, projectKeys.all and taskKeys.all (D3). */
 export function useDeleteLog(): UseMutationResult<void, Error, TimeLog> {
   const queryClient = useQueryClient();
   return useMutation({
@@ -140,7 +151,7 @@ export function useDeleteLog(): UseMutationResult<void, Error, TimeLog> {
           params: { path: { id: log.id } }
         })
       ),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: timeKeys.all })
+    onSuccess: () => refreshAfterLogChange(queryClient)
   });
 }
 
