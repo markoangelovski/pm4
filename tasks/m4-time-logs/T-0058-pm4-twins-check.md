@@ -3,7 +3,7 @@ id: T-0058
 title: pm4 compares production files with their prototype twins (pm4 twins, in check)
 milestone: M4
 app: infra
-status: review
+status: done
 size: S
 tier: sonnet
 depends_on: [T-0057]
