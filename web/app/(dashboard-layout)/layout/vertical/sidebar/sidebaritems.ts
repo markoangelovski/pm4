@@ -1,6 +1,7 @@
 import {
   House,
   Clock,
+  CalendarCheck,
   FolderKanban,
   ListTodo,
   Trash2,
@@ -28,7 +29,7 @@ export interface MenuItem {
 
 /**
  * PM4 navigation, grouped under headings (routing.md: Navigation):
- * Dashboard, Project management (Projects, Tasks) and Time (Logs).
+ * Dashboard, Project management (Projects, Tasks) and Time (Logs, Bookings).
  * Trash and Settings live in `footerItems`.
  */
 const SidebarContent: MenuItem[] = [
@@ -57,7 +58,15 @@ const SidebarContent: MenuItem[] = [
   },
   {
     heading: "Time",
-    items: [{ id: "time", name: "Logs", icon: Clock, url: routes.app.time }]
+    items: [
+      { id: "time", name: "Logs", icon: Clock, url: routes.app.time },
+      {
+        id: "bookings",
+        name: "Bookings",
+        icon: CalendarCheck,
+        url: routes.app.bookings
+      }
+    ]
   }
 ];
 

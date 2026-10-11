@@ -333,6 +333,24 @@ export interface paths {
         patch: operations["TimeLogsController_update"];
         trace?: never;
     };
+    "/api/v1/bookings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The logs worked or booked in a date range (API-BOOK-001). */
+        get: operations["BookingsController_list"];
+        /** Book, re-date or unbook one or many logs (API-BOOK-002). */
+        put: operations["BookingsController_set"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -642,6 +660,34 @@ export interface components {
             excludeFromStats?: boolean;
             /** @description The start of the target date when it has no workday yet. */
             dayStartMinute?: number;
+        };
+        BookingLogResponseDto: {
+            /** Format: date */
+            workDate: string;
+            title: string | null;
+            project: components["schemas"]["RefDto"] | null;
+            task: components["schemas"]["RefDto"] | null;
+            /**
+             * Format: date
+             * @example 2026-10-07
+             */
+            bookingDate: string | null;
+            id: string;
+            durationMinutes: number;
+            text: string;
+            excludeFromStats: boolean;
+        };
+        BookingListResponseDto: {
+            items: components["schemas"]["BookingLogResponseDto"][];
+        };
+        SetBookingDto: {
+            /** @description 1–100 time log ids; repeats are allowed. */
+            logIds: string[];
+            /**
+             * Format: date
+             * @description A date not after today in the caller's zone, or `null` to remove the booking. Absent → 400.
+             */
+            bookingDate: string | null;
         };
     };
     responses: never;
@@ -1943,6 +1989,114 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TimeLogResponseDto"];
+                };
+            };
+            /** @description Validation failed: one entry in errors[] per invalid field. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Missing, invalid or expired credentials. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Not found. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Unexpected error. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+        };
+    };
+    BookingsController_list: {
+        parameters: {
+            query: {
+                from: string;
+                to: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookingListResponseDto"];
+                };
+            };
+            /** @description Validation failed: one entry in errors[] per invalid field. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Missing, invalid or expired credentials. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Unexpected error. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+        };
+    };
+    BookingsController_set: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetBookingDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookingListResponseDto"];
                 };
             };
             /** @description Validation failed: one entry in errors[] per invalid field. */

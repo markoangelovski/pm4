@@ -6,6 +6,7 @@ export const routes = {
   app: {
     dashboard: "/app",
     time: "/app/time",
+    bookings: "/app/bookings",
     projects: "/app/projects",
     project: "/app/project",
     tasks: "/app/tasks",
