@@ -92,7 +92,8 @@ New non-prototype components: props and signatures as usual.
 
 ## Acceptance criteria
 The edge cases and the test plan in one table. One row per case; several rows may share an AC.
-*Test*: the `*.ac.*` file, `check` (a command under *Checks*) or `manual`. *Task*: the task that makes it pass.
+*Test*: the `*.ac.*` file, `check` (a command under *Checks*) or `manual`. *Task*: the task that makes it pass. An AC
+listing several tasks is checked only with the last of them; give each task its own AC if each should be checked on its own.
 
 | AC | Case → expected | Test | Task |
 | --- | --- | --- | --- |
