@@ -169,7 +169,7 @@ Invalidations (D3, T2). `features/time/api.ts` imports `projectKeys` from `@/fea
 Prototype twins (D5): make the same changes in `web/proto/features/{time,bookings,tasks}/api.ts`. In `web/proto/features/{projects,tasks,time}/api.ts`,
 take the types from `@/lib/api/schema` exactly as production does: drop the `proposed-types` imports, the `as Project`/`as ProjectList`
 casts and the `GetTimeLogs` cast. Then delete the three `proposed-types.ts` with `rm`. Every `web/proto/features/<d>/api.ts` then equals
-`web/features/<d>/api.ts` apart from `@/proto/mock/client` ↔ `@/lib/api/client` and `@/proto/` ↔ `@/` (AC-19).
+`web/features/<d>/api.ts` apart from `@/proto/mock/client` ↔ `@/lib/api/client` and `@/proto/` ↔ `@/`, which the [twin check](../04-web/prototype.md#twin-check) holds.
 
 ### Components (T2, T3)
 Promoted files need no change. Replace the existing production files with their twins, from `web/`:
@@ -210,35 +210,16 @@ excluded from statistics. One log of user B on B's own project.
 | AC-15 | The project page shows **Logged time** and requests `/api/v1/time-logs?projectId=<id>…`; not while the project is in the trash | `web/features/projects/components/project-detail.ac.test.tsx` | T2 |
 | AC-16 | The task page shows **Logged time** and requests `?taskId=<id>…`; not while the task is in the trash | `web/features/tasks/components/task-detail.ac.test.tsx` | T2 |
 | AC-17 | Bookings, all rows collapsed → headers `Projects`, `""`, `""`, `""`, `Hours worked`, `Hours booked`; expanding a row → `Project`, `Tasks`, `Logs`, `Booking date`, `Hours worked`, `Hours booked`; **Book all** stays in the row in both states | `web/features/bookings/components/bookings-view.ac.test.tsx` | T3 |
-| AC-18 | T2's replaced production components and promoted files equal their prototype twins apart from imports and Prettier | check | T2 |
-| AC-19 | The prototype `api.ts` twins equal production apart from the client import; no `proposed-types.ts` is left | check | T2 |
+| AC-18 | Retired: covered by the twin check ([prototype.md#twin-check](../04-web/prototype.md#twin-check), T-0058) | — | T2 |
+| AC-19 | Retired: covered by the twin check ([prototype.md#twin-check](../04-web/prototype.md#twin-check), T-0058) | — | T2 |
 | AC-20 | `format:check` covers `features` and `proto`, and passes | check | T3 |
 | AC-21 | No old sample name in specs or tests (D7): the test writer greps the old names (kept outside the repo) and finds none | manual | T1 |
-| AC-22 | T3's replaced Dashboard and Bookings components equal their prototype twins apart from imports and Prettier | check | T3 |
+| AC-22 | Retired: covered by the twin check ([prototype.md#twin-check](../04-web/prototype.md#twin-check), T-0058) | — | T3 |
 
 Typed stubs: *Contract stubs* above.
 
 ## Checks
 ```bash
-# AC-18: T2's components equal their prototype twins
-cd web
-for f in features/projects/components/projects-list.tsx features/projects/components/project-detail.tsx \
-         features/tasks/components/tasks-list.tsx features/tasks/components/task-detail.tsx \
-         features/time/components/logged-time-section.tsx features/time/components/logged-total.tsx; do
-  diff <(sed 's#@/proto/#@/#g' "proto/$f" | npx prettier --stdin-filepath "$f") "$f"
-done
-# AC-22: T3's components equal their prototype twins
-cd web
-for f in features/dashboard/components/{dashboard-view,hours-summary,kpi-tiles,project-hours,range-picker,running-totals,workday-chart}.tsx \
-         features/bookings/components/{bookings-view,day-section,booking-cell,range-field}.tsx; do
-  diff <(sed 's#@/proto/#@/#g' "proto/$f" | npx prettier --stdin-filepath "$f") "$f"
-done
-# AC-19: prototype api.ts twins equal production apart from the client import
-cd web
-for d in time bookings tasks projects dashboard users; do
-  diff <(sed -e 's#@/proto/mock/client#@/lib/api/client#' -e 's#@/proto/#@/#g' "proto/features/$d/api.ts" | npx prettier --stdin-filepath "features/$d/api.ts") "features/$d/api.ts"
-done
-! ls proto/features/*/proposed-types.ts 2>/dev/null
 # AC-20: format:check covers features and proto
 grep -q '"format:check": "prettier --check app components features hooks lib proto ' web/package.json
 cd web && npm run format:check
@@ -258,3 +239,4 @@ None. OQ-131…OQ-137 are resolved.
 - 2026-10-11: Initial draft from prototype `fa9a030` (OQ-131…OQ-137). Ready for review.
 - 2026-10-11: Approved by the owner.
 - 2026-10-11: AC-18 split: T2's components stay AC-18, T3's become AC-22, so each task's `pm4 check` runs only its own comparison (owner).
+- 2026-10-11: AC-18, AC-19 and AC-22 retired with their *Checks*: the twin check covers them, and AC-19's `proposed-types.ts` line would fail on the next prototype (T-0059).
