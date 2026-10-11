@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // PM4 workflow helper: the mechanical steps of the spec → tests → implement → review workflow,
-// so no model spends tokens on them. No dependencies. Run from anywhere in the repo.
+// so no model spends tokens on them. No dependencies (twins borrow web/'s Prettier). Run from anywhere in the repo.
 //
 //   node scripts/pm4.mjs tasks  <feature-spec>       create task files + BOARD rows from the spec's Tasks table
 //   node scripts/pm4.mjs hash   <feature-spec>       record sha256 of the acceptance tests in the tasks' ac_files
@@ -8,6 +8,7 @@
 //   node scripts/pm4.mjs status <T-####> <status>    set status in the task file and BOARD, unblock dependents
 //   node scripts/pm4.mjs brief  <T-####>             the slice of the feature spec an implementer needs
 //   node scripts/pm4.mjs promote <T-####>            copy the task's prototype files (Files rows marked P) into place
+//   node scripts/pm4.mjs twins                       compare web/ files with their twins under web/proto/features
 //   node scripts/pm4.mjs check  <T-####> [--no-gates]          scope, hashes, gates, spec checks for one task
 //   node scripts/pm4.mjs check  --feature <spec> [--no-gates]  the same for a whole feature (review)
 //
@@ -17,7 +18,7 @@ import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const TASKS_DIR = path.join(ROOT, "tasks");
@@ -249,7 +250,7 @@ function loadSpec(specPath) {
         .filter((s) => s.includes("/") || s.includes("."))
         .map((s) => (app && !s.startsWith(`${app}/`) && !s.startsWith(".") ? `${app}/${s}` : s));
       const kind = cKind >= 0 ? (r[cKind] ?? "").trim().toUpperCase() : "";
-      files.push({ tasks: taskRefs(r[cTask]), tests: /test/i.test(r[cTask]), kind, paths, line: ft.rowLines[i] });
+      files.push({ app, tasks: taskRefs(r[cTask]), tests: /test/i.test(r[cTask]), kind, paths, line: ft.rowLines[i] });
     });
   }
 
@@ -673,6 +674,56 @@ function gitChanged() {
   return unique(changed);
 }
 
+// Twin check (specs/04-web/prototype.md#twin-check): each file under web/proto/features against the production file at
+// the same path minus proto/. The prototype text gets the production imports and Prettier (web/'s own, with the
+// production path's config), then must equal the production file. A differing pair is a failure when either file is
+// uncommitted (this change made it), else a warning (the prototype is ahead, or the pair drifted earlier).
+const TWIN_MARKER = "pm4-twin: differs";
+
+async function twins() {
+  const prettierPath = path.join(ROOT, "web/node_modules/prettier/index.mjs");
+  if (!fs.existsSync(prettierPath)) die("twins need web/node_modules: run npm ci in web/");
+  const prettier = await import(pathToFileURL(prettierPath).href);
+  const changed = new Set(gitChanged());
+  const out = { equal: [], intended: [], notPromoted: [], warnings: [], failures: [] };
+  const protoFiles = fs
+    .readdirSync(path.join(ROOT, "web/proto/features"), { recursive: true })
+    .map((f) => rel(path.join("web/proto/features", f)))
+    .filter((f) => fs.statSync(path.join(ROOT, f)).isFile())
+    .sort();
+  for (const proto of protoFiles) {
+    const prod = proto.replace(/^web\/proto\//, "web/");
+    const name = prod.replace(/^web\//, "");
+    if (!exists(prod)) {
+      out.notPromoted.push(name);
+      continue;
+    }
+    const text = read(proto);
+    if (text.includes(TWIN_MARKER)) {
+      out.intended.push(name);
+      continue;
+    }
+    const normal = text.replaceAll("@/proto/mock/client", "@/lib/api/client").replaceAll("@/proto/", "@/");
+    const abs = path.join(ROOT, prod);
+    const formatted = await prettier.format(normal, { ...(await prettier.resolveConfig(abs)), filepath: abs });
+    if (formatted === read(prod)) out.equal.push(name);
+    else (changed.has(proto) || changed.has(prod) ? out.failures : out.warnings).push(name);
+  }
+  return out;
+}
+
+async function cmdTwins() {
+  const r = await twins();
+  for (const p of r.failures) console.log(`FAIL     ${p}`);
+  for (const p of r.warnings) console.log(`WARN     ${p}`);
+  for (const p of r.intended) console.log(`intended ${p}`);
+  console.log(
+    `twins: ${r.equal.length} equal, ${r.intended.length} intended, ${r.notPromoted.length} not promoted, ` +
+      `${r.warnings.length} warnings, ${r.failures.length} failures`,
+  );
+  if (r.failures.length) process.exit(1);
+}
+
 function globRe(p) {
   const esc = p.replace(/[.+^${}()|[\]\\]/g, "\\$&").replace(/\*\*/g, "\0").replace(/\*/g, "[^/]*").replace(/\0/g, ".*");
   return new RegExp(`^${esc}${p.endsWith("/") ? ".*" : ""}$`);
@@ -692,7 +743,7 @@ function runGate(app, script, extraArgs = []) {
   return { ok: r.status === 0, secs, output };
 }
 
-function cmdCheck(args) {
+async function cmdCheck(args) {
   const noGates = args.includes("--no-gates");
   const fi = args.indexOf("--feature");
   const featureMode = fi >= 0;
@@ -793,6 +844,14 @@ function cmdCheck(args) {
       report(`  check ${ch.label}: ${r.status === 0 ? "ok" : "FAIL"}`);
       if (r.status !== 0) problems.push(`check "${ch.label}" failed:\n${tail(`${r.stdout}${r.stderr}`)}`);
     }
+    if (featureMode ? spec.files.some((f) => f.app === "web") : task.app === "web") {
+      const tw = await twins();
+      report(`  twins: ${tw.failures.length ? `FAIL (${tw.failures.length})` : `ok (${tw.equal.length} equal)`}`);
+      for (const p of tw.warnings) report(`  twins warning: ${p}`);
+      if (tw.failures.length) {
+        problems.push(`production files differ from their prototype twins:\n${tw.failures.map((p) => `    web/${p}`).join("\n")}`);
+      }
+    }
   }
   if (manual?.length) report(`  manual (owner verifies): ${manual.join(", ")}`);
 
@@ -825,10 +884,14 @@ switch (cmd) {
   case "promote":
     cmdPromote(args[0] ?? die("usage: promote <T-####>"));
     break;
+  case "twins":
+    await cmdTwins();
+    break;
   case "check":
-    cmdCheck(args);
+    await cmdCheck(args);
     break;
   default:
-    console.log(fs.readFileSync(fileURLToPath(import.meta.url), "utf8").split("\n").slice(1, 14).join("\n").replace(/^\/\/ ?/gm, ""));
+    const lines = fs.readFileSync(fileURLToPath(import.meta.url), "utf8").split("\n").slice(1);
+    console.log(lines.slice(0, lines.findIndex((l) => !l.startsWith("//"))).join("\n").replace(/^\/\/ ?/gm, ""));
     process.exit(cmd ? 2 : 0);
 }

@@ -86,6 +86,26 @@ acceptance tests; lint and typecheck cover it.
 | `postbuild` fails if `out/proto` exists or any file in `out/` contains `pm4-proto-only` (every mock hook imports the store, so leaked mock code carries the marker) | `web/package.json` |
 | Shell renders not-found on non-localhost hosts | `app/proto/layout.dev.tsx` |
 
+## Twin check
+`scripts/pm4.mjs` keeps promoted files equal to their prototype twins, so feature specs don't need their own
+"equals its prototype twin" checks.
+- **Pairs:** every file under `web/proto/features/**` with the file at the same path minus `proto/`
+  (`web/proto/features/time/api.ts` ↔ `web/features/time/api.ts`). Nothing else is compared: `proto/lib/routes.ts`,
+  `proto/mock/**` and the `app/proto/**` pages differ from production by design. A prototype file with no production
+  file yet is *not promoted* (counted, never a failure).
+- **Normalisation:** in the prototype text, `@/proto/mock/client` becomes `@/lib/api/client`, then every other
+  `@/proto/` becomes `@/`. The result is formatted with `web/`'s Prettier and the production path's config, and must
+  equal the production file.
+- **Intended differences:** a prototype file containing `pm4-twin: differs (<why>)` (in its doc comment) is not
+  compared. Use it only where the prototype can't do what production does, e.g. `features/auth/use-sign-out.ts`
+  can't import `lib/auth`.
+- **Fail or warn:** a differing pair is a **failure** when either file has an uncommitted change (the change under
+  check made it differ). Otherwise it's a **warning**: the prototype is ahead after a prototype commit, or the pair
+  drifted earlier.
+- **Where it runs:** `pm4 check` for a `web` task, and `pm4 check --feature` when the spec's *Files* table has a `web`
+  row (so in `implement-task` and `review-feature`), after the spec's checks. `pm4 twins` runs it alone and exits 1
+  on a failure. It needs `web/node_modules` (`npm ci` in `web/`).
+
 ## Workflow
 1. **Build** (main session with the owner, `prototype` skill): the screen, its mock hooks, seed and proposed types.
    The owner tries it at `http://localhost:3000/proto/app/...`.
@@ -98,6 +118,7 @@ acceptance tests; lint and typecheck cover it.
    production path (only if that path doesn't exist yet), rewrites `@/proto/` imports to `@/`, and lists the
    remaining `@/proto/mock/` imports the implementer must replace. Existing production files are left alone; the spec
    says how to apply the prototype's changes to them (usually `git diff <old prototype SHA> <prototype SHA> -- <file>`).
+   From then on, the [twin check](#twin-check) holds the promoted and replaced files equal to their twins.
 5. **Stay ahead**: a later UI change to a promoted screen starts again at step 1. A review finding that changes UI is
    fixed in both the production file and its prototype twin (both listed in *Files*).
 
@@ -108,3 +129,4 @@ acceptance tests; lint and typecheck cover it.
 - 2026-10-11: Initial version (ADR-0012).
 - 2026-10-11: Approved by the owner.
 - 2026-10-11: Mock hooks are copies of the real `api.ts` over a mock client (owner).
+- 2026-10-11: Twin check: `pm4 check` and `pm4 twins` compare `proto/features/**` with production (T-0058).
