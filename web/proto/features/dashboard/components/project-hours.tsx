@@ -6,9 +6,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ProjectIcon } from "@/proto/features/projects/components/project-icon";
 import { formatDuration } from "@/lib/time";
 import { routes } from "@/proto/lib/routes";
-import type { ProjectShare } from "../stats";
+import type { ReportProject } from "../stats";
 
-function Name({ row }: { row: ProjectShare }) {
+function Name({ row }: { row: ReportProject }) {
   if (row.kind === "unsorted" || row.kind === "nonprod") {
     return (
       <span className="min-w-0 truncate text-muted-foreground">
@@ -16,28 +16,30 @@ function Name({ row }: { row: ProjectShare }) {
       </span>
     );
   }
-  if (!row.projectId) {
+  const project = row.project;
+  const title = project?.title ?? "";
+  if (!project || project.deleted || !project.id) {
     return (
       <span className="min-w-0 truncate">
-        <span>{row.title}</span>{" "}
+        <span>{title}</span>{" "}
         <span className="text-muted-foreground">(deleted)</span>
       </span>
     );
   }
   return (
     <Link
-      href={`${routes.app.project}?id=${row.projectId}`}
+      href={`${routes.app.project}?id=${project.id}`}
       className="flex min-w-0 items-center gap-2 hover:underline"
     >
-      <ProjectIcon project={{ id: row.projectId }} className="size-5" />
-      <span className="truncate">{row.title}</span>
+      <ProjectIcon project={{ id: project.id }} className="size-5" />
+      <span className="truncate">{title}</span>
     </Link>
   );
 }
 
-/** Worked hours per project in the range, the booked part inside each bar. Unsorted and Non-prod can't be booked. */
-export function ProjectHours({ rows }: { rows: ProjectShare[] }) {
-  const max = Math.max(0, ...rows.map((r) => r.worked));
+/** SCR-010 / FR-RPT-006: worked hours per project in the range (API order), the booked part inside each bar. Unsorted and Non-prod can't be booked. */
+export function ProjectHours({ rows }: { rows: ReportProject[] }) {
+  const max = Math.max(0, ...rows.map((r) => r.workedMinutes));
   return (
     <Card className="h-full gap-0! border rounded-md! py-0!">
       <CardHeader className="flex h-11 flex-row items-center justify-between border-b px-4 py-0! pb-0!">
@@ -69,23 +71,28 @@ export function ProjectHours({ rows }: { rows: ProjectShare[] }) {
           </p>
         ) : (
           <ul className="space-y-4">
-            {rows.map((row) => {
+            {rows.map((row, i) => {
               const bucket = row.kind !== "project";
-              const share = max > 0 ? (row.worked / max) * 100 : 0;
+              const share = max > 0 ? (row.workedMinutes / max) * 100 : 0;
               const booked =
-                row.worked > 0
-                  ? Math.min((row.booked / row.worked) * 100, 100)
+                row.workedMinutes > 0
+                  ? Math.min((row.bookedMinutes / row.workedMinutes) * 100, 100)
                   : 0;
               return (
-                <li key={row.key} className="space-y-1.5">
+                <li
+                  key={row.project?.id ?? `${row.kind}-${i}`}
+                  className="space-y-1.5"
+                >
                   <div className="flex items-center justify-between gap-3 text-sm">
                     <Name row={row} />
                     <span className="flex shrink-0 items-baseline gap-2 tabular-nums">
                       <span className="font-medium">
-                        {formatDuration(row.worked)}
+                        {formatDuration(row.workedMinutes)}
                       </span>
                       <span className="text-xs text-muted-foreground">
-                        {bucket ? "—" : `${formatDuration(row.booked)} booked`}
+                        {bucket
+                          ? "—"
+                          : `${formatDuration(row.bookedMinutes)} booked`}
                       </span>
                     </span>
                   </div>

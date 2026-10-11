@@ -13,8 +13,9 @@ import { TASK_STATUSES, type TaskStatus } from "@/proto/features/tasks/status";
 import { apiClient } from "@/proto/mock/client";
 import { isApiError, unwrap, unwrapVoid } from "@/lib/api/problem";
 import type { components } from "@/lib/api/schema";
+import type { TaskResponseDto } from "./proposed-types";
 
-type TaskResponse = components["schemas"]["TaskResponseDto"];
+type TaskResponse = TaskResponseDto;
 /** D14: a task's project is never purged, so its `Ref.id` is never null (endpoints.md *Task*). */
 export type Task = Omit<TaskResponse, "project"> & {
   project: { id: string; title: string; deleted: boolean };

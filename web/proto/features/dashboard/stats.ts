@@ -1,39 +1,39 @@
-import { endOfISOWeek, format, parseISO, startOfISOWeek } from "date-fns";
-import { isBookable } from "@/proto/features/bookings/month";
-import type { TimeLog } from "@/proto/features/time/types";
+import {
+  endOfISOWeek,
+  format,
+  isWeekend,
+  parseISO,
+  startOfISOWeek
+} from "date-fns";
+import type { components } from "@/lib/api/schema";
+import { eachDay, type DateRange } from "./range";
+
+/** API-RPT-001's response. */
+export type DashboardReport =
+  components["schemas"]["DashboardReportResponseDto"];
+export type ReportDay = components["schemas"]["ReportDayDto"];
+export type ReportProject = components["schemas"]["ReportProjectDto"];
 
 /** One calendar day of the range. A workday is a day with a start time. */
 export interface DayStat {
   workDate: string;
   startMinute: number | null;
-  /** Every log of the day (Logs' "Logged"). */
   worked: number;
-  /** Logs of the day that have a booking date, whatever that date is. */
   booked: number;
 }
 
-const isBooked = (log: TimeLog, bookings: Record<string, string>) =>
-  isBookable(log) && !!bookings[log.id];
-
-export function dayStats(
-  days: string[],
-  logs: TimeLog[],
-  starts: Record<string, number>,
-  bookings: Record<string, string>
-): DayStat[] {
-  const byDate = new Map<string, DayStat>(
-    days.map((d) => [
-      d,
-      { workDate: d, startMinute: starts[d] ?? null, worked: 0, booked: 0 }
-    ])
-  );
-  for (const log of logs) {
-    const day = byDate.get(log.workDate);
-    if (!day) continue;
-    day.worked += log.durationMinutes;
-    if (isBooked(log, bookings)) day.booked += log.durationMinutes;
-  }
-  return [...byDate.values()];
+/** One per date of the range, oldest first; a date missing from `days` → { startMinute: null, worked: 0, booked: 0 }. */
+export function dayStats(range: DateRange, days: ReportDay[]): DayStat[] {
+  const byDate = new Map(days.map((d) => [d.workDate, d]));
+  return eachDay(range).map((workDate) => {
+    const d = byDate.get(workDate);
+    return {
+      workDate,
+      startMinute: d?.startMinute ?? null,
+      worked: d?.workedMinutes ?? 0,
+      booked: d?.bookedMinutes ?? 0
+    };
+  });
 }
 
 export interface Totals {
@@ -47,6 +47,7 @@ export interface Totals {
   latestStart: number | null;
 }
 
+/** workdays = days with a start; target = workdays × targetMinutes; avgStart = Math.round(mean of the starts). */
 export function totals(days: DayStat[], targetMinutes: number): Totals {
   const starts = days.flatMap((d) =>
     d.startMinute === null ? [] : [d.startMinute]
@@ -75,12 +76,12 @@ export interface Bucket {
   worked: number;
   booked: number;
   unbooked: number;
-  /** Daily target for a day bar (even on a day off, for the reference line); workdays × target for a week. */
+  /** The daily target for a day; workdays × the daily target for a week. */
   target: number;
   workdays: number;
 }
 
-/** Days up to 62 → a bar per day; longer → a bar per ISO week (start = the week's average). */
+/** Up to 62 days → one bar per day (a weekend day with no start and no work left out); longer → one per ISO week (start = the week's average). */
 export function buckets(
   days: DayStat[],
   targetMinutes: number
@@ -90,18 +91,25 @@ export function buckets(
       days[0]?.workDate.slice(0, 7) === days.at(-1)?.workDate.slice(0, 7);
     return {
       by: "day",
-      items: days.map((d) => ({
-        key: d.workDate,
-        date: d.workDate,
-        tick: format(parseISO(d.workDate), oneMonth ? "d" : "d MMM"),
-        title: format(parseISO(d.workDate), "EEE, d MMM yyyy"),
-        startMinute: d.startMinute,
-        worked: d.worked,
-        booked: d.booked,
-        unbooked: d.worked - d.booked,
-        target: targetMinutes,
-        workdays: d.startMinute === null ? 0 : 1
-      }))
+      items: days
+        .filter(
+          (d) =>
+            d.startMinute !== null ||
+            d.worked > 0 ||
+            !isWeekend(parseISO(d.workDate))
+        )
+        .map((d) => ({
+          key: d.workDate,
+          date: d.workDate,
+          tick: format(parseISO(d.workDate), oneMonth ? "d" : "d MMM"),
+          title: format(parseISO(d.workDate), "EEE, d MMM yyyy"),
+          startMinute: d.startMinute,
+          worked: d.worked,
+          booked: d.booked,
+          unbooked: d.worked - d.booked,
+          target: targetMinutes,
+          workdays: d.startMinute === null ? 0 : 1
+        }))
     };
   }
   const weeks = new Map<string, DayStat[]>();
@@ -137,15 +145,15 @@ export interface RunningPoint {
   target: number | null;
 }
 
-/** Cumulative worked, booked and target per day; null after `today`, so the lines stop at today. */
+/** Cumulative worked, booked and target (+ targetMinutes per day with a start); all null after `today`, so the lines stop there. */
 export function running(
   days: DayStat[],
   targetMinutes: number,
   today: string
 ): RunningPoint[] {
-  let worked = 0,
-    booked = 0,
-    target = 0;
+  let worked = 0;
+  let booked = 0;
+  let target = 0;
   return days.map((d) => {
     worked += d.worked;
     booked += d.booked;
@@ -161,62 +169,7 @@ export function running(
   });
 }
 
-export interface ProjectShare {
-  key: string;
-  projectId: string | null;
-  title: string;
-  kind: "project" | "unsorted" | "nonprod";
-  worked: number;
-  booked: number;
-}
-
-/** Worked and booked minutes per project, biggest first; then "Unsorted" (no project) and "Non-prod" (excluded from statistics). */
-export function byProject(
-  logs: TimeLog[],
-  bookings: Record<string, string>
-): ProjectShare[] {
-  const rows = new Map<string, ProjectShare>();
-  for (const log of logs) {
-    const kind = log.excludeFromStats
-      ? "nonprod"
-      : log.project
-        ? "project"
-        : "unsorted";
-    const key =
-      kind === "project"
-        ? (log.project!.id ?? `deleted:${log.project!.title}`)
-        : kind;
-    let row = rows.get(key);
-    if (!row) {
-      row = {
-        key,
-        kind,
-        worked: 0,
-        booked: 0,
-        projectId: kind === "project" ? log.project!.id : null,
-        title:
-          kind === "project"
-            ? log.project!.title
-            : kind === "unsorted"
-              ? "Unsorted"
-              : "Non-prod"
-      };
-      rows.set(key, row);
-    }
-    row.worked += log.durationMinutes;
-    if (isBooked(log, bookings)) row.booked += log.durationMinutes;
-  }
-  const all = [...rows.values()];
-  return [
-    ...all
-      .filter((r) => r.kind === "project")
-      .sort((a, b) => b.worked - a.worked),
-    ...all.filter((r) => r.kind === "unsorted"),
-    ...all.filter((r) => r.kind === "nonprod")
-  ];
-}
-
-/** Axis ticks in minutes at whole, round hour steps (1, 2, 4, 5, 10, 20, 25, 50…h), at most ~5 intervals, covering `maxMinutes`. */
+/** Axis ticks in minutes at whole-hour steps (1, 2, 4, 5, 10, 20, 25, 50, 100, 200, 250, 500 h, else 1000), at most 5 intervals, from 0 to cover maxMinutes (at least 1 h). */
 export function hourTicks(maxMinutes: number): number[] {
   const maxH = Math.max(1, maxMinutes / 60);
   const step =

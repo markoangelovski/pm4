@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { format, parseISO } from "date-fns";
-import type { DateRange } from "react-day-picker";
+import type { DateRange as PickerRange } from "react-day-picker";
 import { CalendarIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -12,37 +12,37 @@ import {
   PopoverTrigger
 } from "@/components/ui/popover";
 import { formatWorkDate } from "@/lib/time";
-
-export interface DateRangeValue {
-  from: string;
-  to: string;
-}
+import { isRangeTooLong, type DateRange } from "../days";
 
 const iso = (d: Date) => format(d, "yyyy-MM-dd");
 
-/** Start and end date in one calendar popover, plus a Submit button that applies the range. Days after `max` are disabled. */
+/** The range control (SCR-045): start and end in one two-month calendar popover, and Submit, which applies the range. Days after `max` are disabled; at most 366 days (OQ-130). */
 export function RangeField({
   applied,
   max,
   onSubmit
 }: {
-  applied: DateRangeValue;
+  applied: DateRange;
   max: string;
-  onSubmit: (range: DateRangeValue) => void;
+  onSubmit: (range: DateRange) => void;
 }) {
   const [open, setOpen] = useState(false);
-  const [draft, setDraft] = useState<DateRange | undefined>({
+  const [draft, setDraft] = useState<PickerRange | undefined>({
     from: parseISO(applied.from),
     to: parseISO(applied.to)
   });
+  const start = draft?.from ? iso(draft.from) : null;
+  const end = draft?.to ? iso(draft.to) : start;
+  const tooLong = start !== null && end !== null && isRangeTooLong(start, end);
 
   return (
     <form
       className="flex flex-wrap items-center gap-2"
       onSubmit={(e) => {
         e.preventDefault();
-        if (!draft?.from) return;
-        onSubmit({ from: iso(draft.from), to: iso(draft.to ?? draft.from) });
+        if (!start || !end || tooLong) return;
+        setOpen(false);
+        onSubmit({ from: start, to: end });
       }}
     >
       <Popover open={open} onOpenChange={setOpen}>
@@ -72,9 +72,16 @@ export function RangeField({
           />
         </PopoverContent>
       </Popover>
-      <Button type="submit" className="cursor-pointer" disabled={!draft?.from}>
+      <Button
+        type="submit"
+        className="cursor-pointer"
+        disabled={!start || tooLong}
+      >
         Submit
       </Button>
+      {tooLong ? (
+        <p className="text-sm text-muted-foreground">Pick at most 366 days.</p>
+      ) : null}
     </form>
   );
 }

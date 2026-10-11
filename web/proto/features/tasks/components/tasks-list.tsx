@@ -375,7 +375,7 @@ export function TasksList({
                     <ProjectLeadLabel lead={task.projectLead} />
                   </TableCell>
                   <TableCell className="whitespace-nowrap">
-                    <LoggedTotal kind="task" id={task.id} />
+                    <LoggedTotal minutes={task.loggedMinutes} />
                   </TableCell>
                   <TableCell className="whitespace-nowrap">
                     {me ? (

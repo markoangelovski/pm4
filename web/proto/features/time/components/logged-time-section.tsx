@@ -12,9 +12,10 @@ import {
   TableHeader,
   TableRow
 } from "@/components/ui/table";
+import { Skeleton } from "@/components/ui/skeleton";
 import { formatDuration, formatWorkDate } from "@/lib/time";
 import { routes } from "@/proto/lib/routes";
-import { LOGGED_TIME_PAGE_SIZE, useEntityLogs } from "@/proto/mock/hooks";
+import { TIME_LOG_PAGE_SIZE, useTimeLogs } from "../api";
 
 /** SCR-044: the logged time of one project (with a Task column) or one task. */
 export function LoggedTimeSection({
@@ -28,24 +29,50 @@ export function LoggedTimeSection({
     "logsPage",
     parseAsInteger.withDefault(1).withOptions({ clearOnDefault: true })
   );
-  const { items, total, totalMinutes, bookedMinutes } = useEntityLogs(
-    { projectId, taskId },
+  const logs = useTimeLogs(
+    projectId !== undefined ? { projectId } : { taskId: taskId ?? "" },
     Math.max(1, page)
   );
-  const pageCount = Math.max(1, Math.ceil(total / LOGGED_TIME_PAGE_SIZE));
+  const data = logs.data;
+  const pageCount = Math.max(
+    1,
+    Math.ceil((data?.total ?? 0) / TIME_LOG_PAGE_SIZE)
+  );
   const showTask = projectId !== undefined;
 
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between gap-2">
         <CardTitle>Logged time</CardTitle>
-        <span className="text-sm font-medium tabular-nums text-muted-foreground">
-          Total worked: {formatDuration(totalMinutes)}
-          <span className="ml-4">Booked: {formatDuration(bookedMinutes)}</span>
-        </span>
+        {data ? (
+          <span className="text-sm font-medium tabular-nums text-muted-foreground">
+            Total worked: {formatDuration(data.totalMinutes)}
+            <span className="ml-4">
+              Booked: {formatDuration(data.bookedMinutes)}
+            </span>
+          </span>
+        ) : null}
       </CardHeader>
       <CardContent className="px-0">
-        {total === 0 ? (
+        {logs.isError ? (
+          <div className="flex flex-col items-center gap-3 py-6 text-sm text-muted-foreground">
+            <p>Couldn&apos;t load the logs.</p>
+            <Button
+              variant="outline"
+              size="sm"
+              className="cursor-pointer"
+              onClick={() => void logs.refetch()}
+            >
+              Retry
+            </Button>
+          </div>
+        ) : !data ? (
+          <div className="space-y-2 px-6" aria-busy="true">
+            <Skeleton className="h-8 w-full" />
+            <Skeleton className="h-8 w-full" />
+            <Skeleton className="h-8 w-full" />
+          </div>
+        ) : data.total === 0 ? (
           <p className="py-6 text-center text-sm text-muted-foreground">
             No time logged yet.
           </p>
@@ -62,7 +89,7 @@ export function LoggedTimeSection({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {items.map((l) => (
+                {data.items.map((l) => (
                   <TableRow key={l.id}>
                     <TableCell className="whitespace-nowrap">
                       <Link

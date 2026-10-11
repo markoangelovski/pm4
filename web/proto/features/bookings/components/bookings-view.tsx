@@ -1,58 +1,106 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { format, parseISO } from "date-fns";
+import { useMemo } from "react";
+import { parseAsString, useQueryStates } from "nuqs";
 import { CalendarX } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
   Empty,
+  EmptyContent,
   EmptyDescription,
   EmptyHeader,
   EmptyMedia,
   EmptyTitle
 } from "@/components/ui/empty";
-import { monthRange, today as todayIn, formatWorkDate } from "@/lib/time";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useMe } from "@/proto/features/users/api";
+import { today as todayIn } from "@/lib/time";
+import { useBookingRange } from "../api";
 import {
-  useAllLogs,
-  useBookings,
-  useLogsInRange,
-  useMeSettings
-} from "@/proto/mock/hooks";
-import { daysWithLogs } from "../month";
+  bookingDays,
+  defaultRange,
+  parseRange,
+  rangeLabel,
+  type DateRange
+} from "../days";
 import { DaySection } from "./day-section";
-import { RangeField, type DateRangeValue } from "./range-field";
+import { RangeField } from "./range-field";
 
-const label = ({ from, to }: DateRangeValue) =>
-  from.slice(0, 7) === to.slice(0, 7)
-    ? format(parseISO(from), "MMMM yyyy")
-    : `${formatWorkDate(from)} – ${formatWorkDate(to)}`;
-
-/** Prototype: the days with logs in the submitted time range (the current month so far by default), oldest first. */
+/** The Bookings page body (SCR-045): the range in the URL (default: this month up to today), then one section per listed day, oldest first. */
 export function BookingsView() {
-  const { timeZone, dailyTargetMinutes } = useMeSettings();
+  const me = useMe();
+  const timeZone = me.data?.timeZone ?? "UTC";
+  const target = me.data?.dailyTargetMinutes ?? 0;
   const today = todayIn(timeZone);
-  const [range, setRange] = useState<DateRangeValue>(() => ({
-    from: monthRange(today, timeZone).from,
-    to: today
-  }));
-  const logs = useLogsInRange(range.from, range.to);
-  const allLogs = useAllLogs();
-  const bookings = useBookings();
-  const days = useMemo(
-    () => daysWithLogs(logs, allLogs, range, dailyTargetMinutes, bookings),
-    [logs, allLogs, range, dailyTargetMinutes, bookings]
+  const [query, setQuery] = useQueryStates(
+    { from: parseAsString, to: parseAsString },
+    { history: "replace" }
   );
+  const range = useMemo(
+    () => parseRange(query.from, query.to, today),
+    [query.from, query.to, today]
+  );
+  const bookings = useBookingRange(range.from, range.to);
+  const data = bookings.data;
+  const days = useMemo(
+    () => (data ? bookingDays(data, range, target) : []),
+    [data, range, target]
+  );
+
+  const submit = (next: DateRange) => {
+    const def = defaultRange(today);
+    void setQuery(
+      next.from === def.from && next.to === def.to
+        ? { from: null, to: null }
+        : next
+    );
+  };
+
+  const failed = me.isError || bookings.isError;
+  const loading = !failed && (!me.data || !data);
 
   return (
     <div className="space-y-6">
       <div className="space-y-3">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Bookings</h1>
-          <p className="text-sm text-muted-foreground">{label(range)}</p>
+          <p className="text-sm text-muted-foreground">{rangeLabel(range)}</p>
         </div>
-        <RangeField applied={range} max={today} onSubmit={setRange} />
+        <RangeField
+          key={`${range.from}:${range.to}`}
+          applied={range}
+          max={today}
+          onSubmit={submit}
+        />
       </div>
-      {days.length === 0 ? (
+      {failed ? (
+        <Card className="border rounded-md!">
+          <Empty>
+            <EmptyHeader>
+              <EmptyTitle>Couldn&apos;t load the bookings.</EmptyTitle>
+            </EmptyHeader>
+            <EmptyContent>
+              <Button
+                variant="outline"
+                className="cursor-pointer"
+                onClick={() => {
+                  if (me.isError) void me.refetch();
+                  if (bookings.isError) void bookings.refetch();
+                }}
+              >
+                Retry
+              </Button>
+            </EmptyContent>
+          </Empty>
+        </Card>
+      ) : loading ? (
+        <div className="space-y-4" aria-busy="true">
+          <Skeleton className="h-12 w-full" />
+          <Skeleton className="h-20 w-full" />
+          <Skeleton className="h-48 w-full" />
+        </div>
+      ) : days.length === 0 ? (
         <Card className="border rounded-md!">
           <Empty>
             <EmptyHeader>

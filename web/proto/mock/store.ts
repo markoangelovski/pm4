@@ -1,6 +1,5 @@
 // In-memory data of the UI prototype (module state: resets on every reload). The mock client
-// (`./client.ts`) and the store hooks (`./hooks.ts`) read and change it.
-import { useSyncExternalStore } from "react";
+// (`./client.ts`) reads and changes it.
 import type { components } from "@/lib/api/schema";
 import type { TimeLog } from "@/proto/features/time/types";
 import { MOCK_USER, seedProjects, seedTasks, seedTime } from "./seed";
@@ -38,21 +37,11 @@ let state: MockState = {
   seq: 10000
 };
 
-const listeners = new Set<() => void>();
 function set(next: Partial<MockState>) {
   state = { ...state, ...next };
-  listeners.forEach((l) => l());
 }
-const subscribe = (l: () => void) => (
-  listeners.add(l),
-  () => void listeners.delete(l)
-);
 
 export const getMockState = (): MockState => state;
-
-export function useMockState(): MockState {
-  return useSyncExternalStore(subscribe, getMockState, getMockState);
-}
 
 /** A new id with the given prefix (`p-new1`, `l10001`, …). */
 export function nextId(prefix: string): string {
@@ -87,10 +76,13 @@ export const mock = {
     });
     return log;
   },
+  /** A log that stops being bookable (excluded from statistics, or no project) loses its booking (OQ-124). */
   updateLog(id: string, input: Omit<TimeLog, "id">, dayStart?: number) {
+    const bookable = !input.excludeFromStats && input.project !== null;
     set({
       starts: startsWith(input.workDate, dayStart),
-      logs: state.logs.map((l) => (l.id === id ? { ...input, id } : l))
+      logs: state.logs.map((l) => (l.id === id ? { ...input, id } : l)),
+      bookings: bookable ? state.bookings : without(state.bookings, id)
     });
   },
   deleteLog(id: string) {
@@ -99,9 +91,6 @@ export const mock = {
   },
   setStart(date: string, minute: number) {
     set({ starts: { ...state.starts, [date]: minute } });
-  },
-  book(logId: string, date: string) {
-    set({ bookings: { ...state.bookings, [logId]: date } });
   },
   bookMany(logIds: string[], date: string) {
     set({

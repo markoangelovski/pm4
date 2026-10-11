@@ -302,7 +302,7 @@ export function ProjectsList() {
                             </div>
                           </TableCell>
                           <TableCell className="whitespace-nowrap">
-                            <LoggedTotal kind="project" id={project.id} />
+                            <LoggedTotal minutes={project.loggedMinutes} />
                           </TableCell>
                           <TableCell className="whitespace-nowrap">
                             {me ? (
