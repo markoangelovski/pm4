@@ -14,6 +14,47 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts"
   ]),
+  // UI prototype separation (ADR-0012, specs/04-web/prototype.md).
+  {
+    files: ["**/*.{ts,tsx,js,jsx,mjs}"],
+    ignores: ["proto/**", "app/proto/**"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: ["@/proto", "@/proto/**", "**/proto/**", "@/app/proto/**"],
+              message:
+                "Production code never imports the UI prototype (ADR-0012)."
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    files: ["proto/**", "app/proto/**"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: [
+                "@/features/**",
+                "@/lib/api/client",
+                "@/lib/auth/**",
+                "@/app/(dashboard-layout)/**"
+              ],
+              message:
+                "The prototype uses its own twins under proto/ and mock hooks, never real data or auth code (specs/04-web/prototype.md)."
+            }
+          ]
+        }
+      ]
+    }
+  },
   // Last, so Prettier owns formatting (code-style, T-0006).
   eslintConfigPrettier
 ]);
