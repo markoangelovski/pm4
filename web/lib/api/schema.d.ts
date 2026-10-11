@@ -351,6 +351,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/reports/dashboard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Worked and booked minutes per day and per project in a date range (API-RPT-001). */
+        get: operations["ReportsController_dashboard"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -688,6 +705,35 @@ export interface components {
              * @description A date not after today in the caller's zone, or `null` to remove the booking. Absent → 400.
              */
             bookingDate: string | null;
+        };
+        ReportDayDto: {
+            /**
+             * Format: date
+             * @example 2026-10-06
+             */
+            workDate: string;
+            /**
+             * @description Minutes after midnight, or `null` for a date with logs but no workday.
+             * @example 540
+             */
+            startMinute: number | null;
+            /** @example 315 */
+            workedMinutes: number;
+            /** @example 120 */
+            bookedMinutes: number;
+        };
+        /** @enum {string} */
+        ReportProjectKind: "project" | "unsorted" | "nonprod";
+        ReportProjectDto: {
+            kind: components["schemas"]["ReportProjectKind"];
+            /** @description The project `Ref` (trashed or purged → `deleted: true`); `null` for `unsorted` and `nonprod`. */
+            project: components["schemas"]["RefDto"] | null;
+            workedMinutes: number;
+            bookedMinutes: number;
+        };
+        DashboardReportResponseDto: {
+            days: components["schemas"]["ReportDayDto"][];
+            projects: components["schemas"]["ReportProjectDto"][];
         };
     };
     responses: never;
@@ -2119,6 +2165,55 @@ export interface operations {
             };
             /** @description Not found. */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Unexpected error. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+        };
+    };
+    ReportsController_dashboard: {
+        parameters: {
+            query: {
+                from: string;
+                to: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DashboardReportResponseDto"];
+                };
+            };
+            /** @description Validation failed: one entry in errors[] per invalid field. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Missing, invalid or expired credentials. */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };
