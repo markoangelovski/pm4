@@ -1,4 +1,12 @@
-import type { UseMutationResult, UseQueryResult } from "@tanstack/react-query";
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+  type UseMutationResult,
+  type UseQueryResult
+} from "@tanstack/react-query";
+import { apiClient } from "@/lib/api/client";
+import { unwrap } from "@/lib/api/problem";
 import { timeKeys } from "@/features/time/api";
 import type { BookingLog } from "./days";
 
@@ -15,9 +23,18 @@ export function useBookingRange(
   from: string,
   to: string
 ): UseQueryResult<BookingLog[], Error> {
-  void from;
-  void to;
-  throw new Error("not implemented (feat-book-web)");
+  return useQuery({
+    queryKey: bookingKeys.range(from, to),
+    queryFn: async ({ signal }) => {
+      const data = unwrap(
+        await apiClient.GET("/api/v1/bookings", {
+          params: { query: { from, to } },
+          signal
+        })
+      );
+      return data.items as BookingLog[];
+    }
+  });
 }
 
 /** API-BOOK-002: PUT /bookings, returns data.items; invalidates bookingKeys.all. */
@@ -26,5 +43,18 @@ export function useSetBooking(): UseMutationResult<
   Error,
   { logIds: string[]; bookingDate: string | null }
 > {
-  throw new Error("not implemented (feat-book-web)");
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: {
+      logIds: string[];
+      bookingDate: string | null;
+    }) => {
+      const data = unwrap(
+        await apiClient.PUT("/api/v1/bookings", { body: input })
+      );
+      return data.items as BookingLog[];
+    },
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: bookingKeys.all })
+  });
 }

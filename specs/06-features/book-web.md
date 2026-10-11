@@ -128,7 +128,7 @@ export const bookedTone: (sameDay: boolean) => string;   // "text-green-700 dark
   `days = bookingDays(data, range, me.dailyTargetMinutes)` (memoised). Submit → `setQuery(equal to defaultRange(today) ? { from: null, to: null } : range)` (D3).
   Render, per SCR-045: heading, `rangeLabel(range)`, `RangeField`, then by state: skeletons; error → "Couldn't load the bookings." + **Retry** (`refetch`);
   no days → the empty card; else one `DaySection` per day.
-- `RangeField`: `<Calendar mode="range" numberOfMonths={2} disabled={{ after: max }}>` in a `Popover`; **Submit** disabled until a start is picked; a start alone → `{ from, to: from }`.
+- `RangeField`: `<Calendar mode="range" numberOfMonths={2} disabled={{ after: max }}>` in a `Popover`; **Submit** disabled until a start is picked, and while `to − from` > 366 days, then with the hint "Pick at most 366 days." (OQ-130, as SCR-010); a start alone → `{ from, to: from }`.
 - `DaySection`: `<section aria-label={day.workDate}>`; the heading, six figure cards (SCR-045 labels and tooltips; hours `minutes === 0 ? "0h" : formatDuration(minutes)`),
   then the table. Expanded state is per section, all collapsed at first; the collapsed layout (3 columns) shows while no group is expanded, the 6-column layout
   otherwise. A group row click toggles it unless the target is inside `a, button, input, [role=dialog]`. The chevron is a button labelled "Expand project" /

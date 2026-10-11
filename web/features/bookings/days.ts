@@ -170,6 +170,11 @@ const isWorkDate = (value: string | null): value is string => {
   return isValid(date) && format(date, "yyyy-MM-dd") === value;
 };
 
+/** The longest range the page lists: to − from ≤ 366 days. */
+export function isRangeTooLong(from: string, to: string): boolean {
+  return differenceInCalendarDays(parseISO(to), parseISO(from)) > 366;
+}
+
 /** Real dates (YYYY-MM-DD), from ≤ to ≤ today, to − from ≤ 366 days → that range; anything else (also a missing one) → defaultRange(today). */
 export function parseRange(
   from: string | null,
@@ -181,7 +186,7 @@ export function parseRange(
     isWorkDate(to) &&
     from <= to &&
     to <= today &&
-    differenceInCalendarDays(parseISO(to), parseISO(from)) <= 366
+    !isRangeTooLong(from, to)
   )
     return { from, to };
   return defaultRange(today);
