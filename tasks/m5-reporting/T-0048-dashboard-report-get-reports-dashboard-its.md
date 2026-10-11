@@ -3,13 +3,14 @@ id: T-0048
 title: Dashboard report: GET /reports/dashboard, its DTOs and two repository queries
 milestone: M5
 app: api
-status: blocked
+status: ready
 size: M
 tier: haiku
 depends_on: []
 feature_spec: specs/06-features/rpt-api.md
 spec_row: T1
-ac_files: []
+ac_files:
+  - { path: api/test/reports.ac.e2e-spec.ts, sha256: 77b477864b3d65597f409a0191d02ce950114e161677f1131c1bb4917ff8421a }
 ---
 
 # T-0048: Dashboard report: GET /reports/dashboard, its DTOs and two repository queries
