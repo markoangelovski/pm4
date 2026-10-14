@@ -1,9 +1,9 @@
 ---
 id: prod-scope
 title: Scope and Milestones
-status: draft
+status: approved
 owner: Marko Angelovski
-last_updated: 2026-10-09
+last_updated: 2026-10-14
 related: [prod-vision, req-overview]
 ---
 
@@ -58,3 +58,4 @@ Soft-delete *columns and filtering* are built into M2/M3 from the start. M6 adds
 - 2026-10-07: Time-capture scope follows the owner's description.
 - 2026-10-09: Bookings join M4.
 - 2026-10-09: The dashboard follows the owner's Dashboard screen; the per-project line chart is dropped (OQ-126).
+- 2026-10-14: Approved by the owner.

@@ -23,7 +23,7 @@ Either way, fix the disagreement. Never ignore it.
 | Spec | File | Status |
 | --- | --- | --- |
 | Product vision | [00-product/vision.md](00-product/vision.md) | draft |
-| Scope and milestones | [00-product/scope.md](00-product/scope.md) | draft |
+| Scope and milestones | [00-product/scope.md](00-product/scope.md) | approved |
 | Glossary | [00-product/glossary.md](00-product/glossary.md) | draft |
 | Requirements overview | [01-requirements/README.md](01-requirements/README.md) | draft |
 | Auth and accounts | [01-requirements/auth.md](01-requirements/auth.md) | draft |
@@ -43,7 +43,7 @@ Either way, fix the disagreement. Never ignore it.
 | Security | [02-architecture/security.md](02-architecture/security.md) | approved |
 | API conventions | [03-api/conventions.md](03-api/conventions.md) | approved |
 | Data model | [03-api/data-model.md](03-api/data-model.md) | draft |
-| API endpoints | [03-api/endpoints.md](03-api/endpoints.md) | draft |
+| API endpoints | [03-api/endpoints.md](03-api/endpoints.md) | approved |
 | Static export constraints | [04-web/static-export.md](04-web/static-export.md) | approved |
 | Template adaptation | [04-web/template-adaptation.md](04-web/template-adaptation.md) | approved |
 | Web conventions | [04-web/conventions.md](04-web/conventions.md) | approved |

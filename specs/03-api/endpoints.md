@@ -1,9 +1,9 @@
 ---
 id: api-endpoints
 title: API Endpoints
-status: draft
+status: approved
 owner: Marko Angelovski
-last_updated: 2026-10-11
+last_updated: 2026-10-14
 related: [api-conventions, api-data-model, req-auth, req-projects, req-tasks, req-time-logs, req-reporting, req-trash]
 ---
 
@@ -26,7 +26,7 @@ defines its request, response and errors. Paths are relative to `/api/v1` unless
 
 | ID | Method | Path | Implements | Status |
 | --- | --- | --- | --- | --- |
-| API-SYS-001 | GET | `/health` (root) | NFR-003 | TODO |
+| API-SYS-001 | GET | `/health` (root) | NFR-003 | specified |
 | API-SYS-002 | — | (removed: the purge is a background job, ADR-0011) | — | — |
 | API-SYS-003 | GET | `/version` → `{version}` (public, no DB/Redis) | SCR-004 | specified |
 | API-AUTH-001 | GET | `/auth/google?returnTo=&timeZone=` → 302 Google | FR-AUTH-001, FR-AUTH-006 | specified |
@@ -62,14 +62,24 @@ defines its request, response and errors. Paths are relative to `/api/v1` unless
 | API-TLOG-005 | — | (removed) | — | — |
 | API-TLOG-006 | DELETE | `/time-logs/{id}` (immediate) | FR-TLOG-008 | specified |
 | API-TLOG-007 | — | (removed) | — | — |
-| API-BOOK-001 | GET | `/bookings?from=&to=` → `{items: BookingLog[]}` (logs worked in the range, and logs booked into it) | FR-BOOK-001/002/003 | TODO |
-| API-BOOK-002 | PUT | `/bookings` `{logIds, bookingDate}` → `{items: BookingLog[]}` (book, re-date or remove, one or many logs) | FR-BOOK-004/005 | TODO |
+| API-BOOK-001 | GET | `/bookings?from=&to=` → `{items: BookingLog[]}` (logs worked in the range, and logs booked into it) | FR-BOOK-001/002/003 | specified |
+| API-BOOK-002 | PUT | `/bookings` `{logIds, bookingDate}` → `{items: BookingLog[]}` (book, re-date or remove, one or many logs) | FR-BOOK-004/005 | specified |
 | API-TRASH-001 | GET | `/trash` (projects with nested cascaded tasks, individually deleted tasks, purge dates) | FR-TRASH-001 | TODO |
-| API-RPT-001 | GET | `/reports/dashboard?from=&to=` → `{days: ReportDay[], projects: ReportProject[]}` (worked and booked minutes per day and per project) | FR-RPT-002…006 | TODO |
+| API-RPT-001 | GET | `/reports/dashboard?from=&to=` → `{days: ReportDay[], projects: ReportProject[]}` (worked and booked minutes per day and per project) | FR-RPT-002…006 | specified |
 | API-RPT-002 | — | (removed, OQ-129) | — | — |
 
 ## Endpoint details
-TODO: write each endpoint using the template once its requirement spec reaches `review`.
+TODO: the rows still marked TODO have no detail section yet. Write each one using the template once its requirement spec reaches `review`: the trash endpoints (API-PRJ-007, API-TSK-007, API-TRASH-001) after req-trash.
+
+### API-SYS-001: Health
+`GET /health` (root, outside `/api/v1`) · Auth: none (public) · Implements: NFR-003
+Checks Postgres and Redis in parallel: a ping with a **10 s** timeout for the DB (a Neon wake-up, NFR-003) and
+**2 s** for Redis. A component that errors or times out is `down`. Used by the App Service health check and the
+post-deploy smoke check ([deployment](../02-architecture/deployment.md)). Not rate limited (security.md). Not in the
+OpenAPI contract (`@ApiExcludeController`).
+**200:** `{ status: "ok", db: "up", redis: "up" }` when both are up
+**503:** `{ status: "error", db: "up" | "down", redis: "up" | "down" }` when either is down (same JSON shape, not Problem Details)
+**Errors:** none of its own
 
 ### API-SYS-003: API version
 `GET /version` · Auth: none (public) · Implements: SCR-004 (OQ-052)
@@ -418,3 +428,6 @@ None.
 - 2026-10-09: API-USR-002: `timeZone` is canonicalised and fixed UTC offsets are rejected, as at sign-in (feat-tlog-api D9).
 - 2026-10-11: `loggedMinutes` on `Project` and `Task` (OQ-132); API-TLOG-001 returns `BookingLog` items and `bookedMinutes`, and spells out its
   validation (feat-proto-sync-web, prototype `fa9a030`). `Project`, `Task` and API-TLOG-001 need the owner's approval.
+- 2026-10-14: Index status of API-BOOK-001/002 and API-RPT-001 set to `specified` (controllers and detail sections exist). API-SYS-001 detailed from the
+  built `api/src/health/` and set to `specified`.
+- 2026-10-14: Approved by the owner.

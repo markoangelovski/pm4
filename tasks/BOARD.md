@@ -64,4 +64,4 @@
 | [T-0058](m4-time-logs/T-0058-pm4-twins-check.md) | pm4 compares production files with their prototype twins (pm4 twins, in check) | M4 | infra | S | done | T-0057 |
 | [T-0059](m4-time-logs/T-0059-retire-proto-sync-web-twin-checks.md) | Retire proto-sync-web's own twin checks (AC-18, AC-19, AC-22); the twin check covers them | M4 | spec | S | done | T-0058 |
 
-Milestones M2–M6 have no tasks yet, and M1 has only the landing route split so far. They're created with the `write-task` skill once their specs are approved.
+M0–M5 are done. M6 (Trash) has no tasks yet; its tasks are created with the `write-task` skill once its feature specs are approved.
