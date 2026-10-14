@@ -31,7 +31,7 @@ Explains how requirements are written, and indexes the requirement specs.
 **Priority:** Must | Should | Could
 **Statement:** The user can create a project by providing a name (required) and a description (optional).
 **Rules:**
-- Name: 1–120 characters, trimmed, unique per user (TBD)
+- Name: 1–200 characters, trimmed, not unique (approved, [projects.md Fields](projects.md#fields))
 **Acceptance criteria:**
 - Given I am signed in, when I submit a valid name, then the project is created and appears in my project list.
 - Given I submit an empty name, then I see a validation error and nothing is created.
