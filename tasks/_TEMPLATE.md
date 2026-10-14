@@ -7,7 +7,7 @@ Two kinds of task file:
 -->
 ---
 id: T-XXXX
-title: <Imperative title, e.g. "Rename the trash column header">
+title: <Imperative title, e.g. "Rename the logged time column header">
 milestone: M<N>
 app: web            # web | api | infra | spec
 status: ready       # blocked | ready | in-progress | review | done

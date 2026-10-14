@@ -3,8 +3,8 @@ id: arch-stack
 title: Tech Stack
 status: approved
 owner: Marko Angelovski
-last_updated: 2026-10-02
-related: [arch-overview, web-template, ADR-0001, ADR-0002, ADR-0005, ADR-0006, ADR-0007, ADR-0008, ADR-0009, ADR-0010, ADR-0011]
+last_updated: 2026-10-14
+related: [arch-overview, web-template, ADR-0001, ADR-0002, ADR-0005, ADR-0006, ADR-0007, ADR-0008, ADR-0009, ADR-0010]
 ---
 
 # Tech Stack
@@ -56,9 +56,8 @@ A newer **major** needs a spec update.
 | Database | PostgreSQL on **Neon** | **18** (Neon's default for new projects; local/CI containers `postgres:18`) | ADR-0008. The `postgres:18` Docker image changed its data-directory convention: `docker-compose.yml` mounts the named volume at `/var/lib/postgresql` (not the old `.../data` subdirectory), or the container fails to start |
 | DB driver | `pg` (node-postgres) with Neon's **pooled** URL | 8.23.0 | A long-running server, not edge |
 | ORM / migrations | **Drizzle ORM + drizzle-kit** | 0.45.3 / 0.31.11 | ADR-0008 |
-| Cache / ephemeral | **Redis Cloud** via `ioredis` | 6.0.0 (BullMQ's supported range not yet checked — BullMQ isn't installed until the jobs module lands, ADR-0011) | ADR-0008 |
+| Cache / ephemeral | **Redis Cloud** via `ioredis` | 6.0.0 | ADR-0008 |
 | Auth | Google OAuth (Authorization Code + PKCE) via `openid-client`; JWT (HS256) via `@nestjs/jwt` | 6.8.x / 12.0.x | ADR-0007, OQ-059. Installed by feat-auth-api-session. A generic, OpenID-certified OIDC client: PKCE, state, discovery and ID-token validation for Google and any future OIDC provider (Authentik, Keycloak…). No Passport; `openid-client` ships its own Passport strategy if that's ever wanted. |
-| Background jobs | **BullMQ** via `@nestjs/bullmq`, worker in the API process | 6.3.x / 12.0.x | ADR-0011. **Not installed at T-0001** (out of scope). Uses the Redis Cloud DB (`noeviction`) |
 | Rate limiting | `@nestjs/throttler` with Redis storage | 6.7.x | **Not installed yet.** Deferred to its own feature after auth (OQ-060) |
 | Security headers | helmet | 8.3.0 | |
 | Logging | NestJS default logger → stdout → App Service logs | — | NFR-009. No log library. |
@@ -71,7 +70,7 @@ A newer **major** needs a spec update.
 ## Changelog
 - 2026-09-26: Initial scaffold.
 - 2026-09-26: Updated with owner answers to OQ-001–018.
-- 2026-09-27: ADR-0009/0010 accepted. Added BullMQ (ADR-0011).
+- 2026-09-27: ADR-0009/0010 accepted.
 - 2026-09-27: OQ-042 resolved (Node 24 LTS, Postgres 18). Filled in target versions. Logging is the NestJS default logger. Auth library: openid-client.
 - 2026-09-27: Auth library note: generic OIDC, SSO-ready.
 - 2026-09-27: Approved by the owner.
@@ -97,8 +96,8 @@ A newer **major** needs a spec update.
   which is why the Nest CLI's `new` schematic now defaults to Vitest + oxlint instead of Jest +
   ESLint. Converted to Jest + ESLint per this table and `api/AGENTS.md` at the time (both work under
   ESM, but need `--experimental-vm-modules`, `jest.unstable_mockModule` instead of `jest.mock`, and
-  explicit `@jest/globals` imports). Rate limiting, BullMQ and the auth libraries are in this table
-  but not yet installed — out of scope for T-0001, deferred to the tasks that add auth/jobs.
+  explicit `@jest/globals` imports). Rate limiting and the auth libraries are in this table
+  but not yet installed — out of scope for T-0001, deferred to the tasks that add them.
 - 2026-09-27: T-0001 follow-up (owner decision): switched `api/` tests from Jest to **Vitest**
   (see the Tests row) — the friction flagged above is gone under Vitest, which is also what the Nest
   CLI's own `new` schematic scaffolds for an ESM-only Nest 12 project. Added the `@nestjs/swagger`

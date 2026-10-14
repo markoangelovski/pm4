@@ -1,9 +1,9 @@
 ---
 id: req-auth
 title: Auth and Accounts
-status: draft
+status: approved
 owner: Marko Angelovski
-last_updated: 2026-10-03
+last_updated: 2026-10-14
 related: [sec, api-endpoints, req-landing, web-routing, ADR-0007, feat-land-app-route-split]
 ---
 
@@ -16,7 +16,13 @@ Covers how users sign in (Google OAuth), how sessions are kept, and the user pro
 **In:** sign in with Google, automatic account creation on first sign-in, session persistence and
 refresh, sign out, protected routes, and a profile (name, avatar, email, time zone).
 **Out (MVP):** email/password, other providers (the design allows adding them), account linking UI,
-account deletion (TODO: confirm), MFA (delegated to Google).
+account deletion (no UI or endpoint), MFA (delegated to Google).
+
+## Deleting a user
+Deleting a user (outside the app, there is no account deletion UI) deletes all of their data: projects,
+tasks, time logs, workdays, bookings, settings, integration connections and identities, through
+`ON DELETE CASCADE` foreign keys (data-model.md), and their sessions in Redis. A project lead in another
+user's project that points at the deleted user keeps its saved name (FR-PRJ-006).
 
 ## Requirements
 

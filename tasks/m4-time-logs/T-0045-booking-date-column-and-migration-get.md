@@ -47,6 +47,6 @@ _Implementer: what changed, and anything the reviewer should look at._
 ## Review
 **Verdict: approve** (Opus reviewer, 2026-10-10). `pm4 check`: every gate passes; the scope hits are the Files-table spell-out in `book-api.md` and the T-0051 rule in `data-model.md`.
 
-- Minor: the D5 clearing rule in `TimeLogsService.update` has no unit test (the e2e ACs 10–11 cover it). Fixed by the orchestrator: four D5 cases added to `time-logs.service.spec.ts` (link cleared, excluded, moved to another project, purged-project log edited).
-- Minor, from feat-tlog-api (not this diff): replacing a log's link keeps `deleted_project_title`, so a purged-project log moved to `projectId: null` is unbooked by D5 but still bookable via PUT. Owner chose a follow-up: T-0051 (quick lane; rule added to `data-model.md` *Retained names*).
+- Minor: the D5 clearing rule in `TimeLogsService.update` has no unit test (the e2e ACs 10–11 cover it). Fixed by the orchestrator: four D5 cases added to `time-logs.service.spec.ts` (link cleared, excluded, moved to another project, deleted-project log edited).
+- Minor, from feat-tlog-api (not this diff): replacing a log's link keeps `deleted_project_title`, so a deleted-project log moved to `projectId: null` is unbooked by D5 but still bookable via PUT. Owner chose a follow-up: T-0051 (quick lane; rule added to `data-model.md` *Retained names*).
 - Tier: haiku was right; every AC passed on the first attempt.

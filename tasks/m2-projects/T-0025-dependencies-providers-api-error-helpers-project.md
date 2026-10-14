@@ -53,5 +53,5 @@ PASS T-0025
 ## Review
 **Verdict: approve** (Opus review of feat prj-web, 2026-10-04; `pm4 check --feature` PASS).
 - Accepted as is: `onSuccess` waits for the invalidations; `applyFieldErrors` keeps the first error per field; `useProject` never retries a 404 (D6).
-- Minor, optional (finding 5, shared with T-0027): `useDeleteProject` removes the detail query, then waits for the invalidations before the dialog's `onDeleted` disables the query, which leaves a small window to refetch the trashed project (D13). Fix: `void` the invalidations instead of returning them. Nothing triggers it today; AC-15 passes.
+- Minor, optional (finding 5, shared with T-0027): `useDeleteProject` removes the detail query, then waits for the invalidations before the dialog's `onDeleted` disables the query, which leaves a small window to refetch the deleted project (D13). Fix: `void` the invalidations instead of returning them. Nothing triggers it today; AC-15 passes.
 - Tier: opus was right (base pattern for later domains; passed first try).

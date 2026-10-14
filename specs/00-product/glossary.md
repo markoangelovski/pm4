@@ -34,8 +34,7 @@ Use these terms consistently in specs, code, UI copy and API names.
 | Worked / Booked / Target (dashboard) | For a date range: the hours of its logs / the part of them whose logs are booked (counted on the day worked) / its workdays × the daily target | `workedMinutes`, `bookedMinutes` | — |
 | Duration | Time spent, stored as **integer minutes** | `durationMinutes` | `duration` (decimal hours) |
 | Work date | The user's local calendar date the work belongs to (`YYYY-MM-DD`) | `workDate` | `day` |
-| Trash | Soft-deleted projects and tasks. Restorable for 31 days, then purged. | `/trash` | — |
-| Retained name | The title of a deleted task/project that a time log keeps showing after deletion | `task.title` + `task.deleted` | — |
+| Retained name | The title of a deleted task/project that a time log keeps showing, as plain text with a deleted marker | `task.title` + `task.deleted` | — |
 | Integration | A kind of external system PM4 can connect to, set up under Settings → Integrations. Today only PMSPA. | — | — |
 | Connection | One user's configured link to an integration (for PMSPA: URL, email, password), with a status | — | — |
 | Connector | The page under **Connectors** in the sidebar where the user works with a connected integration (e.g. Connectors → PMSPA) | `/app/connectors/pmspa` | — |
@@ -49,7 +48,7 @@ Use these terms consistently in specs, code, UI copy and API names.
 
 ## Changelog
 - 2026-09-26: Initial scaffold.
-- 2026-09-26: Legacy time model terms, trash, identity, external link, project lead.
+- 2026-09-26: Legacy time model terms, identity, external link, project lead.
 - 2026-10-03: Project lead can be a PM4 user or a free-text name (OQ-076).
 - 2026-10-07: Time-capture terms rewritten from the owner's description: no position, added log text, title, unsorted, daily target.
 - 2026-10-09: Excluded from statistics, Non-prod, billable time, % billable and overtime; the daily target defaults to 7 h; By project is the default view.

@@ -145,5 +145,5 @@ Contract: `api/` → `npm run openapi:export`; `web/` → `npm run api:types`. B
 **Project**: a container for tasks. **Task**: a unit of work in a project. **Workday**: a user's
 calendar day, with an optional start time. **Time log**: one block of work on a date (duration +
 required note + task/project link), ordered by position and shown sequentially or grouped by project.
-**Trash**: soft-deleted projects and tasks, purged after 31 days. **Prototype**: the dev-only, mock-backed twin
+**Deleting** a project or task is permanent; its time logs stay and show its name with a deleted marker. **Prototype**: the dev-only, mock-backed twin
 of the app at `/proto/app/**`, where UI is decided before it's specified. Full glossary: `specs/00-product/glossary.md`.

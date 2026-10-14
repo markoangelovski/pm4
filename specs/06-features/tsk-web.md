@@ -5,8 +5,8 @@ status: approved
 owner: Marko Angelovski
 last_updated: 2026-10-04
 milestone: M3
-requirements: [FR-TSK-001, FR-TSK-002, FR-TSK-003, FR-TSK-004, FR-TSK-005, FR-TSK-006, FR-TSK-007, FR-TSK-008, FR-PRJ-008, FR-TRASH-003, SCR-021, SCR-030, SCR-031, SCR-032]
-related: [req-tasks, web-screens, web-routing, web-conventions, ADR-0009, feat-tsk-api, feat-prj-web, OQ-081, OQ-082, OQ-084, OQ-085, OQ-086, OQ-087, OQ-090, OQ-093]
+requirements: [FR-TSK-001, FR-TSK-002, FR-TSK-003, FR-TSK-004, FR-TSK-005, FR-TSK-006, FR-TSK-007, FR-TSK-008, FR-PRJ-008, SCR-021, SCR-030, SCR-031, SCR-032]
+related: [req-tasks, web-screens, web-routing, web-conventions, ADR-0009, feat-tsk-api, feat-prj-web, OQ-081, OQ-082, OQ-084, OQ-085, OQ-086, OQ-087, OQ-093]
 ---
 
 # Tasks web: task lists, inline status, due-date badges, task detail and the task dialog
@@ -14,7 +14,7 @@ related: [req-tasks, web-screens, web-routing, web-conventions, ADR-0009, feat-t
 ## Goal
 A signed-in user sees and filters a project's tasks on its page (SCR-021), all tasks on `/app/tasks`
 (SCR-030), changes a task's status inline, sees overdue / due-soon badges, opens a task (SCR-031),
-creates and edits tasks in a dialog (SCR-032), moves a task to another project, and deletes and restores
+creates and edits tasks in a dialog (SCR-032), moves a task to another project, and deletes
 tasks. Behavior: [screens.md](../04-web/screens.md#screens), [req-tasks](../01-requirements/tasks.md).
 API: feat-tsk-api. Patterns: feat-prj-web.
 
@@ -24,7 +24,7 @@ API: feat-tsk-api. Patterns: feat-prj-web.
 | D1 | Status filter: three toggles, all on by default; none on → "No tasks match the filter" without a request. | OQ-081, OQ-085 (owner) |
 | D2 | Inline status change: optimistic, the row stays in place (sort and filter) until reload/re-sort/re-filter; on failure the old status comes back with a toast. | OQ-087 (owner), conventions *Data layer* (optimistic + rollback) |
 | D3 | Due soon = today or tomorrow, overdue = before today, in the profile time zone; completed / no date → no badge. | OQ-082 (owner) |
-| D4 | Create task → stay, toast "Task created"; delete from the detail page → the project page, toast "Moved to trash". | OQ-093, OQ-086 (owner) |
+| D4 | Create task → stay, toast "Task created"; delete from the detail page → the project page, toast "Task deleted". | OQ-093, OQ-086 (owner) |
 | D5 | D2 in the cache: `onMutate` patches the task in every cached task list and its detail; on success, task lists are invalidated with `refetchType: "none"` (stale, no refetch now), and the project's detail and `projectKeys.lists()` are invalidated normally (counts, FR-PRJ-008). | Agent |
 | D6 | `?status=` holds the selected statuses, comma-separated; absent = all; empty (`status=`) = none. | Agent: conventions *UI rules* (nuqs) |
 | D7 | The project combobox (task dialog, `/app/tasks` filter) loads `useProjects({ q: "", sort: "title:asc", page: 1, pageSize: 100 })` once and filters in the browser; beyond 100 projects only the first 100 can be picked. Its value is `{ id, title }`. A `?project=` id not in that list still filters the request, and the box shows **All projects**. | Owner (2026-10-04) |
@@ -32,9 +32,9 @@ API: feat-tsk-api. Patterns: feat-prj-web.
 | D9 | The layout, classes and copy of the components are owner-approved; the Statistics card on the project page keeps `project.taskCounts`. | Owner (2026-10-04) |
 | D10 | `TasksList` takes `project?: { id, title }` and `TaskFormDialog` `defaultProject?: { id, title }`, so the dialog can show the pre-selected project without a lookup; the form holds `project: { id, title } \| null` and sends `projectId`. | Owner (2026-10-04) |
 | D11 | A row opens the task on click, except on a link, a button, the status select (`[role=combobox]`), a click from a portaled menu, or while text is selected. | Owner (2026-10-04, as feat-prj-web D12) |
-| D12 | After a delete, the task page renders nothing and disables its query before navigating, so "in the trash" never flashes. | Agent: feat-prj-web D13 |
+| D12 | After a delete, the task page renders nothing and disables its query before navigating, so "not found" never flashes. | Agent: feat-prj-web D13 |
 | D13 | No separate `tasks-table.tsx`: the table stays inside `tasks-list.tsx`. | Owner (2026-10-04) |
-| D14 | `Task` (and `TaskList.items`) narrow the generated `Ref` so `project.id` is a `string`: the shared `Ref.id` is nullable for purged entities, but a task's project is always live (endpoints.md *Task*, `deleted: false`). The hooks return the unwrapped body as `Task` / `TaskList`. `TaskListParams.statuses` goes to the typed query as the `status` array (the generated type); openapi-fetch serializes it, and the API accepts repeated or comma-separated values. | Agent: generated types (test step) |
+| D14 | `Task` (and `TaskList.items`) narrow the generated `Ref` so `project.id` is a `string`: the shared `Ref.id` is null for deleted entities (retained names), but a task's project is always live (endpoints.md *Task*, `deleted: false`). The hooks return the unwrapped body as `Task` / `TaskList`. `TaskListParams.statuses` goes to the typed query as the `status` array (the generated type); openapi-fetch serializes it, and the API accepts repeated or comma-separated values. | Agent: generated types (test step) |
 
 ## Scope
 **In:** `features/tasks/` (hooks, due state, schema, components); `formatWorkDate`; the task section in
@@ -45,14 +45,14 @@ API: feat-tsk-api. Patterns: feat-prj-web.
 
 **Non-goals** (implementers must not touch these):
 - `api/`. Projects' own components except `project-detail.tsx` (the task section and the counts, *Files*).
-- Logged time on tasks (OQ-080, M4). The trash page and permanent delete (M6).
+- Logged time on tasks (OQ-080, M4).
 - `lib/api/*`, `lib/auth/*`, `features/users/*` (reuse `ProjectLeadField`, `ProjectLeadLabel`, `useMe` as they are), `web/components/ui/*`.
 
 ## Read first
 | Path | Why / copy this |
 | --- | --- |
 | `specs/04-web/screens.md` (SCR-021 tasks section, SCR-030, SCR-031, SCR-032) | Screen behavior and copy |
-| `specs/03-api/endpoints.md#shared-project-and-task-shapes`, API-TSK-001…006 | Contract (in-trash extensions `projectId`, `projectInTrash`) |
+| `specs/03-api/endpoints.md#shared-project-and-task-shapes`, API-TSK-001…005 | Contract |
 | `web/features/projects/api.ts` | Hooks, keys, `unwrap`, invalidations to copy |
 | `web/features/projects/schemas.ts`, `web/features/projects/components/project-form-dialog.tsx` | The form pattern to copy (`applyFieldErrors`, submit errors) |
 | `web/features/projects/components/projects-list.tsx`, `project-detail.tsx` | API states (loading, error + Retry), pagination, `leaving` |
@@ -114,7 +114,6 @@ export function useCreateTask(): UseMutationResult<Task, Error, TaskInput>;     
 export function useUpdateTask(id: string): UseMutationResult<Task, Error, TaskInput>;      // setQueryData(detail); invalidate lists(), the old and new project details, projectKeys.lists()
 export function useUpdateTaskStatus(): UseMutationResult<Task, Error, { task: Task; status: TaskStatus }>; // D2, D5
 export function useDeleteTask(): UseMutationResult<void, Error, Task>;                     // removeQueries(detail); invalidate lists(), projectKeys.detail(task.project.id), projectKeys.lists()
-export function useRestoreTask(): UseMutationResult<void, Error, string>;                  // invalidate detail(id), lists(), projectKeys.all
 ```
 `useUpdateTaskStatus`: `PATCH /api/v1/tasks/{id} {status}`. `onMutate`: `cancelQueries(taskKeys.all)`, snapshot
 `getQueriesData(taskKeys.lists())` and the detail, then `setQueriesData` replacing that task's `status` (nothing else moves).
@@ -179,12 +178,10 @@ The layout, classes and copy stay as they are (D9); the bullets say what changes
   "Couldn't load tasks." with **Retry** (`refetch`); `isPending` → the skeleton; `total` 0 and filtered (`q`, fewer than
   three statuses, or a `?project=` filter) → "No tasks match the filter"; `total` 0 → "No tasks yet" / "Create a task to
   start tracking your work." with **New task**; else the table.
-- `TaskDetail`: `useTask(idParam, !leaving)`. `isPending` → skeleton; `ApiError` 404 slug `in-trash`:
-  `problem.projectInTrash` true → "This task's project is in the trash" / "Restore the project to see this task again." +
-  **Restore project** (`useRestoreProject().mutate(problem.projectId)`, then invalidate this task's detail); false → "This task is in the trash" + **Restore** (`useRestoreTask`); failures → `toast.error("Couldn't restore the task.")`
-  (or "…the project."); both with **Back to tasks**. Other 404 → "Task not found"; other errors → "Couldn't load the task."
+- `TaskDetail`: `useTask(idParam, !leaving)`. `isPending` → skeleton; `ApiError` 404 → "Task not found" with
+  **Back to tasks**; other errors → "Couldn't load the task."
   with **Retry**. Delete: `DeleteTaskDialog` calls `useDeleteTask`, then `onDeleted` sets `leaving` (render `null`), calls
-  `router.push(\`${routes.app.project}?id=${task.project.id}\`)` and `toast("Moved to trash")`; a failed delete →
+  `router.push(\`${routes.app.project}?id=${task.project.id}\`)` and `toast("Task deleted")`; a failed delete →
   `toast.error("Couldn't delete the task.")`, the dialog stays open.
 - `project-detail.tsx`: `<TasksList project={{ id: project.id, title: project.title }} />` after the grid;
   `ProjectTaskStats` keeps `project.taskCounts`.
@@ -208,10 +205,10 @@ and use fake timers where "today" matters (2026-10-03 12:00 in Zagreb).
 | AC-11 | `TasksList` without `project`: Project column with links; picking a project in the filter → `projectId` in the request and `?project=` in the URL; "All projects" → no `projectId` | `web/features/tasks/components/tasks-list.ac.test.tsx` | T3 |
 | AC-12 | Changing a row's status → `PATCH {status}`; the row stays in place in a list filtered to the old status (D2) | `web/features/tasks/components/tasks-list.ac.test.tsx` | T3 |
 | AC-13 | `TaskDetail`: shows title, the Tasks back link, project link, due date + badge, lead, link (`target="_blank"`), description, `—` for empty fields; inline status works as AC-12 | `web/features/tasks/components/task-detail.ac.test.tsx` | T3 |
-| AC-14 | 404 `not-found` → "Task not found" + "Back to tasks"; 404 `in-trash` `projectInTrash:false` → "This task is in the trash" + Restore → `POST /api/v1/tasks/t1/restore`; `projectInTrash:true` → "This task's project is in the trash" + Restore project → `POST /api/v1/projects/p1/restore`; `500` → "Couldn't load the task." + Retry | `web/features/tasks/components/task-detail.ac.test.tsx` | T3 |
-| AC-15 | Delete → SCR-031's confirmation; confirm → `DELETE /api/v1/tasks/t1`, toast "Moved to trash", `router.push("/app/project?id=p1")`, no `GET /api/v1/tasks/t1` after the delete | `web/features/tasks/components/task-detail.ac.test.tsx` | T3 |
+| AC-14 | 404 `not-found` → "Task not found" + "Back to tasks"; `500` → "Couldn't load the task." + Retry | `web/features/tasks/components/task-detail.ac.test.tsx` | T3 |
+| AC-15 | Delete → SCR-031's confirmation; confirm → `DELETE /api/v1/tasks/t1`, toast "Task deleted", `router.push("/app/project?id=p1")`, no `GET /api/v1/tasks/t1` after the delete | `web/features/tasks/components/task-detail.ac.test.tsx` | T3 |
 | AC-16 | `npm run build` succeeds and `web/out/app/tasks.html`, `web/out/app/task.html` exist | `check` | T3 |
-| AC-17 | Locally against the API: on a project page add two tasks (one due tomorrow → "Due soon"), filter to Upcoming, mark one Completed inline (stays; the stats change to 50 %), reload (it's gone from the filter), move the other to another project, delete it from its page, restore it via its old URL | `manual` | T3 |
+| AC-17 | Locally against the API: on a project page add two tasks (one due tomorrow → "Due soon"), filter to Upcoming, mark one Completed inline (stays; the stats change to 50 %), reload (it's gone from the filter), move the other to another project, delete it from its page, open its old URL → "Task not found" | `manual` | T3 |
 
 Typed stubs (created with the tests): the hook signatures above in `features/tasks/api.ts` (`taskKeys`, types and
 `TASK_SORTS` real), each body `throw new Error("not implemented (feat-tsk-web)")`. The hook and component tests
@@ -228,16 +225,16 @@ cd web && npm run build >/dev/null && test -f out/app/tasks.html && test -f out/
 | --- | --- | --- | --- | --- | --- | --- |
 | T1 | Task hooks with the optimistic status change, due state, `formatWorkDate`, status select and due badge | web | M | opus | First optimistic update with rollback across several cached lists (D5) | — (feat-tsk-api and feat-prj-web done) |
 | T2 | Task create/edit dialog with the project picker and due-date field | web | M | haiku | Copies the project form; picker and date field from installed primitives, fully specified | T1 |
-| T3 | Task lists (project page section and `/app/tasks`), task detail page, delete and restore | web | M | haiku | Composes T1/T2 and the project list/detail patterns; states and copy stated | T2 |
+| T3 | Task lists (project page section and `/app/tasks`), task detail page and delete | web | M | haiku | Composes T1/T2 and the project list/detail patterns; states and copy stated | T2 |
 
 ## Open questions
-None. OQ-081, OQ-082, OQ-084…OQ-087, OQ-090 and OQ-093 are resolved.
+None. OQ-081, OQ-082, OQ-084…OQ-087 and OQ-093 are resolved.
 
 ## Changelog
 - 2026-10-03: Initial draft.
 - 2026-10-03: Approved by the owner.
 - 2026-10-04: Owner layout review (D7, D9…D13): `{ id, title }` project values, the project combobox over the first 100 projects, clickable rows, Created/Updated
-  columns, error and trash copy, no `tasks-table.tsx`. Back to `review`.
+  columns, error copy, no `tasks-table.tsx`. Back to `review`.
 - 2026-10-04: T2 and T3 re-tiered sonnet → haiku (task-routing: haiku first).
 - 2026-10-04: Approved by the owner.
 - 2026-10-04: Test step: D14 (`Task.project.id` narrowed to `string`; `status` as the typed array). feat-prj-web's

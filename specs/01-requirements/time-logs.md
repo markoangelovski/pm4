@@ -3,8 +3,8 @@ id: req-time-logs
 title: Time Capture (Workdays and Time Logs)
 status: approved
 owner: Marko Angelovski
-last_updated: 2026-10-11
-related: [req-projects, req-tasks, req-reporting, req-trash, api-endpoints, api-data-model, web-screens]
+last_updated: 2026-10-14
+related: [req-projects, req-tasks, req-reporting, api-endpoints, api-data-model, web-screens]
 ---
 
 # Time Capture: Workdays and Time Logs
@@ -88,8 +88,7 @@ set) and their title. Rows in **Non-prod** show their project and task, and thei
 **Statement:** The user adds a log with the **log text** and the **duration** (required) and, optionally, a
 **title**, a **project**, a **task** and **Exclude from statistics** (FR-TLOG-018), for a date (default: the date being
 viewed, or today). Both pickers are searchable. A task is shown prefixed with its project name ("Manhatan ·
-Specifications 01"), and typing matches the task title or the project name. Tasks of every status are offered; tasks
-and projects in the trash are not. Picking a task sets the log's project to the task's project, and locks it. Picking
+Specifications 01"), and typing matches the task title or the project name. Tasks of every status are offered. Picking a task sets the log's project to the task's project, and locks it. Picking
 a project first narrows the task picker to that project's tasks. Clearing the project clears the task. When the date
 has no workday start yet, the form also asks for it (FR-TLOG-009).
 **Acceptance criteria:**
@@ -107,7 +106,7 @@ has no workday start yet, the form also asks for it (FR-TLOG-009).
 
 ### FR-TLOG-008: Delete log
 **Priority:** Must
-**Statement:** After confirmation, the log is deleted **immediately** (no trash). Totals update.
+**Statement:** After confirmation, the log is deleted **immediately**. Totals update.
 
 ### FR-TLOG-009: Workday start and day header
 **Priority:** Must
@@ -168,8 +167,15 @@ directly **and** the logs of all its tasks (a log with a task always carries the
 
 ### FR-TLOG-014: Logs keep deleted task/project names
 **Priority:** Must
-**Statement:** If the linked task or project is deleted (trashed or purged), the log keeps showing its name, marked
-as deleted, as plain text instead of a link (FR-TRASH-006). Hours still count in the totals.
+**Statement:** Deleting a task or project never deletes its time logs. The log keeps showing the deleted task's or
+project's name as plain text instead of a link, with a distinct deleted marker: a tombstone icon
+(OQ-149; accessible label "deleted"). A log of a deleted task stays linked to the task's project while
+that project exists. Hours still count in the totals. Such a log can be relinked to another project or task by editing
+it (FR-TLOG-006); the new link replaces the deleted name.
+**Acceptance criteria:**
+- Given a log of a task I deleted, then it shows the task name as plain text with the deleted marker, and its project as a link.
+- Given a log of a project I deleted, then it shows the project name (and its task's name, if any) as plain text with the deleted marker.
+- Given a log of a deleted task, when I edit it and pick another task or project, then it links to that one and the deleted marker is gone.
 
 ### FR-TLOG-016: Charts
 **Priority:** Must

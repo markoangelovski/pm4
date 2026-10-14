@@ -3,7 +3,7 @@ id: web-prototype
 title: UI Prototype
 status: approved
 owner: Marko Angelovski
-last_updated: 2026-10-11
+last_updated: 2026-10-14
 related: [ADR-0012, web-static-export, web-routing, web-conventions, qa-task-routing, feat-template]
 ---
 
@@ -61,7 +61,7 @@ web/
   first, typed with `proposed-types.ts`.
 - Reads resolve after a short fixed delay (`MOCK_LATENCY_MS` in `proto/mock/client.ts`) so loading states show.
 - Data resets on every reload (no storage). The seed covers the empty, typical and edge cases the screen needs
-  (long names, zero values, trashed items); edge cases may be switchable from the prototype shell.
+  (long names, zero values, logs of deleted projects and tasks); edge cases may be switchable from the prototype shell.
 - Types come from `@/lib/api/schema` where they exist. A field or endpoint the API doesn't have yet is declared in
   `proposed-types.ts` (DTO-shaped, named like the future schema type). The feature spec's *API* interfaces copy
   these shapes; after the API task, `npm run api:types` replaces them.

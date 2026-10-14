@@ -81,7 +81,7 @@ export class DashboardReportResponseDto {
 ```ts
 // api/src/time/time.repository.ts (both scoped by userId, dates inclusive)
 reportDays(userId, from, to): Promise<{ workDate: string; startMinute: number | null; workedMinutes: number; bookedMinutes: number }[]>;
-export interface ReportProjectRow { kind: ReportProjectKind; projectId: string | null; projectTitle: string | null; projectDeletedAt: Date | null;
+export interface ReportProjectRow { kind: ReportProjectKind; projectId: string | null; projectTitle: string | null;
   deletedProjectTitle: string | null; workedMinutes: number; bookedMinutes: number }
 reportProjects(userId, from, to): Promise<ReportProjectRow[]>;
 ```
@@ -95,7 +95,7 @@ SELECT COALESCE(w.work_date, l.work_date) AS work_date, w.start_minute, COALESCE
 FROM w FULL JOIN l ON l.work_date = w.work_date ORDER BY 1;
 
 -- reportProjects
-SELECT g.kind, g.project_id, g.deleted_project_title, p.title AS project_title, p.deleted_at AS project_deleted_at,
+SELECT g.kind, g.project_id, g.deleted_project_title, p.title AS project_title,
        SUM(g.duration_minutes)::int AS worked,
        COALESCE(SUM(g.duration_minutes) FILTER (WHERE g.booking_date IS NOT NULL), 0)::int AS booked
 FROM (SELECT duration_minutes, booking_date,
@@ -105,7 +105,7 @@ FROM (SELECT duration_minutes, booking_date,
              CASE WHEN NOT exclude_from_stats AND project_id IS NULL THEN deleted_project_title END AS deleted_project_title
       FROM time_logs WHERE user_id = $user AND work_date BETWEEN $from AND $to) g
 LEFT JOIN projects p ON p.id = g.project_id
-GROUP BY g.kind, g.project_id, g.deleted_project_title, p.title, p.deleted_at;
+GROUP BY g.kind, g.project_id, g.deleted_project_title, p.title;
 ```
 Dates come back as `YYYY-MM-DD` strings, as in `listWorkdays`.
 
@@ -118,7 +118,7 @@ dashboard(userId, query: WorkdaysQueryDto): Promise<DashboardReportResponseDto>;
 ```
 - `days` = `reportDays` as is.
 - `projects`: each row → `{ kind, project, workedMinutes, bookedMinutes }`, `project` = `kind === "project"` ? the `toRef` rule (a project row → `{ id, title,
-  deleted: projectDeletedAt !== null }`; none but `deletedProjectTitle` → `{ id: null, title: deletedProjectTitle, deleted: true }`) : `null`.
+  deleted: false }`; none but `deletedProjectTitle` → `{ id: null, title: deletedProjectTitle, deleted: true }`) : `null`.
   Order: `project` rows by `workedMinutes` descending, then `project.title` ascending (`localeCompare`), then `unsorted`, then `nonprod`.
 
 ## Acceptance criteria
@@ -134,7 +134,7 @@ Nvidia (tasks Development, PM) and PM Internal are A's projects. Workdays: 30 Se
 | AC-2 | The same range → `projects` = Anthropic `{kind "project", worked 255, booked 120}`, Nvidia `{240, 240}`, PM Internal `{60, 0}`, then `{kind "unsorted", project null, 45, 0}`, `{kind "nonprod", project null, 90, 0}` (d, although it has a project) | `api/test/reports.ac.e2e-spec.ts` | T1 |
 | AC-3 | `?from=2026-09-30&to=2026-09-30` → `days` [30 Sep `{540, 90, 60}`], `projects` [Nvidia `{90, 60}`] | `api/test/reports.ac.e2e-spec.ts` | T1 |
 | AC-4 | A project Alpha with a 60-min log on 8 Oct → in 1–9 Oct, Alpha comes right before PM Internal (same minutes, title order) | `api/test/reports.ac.e2e-spec.ts` | T1 |
-| AC-5 | PM Internal moved to the trash → its row is `project {id, title "PM Internal", deleted: true}`, 60 min; after a simulated purge (raw SQL: `project_id = NULL, deleted_project_title = 'Old'` on b, and on a new 30-min log of another project) → one row `project {id: null, title "Old", deleted: true}` with 90 min | `api/test/reports.ac.e2e-spec.ts` | T1 |
+| AC-5 | PM Internal deleted (`DELETE /projects/{id}`) → its row is `project {id: null, title "PM Internal", deleted: true}`, 60 min; a second project also titled "PM Internal" with a new 30-min log, then deleted → still one row `project {id: null, title "PM Internal", deleted: true}` with 90 min (grouped by the retained name) | `api/test/reports.ac.e2e-spec.ts` | T1 |
 | AC-6 | B's logs and workdays never appear; `?from=2026-11-01&to=2026-11-30` (nothing there, in the future) → `{days: [], projects: []}` | `api/test/reports.ac.e2e-spec.ts` | T1 |
 | AC-7 | `400` for `from > to`, 2025-10-07..2026-10-09 (367 days apart), `from=2026-02-30`, a missing `to`; 2025-10-08..2026-10-09 (366) → `200` | `api/test/reports.ac.e2e-spec.ts` | T1 |
 | AC-8 | Without a token → `401` | `api/test/reports.ac.e2e-spec.ts` | T1 |

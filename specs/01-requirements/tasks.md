@@ -3,8 +3,8 @@ id: req-tasks
 title: Tasks
 status: approved
 owner: Marko Angelovski
-last_updated: 2026-10-11
-related: [req-projects, req-time-logs, req-trash, api-endpoints]
+last_updated: 2026-10-14
+related: [req-projects, req-time-logs, api-endpoints]
 ---
 
 # Tasks
@@ -13,15 +13,15 @@ related: [req-projects, req-time-logs, req-trash, api-endpoints]
 Covers creating and managing tasks inside a project. Fields and workflow follow the legacy app (OQ-006).
 
 ## Scope
-**In:** create, list/filter (per project and across projects), view, edit, change status, delete (to
-trash), move to another project (OQ-084), due-date indicator.
+**In:** create, list/filter (per project and across projects), view, edit, change status, delete
+(permanent), move to another project (OQ-084), due-date indicator.
 **Out (MVP):** subtasks, dependencies, attachments, comments, priorities, labels, configurable statuses.
 Logged time on the task page: FR-TLOG-012.
 
 ## Fields
 | Field | Required | Rules |
 | --- | --- | --- |
-| projectId | yes | A non-deleted project owned by the user |
+| projectId | yes | An existing project owned by the user |
 | title | yes | 1–200 chars, trimmed. Not unique. |
 | description | no | ≤ 2000 chars, plain text |
 | externalLink | no | A valid `http(s)` URL, ≤ 500 chars (legacy `jiraLink`) |
@@ -50,11 +50,11 @@ are optional, and the lead is suggested as the signed-in user.
 - Given only a title and project (lead cleared), the task is created with status `upcoming` and no description, link, lead or due date.
 - Given an empty or too-long title, or no project, a field error is shown and nothing is created.
 - Given an invalid external link, a field error is shown and nothing is created.
-- Given a project that is in the trash or belongs to another user, the API rejects the task (404) and nothing is created.
+- Given a project that doesn't exist (e.g. deleted) or belongs to another user, the API rejects the task (404) and nothing is created.
 
 ### FR-TSK-002: List tasks in a project
 **Priority:** Must
-**Statement:** In the project view, a paginated list of the project's non-deleted tasks with title,
+**Statement:** In the project view, a paginated list of the project's tasks with title,
 status, due date (with the indicator, FR-TSK-008), project lead and logged time (the task's total, FR-TLOG-012; OQ-132). Filter by status (multi-select,
 all statuses selected by default, OQ-081) and search by title. Sort by due date, updated date or title
 (default: updated, descending).
@@ -68,31 +68,30 @@ all statuses selected by default, OQ-081) and search by title. Sort by due date,
 
 ### FR-TSK-003: List tasks across projects
 **Priority:** Must
-**Statement:** The same as FR-TSK-002 across all non-deleted projects, plus the project name and a
+**Statement:** The same as FR-TSK-002 across all projects, plus the project name and a
 project filter (OQ-084).
 **Acceptance criteria:**
-- Given tasks whose project is in the trash, they aren't listed.
+- Given tasks in two projects, both are listed, each with its project's name.
 
 ### FR-TSK-004: View task
 **Priority:** Must
 **Statement:** The task details: title, project, status, due date, lead, external link (opens in a new
-tab) and description. A missing or deleted task shows "not found", with "Restore" offered if it's in
-the trash (FR-TRASH-003). Logged time is a separate section (FR-TLOG-012).
+tab) and description. A missing or deleted task shows "not found". Logged time is a separate section (FR-TLOG-012).
 **Acceptance criteria:**
 - Given a task with every field set, then each one is shown, and the project name links to the project's page.
 - Given a task with only the required fields, then the empty optional fields don't show placeholders that look like data (no fake link or date).
 - Given a task id that doesn't exist or belongs to another user, then "not found" is shown.
-- Given a task in my trash, then "not found" is shown with "Restore"; given its project is in the trash, then "Restore project" is offered instead (FR-TRASH-003).
+- Given a task I deleted, or a task whose project I deleted, then "not found" is shown.
 
 ### FR-TSK-005: Edit task
 **Priority:** Must
 **Statement:** All fields can be edited, and optional fields can be cleared. Moving a task to another
-non-deleted project also moves the project attribution of its linked time logs (OQ-084).
+project also moves the project attribution of its linked time logs (OQ-084).
 **Acceptance criteria:**
 - Given I move a task from project A to project B, then it leaves A's list and statistics and appears in B's.
 - Given I clear the description, external link, lead or due date and save, then the task has none.
 - Given invalid input (empty or too-long title, invalid link), a field error is shown and the task is unchanged.
-- Given I pick a project that is in the trash or isn't mine, the API rejects the change (404) and the task is unchanged.
+- Given I pick a project that doesn't exist (e.g. deleted) or isn't mine, the API rejects the change (404) and the task is unchanged.
 - Given I cancel the edit, then nothing is changed.
 
 ### FR-TSK-006: Quick status change
@@ -110,12 +109,13 @@ stays where it is until the list is reloaded or re-sorted (OQ-087).
 
 ### FR-TSK-007: Delete task
 **Priority:** Must
-**Statement:** After confirmation, the task moves to the trash. Its time logs remain (FR-TRASH-006).
+**Statement:** After confirmation, the task is deleted permanently. Its time logs remain and keep the
+task name (FR-TLOG-014).
 **Acceptance criteria:**
-- Given I click Delete, then a confirmation is shown first; given I cancel it, nothing changes.
-- Given I confirm, then the task leaves its project's list and the cross-project list, the project statistics no longer count it, and it appears in the trash.
-- Given I confirm on the task's own page, then I land on its project's page with a "Moved to trash" toast (OQ-086).
-- Given time logs linked to the task, then they still exist and show the task name marked "deleted" (FR-TRASH-006).
+- Given I click Delete, then a confirmation is shown first: "Delete task?" / "“<title>” will be deleted permanently. Its logged time stays." (**Cancel**, **Delete**); given I cancel it, nothing changes.
+- Given I confirm, then the task leaves its project's list and the cross-project list, and the project statistics no longer count it.
+- Given I confirm on the task's own page, then I land on its project's page with a "Task deleted" toast (OQ-086).
+- Given time logs linked to the task, then they still exist, stay linked to the task's project, and show the task name as plain text with the deleted marker (FR-TLOG-014).
 
 ### FR-TSK-008: Due date indicator
 **Priority:** Should

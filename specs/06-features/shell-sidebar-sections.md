@@ -13,14 +13,14 @@ related: [web-routing, web-template, ADR-0005, OQ-054, feat-land-app-route-split
 
 ## Goal
 The sidebar nav is grouped under headings, like the template's (`DASHBOARD › Modern`, `PAGES › Table…`),
-and Trash and Settings move to a fixed footer at the bottom of the sidebar (where the template has
+and Settings moves to a fixed footer at the bottom of the sidebar (where the template has
 Help Center and Documentation). Behavior: [routing.md → Navigation](../04-web/routing.md#navigation) (OQ-054).
 
 ## Decisions
 | # | Decision | Source |
 | --- | --- | --- |
 | D1 | Sections: **Dashboard** → Default (`/app`); **Project management** → Projects, Tasks; **Time** → Logs (`/app/time`). Only labels change; no route changes. | OQ-054 (owner, 2026-10-02) |
-| D2 | Footer: Trash, then Settings, with no heading. Rendered by the same `NavCollapse`/`NavItem` as the main nav (same hover, filled active state). The template's plan/upgrade card (`nav-secondary.tsx`) is not used. | OQ-054 (owner) |
+| D2 | Footer: Settings, with no heading. Rendered by the same `NavCollapse`/`NavItem` as the main nav (same hover, filled active state). The template's plan/upgrade card (`nav-secondary.tsx`) is not used. | OQ-054 (owner) |
 | D3 | Headings are stored in sentence case (`"Project management"`) and shown in capitals by the existing `uppercase` class in `nav-collapse`. | Agent: the template does the same |
 | D4 | The footer items live in a separate named export `footerItems`, so the default export stays "the scrollable nav". | Agent |
 | D5 | A section without `heading` renders no heading element at all (today it renders an empty line, and `...` when collapsed). | Agent: the footer has no heading |
@@ -76,8 +76,7 @@ export default SidebarContent;
 
 /** The fixed sidebar footer (OQ-054): no heading. */
 export const footerItems: MenuItem[] = [
-  { items: [{ id: "trash",    name: "Trash",    icon: Trash2,   url: routes.app.trash },
-            { id: "settings", name: "Settings", icon: Settings, url: routes.app.settings }] },
+  { items: [{ id: "settings", name: "Settings", icon: Settings, url: routes.app.settings }] },
 ];
 ```
 Update the doc comment above `SidebarContent` to describe the sections.
@@ -96,7 +95,7 @@ In `app-sidebar.tsx`, after `</SidebarContent>`:
   </Suspense>
 </SidebarFooter>
 ```
-`FooterSkeleton`: like `NavSkeleton`, with two `<Skeleton className="h-8 w-full" />` rows. Import
+`FooterSkeleton`: like `NavSkeleton`, with one `<Skeleton className="h-8 w-full" />` row. Import
 `SidebarFooter` from `@/components/ui/sidebar` and `footerItems` from `./sidebaritems`.
 `SidebarContent` stays the scroll area, so the footer stays at the bottom while the nav scrolls.
 
@@ -104,12 +103,12 @@ In `app-sidebar.tsx`, after `</SidebarContent>`:
 | AC | Case → expected | Test | Task |
 | --- | --- | --- | --- |
 | AC-1 | Default export, as `[heading, [[id, name, url]…]]`: `["Dashboard", [["dashboard","Default","/app"]]]`, `["Project management", [["projects","Projects","/app/projects"],["tasks","Tasks","/app/tasks"]]]`, `["Time", [["time","Logs","/app/time"]]]` | `web/app/(dashboard-layout)/layout/vertical/sidebar/sidebaritems.ac.test.ts` | T1 |
-| AC-2 | `footerItems`: one section with no `heading`, items `[["trash","Trash","/app/trash"],["settings","Settings","/app/settings"]]` | `web/app/(dashboard-layout)/layout/vertical/sidebar/sidebaritems.ac.test.ts` | T1 |
-| AC-3 | All app routes still reachable: the URLs of both exports together are exactly `/app`, `/app/projects`, `/app/tasks`, `/app/time`, `/app/trash`, `/app/settings` (replaces feat-land-app-route-split AC-9) | `web/app/(dashboard-layout)/layout/vertical/sidebar/sidebaritems.ac.test.ts` | T1 |
+| AC-2 | `footerItems`: one section with no `heading`, items `[["settings","Settings","/app/settings"]]` | `web/app/(dashboard-layout)/layout/vertical/sidebar/sidebaritems.ac.test.ts` | T1 |
+| AC-3 | All app routes still reachable: the URLs of both exports together are exactly `/app`, `/app/projects`, `/app/tasks`, `/app/time`, `/app/settings` (replaces feat-land-app-route-split AC-9) | `web/app/(dashboard-layout)/layout/vertical/sidebar/sidebaritems.ac.test.ts` | T1 |
 | AC-4 | `NavCollapse` with the default export, sidebar expanded: shows the texts `Dashboard`, `Project management`, `Time`, and links `Default`, `Projects`, `Tasks`, `Logs` | `web/app/(dashboard-layout)/layout/vertical/sidebar/nav-collapse/nav-collapse.ac.test.tsx` | T1 |
 | AC-5 | `NavCollapse` with `footerItems`: no heading element; collapsed (`useSidebar` → `state: "collapsed"`) shows no `...`. With the default export collapsed, `...` shows 3 times | `web/app/(dashboard-layout)/layout/vertical/sidebar/nav-collapse/nav-collapse.ac.test.tsx` | T1 |
-| AC-6 | `NavCollapse` with `footerItems` at pathname `/app/settings`: the `Settings` link contains the active item (class `bg-primary`), and `Trash` doesn't | `web/app/(dashboard-layout)/layout/vertical/sidebar/nav-collapse/nav-collapse.ac.test.tsx` | T1 |
-| AC-7 | The built `/app` page has a sidebar footer with the Trash and Settings links | `check` | T1 |
+| AC-6 | `NavCollapse` with `footerItems` at pathname `/app/settings`: the `Settings` link contains the active item (class `bg-primary`) | `web/app/(dashboard-layout)/layout/vertical/sidebar/nav-collapse/nav-collapse.ac.test.tsx` | T1 |
+| AC-7 | The built `/app` page has a sidebar footer with the Settings link | `check` | T1 |
 | AC-8 | Expanded and collapsed: headings in capitals (`...` when collapsed), the footer pinned to the bottom with a top border, Settings filled when on `/app/settings`; light and dark | `manual` | T1 |
 
 Test setup for `nav-collapse.ac.test.tsx`: mock `next/navigation` (`usePathname`) and
@@ -117,15 +116,15 @@ Test setup for `nav-collapse.ac.test.tsx`: mock `next/navigation` (`usePathname`
 
 ## Checks
 ```bash
-# AC-7: the sidebar footer in the built /app page holds Trash and Settings
+# AC-7: the sidebar footer in the built /app page holds Settings
 # (only between the footer and the main content, so the header's Settings link doesn't count)
-node -e "const h=require('fs').readFileSync('web/out/app.html','utf8'); const a=h.indexOf('data-slot=\"sidebar-footer\"'), b=h.indexOf('data-slot=\"sidebar-inset\"', a); const f=h.slice(a, b); if (a<0 || b<0 || !f.includes('href=\"/app/trash\"') || !f.includes('href=\"/app/settings\"')) process.exit(1)"
+node -e "const h=require('fs').readFileSync('web/out/app.html','utf8'); const a=h.indexOf('data-slot=\"sidebar-footer\"'), b=h.indexOf('data-slot=\"sidebar-inset\"', a); const f=h.slice(a, b); if (a<0 || b<0 || !f.includes('href=\"/app/settings\"')) process.exit(1)"
 ```
 
 ## Tasks
 | # | Task | App | Size | Tier | Why this tier | Depends on |
 | --- | --- | --- | --- | --- | --- | --- |
-| T1 | Group the sidebar nav into sections and move Trash and Settings to a fixed footer | web | S | sonnet | 4 files, all changes given; more than haiku's 3 files, no new pattern | — |
+| T1 | Group the sidebar nav into sections and move Settings to a fixed footer | web | S | sonnet | 4 files, all changes given; more than haiku's 3 files, no new pattern | — |
 
 ## Open questions
 None. OQ-054 is resolved.

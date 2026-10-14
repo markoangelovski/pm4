@@ -3,7 +3,7 @@ id: arch-env
 title: Environments and Configuration
 status: approved
 owner: Marko Angelovski
-last_updated: 2026-10-03
+last_updated: 2026-10-14
 related: [arch-deployment, sec]
 ---
 
@@ -39,7 +39,7 @@ Validated at startup. The app refuses to boot if something is missing or invalid
 | `NODE_ENV` | no | `development` / `test` / `production` |
 | `DATABASE_URL` | **yes** | Neon **pooled** connection string (runtime) |
 | `DATABASE_URL_DIRECT` | **yes** | Neon **direct** connection string (migrations only, CI secret) |
-| `REDIS_URL` | **yes** | Redis Cloud URL, **plain `redis://`**: the Redis Cloud free tier has TLS off (owner, 2026-09-27; accepted risk in security.md). Used for auth state, rate limits and BullMQ queues (ADR-0011) |
+| `REDIS_URL` | **yes** | Redis Cloud URL, **plain `redis://`**: the Redis Cloud free tier has TLS off (owner, 2026-09-27; accepted risk in security.md). Used for auth state and rate limits |
 | `CORS_ORIGINS` | no | `https://pm4.angelovski.top` (comma-separated) |
 | `WEB_APP_URL` | no | Where the OAuth callback redirects back to (`https://pm4.angelovski.top`) |
 | `GOOGLE_CLIENT_ID` | no | Google OAuth client |
@@ -48,7 +48,6 @@ Validated at startup. The app refuses to boot if something is missing or invalid
 | `JWT_ACCESS_SECRET` | **yes** | Signs access tokens (≥ 32 random bytes) |
 | `ACCESS_TOKEN_TTL` / `REFRESH_TOKEN_TTL` | no | `15m` / `30d` (sliding; OQ-023, OQ-024) |
 | `AUTH_ALLOWED_EMAILS` | no | Comma-separated sign-up allow-list. Empty = open sign-up (OQ-022, security.md §Sign-up policy) |
-| `TRASH_RETENTION_DAYS` | no | `31` |
 
 Each app commits a `.env.example` with every variable and dummy values.
 
@@ -68,7 +67,7 @@ Each app commits a `.env.example` with every variable and dummy values.
 - 2026-09-26: Updated with owner answers to OQ-001–018.
 - 2026-09-26: OQ-022, OQ-023, OQ-032 resolved. Recorded the F1 tier and free-tier quotas.
 - 2026-09-27: OQ-024 resolved: REFRESH_TOKEN_TTL 30d.
-- 2026-09-27: Removed the purge workflow config and INTERNAL_JOB_TOKEN (ADR-0011). Publish profile chosen. No Neon branches.
+- 2026-09-27: Publish profile chosen. No Neon branches.
 - 2026-09-27: OQ-042: Node 24 LTS runtime, Postgres 18.
 - 2026-09-27: Approved by the owner.
 - 2026-09-27: Filled in the real web domain and API host. REDIS_URL is plain `redis://` (Redis Cloud free tier, TLS off).

@@ -16,7 +16,7 @@ in both directions. It is the first of possibly several integrations. Each one i
 and once configured it gets its own page under **Connectors** in the sidebar.
 
 ## Scope
-**In (M7, OQ-141):** the Integrations settings tab; one PMSPA connection per user (URL, email, password); credentials
+**In (M6, OQ-141):** the Integrations settings tab; one PMSPA connection per user (URL, email, password); credentials
 encrypted at rest; the connection status with a manual test; disconnecting; the **Connectors** sidebar section with the
 **PMSPA** item; the `/app/connectors/pmspa` page.
 **Out:** integrations other than PMSPA; more than one PMSPA connection per user (OQ-144); a PMSPA favicon (OQ-143).

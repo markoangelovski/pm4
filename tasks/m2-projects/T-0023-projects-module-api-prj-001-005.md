@@ -1,6 +1,6 @@
 ---
 id: T-0023
-title: Projects module (API-PRJ-001…006) with task counts, the project lead and the in-trash Problem type
+title: Projects module (API-PRJ-001…005) with task counts and the project lead
 milestone: M2
 app: api
 status: done
@@ -15,9 +15,9 @@ ac_files:
   - { path: api/src/common/sql/escape-like.ac.spec.ts, sha256: 9e28c127f1c9c42ca28a21978b97ef9ef5a1326b97299186f06232e87d728601 }
 ---
 
-# T-0023: Projects module (API-PRJ-001…006) with task counts, the project lead and the in-trash Problem type
+# T-0023: Projects module (API-PRJ-001…005) with task counts and the project lead
 
-**Tier reason:** First feature module and repository; first lead and in-trash patterns, reused by tasks
+**Tier reason:** First feature module and repository; first lead and not-found patterns, reused by tasks
 
 Work from the brief: `node scripts/pm4.mjs brief T-0023`. Verify with `node scripts/pm4.mjs check T-0023`.
 
@@ -25,12 +25,12 @@ Work from the brief: `node scripts/pm4.mjs brief T-0023`. Verify with `node scri
 _Implementer: what changed, and anything the reviewer should look at._
 
 **What changed**
-- Shared helpers: `escapeLike`, `InTrashException`, `Trim`/`TrimToNull`, `PageQueryDto` (page/pageSize are
+- Shared helpers: `escapeLike`, `Trim`/`TrimToNull`, `PageQueryDto` (page/pageSize are
   `@ApiPropertyOptional({ type: "integer" })` so the contract doesn't mark them required).
 - `ProblemDetailsFilter` (D10): a string `problemType` becomes the slug; object `extensions` are added after the
   standard members and never replace `type`/`title`/`status`/`detail`/`errors`. A `500` ignores both.
 - `ProjectLeadService` + `ProjectLeadDto`/`LeadUserDto`; `UsersRepository.findLeadUser`; `UsersModule` exports the service.
-- `projects` module (controller, service, repository, DTOs). The counts subquery is scoped by `user_id`, `deleted_at IS NULL`,
+- `projects` module (controller, service, repository, DTOs). The counts subquery is scoped by `user_id`,
   and also by `project_id` for `findById`. Title sort uses `lower(title)`. Every sort breaks ties on `id DESC`.
 - `openapi.json` re-exported (projects paths, bearer-protected). Unit specs added for the new and changed files.
 
@@ -38,7 +38,7 @@ _Implementer: what changed, and anything the reviewer should look at._
 ```
 api lint: ok · format:check: ok · typecheck: ok · test: ok · test:e2e: FAIL · build: ok · openapi:export: ok
 check AC-19: ok · pending ACs (later tasks, excluded): AC-17, AC-18, AC-20
-- changed files outside scope: the 7 *.spec.ts files (problem-details.filter, users.repository, in-trash.exception,
+- changed files outside scope: the 6 *.spec.ts files (problem-details.filter, users.repository,
   projects.controller/repository/service, project-lead.service): listed in the Files table as `…spec.ts` shorthand
 - test:e2e: 2 failed | 65 passed | 5 skipped
   projects.ac.e2e-spec.ts AC-15 → ECONNREFUSED (test bug, see below)
@@ -65,10 +65,10 @@ flags only the orchestrator's `specs/06-features/prj-api.md` edit.
 ## Review
 **Verdict: approve** (Opus reviewer, 2026-10-04). No spec drift, no non-goals touched; every query scoped by `userId`.
 Minor findings, applied by the orchestrator after the review:
-- `update` and `setDeletedAt` now also filter on the trash state, so a PATCH or DELETE racing a DELETE can't write a trashed row.
+- `update` and `delete` now also filter on the owner, so a PATCH or DELETE racing a DELETE affects no row and returns `404`.
 - `api/AGENTS.md` *Patterns to copy* lists the first feature module and its helpers.
 - These notes record the final check summary.
 
 Left as is: a `400` carrying field `errors` ignores `problemType`/`extensions` (no caller needs it; validation bodies
 always use `validation`). `projects.repository.spec.ts` covers only `findById`; counts, order and search are covered by e2e AC-5…8.
-**Tier:** opus was right (first module; sets the in-trash, lead and repository patterns).
+**Tier:** opus was right (first module; sets the not-found, lead and repository patterns).

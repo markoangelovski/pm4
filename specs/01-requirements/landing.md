@@ -3,7 +3,7 @@ id: req-landing
 title: Public Landing Page
 status: approved
 owner: Marko Angelovski
-last_updated: 2026-10-01
+last_updated: 2026-10-14
 related: [prod-scope, req-auth, web-routing, web-screens, web-static-export, feat-land-app-route-split]
 ---
 
@@ -23,12 +23,13 @@ link (`?returnTo=`) on to sign-in.
 ## Requirements
 
 ### FR-LAND-001: Public landing page
+> The landing page's design is redone in M7 (OQ-151). Until then it stays as built: header, hero, call to action.
 **Priority:** Must
 **Statement:** PM4 has a public landing page at `/`. Anyone can open it without signing in. It is
 a marketing page that describes what PM4 is and what it can do. It covers at least projects, tasks,
-time logging with a required log text, the dashboard reporting, and the trash (OQ-045):
+time logging with a required log text, and the dashboard reporting (OQ-045):
 - a **hero** with the product name, a tagline and the same "Go to app" / "Login" call to action as the header;
-- a **feature grid**: projects, tasks, time logs, dashboard, trash;
+- a **feature grid**: projects, tasks, time logs, dashboard;
 - a **footer**.
 
 Screenshots are added later. The agent drafts the copy, and the owner edits it.
@@ -42,7 +43,7 @@ Screenshots are added later. The agent drafts the copy, and the owner edits it.
 - Given I'm signed out, when I open `/`, then I see the landing page and I'm not redirected to sign-in.
 - Given I'm signed in, when I open `/`, then I see the landing page (no redirect to the app).
 - Given the API is down, when I open `/`, then the page content still renders.
-- The page describes projects, tasks, time logging, reporting and the trash.
+- The page describes projects, tasks, time logging and reporting.
 - When I open `/home`, then I see the not-found page.
 
 ### FR-LAND-002: Header app/login button

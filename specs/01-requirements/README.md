@@ -22,7 +22,6 @@ Explains how requirements are written, and indexes the requirement specs.
 | Time capture | TLOG | [time-logs.md](time-logs.md) |
 | Bookings | BOOK | [bookings.md](bookings.md) |
 | Dashboard and reporting | RPT | [reporting.md](reporting.md) |
-| Trash and soft delete | TRASH | [trash.md](trash.md) |
 | Integrations and connectors | INT | [integrations.md](integrations.md) |
 | Non-functional | NFR | [non-functional.md](non-functional.md) |
 

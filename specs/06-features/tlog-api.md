@@ -5,8 +5,8 @@ status: approved
 owner: Marko Angelovski
 last_updated: 2026-10-09
 milestone: M4
-requirements: [FR-TLOG-001, FR-TLOG-004, FR-TLOG-006, FR-TLOG-008, FR-TLOG-009, FR-TLOG-014, FR-TLOG-017, FR-TLOG-018, FR-TRASH-006, FR-TRASH-007, API-USR-002, API-WD-001, API-WD-002, API-WD-003, API-TLOG-002, API-TLOG-004, API-TLOG-006]
-related: [req-time-logs, req-trash, api-endpoints, api-data-model, api-conventions, sec, feat-tsk-api, feat-tlog-web, OQ-103, OQ-105, OQ-108, OQ-110, OQ-111, OQ-114, OQ-115, OQ-119]
+requirements: [FR-TLOG-001, FR-TLOG-004, FR-TLOG-006, FR-TLOG-008, FR-TLOG-009, FR-TLOG-014, FR-TLOG-017, FR-TLOG-018, API-USR-002, API-WD-001, API-WD-002, API-WD-003, API-TLOG-002, API-TLOG-004, API-TLOG-006]
+related: [req-time-logs, api-endpoints, api-data-model, api-conventions, sec, feat-tsk-api, feat-tlog-web, OQ-103, OQ-105, OQ-108, OQ-110, OQ-111, OQ-114, OQ-115, OQ-119]
 ---
 
 # Time logging API: workdays, time logs and the daily target
@@ -21,7 +21,7 @@ The web side is feat-tlog-web.
 ## Decisions
 | # | Decision | Source |
 | --- | --- | --- |
-| D1 | A log's project is derived from its task; a differing `projectId` → `400`. A task or project in the trash can't be newly linked (`404 not-found`), but a log keeps its current link on edit. | OQ-108 (owner) |
+| D1 | A log's project is derived from its task; a differing `projectId` → `400`. A deleted task or project can't be linked (`404 not-found`); an edit that sends no link fields keeps the log's link and retained names. | OQ-108 (owner) |
 | D2 | The first log of a date creates the workday in the same transaction (`dayStartMinute`); later `dayStartMinute` values are ignored. | OQ-103 (owner) |
 | D3 | The day view returns all logs of the date in `id` order; no pagination, no order field. | OQ-114 (owner) |
 | D4 | A log with a task carries the task's `project_id`; moving a task updates its logs in the same transaction, inside `TasksRepository.update` (no module dependency from tasks to time). | data-model.md *time_logs* |
@@ -30,15 +30,16 @@ The web side is feat-tlog-web.
 | D7 | `excludeFromStats` is stored and returned as is; the API computes no statistics from it in this feature. | OQ-119 (owner) |
 | D8 | `GET /time-logs?projectId=&taskId=` (API-TLOG-001) is not built here; it comes with the logged-time sections of the project and task pages. | Owner (2026-10-09): features documented one screen at a time |
 | D9 | `PATCH /me` treats `timeZone` as sign-in does (`sanitizeTimeZone` in `api/src/auth/auth.service.ts`): it stores the canonical name `Intl` resolves (`europe/zagreb` → `Europe/Zagreb`), and a fixed UTC offset (`+01:00`) → `400`. | Owner (2026-10-09), review |
+| D10 | Deleting a task or project first saves its title on its logs (data-model.md *Retained names*), in the same transaction as the `DELETE`, inside `TasksRepository.delete` and `ProjectsRepository.delete` (as D4: no module dependency on time). | data-model.md *Retained names* |
 
 ## Scope
 **In:** schema and migration for `workdays`, `time_logs`, `users.daily_target_minutes`; the `time` module (workdays and
-time logs); `PATCH /me` and `Me.dailyTargetMinutes`; moving a task's logs in `PATCH /tasks/{id}`; the OpenAPI export.
+time logs); `PATCH /me` and `Me.dailyTargetMinutes`; moving a task's logs in `PATCH /tasks/{id}`; retained names in the task and project deletes; the OpenAPI export.
 
 **Before the tests are written:** feat-tsk-api is done.
 
 **Non-goals** (implementers must not touch these):
-- Anything in `web/`. API-TLOG-001 (D8). The trash list, the purge and the retained-name `UPDATE` (M6; only the read model is built here).
+- Anything in `web/`. API-TLOG-001 (D8).
 - Reports (`/reports/*`), the dashboard, bookings.
 - `projects/*`, auth, the Problem Details filter, `common/validation/*` beyond adding to them.
 - `api/test/*` files written in the test step.
@@ -47,7 +48,7 @@ time logs); `PATCH /me` and `Me.dailyTargetMinutes`; moving a task's logs in `PA
 | Path | Why / copy this |
 | --- | --- |
 | `specs/03-api/endpoints.md#shared-time-capture-shapes` and API-WD-001…003, API-TLOG-002/004/006, API-USR-002 | Contract |
-| `specs/03-api/data-model.md#workdays`, `#time_logs`, `#retained-names-fr-trash-006` | Tables, invariants, read model |
+| `specs/03-api/data-model.md#workdays`, `#time_logs`, `#retained-names` | Tables, invariants, retained names, read model |
 | `api/src/tasks/` (module, controller, service, repository, `dto/`) | The pattern to copy: layering, `findOwned`, Drizzle style, `@ApiProblemResponses` |
 | `api/src/database/schema/projects.ts`, `api/src/database/schema/users.ts` | Column style, `index`, `check`, FKs |
 | `api/src/users/users.controller.ts`, `users.service.ts`, `users.repository.ts`, `dto/me-response.dto.ts` | `/me` to extend |
@@ -74,7 +75,8 @@ time logs); `PATCH /me` and `Me.dailyTargetMinutes`; moving a task's logs in `PA
 | api | `api/src/time/time.repository.ts`, `api/src/time/time.repository.spec.ts` | C | T2 | `npx nest g provider time/time.repository --flat` |
 | api | `api/src/time/dto/*.ts` | C | T2 | Hand-written |
 | api | `api/src/app.module.ts` | M | T2 | The CLI adds `TimeModule` |
-| api | `api/src/tasks/tasks.repository.ts`, `api/src/tasks/tasks.repository.spec.ts` | M | T2 | Move a task's logs (D4) |
+| api | `api/src/tasks/tasks.repository.ts`, `api/src/tasks/tasks.repository.spec.ts` | M | T2 | Move a task's logs (D4); retained names on delete (D10) |
+| api | `api/src/projects/projects.repository.ts`, `api/src/projects/projects.repository.spec.ts` | M | T2 | Retained names on delete (D10) |
 | api | `api/openapi.json` | M | T1, T2 | `npm run openapi:export` |
 
 ## Interfaces
@@ -153,7 +155,7 @@ A date that matches the regex but isn't real (`2026-02-30`), or a path `{date}` 
 ```ts
 // api/src/time/time.repository.ts (every method scoped by userId; one DrizzleDb transaction where noted)
 export interface TimeLogRow { id; workDate; durationMinutes; excludeFromStats; text; title; taskId; projectId; deletedTaskTitle; deletedProjectTitle;
-  taskTitle: string | null; taskDeletedAt: Date | null; taskProjectDeletedAt: Date | null; projectTitle: string | null; projectDeletedAt: Date | null }
+  taskTitle: string | null; projectTitle: string | null }
 getWorkday(userId, date): Promise<number | null>;                               // startMinute
 upsertWorkday(userId, date, startMinute): Promise<void>;                        // INSERT … ON CONFLICT (user_id, work_date) DO UPDATE
 insertLog(userId, values, dayStart: { date: string; startMinute: number } | null): Promise<string>; // transaction: insert the workday ON CONFLICT DO NOTHING when dayStart, then the log
@@ -163,9 +165,8 @@ deleteLog(userId, id): Promise<void>;
 listDay(userId, date): Promise<TimeLogRow[]>;                                   // ORDER BY l.id ASC
 listWorkdays(userId, from, to): Promise<{ workDate: string; startMinute: number; totalMinutes: number }[]>; // LEFT JOIN + SUM, ORDER BY work_date
 ```
-Rows `LEFT JOIN tasks` (and the task's project, for `taskProjectDeletedAt`) and `projects`, including trashed ones. `Ref` mapping (`toRef`): a task/project row
-present → `{ id, title, deleted: deletedAt !== null }` (a task is `deleted` also when its **project** is trashed: `taskDeletedAt || taskProjectDeletedAt`);
-no row but a `deleted…Title` snapshot → `{ id: null, title: snapshot, deleted: true }`; else `null`.
+Rows `LEFT JOIN tasks` and `projects`. `Ref` mapping (`toRef`): a task/project row present → `{ id, title, deleted: false }`;
+no row but a `deleted…Title` retained name → `{ id: null, title: retainedName, deleted: true }`; else `null`.
 
 ```ts
 // api/src/time/time-logs.service.ts
@@ -176,13 +177,15 @@ setStart(userId, date, startMinute): Promise<WorkdayResponseDto>;
 ```
 - `today(tz)`: the date string in the caller's `users.time_zone` (`UsersRepository.findById`); `date > today` → `BadRequestException` naming `workDate` (D5). The same check serves `PUT /workdays/{date}`.
 - Link resolution (`create`, `update` when `projectId` or `taskId` is present): per endpoints.md *Link input*. Use `TasksService.findOwned(userId, taskId)` and `ProjectsService.findOwned`;
-  `NotFoundException` or `InTrashException` from them → `NotFoundException("Task not found.")` / `("Project not found.")`. `update` skips the check for a link equal to the log's current one (D1).
+  `NotFoundException` from them → `NotFoundException("Task not found.")` / `("Project not found.")`. A link that sets `taskId` or `projectId` clears both retained names in the same `UPDATE` (data-model.md *Retained names*).
   `TimeModule` imports `TasksModule`, `ProjectsModule`, `UsersModule`.
 - Day start: after resolving the target date, `existing = getWorkday(userId, date)`. `existing === null` and no `dayStartMinute` → `400` (field `dayStartMinute`); else `dayStart = existing === null ? { date, startMinute } : null` (D2). In `update`, only when `workDate` is present and differs.
 - `create`: `excludeFromStats ?? false`. `update`: sets `excludeFromStats` only when present.
 - `getDay`: `startMinute = getWorkday ?? null`, `logs = listDay`, `totalMinutes = sum` (all logs, excluded ones too). `list`: range > 366 days or `from > to` → `400`.
 - `update` of a missing/foreign/non-UUID id and `remove` → `404 not-found` ("Time log not found.").
 - `TasksRepository.update` (D4): when `values.projectId` is set, run `UPDATE tasks …` and `UPDATE time_logs SET project_id = <new> WHERE user_id = … AND task_id = <id>` in one `db.transaction`.
+- `TasksRepository.delete` (D10): in one `db.transaction`, `UPDATE time_logs SET deleted_task_title = <task title> WHERE user_id = … AND task_id = <id>`, then `DELETE` the task (the FK sets `task_id` to null; `project_id` stays).
+- `ProjectsRepository.delete` (D10): in one `db.transaction`, `UPDATE time_logs l SET deleted_project_title = <project title>, deleted_task_title = t.title FROM … WHERE l.project_id = <id>` (`deleted_task_title` from the log's task, null for a project-only log), then `DELETE` the project (its tasks cascade; the FKs null both ids).
 - Controllers: `@ApiBearerAuth('bearer')`, `@Controller('workdays')` (`GET`, `GET :date`, `PUT :date`) and `@Controller('time-logs')` (`POST`, `PATCH :id`, `DELETE :id` → 204), `@ApiProblemResponses(...)` per endpoints.md *Errors*. Run `npm run openapi:export` at the end.
 
 ## Acceptance criteria
@@ -198,17 +201,17 @@ Signed in as user A (zone `Europe/Zagreb`; "today" = 2026-10-07) unless stated; 
 | AC-6 | `400` with the named field for: no/blank/1001-char `text`; `title` 101 chars; `durationMinutes` `0`, `10`, `20`, `1455`, `"1h"`, missing; `workDate` `2026-02-30`, `07.10.2026`, missing; `workDate` `2026-10-08` (future); `excludeFromStats` `"yes"`, `null` | `api/test/time-logs.ac.e2e-spec.ts` | T2 |
 | AC-7 | `durationMinutes` `15` and `1440` → `201`; blank `title` → stored `null`; `title " Review "` → `"Review"`; `excludeFromStats:true` → `201` with `true`, and it is counted in `totalMinutes` of `GET /workdays/{date}` | `api/test/time-logs.ac.e2e-spec.ts` | T2 |
 | AC-8 | `taskId:T` → `201` with `task {id:T, title, deleted:false}` and `project {id:P, …}`; `taskId:T, projectId:P` → `201`; `taskId:T, projectId:Q` → `400` naming `projectId` | `api/test/time-logs.ac.e2e-spec.ts` | T2 |
-| AC-9 | `projectId:P` only → `project` set, `task null`; B's, random or trashed project/task → `404 not-found`, nothing created; a completed task → `201` | `api/test/time-logs.ac.e2e-spec.ts` | T2 |
+| AC-9 | `projectId:P` only → `project` set, `task null`; B's, random or deleted project/task → `404 not-found`, nothing created; a completed task → `201` | `api/test/time-logs.ac.e2e-spec.ts` | T2 |
 | AC-10 | `GET /workdays/2026-10-07` lists logs in the order created (3 logs → same order), `totalMinutes` = their sum; a date with nothing → `{startMinute:null, totalMinutes:0, logs:[]}`; `2026-13-01` → `400`; B's logs never appear | `api/test/time-logs.ac.e2e-spec.ts` | T2 |
 | AC-11 | `PUT /workdays/2026-10-07 {startMinute:480}` → `200`, then `GET` shows 480; `PUT` for `2026-10-08` → `400`; `startMinute` `485` → `400` | `api/test/time-logs.ac.e2e-spec.ts` | T2 |
 | AC-12 | `GET /workdays?from=2026-10-01&to=2026-10-31` → one item per workday with `startMinute` and `totalMinutes`; a workday whose logs were all deleted → `totalMinutes 0`; range over 366 days or `from > to` → `400` | `api/test/time-logs.ac.e2e-spec.ts` | T2 |
 | AC-13 | `PATCH` changes `durationMinutes`, `text`, `title` (`null` clears it), `excludeFromStats` (true → false); `text:null`, `durationMinutes:null`, `workDate:null`, `excludeFromStats:null` → `400`; `{}` → `200` | `api/test/time-logs.ac.e2e-spec.ts` | T2 |
 | AC-14 | `PATCH {taskId:U}` → project becomes Q; `PATCH {projectId:P}` (no task) → task cleared; `PATCH {projectId:null}` → both cleared; neither field → link unchanged; B's task → `404` | `api/test/time-logs.ac.e2e-spec.ts` | T2 |
 | AC-15 | `PATCH {workDate:"2026-10-05"}` where that date has no workday and no `dayStartMinute` → `400` (`dayStartMinute`); with it → `200` and the date has that start; to a future date → `400`; to a date that has a workday → `200` (no `dayStartMinute` needed), and the log is listed among that date's logs by `id` (entry) order | `api/test/time-logs.ac.e2e-spec.ts` | T2 |
-| AC-16 | A log linked to a task that is later trashed: `PATCH {text:"x"}` with no link fields → `200`; `PATCH {taskId:<same task>}` → `200`; the day shows `task.deleted true`; a different trashed task → `404` | `api/test/time-logs.ac.e2e-spec.ts` | T2 |
+| AC-16 | A log linked to a task that is later deleted: the day shows `task {id: null, title, deleted: true}` and `project` P; `PATCH {text:"x"}` with no link fields → `200`, the retained name stays; `PATCH {taskId:U}` → `200`, `task` U, `project` Q, no retained name (FR-TLOG-014); a deleted task's id → `404` | `api/test/time-logs.ac.e2e-spec.ts` | T2 |
 | AC-17 | `DELETE /time-logs/{id}` → `204`, gone from `GET /workdays/{date}`, the workday stays; again → `404`; B's → `404`; `abc` → `404` | `api/test/time-logs.ac.e2e-spec.ts` | T2 |
 | AC-18 | `PATCH /tasks/T {projectId:Q}` → T's logs now have `project` Q in `GET /workdays/{date}`; a log of P without a task keeps P | `api/test/time-logs.ac.e2e-spec.ts` | T2 |
-| AC-19 | A log of a trashed project or task is still returned in its day, with `deleted: true` and its title, and still counts in `totalMinutes` | `api/test/time-logs.ac.e2e-spec.ts` | T2 |
+| AC-19 | `DELETE /projects/P`: its direct log and its task T's log are still returned in their day with `project {id: null, title P's, deleted: true}` (T's log also `task {id: null, title T's, deleted: true}`), and still count in `totalMinutes` | `api/test/time-logs.ac.e2e-spec.ts` | T2 |
 | AC-20 | Every `/workdays` and `/time-logs` endpoint, without a token → `401` | `api/test/time-logs.ac.e2e-spec.ts` | T2 |
 | AC-21 | `api/openapi.json` has the paths of API-WD-001…003, API-TLOG-002/004/006 and `PATCH /api/v1/me`, all requiring `bearer`; `MeResponseDto` has `dailyTargetMinutes` and `TimeLogResponseDto` has `excludeFromStats` | `check` | T2 |
 
@@ -228,7 +231,7 @@ if (!s.TimeLogResponseDto?.properties?.excludeFromStats) { console.error('missin
 | # | Task | App | Size | Tier | Why this tier | Depends on |
 | --- | --- | --- | --- | --- | --- | --- |
 | T1 | Schema + migration (`workdays`, `time_logs`, `users.daily_target_minutes`) and `PATCH /me` | api | S | haiku | Table definitions are spelled out above; `/me` follows the existing controller/service | — (feat-tsk-api done) |
-| T2 | `time` module: workdays, time logs, link and day-start rules, moving a task's logs | api | L | sonnet | Transactions across two tables, link and day-start rules, time-zone "today" and a cross-module change in `TasksRepository` | T1 |
+| T2 | `time` module: workdays, time logs, link and day-start rules, moving a task's logs, retained names on delete | api | L | sonnet | Transactions across two tables, link and day-start rules, time-zone "today" and cross-module changes in `TasksRepository` and `ProjectsRepository` | T1 |
 
 ## Open questions
 None.

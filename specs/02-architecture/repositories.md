@@ -3,7 +3,7 @@ id: arch-repos
 title: Repository Layout
 status: approved
 owner: Marko Angelovski
-last_updated: 2026-09-27
+last_updated: 2026-10-14
 related: [ADR-0006]
 ---
 
@@ -59,6 +59,5 @@ pm4/                               # git root. Remote: a new GitHub repo (OQ-033
 - 2026-09-26: Initial scaffold.
 - 2026-09-26: Updated with owner answers to OQ-001–018.
 - 2026-09-26: OQ-033 resolved: a new GitHub repo.
-- 2026-09-27: Removed trash-purge.yml (ADR-0011).
 - 2026-09-27: Default branch is `master`.
 - 2026-09-27: Approved by the owner.

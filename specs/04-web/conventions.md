@@ -3,7 +3,7 @@ id: web-conventions
 title: Web Conventions
 status: approved
 owner: Marko Angelovski
-last_updated: 2026-10-11
+last_updated: 2026-10-14
 related: [web-static-export, web-template, web-routing, web-prototype, qa-code-style, ADR-0009, ADR-0010, ADR-0012, feat-land-app-route-split]
 ---
 
@@ -20,11 +20,11 @@ app/
     layout.tsx  loading.tsx  error.tsx  layout/   # shell internals
     app/                       # the `/app` URL segment
       page.tsx                 #   dashboard `/app` (FR-RPT-*)
-      projects/  project/  tasks/  task/  time/  trash/  settings/
+      projects/  project/  tasks/  task/  time/  settings/
   auth/sign-in/  auth/callback/  # outside the shell and outside `/app`
   proto/                       # UI prototype routes `/proto/app/**`: page.dev.tsx / layout.dev.tsx, dev only (prototype.md)
 components/ui/                 # shadcn primitives (edit only for global changes)
-features/<domain>/             # projects, tasks, time, reports, trash, auth
+features/<domain>/             # projects, tasks, time, reports, auth
   api.ts                       #   query-key factory + useQuery/useMutation hooks
   schemas.ts                   #   zod form schemas
   components/                  #   domain components

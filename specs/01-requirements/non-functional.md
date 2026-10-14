@@ -3,7 +3,7 @@ id: req-nfr
 title: Non-Functional Requirements
 status: draft
 owner: Marko Angelovski
-last_updated: 2026-09-27
+last_updated: 2026-10-14
 related: [sec, arch-deployment, qa-testing, api-data-model]
 ---
 
@@ -66,7 +66,7 @@ English only (no i18n framework). Light and dark themes as provided by the templ
 ### NFR-013: Redis memory budget
 Redis Cloud free tier: **30 MB** (OQ-032). Redis holds only short-lived keys, and **every key has a
 TTL**: OAuth state (10 min), login codes (60 s), refresh tokens (the refresh lifetime), per-user family
-sets (the refresh lifetime), rate-limit counters (their window). BullMQ queue keys are the exception, and are kept small by removing finished jobs (ADR-0011). This needs the
+sets (the refresh lifetime), rate-limit counters (their window). This needs the
 `noeviction` policy on the Redis Cloud DB. Keys use short prefixes and small values
 (hashes, not JSON blobs of profiles). Estimated use: well under 1 MB for tens of users. Memory use
 (`INFO memory`) is checked alongside DB size, with an alert at 80% (24 MB). If Redis is lost, users only
@@ -76,5 +76,5 @@ have to sign in again; no data is lost.
 - 2026-09-26: Initial scaffold.
 - 2026-09-26: Updated with owner answers to OQ-001–018.
 - 2026-09-26: OQ-032 resolved: 0.5 GB Postgres and 30 MB Redis budgets; added NFR-013.
-- 2026-09-27: OQ-031/logging decided (F1, App Service logs, no App Insights). Performance, cold-start and backup targets moved to OQ-040/041. Redis budget covers BullMQ.
+- 2026-09-27: Logging decided (F1, App Service logs, no App Insights). Performance, cold-start and backup targets moved to OQ-040/041.
 - 2026-09-27: OQ-040, OQ-041 resolved. Logging reduced to standard App Service logging with no app-level work.

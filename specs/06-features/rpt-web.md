@@ -22,7 +22,7 @@ worked / target / booked totals, the running totals and the hours per project. B
 | D1 | The range and chart logic is plain functions, final before the implementation (test step): `range.ts` and `stats.ts`. | Agent: as feat-book-web D1 |
 | D2 | The range is `?from=&to=`; absent, invalid or over 366 days apart → this month (the whole month). Applying this month removes both parameters. | OQ-130 (owner) |
 | D3 | Up to 62 days → one bar per day, else one per Monday–Sunday week. Per day, a weekend day with no start and no logs is left out. | OQ-128 (owner) |
-| D4 | `reportKeys` live under `timeKeys.all`, so log mutations (header **Log time**) refresh the dashboard; `staleTime: 0`, so bookings, renames and trash changes made elsewhere show on the next visit. | Agent |
+| D4 | `reportKeys` live under `timeKeys.all`, so log mutations (header **Log time**) refresh the dashboard; `staleTime: 0`, so bookings, renames and deletions made elsewhere show on the next visit. | Agent |
 | D5 | Series colours: worked `#2a78d6` / dark `#3987e5`, booked `#1baf7a` / dark `#199e70`, start `#eb6834` / dark `#d95926`, as CSS variables `--dash-worked`, `--dash-booked`, `--dash-start` on the page root. | Owner's screen (2026-10-09) |
 
 ## Scope

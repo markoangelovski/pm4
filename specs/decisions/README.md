@@ -15,7 +15,6 @@ edited in substance. To change a decision, write a new ADR that **supersedes** i
 | [ADR-0008](ADR-0008-data-stores.md) | Neon Postgres + Drizzle, Redis Cloud for ephemeral state | accepted |
 | [ADR-0009](ADR-0009-web-data-layer-and-forms.md) | TanStack Query + react-hook-form + zod | accepted |
 | [ADR-0010](ADR-0010-openapi-contract.md) | OpenAPI contract with generated web types | accepted |
-| [ADR-0011](ADR-0011-background-jobs-bullmq.md) | Background jobs with BullMQ, run inside the API process | accepted |
 | [ADR-0012](ADR-0012-ui-prototype.md) | Frontend-only UI prototype under `/proto`, confirmed before the feature spec | accepted |
 
 New ADRs: copy [_TEMPLATE.md](_TEMPLATE.md) and use the next number.

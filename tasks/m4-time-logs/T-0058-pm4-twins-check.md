@@ -55,7 +55,7 @@ pair drifted), and check that no production file imports `@/proto/*`.
 - [ ] `node scripts/pm4.mjs twins` on the clean tree: 61 equal, 1 intended (`features/auth/use-sign-out.ts`), 0 warnings, 0 failures, exit 0.
 - [ ] Changing one line of `web/features/time/api.ts` only (uncommitted): `pm4 twins` exits 1 with `FAIL features/time/api.ts`, and
   `pm4 check --feature specs/06-features/proto-sync-web.md` fails on it. The same change committed in a scratch copy is a `WARN`, and the
-  check passes. (Undo the change afterwards by editing the file back, never with git restore.)
+  check passes. (Undo the change afterwards by editing the file back, never with git commands.)
 - [ ] `pm4 check` on an api task prints no `twins` line.
 
 ---
