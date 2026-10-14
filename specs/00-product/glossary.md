@@ -3,7 +3,7 @@ id: prod-glossary
 title: Glossary
 status: draft
 owner: Marko Angelovski
-last_updated: 2026-10-09
+last_updated: 2026-10-14
 related: [prod-vision, api-data-model]
 ---
 
@@ -36,6 +36,10 @@ Use these terms consistently in specs, code, UI copy and API names.
 | Work date | The user's local calendar date the work belongs to (`YYYY-MM-DD`) | `workDate` | `day` |
 | Trash | Soft-deleted projects and tasks. Restorable for 31 days, then purged. | `/trash` | — |
 | Retained name | The title of a deleted task/project that a time log keeps showing after deletion | `task.title` + `task.deleted` | — |
+| Integration | A kind of external system PM4 can connect to, set up under Settings → Integrations. Today only PMSPA. | — | — |
+| Connection | One user's configured link to an integration (for PMSPA: URL, email, password), with a status | — | — |
+| Connector | The page under **Connectors** in the sidebar where the user works with a connected integration (e.g. Connectors → PMSPA) | `/app/connectors/pmspa` | — |
+| PMSPA | An external project management app with an API; the first integration (FR-INT-*) | — | — |
 
 > The legacy Event level is dropped. The legacy names (Day, Event) are not used in new code.
 
@@ -51,3 +55,4 @@ Use these terms consistently in specs, code, UI copy and API names.
 - 2026-10-09: Excluded from statistics, Non-prod, billable time, % billable and overtime; the daily target defaults to 7 h; By project is the default view.
 - 2026-10-09: Added *Booking*.
 - 2026-10-09: Added the dashboard's *Worked / Booked / Target*.
+- 2026-10-14: Added *Integration*, *Connection*, *Connector* and *PMSPA* (req-integrations).

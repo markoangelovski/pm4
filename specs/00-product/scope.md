@@ -1,10 +1,10 @@
 ---
 id: prod-scope
 title: Scope and Milestones
-status: approved
+status: review
 owner: Marko Angelovski
 last_updated: 2026-10-14
-related: [prod-vision, req-overview]
+related: [prod-vision, req-overview, req-integrations]
 ---
 
 # Scope and Milestones
@@ -23,11 +23,12 @@ Defines what is in and out of scope for the MVP, and the milestone order that `t
 - Trash: restore for 31 days, permanent delete, automatic (best-effort) purge afterwards.
 - Dashboard: project and task counts, and for a date range the workdays' start times, the hours worked against the daily target,
   the booked hours, running totals and the hours per project.
+- Integrations (M7): Settings → Integrations and the PMSPA connector: one connection per user, its status, sync with PMSPA and a Connectors page (req-integrations).
 
 ## Out of scope (MVP)
 - Sharing, teams, roles (single user per account). A project lead who is a PM4 user gets no access.
 - Invoicing, billing rates, CSV/PDF export.
-- Integrations (Jira etc.). The external link is just a URL.
+- Integrations other than the PMSPA connector (M7). The external link is just a URL.
 - Native mobile apps, offline mode, notifications/email.
 - i18n (English only).
 - Staging/preview environments (production only).
@@ -45,6 +46,7 @@ Each milestone corresponds to a folder in `tasks/`.
 | M4 | Time capture | Workdays and time logs end to end (all three views), bookings | FR-TLOG-*, FR-BOOK-* done |
 | M5 | Reporting | Dashboard: counts, workday chart, worked / target / booked, running totals, hours by project | FR-RPT-* done |
 | M6 | Trash | Trash view, restore, permanent delete, background purge (ADR-0011) | FR-TRASH-* done |
+| M7 | Integrations | Settings → Integrations, the PMSPA connector (connection, status, sync) and its Connectors page. May be built before M6 (OQ-141) | FR-INT-* done |
 
 Soft-delete *columns and filtering* are built into M2/M3 from the start. M6 adds the trash UI, restore, purge and retained-name handling.
 
@@ -59,3 +61,4 @@ Soft-delete *columns and filtering* are built into M2/M3 from the start. M6 adds
 - 2026-10-09: Bookings join M4.
 - 2026-10-09: The dashboard follows the owner's Dashboard screen; the per-project line chart is dropped (OQ-126).
 - 2026-10-14: Approved by the owner.
+- 2026-10-14: M7 Integrations: the PMSPA connector joins the scope after M6 (OQ-141). Back to `review`.
