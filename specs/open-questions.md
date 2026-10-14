@@ -8,6 +8,10 @@ and link to where the decision now lives. Resolved items stay here for history.
 
 | ID | Question | Proposal | Area | Blocks |
 | --- | --- | --- | --- | --- |
+| OQ-138 | How PM4 stores the PMSPA credentials (password, or a token PMSPA issues), the encryption key setup, and which PMSPA call checks the connection (and its timeout) | Store only what PMSPA returns at login (API / refresh token), encrypted with AES-256-GCM and a key in Azure App Settings; keep the password (encrypted) only if PMSPA has no long-lived token. **Owner (2026-10-14):** decide once the PMSPA API documentation is shared. | INT | FR-INT-003, FR-INT-004 |
+| OQ-139 | Sync rules: which entities, direction per entity, manual or automatic, matching, conflicts, deletes, and what disconnecting does to synced data | To be discussed with the owner after the entity mapping (OQ-148). | INT | FR-INT-005, FR-INT-008 |
+| OQ-140 | What the Connectors → PMSPA page (`/app/connectors/pmspa`) shows and lets the user do | Follows from OQ-139; settled in the prototype. | INT | FR-INT-007 |
+| OQ-148 | How PMSPA entities and their fields map to PM4's and back (PMSPA project ↔ PM4 project, tasks, workdays, logs, bookings), and what one side has that the other doesn't | **Owner (2026-10-14):** worked out together once the owner shares the PMSPA API documentation (next session). | INT | FR-INT-008, FR-INT-009, OQ-139 |
 
 ## Resolved
 
@@ -20,6 +24,13 @@ and link to where the decision now lives. Resolved items stay here for history.
 | OQ-135 | The Logged time section's **Log** column: the log text (prototype) or "title or text" (SCR-044) | **Owner (2026-10-11):** the log text, one line, full text on hover, as prototyped. | FR-TLOG-012, SCR-044 |
 | OQ-136 | Rename the sample names in specs and acceptance tests to the prototype seed's | **Owner (2026-10-11):** the previous names must not end up in git. Every spec (feat-proto-sync-web's spec commit) and every acceptance test (its tests commit) uses the prototype seed's names: projects Anthropic, Nvidia, Tesla, Google; people Jane, John, Mark, Tom, Bob, Peter, Anna (ids and inflected forms too). The old-to-new mapping is kept outside the repo. Before the next push the owner rewrites the unpushed history (`github/master`..`master`) so no pushed commit has them. | feat-proto-sync-web |
 | OQ-137 | Add `proto/` to `npm run format:check` | **Owner (2026-10-11):** add `proto` **and** `features` (which wasn't checked) to `format` and `format:check`, and format `features/` once, so promoted files match their prototype twins apart from imports. | feat-proto-sync-web |
+| OQ-141 | Integrations were out of MVP scope: which milestone | **Owner (2026-10-14):** a new **M7 Integrations** after M6 Trash; it may be built before M6. | prod-scope |
+| OQ-142 | What the PMSPA connection status shows | **Owner (2026-10-14):** Not configured / Connected / Invalid credentials / Unreachable, the time of the last check, and a **Test connection** button; checked on save, on Test and whenever the API calls PMSPA. Last sync time joins once sync is specified. | FR-INT-004 |
+| OQ-143 | The sidebar icon for PMSPA (its favicon is on another site, outside the CSP) | **Owner (2026-10-14):** a generic globe icon only; no favicon is fetched. | FR-INT-006 |
+| OQ-144 | How many PMSPA connections a user can have | **Owner (2026-10-14):** one per user. | FR-INT-002 |
+| OQ-145 | Which PMSPA URLs the API accepts | **Owner (2026-10-14):** public `https://` only; hosts resolving to private, loopback or link-local addresses are refused (SSRF). | FR-INT-002 |
+| OQ-146 | When Connectors → PMSPA shows in the sidebar | **Owner (2026-10-14):** whenever a connection is saved, whatever its status; hidden after disconnecting. | FR-INT-006 |
+| OQ-147 | Can the user remove the connection | **Owner (2026-10-14):** yes, **Disconnect** with a confirmation deletes the URL and credentials and hides the sidebar item; synced data per OQ-139. The saved password is never shown again; editing keeps it unless a new one is typed. | FR-INT-002, FR-INT-005 |
 | OQ-126 | Is the per-project line chart (a project multi-select, one line per project, a toggleable Total line) still wanted? | **Owner (2026-10-09):** no, dropped. The dashboard shows **Hours by project** bars instead. (Replaces OQ-029d and the old FR-RPT-005.) | req-reporting |
 | OQ-127 | On which day a booked log counts on the dashboard | **Owner (2026-10-09):** the day it was **worked**, whatever its booking date ("of the work done in the range, how much is booked"). The Bookings page counts by booking date (OQ-122), so their totals can differ. | req-reporting §Shared rules, API-RPT-001 |
 | OQ-128 | Weekends in the per-day workday chart | **Owner (2026-10-09):** a Saturday or Sunday with no start time and no logs is left out; one with work is shown. | FR-RPT-003 |
