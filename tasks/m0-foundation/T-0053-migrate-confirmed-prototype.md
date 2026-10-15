@@ -74,7 +74,7 @@ validates every real route with `.next/types/validator.ts`. `next dev` keeps the
 
 Intentional changes:
 - Banner: "UI prototype: mock data in memory, reset on every reload." (the `pm4.refreshToken = "x"` hint is gone).
-- The logo goes to the prototype dashboard. Sign-out goes to the landing page. Trash, Settings and User profile
+- The logo goes to the prototype dashboard. Sign-out goes to the landing page. Settings and User profile
   still link to the real app (no prototype twins yet).
 
 Follow-ups (proposals, not done):

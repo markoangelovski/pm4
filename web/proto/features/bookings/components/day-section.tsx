@@ -30,6 +30,7 @@ import {
   TableRow
 } from "@/components/ui/table";
 import { ProjectIcon } from "@/proto/features/projects/components/project-icon";
+import { DeletedName } from "@/proto/features/time/components/deleted-marker";
 import { formatDuration, formatWorkDate } from "@/lib/time";
 import { routes } from "@/proto/lib/routes";
 import { cn } from "@/lib/utils";
@@ -107,9 +108,7 @@ function LogTask({ row }: { row: BookingRow }) {
           {task.title}
         </Link>
       ) : (
-        <span className="truncate text-muted-foreground">
-          {task.title} <span className="italic">(deleted)</span>
-        </span>
+        <DeletedName title={task.title} />
       )}
     </span>
   );
@@ -143,7 +142,7 @@ function BookAllButton({
 
 const GROUP_TITLES = { unsorted: "Unsorted", nonprod: "Non-prod" } as const;
 
-/** The group's name: a live project links to its page; a deleted one is plain text with "(deleted)"; Unsorted and Non-prod have no icon. */
+/** The group's name: a live project links to its page; a deleted one is plain text with the deleted marker; Unsorted and Non-prod have no icon. */
 function GroupName({ group }: { group: BookingGroup }) {
   if (group.kind !== "project")
     return (
@@ -151,14 +150,7 @@ function GroupName({ group }: { group: BookingGroup }) {
     );
   const project = group.project!;
   if (!project.id || project.deleted)
-    return (
-      <span className="truncate font-medium">
-        {project.title}{" "}
-        <span className="font-normal italic text-muted-foreground">
-          (deleted)
-        </span>
-      </span>
-    );
+    return <DeletedName title={project.title} className="font-medium" />;
   return (
     <>
       <ProjectIcon

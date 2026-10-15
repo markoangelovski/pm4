@@ -3,7 +3,7 @@ id: sec
 title: Security
 status: approved
 owner: Marko Angelovski
-last_updated: 2026-10-03
+last_updated: 2026-10-14
 related: [web-routing, req-auth, arch-env, api-conventions, ADR-0007, NFR-004, NFR-005]
 ---
 
@@ -74,8 +74,8 @@ same `user_identities` table (`provider` = the configured provider key). Provide
 - Every table carries (or inherits via its parent) `userId`. Every query filters on the
   authenticated user. Implemented in the data-access layer, not only in controllers.
 - A resource that doesn't exist or isn't owned returns **404** (existence isn't revealed).
-- Linking checks ownership: a log's `taskId`/`projectId` must belong to the same user (and must not be deleted).
-- Linking a task to a project checks ownership the same way: the `projectId` must be the caller's and not in the trash.
+- Linking checks ownership: a log's `taskId`/`projectId` must be an existing task/project of the same user.
+- Linking a task to a project checks ownership the same way: the `projectId` must be an existing project of the caller's.
 - **The one cross-user read (OQ-076, OQ-077):** a project or task may name **any registered user** as its
   project lead. To support that, API-USR-003 returns other users' `id`, `displayName`, `email` and
   `avatarUrl` for the lead picker (search only: at least 2 characters, at most 10 results, OQ-089), and
@@ -109,7 +109,7 @@ same `user_identities` table (`provider` = the configured provider key). Provide
 ## Accepted risks
 - **Redis traffic isn't encrypted.** The Redis Cloud free tier has TLS off, so the API connects with plain
   `redis://` (owner decision, 2026-09-27). The Redis password and the values in transit (OAuth state and PKCE
-  verifiers, refresh-token hashes, login-code hashes, rate-limit counters, job payloads) could be read by
+  verifiers, refresh-token hashes, login-code hashes, rate-limit counters) could be read by
   someone on the network path between Azure and Redis Cloud. Mitigations: tokens and codes are stored only as
   SHA-256 hashes, entries are short-lived, and no user content is stored in Redis. Revisit if the Redis plan
   changes (switch to `rediss://`, which the API already accepts).
@@ -125,7 +125,7 @@ Secrets live in Azure App Settings and in GitHub Actions secrets. They are never
 - 2026-09-26: Updated with owner answers to OQ-001–018.
 - 2026-09-26: Owner answers to OQ-022–026, OQ-032–034.
 - 2026-09-27: OQ-024 resolved: localStorage, 30-day sliding refresh.
-- 2026-09-27: Removed /internal endpoints (ADR-0011). Rate limits and allow-list revocation moved to OQ-039.
+- 2026-09-27: Rate limits and allow-list revocation moved to OQ-039.
 - 2026-09-27: OQ-039 resolved: rate limits set, allow-list checked on refresh too.
 - 2026-09-27: Documented how future OIDC/SSO providers plug in.
 - 2026-09-27: Approved by the owner.

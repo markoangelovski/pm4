@@ -3,7 +3,7 @@ id: api-conventions
 title: API Conventions
 status: approved
 owner: Marko Angelovski
-last_updated: 2026-10-03
+last_updated: 2026-10-14
 related: [api-endpoints, api-data-model, sec, ADR-0010]
 ---
 
@@ -25,7 +25,7 @@ This resolves OQ-015. **Two kinds of values. Never mix them.**
 
 | Kind | Examples | DB type | API format | Who decides |
 | --- | --- | --- | --- | --- |
-| **Instant** (a moment in time) | `createdAt`, `updatedAt`, `deletedAt` | `timestamptz` | ISO 8601 UTC: `2026-09-26T08:15:00.000Z` | Server clock |
+| **Instant** (a moment in time) | `createdAt`, `updatedAt` | `timestamptz` | ISO 8601 UTC: `2026-09-26T08:15:00.000Z` | Server clock |
 | **Work date** (a calendar day in the user's life) | `workDate`, `dueDate`, report `from`/`to` | `date` | ISO 8601 date: `2026-09-26` | The client, in the user's time zone |
 | **Time of day** | Workday start | `smallint` minutes after local midnight | integer `startMinute` (e.g. `510` = 08:30) | The client |
 
@@ -39,11 +39,11 @@ Rules:
   user's IANA time zone (e.g. `Europe/Zagreb`, which handles the CET/CEST switch) via `@date-fns/tz`.
 - The **server** never uses its own clock or zone to decide a work date. Report ranges are inclusive
   (`from ≤ workDate ≤ to`). Grouping is by `work_date`, with no time-zone math in SQL.
-- The server uses instants only for audit, and for trash retention (`deletedAt < now() - 31 days`).
+- The server uses instants only for audit.
 
 ## Module structure (NestJS)
 Modules: `auth`, `users`, `projects`, `tasks`, `workdays`, `time-logs`,
-`reports`, `trash`, `health`, `jobs` (BullMQ queues and processors, ADR-0011; no controller). Each has a controller (HTTP only), a service (business rules,
+`reports`, `health`. Each has a controller (HTTP only), a service (business rules,
 transactions), a repository (Drizzle queries, **always scoped by userId**) and DTOs. Shared: `database`
 (Drizzle client + schema), `redis`, `common` (filters, pipes, guards, decorators such as `@CurrentUser()`).
 
@@ -63,25 +63,26 @@ transactions), a repository (Drizzle queries, **always scoped by userId**) and D
 - Strings are trimmed. Empty optional strings become `null`.
 - `PATCH` for partial updates. `PUT` only for idempotent upserts keyed by natural keys (`PUT /workdays/{date}`).
 - Flat resources with filter params (`GET /tasks?projectId=…`, `GET /time-logs?from=&to=`). Actions that
-  aren't CRUD use a sub-resource verb (`POST /time-logs/{id}/move`, `POST /projects/{id}/restore`).
+  aren't CRUD use a sub-resource verb (`POST /time-logs/{id}/move`).
 
 ## Responses
 - A single resource is returned **unwrapped** (no `{data}` envelope).
 - Lists use `{ "items": [...], "page": 1, "pageSize": 25, "total": 123 }`.
-- `201` + the resource on create. `200` + the resource on update. `204` on delete, restore or purge.
+- `201` + the resource on create. `200` + the resource on update. `204` on delete.
 - References to tasks/projects inside other resources use a **ref object**:
-  `{ "id": "…" | null, "title": "…", "deleted": boolean }` (supports retained names, FR-TRASH-006).
+  `{ "id": "…" | null, "title": "…", "deleted": boolean }` (supports retained names, FR-TLOG-014).
+  A deleted task or project has `id: null` and `deleted: true`.
 
 ## Pagination, sorting, filtering
 - `?page=1&pageSize=25` (max 100). Offset pagination is fine at this scale.
 - `?sort=updatedAt:desc`, with an allow-list per endpoint.
 - Filters are named params. Multi-values are comma-separated (`status=upcoming,in-progress`, `projectIds=a,b`).
 
-## Soft delete conventions
-- `DELETE /projects/{id}` and `DELETE /tasks/{id}` → soft delete (moves to the trash).
-- `POST /{resource}/{id}/restore` → restore. `DELETE /{resource}/{id}/permanent` → hard delete (trash only).
-- Normal reads exclude soft-deleted rows. Reading a soft-deleted item by id returns `404` with
-  `type …/errors/in-trash`, so the UI can offer restore.
+## Delete conventions
+- `DELETE /{resource}/{id}` deletes permanently (hard delete).
+- Deleting a project also deletes its tasks. Time logs are never deleted with them; they keep the deleted
+  task's or project's name (data-model.md *Retained names*).
+- A deleted item is gone: reading or changing it by id returns `404` `…/errors/not-found`.
 
 ## Errors
 RFC 9457 Problem Details (`application/problem+json`):
@@ -93,8 +94,7 @@ RFC 9457 Problem Details (`application/problem+json`):
 | --- | --- |
 | 400 | Validation error (`errors[]` per field) |
 | 401 | Missing, invalid or expired access token |
-| 404 | Not found, not owned, or in the trash (`type` distinguishes `not-found` from `in-trash`) |
-| 409 | Conflict (e.g. restoring a task whose project is in the trash) |
+| 404 | Not found or not owned (`type` `…/errors/not-found`) |
 | 429 | Rate limited |
 | 500 | Unexpected error. No internals leaked. Logged (NestJS default logger). |
 
@@ -114,7 +114,6 @@ RFC 9457 Problem Details (`application/problem+json`):
 - 2026-09-26: Updated with owner answers to OQ-001–018.
 - 2026-09-26: OQ-027 narrowed to UUIDv7 vs ULID.
 - 2026-09-27: OQ-027 resolved: UUIDv7 ids.
-- 2026-09-27: Removed /internal/* (ADR-0011). Added the jobs module.
 - 2026-09-27: Logging: NestJS default logger (NFR-009).
 - 2026-09-27: Nest building blocks are always generated with the Nest CLI.
 - 2026-09-27: Approved by the owner.

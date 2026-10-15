@@ -37,7 +37,7 @@ logs "A component that acts as a button expected a native <button> because the `
    import `buttonVariants` instead of `Button`.
 3. `web/app/native-button.test.tsx` (new, ordinary Vitest + Testing Library test). Mock `next/link` with a plain anchor and
    `next/navigation` exactly like `web/app/links.ac.test.tsx` does. Before each test, spy on `console.error` and
-   `console.warn`; restore them after each test. Two tests:
+   `console.warn`; reset them after each test. Two tests:
    - render `<LandingCta />`, then expect a `link` named `Login`, and expect neither spy to have been called with an
      argument containing `nativeButton`;
    - the same for `<NotFound />` and the link `Go back home`.

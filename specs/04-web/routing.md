@@ -3,7 +3,7 @@ id: web-routing
 title: Routing and Navigation
 status: approved
 owner: Marko Angelovski
-last_updated: 2026-10-11
+last_updated: 2026-10-14
 related: [web-static-export, web-screens, web-prototype, req-landing, req-auth, feat-land-app-route-split, ADR-0012]
 ---
 
@@ -17,7 +17,7 @@ Defines the URL structure and navigation. Every route must exist at build time (
 - `/` is the public landing page (SCR-003).
 - `/auth/sign-in` and `/auth/callback` are public, outside `/app`.
 - **Everything else lives under `/app`, and every `/app/**` route is private.**
-- The old URLs (`/home`, `/projects`, `/tasks`, `/time`, `/trash`, `/settings`, and their
+- The old URLs (`/home`, `/projects`, `/tasks`, `/time`, `/settings`, and their
   `view/` pages, and every trailing-slash form) don't exist. There are no redirects: they show the normal not-found page (`404.html`).
 
 ## Entity routes (OQ-014: decided)
@@ -25,7 +25,7 @@ Single-entity pages use **query-param routes**: `/app/project?id=<uuid>`, `/app/
 flat sibling of its list, never a child route (static-export.md, OQ-050). There's one static page,
 and the client reads `id` with `useSearchParams` (inside `<Suspense>`).
 - **`id` missing or empty → redirect (replace) to the list** (`/app/projects`, `/app/tasks`).
-- `id` not found → a "Not found" state with a link back to the list. If it's in the trash → a "This project is in the trash" state with **Restore**.
+- `id` not found (also a deleted project or task) → a "Not found" state with a link back to the list.
 
 ## Route map
 | Route | Screen | Auth |
@@ -40,7 +40,6 @@ and the client reads `id` with `useSearchParams` (inside `<Suspense>`).
 | `/app/task?id=` | SCR-031 Task detail (with its logged time) | required |
 | `/app/time?date=&view=project\|task\|sequential` | SCR-040 Day view (workday header, charts, logs, view switch, calendar); `view` absent = `project` | required |
 | `/app/bookings?from=&to=` | SCR-045 Bookings (per-day figures, project rows, booking dates); `from`/`to` absent or invalid = the current month up to today | required |
-| `/app/trash` | SCR-060 Trash | required |
 | `/app/user-profile` | SCR-051 Profile (Google identity, sign out of all devices) | required |
 | `/app/settings?tab=` | SCR-050 Settings (tabs; `tab` absent = `user`: daily target, time zone) | required |
 | `/proto/app/**` | UI prototype twins of the `/app/**` routes (same params). **Dev server on localhost only**, not in the build: in production it's the not-found page (`prototype.md`, ADR-0012) | mocked (always signed in) |
@@ -48,7 +47,7 @@ and the client reads `id` with `useSearchParams` (inside `<Suspense>`).
 ## Navigation
 - Sidebar (OQ-054), in sections with a heading (shown in capitals):
   **Dashboard** → Default (`/app`) · **Project management** → Projects, Tasks · **Time** → Logs (`/app/time`), Bookings (`/app/bookings`).
-  A fixed footer at the bottom of the sidebar (stays put while the nav scrolls) holds Trash and Settings.
+  A fixed footer at the bottom of the sidebar (stays put while the nav scrolls) holds Settings.
   The app logo links to `/app`.
 - Header: a global **Log time** button (FR-TLOG-011), the theme toggle and the user's avatar. The avatar
   opens the **user drawer** (SCR-005) with **Home** (`/app`), **Profile** (`/app/user-profile`) and **Sign out** (OQ-057, OQ-074).
@@ -94,7 +93,7 @@ and the client reads `id` with `useSearchParams` (inside `<Suspense>`).
 
 ## Changelog
 - 2026-09-26: Initial scaffold.
-- 2026-09-26: Query-param routes confirmed with the missing-id redirect. Added auth callback, time and trash routes.
+- 2026-09-26: Query-param routes confirmed with the missing-id redirect. Added auth callback and time routes.
 - 2026-09-27: Added the public landing page route `/home/` (SCR-003).
 - 2026-09-27: OQ-044/045 resolved: `/` without a session → `/home/`; sign-in logo → `/home/`; no page indexable.
 - 2026-09-27: Approved by the owner.
@@ -107,7 +106,7 @@ and the client reads `id` with `useSearchParams` (inside `<Suspense>`).
 - 2026-09-29: Approved by the owner.
 - 2026-10-01: OQ-050: no trailing slashes (`trailingSlash: false`); detail routes `/app/project?id=` and `/app/task?id=`. Back to `review` (feat-land-app-route-split).
 - 2026-10-01: Approved by the owner.
-- 2026-10-02: Sidebar sections and a fixed footer with Trash and Settings; "Time" is labelled "Logs", "Dashboard" "Default" (OQ-054).
+- 2026-10-02: Sidebar sections and a fixed footer with Settings; "Time" is labelled "Logs", "Dashboard" "Default" (OQ-054).
 - 2026-10-02: App footer links to `/` (OQ-055).
 - 2026-10-02: API unreachable during restore keeps the session (OQ-067); other tabs follow a sign-out (OQ-069); the sign-in page forwards a signed-in visitor (OQ-070). Back to `review` (feat-auth-web-session).
 - 2026-10-03: Approved by the owner.

@@ -3,8 +3,8 @@ id: arch-overview
 title: System Overview
 status: approved
 owner: Marko Angelovski
-last_updated: 2026-09-27
-related: [arch-stack, arch-deployment, sec, ADR-0001, ADR-0002, ADR-0007, ADR-0008, ADR-0011]
+last_updated: 2026-10-14
+related: [arch-stack, arch-deployment, sec, ADR-0001, ADR-0002, ADR-0007, ADR-0008]
 ---
 
 # System Overview
@@ -29,17 +29,16 @@ The high-level architecture: components, and how they communicate.
  │ GitHub Pages (custom domain) │                        │ Neon Postgres│ │ Redis Cloud  │
  │ deployed by web-deploy.yml   │                        │ (Drizzle)    │ │ sessions,    │
  └──────────────────────────────┘                        └──────────────┘ │ OAuth state, │
-                                                                          │ rate limits, │
-                                                                          │ BullMQ jobs  │
+                                                                          │ rate limits  │
                                                                           └──────────────┘
 ```
 
 | Component | Responsibility | Must NOT |
 | --- | --- | --- |
 | `web/` | UI, client routing, UX validation, calling the API, holding tokens, time-zone-aware range calculation | Hold secrets, be the only enforcer of rules, render per request |
-| `api/` | OAuth, token issuing, authorization, validation, business rules, aggregation (reports), OpenAPI, background jobs (in-process BullMQ worker, e.g. trash purge) | Serve the frontend. Store secrets in code. |
+| `api/` | OAuth, token issuing, authorization, validation, business rules, aggregation (reports), OpenAPI | Serve the frontend. Store secrets in code. |
 | Neon Postgres | The durable data store | Be the source of truth for sessions |
-| Redis Cloud | Ephemeral state: OAuth state/PKCE, one-time codes, refresh tokens, rate limits, BullMQ job queues | Hold the only copy of any user data |
+| Redis Cloud | Ephemeral state: OAuth state/PKCE, one-time codes, refresh tokens, rate limits | Hold the only copy of any user data |
 | Cloudflare R2 | Unused (reserved for future file features) | — |
 
 ## Key flows
@@ -62,6 +61,5 @@ The high-level architecture: components, and how they communicate.
 - 2026-09-26: Initial scaffold.
 - 2026-09-26: Updated with owner answers to OQ-001–018.
 - 2026-09-27: OQ-024 resolved: API stays on *.azurewebsites.net; refresh token in localStorage.
-- 2026-09-27: OQ-031 resolved: the purge runs as a BullMQ job in the API (ADR-0011). Removed the GitHub Actions purge.
 - 2026-09-27: Approved by the owner.
 - 2026-09-27: Real hosts in the diagram. Redis link has no TLS (free tier).

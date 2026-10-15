@@ -15,7 +15,7 @@ import { isApiError, unwrap, unwrapVoid } from "@/lib/api/problem";
 import type { components } from "@/lib/api/schema";
 
 type TaskResponse = components["schemas"]["TaskResponseDto"];
-/** D14: a task's project is never purged, so its `Ref.id` is never null (endpoints.md *Task*). */
+/** D14: a task's project always exists (deleting a project deletes its tasks), so its `Ref.id` is never null (endpoints.md *Task*). */
 export type Task = Omit<TaskResponse, "project"> & {
   project: { id: string; title: string; deleted: boolean };
 };
@@ -55,6 +55,8 @@ export interface TaskInput {
 
 /** Declared here, not imported from features/time/api, which imports this file. timeKeys.logs(). */
 const TIME_LOGS_KEY = ["time", "logs"] as const;
+/** Every time query (day, logs, bookings, reports): their logs show a deleted task's name. timeKeys.all. */
+const TIME_KEY = ["time"] as const;
 
 export const taskKeys = {
   all: ["tasks"] as const,
@@ -108,7 +110,7 @@ export function useTask(
           signal
         })
       ) as Task,
-    // The app default is one retry; a missing or trashed task won't appear on a retry.
+    // The app default is one retry; a missing or deleted task won't appear on a retry.
     retry: (failureCount, error) => !isApiError(error, 404) && failureCount < 1,
     enabled
   });
@@ -254,7 +256,7 @@ export function useUpdateTaskStatus(): UseMutationResult<
   });
 }
 
-/** API-TSK-005. onSuccess: removeQueries(detail); invalidate lists(), projectKeys.detail(task.project.id), projectKeys.lists(). */
+/** API-TSK-005. onSuccess: removeQueries(detail); invalidate lists(), projectKeys.detail(task.project.id), projectKeys.lists(), ["time"]. */
 export function useDeleteTask(): UseMutationResult<void, Error, Task> {
   const queryClient = useQueryClient();
   return useMutation({
@@ -267,31 +269,13 @@ export function useDeleteTask(): UseMutationResult<void, Error, Task> {
     onSuccess: (_data, task) => {
       queryClient.removeQueries({ queryKey: taskKeys.detail(task.id) });
       // Not returned: the page must disable its detail query first (D12),
-      // or the trashed task would 404 on a refetch.
+      // or the deleted task would 404 on a refetch.
       void queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
       void queryClient.invalidateQueries({
         queryKey: projectKeys.detail(task.project.id)
       });
       void queryClient.invalidateQueries({ queryKey: projectKeys.lists() });
+      void queryClient.invalidateQueries({ queryKey: TIME_KEY });
     }
-  });
-}
-
-/** API-TSK-006. onSuccess: invalidate detail(id), lists(), projectKeys.all. */
-export function useRestoreTask(): UseMutationResult<void, Error, string> {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (id: string) =>
-      unwrapVoid(
-        await apiClient.POST("/api/v1/tasks/{id}/restore", {
-          params: { path: { id } }
-        })
-      ),
-    onSuccess: (_data, id) =>
-      Promise.all([
-        queryClient.invalidateQueries({ queryKey: taskKeys.detail(id) }),
-        queryClient.invalidateQueries({ queryKey: taskKeys.lists() }),
-        queryClient.invalidateQueries({ queryKey: projectKeys.all })
-      ])
   });
 }

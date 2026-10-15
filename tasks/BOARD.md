@@ -16,7 +16,7 @@
 | [T-0010](m1-auth/T-0010-add-get-api-v1-version-api.md) | Add GET /api/v1/version (API-SYS-003) and export the OpenAPI document | M1 | api | S | done | — |
 | [T-0011](m1-auth/T-0011-sidebar-header-branding-logo-title-subtitle.md) | Sidebar header branding: logo, title, subtitle, version pill with the API version tooltip | M1 | web | M | done | T-0010 |
 | [T-0012](m1-auth/T-0012-sidebar-nav-hover-highlight.md) | Sidebar nav hover highlight like the template (CSS only) | M1 | web | S | done | — |
-| [T-0013](m1-auth/T-0013-group-the-sidebar-nav-into-sections.md) | Group the sidebar nav into sections and move Trash and Settings to a fixed footer | M1 | web | S | done | — |
+| [T-0013](m1-auth/T-0013-group-the-sidebar-nav-into-sections.md) | Group the sidebar nav into sections and move Settings to a fixed footer | M1 | web | S | done | — |
 | [T-0014](m1-auth/T-0014-app-footer-copyright.md) | App footer: copyright line | M1 | web | S | done | — |
 | [T-0015](m1-auth/T-0015-add-the-users-and-user-identities.md) | Add the users and user_identities tables and their migration | M1 | api | S | done | — |
 | [T-0016](m1-auth/T-0016-access-tokens-the-default-deny-guard.md) | Access tokens, the default-deny guard and GET /me | M1 | api | M | done | T-0010, T-0015 |
@@ -26,15 +26,15 @@
 | [T-0020](m1-auth/T-0020-user-drawer-useme-usesignouteverywhere-useravatar-and.md) | User drawer: useMe, useSignOutEverywhere, UserAvatar and the header drawer | M1 | web | M | done | T-0019 |
 | [T-0021](m1-auth/T-0021-profile-page-app-user-profile-with.md) | Profile page /app/user-profile with sign out of all devices | M1 | web | S | done | T-0020 |
 | [T-0022](m2-projects/T-0022-add-the-projects-and-tasks-tables.md) | Add the projects and tasks tables, the task_status enum and their migration | M2 | api | S | done | T-0015 |
-| [T-0023](m2-projects/T-0023-projects-module-api-prj-001-006.md) | Projects module (API-PRJ-001…006) with task counts, the project lead and the in-trash Problem type | M2 | api | M | done | T-0022, T-0017 |
+| [T-0023](m2-projects/T-0023-projects-module-api-prj-001-005.md) | Projects module (API-PRJ-001…005) with task counts and the project lead | M2 | api | M | done | T-0022, T-0017 |
 | [T-0024](m2-projects/T-0024-get-users-user-search-for-the.md) | GET /users user search for the lead picker (API-USR-003) | M2 | api | S | done | T-0023 |
 | [T-0025](m2-projects/T-0025-dependencies-providers-api-error-helpers-project.md) | Dependencies, providers, API error helpers, project and user-search hooks, lead helpers | M2 | web | M | done | T-0024, T-0021 |
 | [T-0026](m2-projects/T-0026-projectleadfield-projectleadlabel-and-the-project-create.md) | ProjectLeadField, ProjectLeadLabel and the project create/edit dialog | M2 | web | M | done | T-0025 |
-| [T-0027](m2-projects/T-0027-projects-list-page-and-project-detail.md) | Projects list page and project detail page (stats, delete, restore, not found) | M2 | web | M | done | T-0026 |
-| [T-0028](m3-tasks/T-0028-tasks-module-api-tsk-001-006.md) | Tasks module (API-TSK-001…006): CRUD, filters, move, restore | M3 | api | M | done | T-0024 |
+| [T-0027](m2-projects/T-0027-projects-list-page-and-project-detail.md) | Projects list page and project detail page (stats, delete, not found) | M2 | web | M | done | T-0026 |
+| [T-0028](m3-tasks/T-0028-tasks-module-api-tsk-001-005.md) | Tasks module (API-TSK-001…005): CRUD, filters, move | M3 | api | M | done | T-0024 |
 | [T-0029](m3-tasks/T-0029-task-hooks-with-the-optimistic-status.md) | Task hooks with the optimistic status change, due state, formatWorkDate, status select and due badge | M3 | web | M | done | T-0028, T-0027 |
 | [T-0030](m3-tasks/T-0030-task-create-edit-dialog-with-the.md) | Task create/edit dialog with the project picker and due-date field | M3 | web | M | done | T-0029 |
-| [T-0031](m3-tasks/T-0031-task-lists-project-page-section-and.md) | Task lists (project page section and /app/tasks), task detail page, delete and restore | M3 | web | M | done | T-0030 |
+| [T-0031](m3-tasks/T-0031-task-lists-project-page-section-and.md) | Task lists (project page section and /app/tasks), task detail page and delete | M3 | web | M | done | T-0030 |
 | [T-0032](m1-auth/T-0032-base-ui-link-buttons-native-button-false.md) | Render links styled as buttons as a plain Link with buttonVariants | M1 | web | S | done | — |
 | [T-0033](m1-auth/T-0033-problem-details-schema-the-apiproblemresponses-decorator.md) | Problem Details schema, the ApiProblemResponses decorator and error responses on the existing controllers | M1 | api | S | done | — |
 | [T-0034](m1-auth/T-0034-regenerate-the-web-api-types-for.md) | Regenerate the web API types for the Problem Details responses | M1 | web | S | done | T-0033 |
@@ -54,7 +54,7 @@
 | [T-0048](m5-reporting/T-0048-dashboard-report-get-reports-dashboard-its.md) | Dashboard report: GET /reports/dashboard, its DTOs and two repository queries | M5 | api | M | done | — |
 | [T-0049](m5-reporting/T-0049-dashboard-hooks-features-dashboard-api-ts.md) | Dashboard hooks (features/dashboard/api.ts): the report and the counts | M5 | web | S | done | — |
 | [T-0050](m5-reporting/T-0050-dashboard-page-range-picker-in-the.md) | Dashboard page: range picker in the URL, count tiles, workday chart and table, worked / target / booked, running totals, hours by project | M5 | web | L | done | T-0049 |
-| [T-0051](m4-time-logs/T-0051-replacing-a-log-link-clears-retained-names.md) | Replacing a time log's link clears the retained names of a purged task or project | M4 | api | S | done | T-0045 |
+| [T-0051](m4-time-logs/T-0051-replacing-a-log-link-clears-retained-names.md) | Replacing a time log's link clears the retained names of a deleted task or project | M4 | api | S | done | T-0045 |
 | [T-0052](m0-foundation/T-0052-prototype-separation-guards.md) | Prototype separation guards (dev-only routes, import rules, build check) | M0 | web | S | done | — |
 | [T-0053](m0-foundation/T-0053-migrate-confirmed-prototype.md) | Migrate the confirmed UI prototype to the prototype layout (dev-only routes, twins, mock client) | M0 | web | L | done | T-0052 |
 | [T-0054](m4-time-logs/T-0054-loggedminutes-on-projects-and-tasks-get.md) | loggedMinutes on projects and tasks, GET /time-logs (API-TLOG-001), openapi:export | M4 | api | M | done | — |
@@ -64,4 +64,4 @@
 | [T-0058](m4-time-logs/T-0058-pm4-twins-check.md) | pm4 compares production files with their prototype twins (pm4 twins, in check) | M4 | infra | S | done | T-0057 |
 | [T-0059](m4-time-logs/T-0059-retire-proto-sync-web-twin-checks.md) | Retire proto-sync-web's own twin checks (AC-18, AC-19, AC-22); the twin check covers them | M4 | spec | S | done | T-0058 |
 
-M0–M5 are done. M6 (Trash) has no tasks yet; its tasks are created with the `write-task` skill once its feature specs are approved.
+M0–M5 are done. M6 (Integrations) has no tasks yet; its tasks are created with the `write-task` skill once its feature specs are approved.

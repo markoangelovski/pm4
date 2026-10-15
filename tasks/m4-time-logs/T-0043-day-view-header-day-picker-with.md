@@ -26,7 +26,7 @@ Work from the brief: `node scripts/pm4.mjs brief T-0043`. Verify with `node scri
 - `LogRow` takes one `show` prop instead of `showProject` / `showTask` / `showTitle`.
 - `DeleteLogDialog` uses `useDeleteLog`.
 - `day-charts.tsx` and `app/time/page.tsx` needed no change.
-- Acceptance test fix (orchestrator): AC-18 left `2026-10-07` empty after the empty-state case, so after Retry the day still showed `0m`. The fix restores `ownerLogs` before the error case, and the hashes were re-recorded (`pm4 hash`).
+- Acceptance test fix (orchestrator): AC-18 left `2026-10-07` empty after the empty-state case, so after Retry the day still showed `0m`. The fix resets `ownerLogs` before the error case, and the hashes were re-recorded (`pm4 hash`).
 - Review fix: `day-view.tsx` `isRealDate` also requires `format(parseISO(d), "yyyy-MM-dd") === d` (after `isValid`), so impossible dates fall back to today. vitest day-view 6/6 and eslint pass.
 - `pm4 check T-0043`: ac hashes ok, lint/format/typecheck/build/api:types ok, day-view.ac 6/6. Two things still fail, and neither comes from this task. Scope lists the other uncommitted features' files, and the `sidebaritems` tests fail on the uncommitted Bookings link (feat-book-web).
 

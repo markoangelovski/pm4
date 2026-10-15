@@ -75,8 +75,8 @@ the now-orphaned `components/ui/input-otp.tsx` shadcn primitive (its only consum
 page, was removed, and `input-otp` is off the dependency list).
 
 Added the route map from `routing.md`: `(dashboard-layout)/{page,projects,projects/view,tasks,
-tasks/view,time,trash,settings}` (placeholders picking sensible milestones: Settings M1, Projects/
-Tasks M2, Time M3, Trash M4, Dashboard M5 — reports naturally come last since they read
+tasks/view,time,settings}` (placeholders picking sensible milestones: Settings M1, Projects/
+Tasks M2, Time M3, Dashboard M5 — reports naturally come last since they read
 projects+tasks+time), `auth/sign-in` (Google-only, no-op button), `auth/callback` (spinner),
 `home` (public landing, own header, no sidebar), `not-found.tsx` (plain, no demo image). The two
 `view` pages use a new shared `app/components/shared/view-id-guard.tsx` client component
@@ -188,18 +188,18 @@ needed it for).
     `formatDuration()`, `parseDuration()` throws.
   - `app/components/shared/view-id-guard.test.tsx`: redirects on missing `id`, on empty `id=`,
     renders children and does not redirect when `id` is present (mocks `next/navigation`).
-  - `sidebaritems.test.ts`: nav list matches `["Dashboard","Time","Projects","Tasks","Trash",
+  - `sidebaritems.test.ts`: nav list matches `["Dashboard","Time","Projects","Tasks",
     "Settings"]` in order, every item has a `url` and an `icon`.
 - `npm run build` — **pass**. Route list exactly matches routing.md's route map (no stray routes;
   caught and fixed one — see "footer" above): `/`, `/_not-found`, `/auth/callback`, `/auth/sign-in`,
-  `/home`, `/projects`, `/projects/view`, `/settings`, `/tasks`, `/tasks/view`, `/time`, `/trash`.
+  `/home`, `/projects`, `/projects/view`, `/settings`, `/tasks`, `/tasks/view`, `/time`.
 - `find out -name "route*"` → no output. `grep -r "app/api" out` → only a false positive
   (Next's own doc URL `nextjs.org/docs/app/api-reference/...` inside a vendor chunk) — no real
   Route Handler leftovers.
 - Confirmed present: `out/404.html`, `out/projects/view/index.html`, `out/home/index.html`.
 - Served `out/` with `npx serve@latest out` (via the harness's `run_in_background`, stopped
   afterwards): all of `/`, `/projects/`, `/projects/view/?id=x`, `/tasks/`, `/tasks/view/?id=x`,
-  `/time/`, `/trash/`, `/settings/`, `/auth/sign-in/`, `/auth/callback/`, `/home/` → `200`.
+  `/time/`, `/settings/`, `/auth/sign-in/`, `/auth/callback/`, `/home/` → `200`.
   `grep -io noindex` on `/` and `/home/` → present on both.
 - `grep -E "swr|@iconify|tiptap" package.json` → no output (clean). No `pnpm-lock.yaml` anywhere.
 - `git status` at the repo root → nothing staged; `web/` and `api/` (a concurrent task) show as
@@ -227,7 +227,7 @@ needed it for).
 - `lib/api/schema.d.ts` is a stub (`export interface paths {}`). Regenerate with
   `npm run api:types` once `api/openapi.json` exists (T-0001, running concurrently).
 - Real auth: the `(dashboard-layout)/layout.tsx` has a `// TODO(M1): auth guard` comment marking
-  where session-restore + redirect-to-sign-in goes; `auth/sign-in`'s Google button and
+  where session loading + redirect-to-sign-in goes; `auth/sign-in`'s Google button and
   `auth/callback`'s token exchange are no-ops until M1.
 - `lib/time`'s `parseDuration` throws `"not implemented (M4)"` until the time-log form needs it.
 - Header's "Log time" button is a disabled placeholder (FR-TLOG-008) until M3/M4's time-log flow.

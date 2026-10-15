@@ -59,7 +59,7 @@ _Filled in by `review-feature`._
 **Verdict: approve** (Opus, 2026-10-11). Interfaces, both queries, the range check, the Ref mapping and the order match the spec and
 API-RPT-001; every query is scoped by `user_id`; non-goals untouched; AC-1…AC-9 pass. Minor findings, none blocking:
 1. No `reports.service.spec.ts` although the Files row lists one and testing.md asks for unit tests of service logic (range check, sort,
-   purged-project Ref). Follow-up: a quick-lane task.
+   deleted-project Ref). Follow-up: a quick-lane task.
 2. `toProjectRef` repeats the private `toRef` of `time-logs.service.ts`, which isn't in this task's Files (the spec's *Read first* puts
    `toRef` in `time.repository.ts`). Accept, or export and reuse it in a later task.
 3. The spec's Files row was corrected during implementation (full path of `reports.service.ts`); commit it with the feature.

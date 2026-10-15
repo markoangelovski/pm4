@@ -3,8 +3,8 @@ id: arch-deployment
 title: Deployment and CI/CD
 status: approved
 owner: Marko Angelovski
-last_updated: 2026-10-03
-related: [arch-env, arch-repos, web-static-export, ADR-0001, ADR-0002, ADR-0006, ADR-0011]
+last_updated: 2026-10-14
+related: [arch-env, arch-repos, web-static-export, ADR-0001, ADR-0002, ADR-0006]
 ---
 
 # Deployment and CI/CD
@@ -51,7 +51,6 @@ the npm cache keyed on that app's `package-lock.json`. A `concurrency` group per
   The app listens on `process.env.PORT`.
 - **Health check path:** `/health` (checks the DB and Redis). App Service restarts unhealthy instances.
 - Plan: **Free (F1)**. There's no Always On, so the app unloads when idle and cold-starts on the next request (NFR-003).
-- Background jobs (trash purge) run in the API process via BullMQ (ADR-0011). Nothing extra to deploy.
 
 ## Release versions (OQ-098)
 Nobody bumps a version by hand. Each deploy workflow versions its own app; web and API have separate versions.
@@ -102,7 +101,7 @@ One-time setup outside the repo, done by the owner, not an agent:
 ## Changelog
 - 2026-09-26: Initial scaffold.
 - 2026-09-26: Updated with owner answers to OQ-001–018.
-- 2026-09-27: OQ-031 resolved (no purge workflow; BullMQ in-app, ADR-0011). Publish profile chosen for Azure deploys. F1 plan recorded.
+- 2026-09-27: Publish profile chosen for Azure deploys. F1 plan recorded.
 - 2026-09-27: Default branch is `master`.
 - 2026-09-27: Removed `CNAME` and `.nojekyll`: not needed with an Actions-based Pages deploy.
 - 2026-09-27: Approved by the owner.

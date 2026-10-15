@@ -3,7 +3,7 @@ id: req-reporting
 title: Dashboard and Reporting
 status: approved
 owner: Marko Angelovski
-last_updated: 2026-10-09
+last_updated: 2026-10-14
 related: [req-time-logs, req-bookings, api-endpoints, web-screens, OQ-029, OQ-126, OQ-127, OQ-128, OQ-129, OQ-130]
 ---
 
@@ -49,8 +49,8 @@ the range is named: "October 2026" for a whole calendar month, else "1 Sep 2026 
 
 ### FR-RPT-002: Count tiles
 **Priority:** Must
-**Statement:** Four tiles: **Projects** (projects not in the trash; footer: how many projects have hours in the range; links
-to the project list), **Tasks** (tasks not deleted; footer: a bar split by status and the count per status; links to the task
+**Statement:** Four tiles: **Projects** (the user's projects; footer: how many projects have hours in the range; links
+to the project list), **Tasks** (the user's tasks; footer: a bar split by status and the count per status; links to the task
 list), **Workdays** (the range's workdays; footer: "Days with a start time, of N weekdays so far", N = the Monday–Friday dates
 of the range up to today) and **Average start** (the mean of the range's start times, to the minute; footer: the earliest and
 latest start; "—" and "No workdays in this range" when there are none).
@@ -92,7 +92,7 @@ shows each total up to today.
 **Priority:** Must
 **Statement:** One row per project with hours in the range, most hours first, then **Unsorted** (no project) and **Non-prod**
 (excluded from statistics) when they have hours. A row shows the project's icon and name (a link to the project; a deleted
-project: plain text and "(deleted)"), its hours worked and booked, and a bar of its booked and not booked hours, scaled to the
+project: plain text with the deleted marker, FR-TLOG-014), its hours worked and booked, and a bar of its booked and not booked hours, scaled to the
 biggest row. Unsorted and Non-prod show no booked hours. No hours in the range → "Nothing logged in this range."
 **Acceptance criteria:**
 - Given 4h 15m on Anthropic (2h booked), 4h on Nvidia (all booked), 45m unsorted and 1h 30m excluded, then the rows are Anthropic,

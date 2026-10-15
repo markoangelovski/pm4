@@ -4,7 +4,7 @@ title: API Endpoints
 status: approved
 owner: Marko Angelovski
 last_updated: 2026-10-14
-related: [api-conventions, api-data-model, req-auth, req-projects, req-tasks, req-time-logs, req-reporting, req-trash]
+related: [api-conventions, api-data-model, req-auth, req-projects, req-tasks, req-time-logs, req-reporting]
 ---
 
 # API Endpoints
@@ -27,7 +27,6 @@ defines its request, response and errors. Paths are relative to `/api/v1` unless
 | ID | Method | Path | Implements | Status |
 | --- | --- | --- | --- | --- |
 | API-SYS-001 | GET | `/health` (root) | NFR-003 | specified |
-| API-SYS-002 | — | (removed: the purge is a background job, ADR-0011) | — | — |
 | API-SYS-003 | GET | `/version` → `{version}` (public, no DB/Redis) | SCR-004 | specified |
 | API-AUTH-001 | GET | `/auth/google?returnTo=&timeZone=` → 302 Google | FR-AUTH-001, FR-AUTH-006 | specified |
 | API-AUTH-002 | GET | `/auth/google/callback` → 302 web `/auth/callback` (or `/auth/sign-in?error=`) | FR-AUTH-001/002 | specified |
@@ -42,16 +41,12 @@ defines its request, response and errors. Paths are relative to `/api/v1` unless
 | API-PRJ-002 | GET | `/projects?q=&sort=&page=&pageSize=` (with task counts and logged minutes) | FR-PRJ-002 | specified |
 | API-PRJ-003 | GET | `/projects/{id}` | FR-PRJ-003, FR-PRJ-008 | specified |
 | API-PRJ-004 | PATCH | `/projects/{id}` | FR-PRJ-004 | specified |
-| API-PRJ-005 | DELETE | `/projects/{id}` (soft) | FR-PRJ-005 | specified |
-| API-PRJ-006 | POST | `/projects/{id}/restore` (built in M2, OQ-090) | FR-TRASH-002, FR-PRJ-003 | specified |
-| API-PRJ-007 | DELETE | `/projects/{id}/permanent` | FR-TRASH-004 | TODO |
+| API-PRJ-005 | DELETE | `/projects/{id}` (with its tasks) | FR-PRJ-005 | specified |
 | API-TSK-001 | POST | `/tasks` | FR-TSK-001 | specified |
 | API-TSK-002 | GET | `/tasks?projectId=&status=&q=&sort=&page=&pageSize=` | FR-TSK-002/003, picker | specified |
 | API-TSK-003 | GET | `/tasks/{id}` | FR-TSK-004 | specified |
 | API-TSK-004 | PATCH | `/tasks/{id}` (incl. status, projectId) | FR-TSK-005/006 | specified |
-| API-TSK-005 | DELETE | `/tasks/{id}` (soft) | FR-TSK-007 | specified |
-| API-TSK-006 | POST | `/tasks/{id}/restore` (409 if project in trash; built in M3, OQ-090) | FR-TRASH-003, FR-TSK-004 | specified |
-| API-TSK-007 | DELETE | `/tasks/{id}/permanent` | FR-TRASH-004 | TODO |
+| API-TSK-005 | DELETE | `/tasks/{id}` | FR-TSK-007 | specified |
 | API-WD-001 | GET | `/workdays?from=&to=` → `{items: [{workDate, startMinute, totalMinutes}]}` (the calendar's marks) | FR-TLOG-001 | specified |
 | API-WD-002 | PUT | `/workdays/{date}` `{startMinute}` | FR-TLOG-009 | specified |
 | API-WD-003 | GET | `/workdays/{date}` → `Day` (the start, the total and the day's logs in entry order) | FR-TLOG-001/002/003/009/015/016 | specified |
@@ -64,12 +59,10 @@ defines its request, response and errors. Paths are relative to `/api/v1` unless
 | API-TLOG-007 | — | (removed) | — | — |
 | API-BOOK-001 | GET | `/bookings?from=&to=` → `{items: BookingLog[]}` (logs worked in the range, and logs booked into it) | FR-BOOK-001/002/003 | specified |
 | API-BOOK-002 | PUT | `/bookings` `{logIds, bookingDate}` → `{items: BookingLog[]}` (book, re-date or remove, one or many logs) | FR-BOOK-004/005 | specified |
-| API-TRASH-001 | GET | `/trash` (projects with nested cascaded tasks, individually deleted tasks, purge dates) | FR-TRASH-001 | TODO |
 | API-RPT-001 | GET | `/reports/dashboard?from=&to=` → `{days: ReportDay[], projects: ReportProject[]}` (worked and booked minutes per day and per project) | FR-RPT-002…006 | specified |
 | API-RPT-002 | — | (removed, OQ-129) | — | — |
 
 ## Endpoint details
-TODO: the rows still marked TODO have no detail section yet. Write each one using the template once its requirement spec reaches `review`: the trash endpoints (API-PRJ-007, API-TSK-007, API-TRASH-001) after req-trash.
 
 ### API-SYS-001: Health
 `GET /health` (root, outside `/api/v1`) · Auth: none (public) · Implements: NFR-003
@@ -174,10 +167,10 @@ Used by API-USR-003, API-PRJ-* and API-TSK-*. Implements the field tables in
   `kind: "user"`: `user` set, `name` = `user.displayName` (current). `kind: "text"`: `user: null`. No lead → the field is `null`.
   The lead user's email is never included (OQ-077).
 - **`TaskCounts`:** `{ upcoming: number, inProgress: number, completed: number, total: number }` over the
-  project's tasks that aren't individually deleted. The completed percentage is left to the client.
+  project's tasks. The completed percentage is left to the client.
 - **`loggedMinutes`** (OQ-132): an integer, the sum of `durationMinutes` of the caller's time logs, excluded ones too, computed
   in the query and never stored (data-model.md *time_logs*). A project's covers every log with that project, so its tasks' logs as
-  well, including those of tasks in the trash; a task's covers the logs linked to it. `0` when there are none. It equals
+  well; a task's covers the logs linked to it. `0` when there are none. It equals
   API-TLOG-001's `totalMinutes` for the same project or task.
 - **`Project`:** `{ id, title, description: string | null, externalLink: string | null, projectLead: ProjectLead | null,
   taskCounts: TaskCounts, loggedMinutes, createdAt, updatedAt }` (instants ISO 8601 UTC).
@@ -185,12 +178,8 @@ Used by API-USR-003, API-PRJ-* and API-TSK-*. Implements the field tables in
   projectLead: ProjectLead | null, status: "upcoming" | "in-progress" | "completed", dueDate: string | null,
   loggedMinutes, createdAt, updatedAt }`. `Ref` = `{ id, title, deleted }` (conventions.md *Responses*), `deleted: false` here.
 - **Ids in paths:** a value that isn't a UUID → `404` `…/errors/not-found` (never `400`, never a database error).
-- **In the trash:** reading or changing a soft-deleted project, or an effectively deleted task, by id → `404`
-  `…/errors/in-trash`. For a task, the Problem Details body also has `projectId: string` and
-  `projectInTrash: boolean` (true when the task's **project** is in the trash), so the web can offer
-  "Restore project" (FR-TRASH-003).
+- **Deleted:** a deleted project or task is gone: reading, changing or deleting it by id → `404` `…/errors/not-found`.
 - **Updated date:** any successful `PATCH` sets `updatedAt` to now. Task changes never touch the project's `updatedAt` (OQ-091).
-  Delete and restore change only `deletedAt`.
 - **Lists:** `?page` ≥ 1 (default 1), `?pageSize` 1–100 (default 25), `?q` ≤ 200 chars (trimmed; empty = no filter;
   a case-insensitive "contains" on `title`, with `%`, `_` and `\` matched literally, OQ-085). Sort ties break on `id` descending.
   Out-of-range values → `400`. A page past the end → `items: []` with the real `total`.
@@ -212,7 +201,7 @@ This is the only endpoint that returns other users' emails (security.md *Authori
 
 ### API-PRJ-002: List projects
 `GET /projects?q=&sort=&page=&pageSize=` · Auth: bearer · Implements: FR-PRJ-002
-The caller's projects that aren't in the trash. `sort` ∈ `updatedAt:desc` (default), `updatedAt:asc`,
+The caller's projects. `sort` ∈ `updatedAt:desc` (default), `updatedAt:asc`,
 `createdAt:desc`, `createdAt:asc`, `title:asc`, `title:desc` (title compared case-insensitively).
 `q` (OQ-099, OQ-102): matches the `title` **or** the lead's name, each a case-insensitive "contains" with wildcards
 literal. The lead's name is the read-model name (data-model.md *Project lead*): the lead user's current
@@ -224,37 +213,32 @@ then lead-only matches; inside each group the `sort` order applies, then `id` de
 ### API-PRJ-003: Get project
 `GET /projects/{id}` · Auth: bearer · Implements: FR-PRJ-003, FR-PRJ-008
 **200:** `Project`
-**Errors:** 401 · 404 `not-found` (missing, not a UUID, or another user's) · 404 `in-trash`
+**Errors:** 401 · 404 `not-found` (missing, not a UUID, deleted, or another user's)
 
 ### API-PRJ-004: Update project
 `PATCH /projects/{id}` · Auth: bearer · Implements: FR-PRJ-004
 **Request body:** the create fields, all optional; `title` may not be `null`. An empty body is valid (only `updatedAt` changes).
 **200:** `Project`
-**Errors:** 400 validation · 401 · 404 `not-found` · 404 `in-trash`
+**Errors:** 400 validation · 401 · 404 `not-found`
 
 ### API-PRJ-005: Delete project
 `DELETE /projects/{id}` · Auth: bearer · Implements: FR-PRJ-005
-Sets `deletedAt`. The project's tasks aren't changed; they count as deleted through their project (FR-TRASH rules).
+Deletes the project and its tasks permanently. In the same transaction, first saves the project's title on the logs with
+that project, and each task's title on the logs of that task (data-model.md *Retained names*), then deletes the project; the
+cascade deletes its tasks and the FKs unlink the logs. The logs themselves stay (FR-TLOG-014).
 **204**
-**Errors:** 401 · 404 `not-found` · 404 `in-trash` (already deleted)
-
-### API-PRJ-006: Restore project
-`POST /projects/{id}/restore` · Auth: bearer · Implements: FR-TRASH-002 (OQ-090)
-Clears `deletedAt`. Tasks deleted individually stay in the trash. A project that isn't in the trash → `204`, no change.
-Works until the purge has run (FR-TRASH-005).
-**204**
-**Errors:** 401 · 404 `not-found`
+**Errors:** 401 · 404 `not-found` (also when already deleted)
 
 ### API-TSK-001: Create task
 `POST /tasks` · Auth: bearer · Implements: FR-TSK-001
 **Request body:** `{ projectId: uuid, title: string(1–200), description?: string(≤2000) | null, externalLink?: string(≤500) | null,
 projectLeadUserId?: uuid | null, projectLeadName?: string(≤100) | null, status?: TaskStatus (default "upcoming"), dueDate?: date | null }`
 **201:** `Task`
-**Errors:** 400 validation · 401 · 404 `not-found` when `projectId` is missing, another user's, or in the trash
+**Errors:** 400 validation · 401 · 404 `not-found` when `projectId` is missing or another user's
 
 ### API-TSK-002: List tasks
 `GET /tasks?projectId=&status=&q=&sort=&page=&pageSize=` · Auth: bearer · Implements: FR-TSK-002, FR-TSK-003
-The caller's tasks that aren't effectively deleted. `projectId`: one project (a missing, foreign or trashed one gives
+The caller's tasks. `projectId`: one project (a missing or foreign one gives
 `items: []`, not an error). `status`: a comma-separated non-empty subset of the three statuses; absent = all.
 `sort` ∈ `updatedAt:desc` (default), `updatedAt:asc`, `dueDate:asc`, `dueDate:desc`, `title:asc`, `title:desc`;
 tasks without a due date come last in both `dueDate` directions (OQ-085).
@@ -264,27 +248,22 @@ tasks without a due date come last in both `dueDate` directions (OQ-085).
 ### API-TSK-003: Get task
 `GET /tasks/{id}` · Auth: bearer · Implements: FR-TSK-004
 **200:** `Task`
-**Errors:** 401 · 404 `not-found` · 404 `in-trash` (with `projectId`, `projectInTrash`)
+**Errors:** 401 · 404 `not-found`
 
 ### API-TSK-004: Update task
 `PATCH /tasks/{id}` · Auth: bearer · Implements: FR-TSK-005, FR-TSK-006
 **Request body:** the create fields, all optional; `projectId`, `title` and `status` may not be `null`.
-A new `projectId` moves the task (it must be the caller's and not in the trash, else `404` `not-found`).
+A new `projectId` moves the task (it must be the caller's, else `404` `not-found`).
 Moving a task also sets the project of its time logs to the new project, in the same transaction (data-model.md *time_logs*).
 **200:** `Task`
-**Errors:** 400 validation · 401 · 404 `not-found` · 404 `in-trash`
+**Errors:** 400 validation · 401 · 404 `not-found`
 
 ### API-TSK-005: Delete task
 `DELETE /tasks/{id}` · Auth: bearer · Implements: FR-TSK-007
-Sets the task's `deletedAt`. Linked time logs stay (FR-TRASH-006).
+Deletes the task permanently. In the same transaction, first saves its title on its logs (data-model.md *Retained names*),
+then deletes it; the FK unlinks the logs from the task, and they keep their project. The logs themselves stay (FR-TLOG-014).
 **204**
-**Errors:** 401 · 404 `not-found` · 404 `in-trash`
-
-### API-TSK-006: Restore task
-`POST /tasks/{id}/restore` · Auth: bearer · Implements: FR-TRASH-003 (OQ-090)
-Clears the task's `deletedAt`. A task that isn't deleted → `204`, no change.
-**204**
-**Errors:** 401 · 404 `not-found` · 409 `conflict` when the task's project is in the trash (restore the project instead)
+**Errors:** 401 · 404 `not-found` (also when already deleted)
 
 ### API-USR-002: Update the profile settings
 `PATCH /me` · Auth: bearer · Implements: FR-AUTH-006, FR-TLOG-017
@@ -297,7 +276,7 @@ Clears the task's `deletedAt`. A task that isn't deleted → `204`, no change.
 Used by API-WD-* and API-TLOG-*. Implements [req-time-logs](../01-requirements/time-logs.md).
 
 - **`TimeLog`:** `{ id, workDate: "YYYY-MM-DD", durationMinutes, text, title: string | null, project: Ref | null, task: Ref | null, excludeFromStats: boolean }`.
-  `Ref` as in conventions.md (a deleted or purged entity keeps its title with `deleted: true`, data-model.md *Retained names*).
+  `Ref` as in conventions.md (a deleted project or task keeps its title with `id: null` and `deleted: true`, data-model.md *Retained names*).
   A log with a task always has `project` set (the task's project).
 - **`Day`:** `{ workDate, startMinute: number | null, totalMinutes: number, logs: TimeLog[] }`. `startMinute` is `null` when the date has no workday.
   `logs` are in entry order (`id` ascending), and all of the date's logs are returned (no pagination).
@@ -305,12 +284,12 @@ Used by API-WD-* and API-TLOG-*. Implements [req-time-logs](../01-requirements/t
   `durationMinutes`: an integer, a multiple of 15, 15–1440. `workDate`: a real calendar date that is **not after today in the caller's time zone**.
   `startMinute` / `dayStartMinute`: an integer, a multiple of 15, 0–1425. `excludeFromStats`: a boolean (default `false` on `POST`; `null` → `400`). A wrong value → `400` naming the field.
 - **Link input:** `projectId?: uuid | null` and `taskId?: uuid | null`.
-  - With `taskId`: the task must be the caller's and not effectively deleted, else `404` `not-found` ("Task not found."). The log's project becomes the task's project.
+  - With `taskId`: the task must be the caller's, else `404` `not-found` ("Task not found."). The log's project becomes the task's project.
     A `projectId` that differs from the task's → `400` (field `projectId`, "must be the task's project").
-  - With only `projectId`: the project must be the caller's and not in the trash, else `404` `not-found` ("Project not found.").
+  - With only `projectId`: the project must be the caller's, else `404` `not-found` ("Project not found.").
   - With neither: an unsorted log.
   - On `PATCH`, the link is replaced **as a unit** when either field is present (the absent one counts as `null`) and left alone when both are absent.
-    A link that is the log's current one is accepted even when that task or project is in the trash.
+    A log of a deleted task or project can be relinked this way; the new link clears its retained names (data-model.md *Retained names*).
 - **Workday start:** `dayStartMinute` on `POST` (and on `PATCH` when `workDate` changes) is **required** when the target date has no workday
   (`400`, field `dayStartMinute`, "is required when the day has no start time"), and creates it in the same transaction. When the date already has a
   workday, `dayStartMinute` is ignored.
@@ -337,8 +316,7 @@ The calendar marks the dates whose `totalMinutes` > 0.
 ### API-TLOG-001: List the logs of a project or task
 `GET /time-logs?projectId=&taskId=&page=&pageSize=` · Auth: bearer · Implements: FR-TLOG-012
 **Query:** exactly one of `projectId`, `taskId` (a UUID), else `400` (both or neither: field `projectId`, "exactly one of projectId and taskId is
-required"). `page`, `pageSize` as in *Lists* above (`q` isn't accepted). A trashed project or task is still listed (the detail pages show its section only
-when it isn't in the trash).
+required"). `page`, `pageSize` as in *Lists* above (`q` isn't accepted).
 **200:** `{ items: BookingLog[], page, pageSize, total, totalMinutes, bookedMinutes }`: the caller's logs with that project (which includes the logs of its
 tasks) or that task, ordered by `workDate` descending, then entry order (`id` ascending). `totalMinutes` sums **all** matching logs, not only the page;
 `bookedMinutes` sums those with a `bookingDate`. An unknown or foreign id → `items: []`, `total: 0`, `totalMinutes: 0`, `bookedMinutes: 0`. A page past the
@@ -396,7 +374,7 @@ log; nothing changes on any error.
   `startMinute` is `null` for a date with logs but no workday.
 - **`ReportProject`:** `{ kind: "project" | "unsorted" | "nonprod", project: Ref | null, workedMinutes, bookedMinutes }`. A log excluded from statistics
   counts under `nonprod`; else a log without a project (and no retained project name) under `unsorted`; else under its project: one row per
-  `project_id`, and per retained name for purged projects (data-model.md *Retained names*). `project` is the `Ref` (trashed or purged → `deleted: true`),
+  `project_id`, and per retained name for deleted projects (data-model.md *Retained names*). `project` is the `Ref` (deleted → `deleted: true`),
   `null` for `unsorted` and `nonprod`, whose `bookedMinutes` is always 0. Order: the `project` rows by `workedMinutes` descending, then title, then
   `unsorted`, then `nonprod`. Rows with no logs aren't returned.
 
@@ -410,14 +388,13 @@ None.
 - 2026-09-26: Initial scaffold.
 - 2026-09-26: Updated with owner answers to OQ-001–018.
 - 2026-09-26: Added API-AUTH-006 (sign out of all devices, OQ-023).
-- 2026-09-27: API-SYS-002 removed (OQ-031, ADR-0011).
 - 2026-10-01: OQ-050: no trailing slashes (`trailingSlash: false`); detail routes `/app/project?id=` and `/app/task?id=` (feat-land-app-route-split).
 - 2026-10-02: Added API-SYS-003 `GET /version` (OQ-052, feat-shell-sidebar-branding).
 - 2026-10-02: The owner approved API-SYS-003 for feat-shell-sidebar-branding.
 - 2026-10-02: Detailed API-AUTH-001…006 and API-USR-001, shared auth shapes, default-deny protection (OQ-061…066, feat-auth-api-session).
 - 2026-10-02: The owner approved API-AUTH-001…006 and API-USR-001 (with *Shared auth shapes*) for feat-auth-api-session.
-- 2026-10-03: Detailed API-USR-003, API-PRJ-001…006 and API-TSK-001…006 with the shared project and task shapes (OQ-076…OQ-091; feat-prj-api, feat-tsk-api). Logged-time totals dropped from API-PRJ-002 (OQ-080).
-- 2026-10-03: The owner approved *Shared project and task shapes*, API-USR-003, API-PRJ-001…006 and API-TSK-001…006 for feat-prj-api, feat-prj-web, feat-tsk-api and feat-tsk-web.
+- 2026-10-03: Detailed API-USR-003, API-PRJ-001…005 and API-TSK-001…005 with the shared project and task shapes (OQ-076…OQ-091; feat-prj-api, feat-tsk-api). Logged-time totals dropped from API-PRJ-002 (OQ-080).
+- 2026-10-03: The owner approved *Shared project and task shapes*, API-USR-003, API-PRJ-001…005 and API-TSK-001…005 for feat-prj-api, feat-prj-web, feat-tsk-api and feat-tsk-web.
 - 2026-10-03: API-SYS-003 returns the release version stamped by `api-deploy` (OQ-098, feat-ops-release-versions).
 - 2026-10-04: API-PRJ-002 `q` also matches the lead's name, title matches first (OQ-099, OQ-102; feat-prj-dates-lead-search). Needs the owner's approval again.
 - 2026-10-04: The owner approved API-PRJ-002 (as updated) for feat-prj-dates-lead-search.

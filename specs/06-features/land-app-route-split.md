@@ -25,7 +25,7 @@ This is a web-only change (OQ-047, OQ-050).
   ([landing.md](../01-requirements/landing.md)), SCR-003 ([screens.md](../04-web/screens.md)).
 - Redirect and default destination: FR-AUTH-005, FR-AUTH-001 (`/app`), FR-AUTH-004 (sign-out →
   `/auth/sign-in`) ([auth.md](../01-requirements/auth.md)).
-- Old URLs (`/home`, `/projects`, `/tasks`, `/time`, `/trash`, `/settings`, `…/view`) are no longer
+- Old URLs (`/home`, `/projects`, `/tasks`, `/time`, `/settings`, `…/view`) are no longer
   built, so GitHub Pages serves the existing `404.html`. There are no redirects.
 - Trailing slashes: `trailingSlash: false`, detail pages as flat siblings, and the known folder risk:
   [static-export.md](../04-web/static-export.md#urls-without-trailing-slashes-oq-050).
@@ -66,7 +66,7 @@ feature updates the `TODO(M1)` comments at those places so they point to the hel
 ## Scope
 **In:**
 - `trailingSlash: false` in `web/next.config.ts` (OQ-050).
-- Moving the dashboard, projects, tasks, time, trash and settings pages under `/app`, the detail pages to `/app/project` and `/app/task`, and the landing page to `/`.
+- Moving the dashboard, projects, tasks, time and settings pages under `/app`, the detail pages to `/app/project` and `/app/task`, and the landing page to `/`.
 - `web/lib/routes.ts` and `web/lib/auth/return-to.ts`.
 - Every internal link and redirect target: sidebar, app logo, user menu, entity-view list redirects,
   sign-in logo, not-found button, landing Login.
@@ -111,7 +111,6 @@ unless the row says otherwise. Approving this spec approves the listed moves and
 | web | `web/app/(dashboard-layout)/tasks/page.tsx` → `web/app/(dashboard-layout)/app/tasks/page.tsx` | M (move) | T2 | |
 | web | `web/app/(dashboard-layout)/tasks/view/page.tsx` → `web/app/(dashboard-layout)/app/task/page.tsx` | M (move) | T2 | `listPath={routes.app.tasks}`. Delete the empty `tasks/view/` |
 | web | `web/app/(dashboard-layout)/time/page.tsx` → `web/app/(dashboard-layout)/app/time/page.tsx` | M (move) | T2 | |
-| web | `web/app/(dashboard-layout)/trash/page.tsx` → `web/app/(dashboard-layout)/app/trash/page.tsx` | M (move) | T2 | |
 | web | `web/app/(dashboard-layout)/settings/page.tsx` → `web/app/(dashboard-layout)/app/settings/page.tsx` | M (move) | T2 | |
 | web | `web/app/home/page.tsx` → `web/app/page.tsx` | M (move) | T2 | Then delete the empty `web/app/home/`. T2 also switches its Login links to `routes.signIn` (AC-13); T3 replaces them with `LandingCta` |
 | web | `web/app/(dashboard-layout)/layout/vertical/sidebar/sidebaritems.ts` | M | T2 | `url`s from `routes.app.*` |
@@ -157,7 +156,6 @@ export const routes = {
     project: "/app/project",
     tasks: "/app/tasks",
     task: "/app/task",
-    trash: "/app/trash",
     settings: "/app/settings",
   },
 } as const;
@@ -234,7 +232,7 @@ export function LandingCtaFallback(props: LandingCtaProps): React.JSX.Element;
 #### Link targets (T2)
 | Place | Target |
 | --- | --- |
-| Sidebar `dashboard`, `time`, `projects`, `tasks`, `trash`, `settings` | `routes.app.dashboard`, `.time`, `.projects`, `.tasks`, `.trash`, `.settings` (names, ids, icons and order unchanged) |
+| Sidebar `dashboard`, `time`, `projects`, `tasks`, `settings` | `routes.app.dashboard`, `.time`, `.projects`, `.tasks`, `.settings` (names, ids, icons and order unchanged) |
 | App logo (`full-logo.tsx`) | `routes.app.dashboard` |
 | User menu → Settings (`profile.tsx`) | `routes.app.settings` |
 | Project view, missing `id` | `routes.app.projects` |
@@ -266,7 +264,7 @@ export function LandingCtaFallback(props: LandingCtaProps): React.JSX.Element;
 | `signInHref("/app/tasks")` | `"/auth/sign-in?returnTo=%2Fapp%2Ftasks"` | `AC-4` |
 | `signInHref("/app")` | `"/auth/sign-in?returnTo=%2Fapp"` | `AC-4` |
 | `signInHref(null)`, `signInHref("https://evil.example/")`, `signInHref("/auth/callback")` | `"/auth/sign-in"` | `AC-4` |
-| `postSignInPath("/app/trash")` | `"/app/trash"` | `AC-5` |
+| `postSignInPath("/app/time")` | `"/app/time"` | `AC-5` |
 | `postSignInPath(null)`, `postSignInPath("//evil.example/")` | `"/app"` | `AC-5` |
 | `postSignInPath("/app/projects?x=1")`, `postSignInPath("/home")` (the "Go to app" inputs, D12) | `"/app/projects?x=1"`; `"/app"` | `AC-5` |
 | Landing `/` with no `returnTo` | Login `href="/auth/sign-in"` | `AC-6` |
@@ -275,10 +273,10 @@ export function LandingCtaFallback(props: LandingCtaProps): React.JSX.Element;
 | Landing `?returnTo=` given twice | The first value is used | `AC-6` |
 | `LandingCta` renders | No `fetch` call; `localStorage` is read only for the stored-session key `pm4.refreshToken` (narrowed by feat-auth-web-session, FR-LAND-002) | `AC-7` |
 | Suspense fallback | An `aria-hidden` placeholder with no link and no text | `AC-8` |
-| Sidebar | URLs `/app`, `/app/time`, `/app/projects`, `/app/tasks`, `/app/trash`, `/app/settings`, in the existing order | `AC-9` |
+| Sidebar | URLs `/app`, `/app/time`, `/app/projects`, `/app/tasks`, `/app/settings`, in the existing order | `AC-9` |
 | App logo → `/app`; sign-in logo → `/`; not-found "Go back home" → `/` | As stated | `AC-10` |
-| Build output has the new pages | `out/index.html`, `out/app.html`, `out/app/{time,projects,project,tasks,task,trash,settings}.html`, `out/auth/sign-in.html`, `out/auth/callback.html`, `out/404.html` exist | `AC-11` |
-| Old URLs dropped, no trailing-slash pages | `out/home*`, `out/projects*`, `out/tasks*`, `out/time*`, `out/trash*`, `out/settings*`, `out/app/index.html`, `out/app/projects/index.html`, `out/app/tasks/index.html` don't exist. (The `out/<route>/` folders of Next's `__next.*.txt` route data always exist.) | `AC-11` |
+| Build output has the new pages | `out/index.html`, `out/app.html`, `out/app/{time,projects,project,tasks,task,settings}.html`, `out/auth/sign-in.html`, `out/auth/callback.html`, `out/404.html` exist | `AC-11` |
+| Old URLs dropped, no trailing-slash pages | `out/home*`, `out/projects*`, `out/tasks*`, `out/time*`, `out/settings*`, `out/app/index.html`, `out/app/projects/index.html`, `out/app/tasks/index.html` don't exist. (The `out/<route>/` folders of Next's `__next.*.txt` route data always exist.) | `AC-11` |
 | `/` is not indexable | `out/index.html` contains `<meta name="robots" content="noindex, nofollow"` | `AC-12` |
 | No stray path literals | No old route literal (`"/home…"`, `"/projects…"`, …) and no route literal ending in `/` (`"/app/…/"`, `"/auth/…/"`) in non-test `web/app/**` or `web/lib/**` source, except `web/lib/routes.ts` (D3) | `AC-13` |
 | Deep route on a static server | `npx serve out`, hard-refresh `/`, `/app`, `/app/projects` and `/app/project?id=x`: each loads, no 404 | `AC-14` |
@@ -330,14 +328,14 @@ Run from `web/`. Expected result: every command exits 0, and the acceptance test
 cd web && npm run lint && npm run typecheck && npm test && npm run build
 # AC-11: new pages exist, old and trailing-slash ones don't
 cd web && for p in index.html app.html app/time.html app/projects.html app/project.html app/tasks.html \
-  app/task.html app/trash.html app/settings.html auth/sign-in.html auth/callback.html 404.html; do test -f "out/$p" || { echo "missing $p"; exit 1; }; done \
-  && for p in home home.html projects projects.html tasks tasks.html time time.html trash trash.html settings settings.html \
+  app/task.html app/settings.html auth/sign-in.html auth/callback.html 404.html; do test -f "out/$p" || { echo "missing $p"; exit 1; }; done \
+  && for p in home home.html projects projects.html tasks tasks.html time time.html settings settings.html \
   app/index.html app/projects/index.html app/tasks/index.html; do test ! -e "out/$p" || { echo "stale $p"; exit 1; }; done
 # AC-12: the landing page is noindex
 cd web && grep -q '<meta name="robots" content="noindex, nofollow"' out/index.html
 # AC-13: no old path literals and no trailing-slash route literals in source (tests and lib/routes.ts excluded, D3)
 cd web && ! grep -rnE --include='*.ts' --include='*.tsx' --exclude='*.test.*' --exclude='routes.ts' \
-  -e '"/(home|projects|tasks|time|trash|settings)[/"?]' -e '"/(app|auth)(/[a-z-]+)*/"' app lib
+  -e '"/(home|projects|tasks|time|settings)[/"?]' -e '"/(app|auth)(/[a-z-]+)*/"' app lib
 ```
 AC-14: `npx serve out`, then hard-refresh `/`, `/app`, `/app/projects` and `/app/project?id=x`. Each loads with no
 404 and no missing assets, and `/home` shows the not-found page.

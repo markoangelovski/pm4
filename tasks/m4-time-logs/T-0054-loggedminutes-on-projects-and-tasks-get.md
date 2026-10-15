@@ -22,7 +22,7 @@ Work from the brief: `node scripts/pm4.mjs brief T-0054`. Verify with `node scri
 ## Implementation notes
 _Implementer: what changed, and anything the reviewer should look at._
 
-- `loggedMinutes`: correlated `coalesce(sum(...))` subquery in `ProjectsRepository.selectRows` (by `userId` and `projectId`) and `TasksRepository.selectRows` (by `taskId`). `toDto` uses the row value. Trashed tasks still count on the project. Fixtures in `projects.service.spec.ts` and `tasks.service.spec.ts` gained `loggedMinutes: 0`.
+- `loggedMinutes`: correlated `coalesce(sum(...))` subquery in `ProjectsRepository.selectRows` (by `userId` and `projectId`) and `TasksRepository.selectRows` (by `taskId`). `toDto` uses the row value. Fixtures in `projects.service.spec.ts` and `tasks.service.spec.ts` gained `loggedMinutes: 0`.
 - `GET /time-logs` (API-TLOG-001): `TimeRepository.listLogs` (one page plus totals with `count`, `totalMinutes` and `bookedMinutes`). `TimeLogsService.list` checks that exactly one of `projectId` and `taskId` is set (`400`, field `projectId`), then maps rows to `BookingLog`s. It doesn't check ownership of the id; unknown or foreign ids give an empty page.
 - The stubs from the test step became the implementation. `openapi.json` didn't change (the stub contract already matched).
 - `pm4 check T-0054`: PASS. Lint and format:check failed on the first run (Prettier layout in the three repository files); `npm run format` fixed it, and the second run passed. Test e2e: 17 files, 222 tests passed. AC-21 is manual (owner).

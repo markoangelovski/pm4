@@ -52,7 +52,7 @@ The only failure is scope: `specs/04-web/static-export.md` and the feature spec,
 | # | Tier | Result (`done` / `BLOCKED` / `FAILED`) | Summary |
 | --- | --- | --- | --- |
 | 1 | sonnet | BLOCKED | AC-11 check wrong: `out/app/projects` and `out/app/tasks` are RSC payload dirs Next always emits; no index.html inside |
-| 2 | (orchestrator) | done | Spec checks fixed (AC-11, AC-13), `APP_PREFIX` restored; all gates and checks pass |
+| 2 | (orchestrator) | done | Spec checks fixed (AC-11, AC-13), `APP_PREFIX` put back; all gates and checks pass |
 
 ## Review
 **Verdict: approve** (Opus review, 2026-10-02). Moves, link targets, TODO comments and `trailingSlash` match the spec; Non-goals respected. Minor findings, fixed in the main session: `web/AGENTS.md` structure and patterns updated (spec follow-up); `next.config.ts` header comment reworded. Open (owner's call): the doc comment in `view-id-guard.tsx:14` (a Non-goal file) still says `/projects/view/?id=…`. Tier: sonnet right; the block came from the spec's checks, not the tier.

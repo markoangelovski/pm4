@@ -14,6 +14,7 @@ import { apiClient } from "@/proto/mock/client";
 import { unwrap, unwrapVoid } from "@/lib/api/problem";
 import type { components } from "@/lib/api/schema";
 import { nowMinute } from "@/lib/time/clock";
+import type { DeleteWorkday } from "./proposed-types";
 import type { Day, TimeLog, TimeLogInput } from "./types";
 
 export type {
@@ -150,6 +151,22 @@ export function useDeleteLog(): UseMutationResult<void, Error, TimeLog> {
         await apiClient.DELETE("/api/v1/time-logs/{id}", {
           params: { path: { id: log.id } }
         })
+      ),
+    onSuccess: () => refreshAfterLogChange(queryClient)
+  });
+}
+
+/** API-WD-004: deletes the day's start and logs; invalidates timeKeys.all, projectKeys.all and taskKeys.all (D3). */
+export function useDeleteDay(): UseMutationResult<void, Error, string> {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (date: string) =>
+      // API-WD-004 isn't in lib/api/schema yet: typed by proposed-types.ts until `npm run api:types`.
+      unwrapVoid(
+        await (apiClient.DELETE as unknown as DeleteWorkday)(
+          "/api/v1/workdays/{date}",
+          { params: { path: { date } } }
+        )
       ),
     onSuccess: () => refreshAfterLogChange(queryClient)
   });

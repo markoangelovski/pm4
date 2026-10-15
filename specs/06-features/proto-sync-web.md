@@ -207,8 +207,8 @@ excluded from statistics. One log of user B on B's own project.
 | AC-12 | With `taskId`: no Task column. 30 logs → "Page 1 of 2"; **Next** sets `logsPage=2` and requests page 2. No logs → "No time logged yet."; a failed request → "Couldn't load the logs." and **Retry** refetches | `web/features/time/components/logged-time-section.ac.test.tsx` | T2 |
 | AC-13 | Projects list: a **Logged** column; `loggedMinutes` 105 → `1h 45m`, 0 → `—` | `web/features/projects/components/projects-list.ac.test.tsx` | T2 |
 | AC-14 | Tasks list (both the project section and `/app/tasks`): a **Logged** column; 30 → `30m`, 0 → `—` | `web/features/tasks/components/tasks-list.ac.test.tsx` | T2 |
-| AC-15 | The project page shows **Logged time** and requests `/api/v1/time-logs?projectId=<id>…`; not while the project is in the trash | `web/features/projects/components/project-detail.ac.test.tsx` | T2 |
-| AC-16 | The task page shows **Logged time** and requests `?taskId=<id>…`; not while the task is in the trash | `web/features/tasks/components/task-detail.ac.test.tsx` | T2 |
+| AC-15 | The project page shows **Logged time** and requests `/api/v1/time-logs?projectId=<id>…`; not when the project isn't found | `web/features/projects/components/project-detail.ac.test.tsx` | T2 |
+| AC-16 | The task page shows **Logged time** and requests `?taskId=<id>…`; not when the task isn't found | `web/features/tasks/components/task-detail.ac.test.tsx` | T2 |
 | AC-17 | Bookings, all rows collapsed → headers `Projects`, `""`, `""`, `""`, `Hours worked`, `Hours booked`; expanding a row → `Project`, `Tasks`, `Logs`, `Booking date`, `Hours worked`, `Hours booked`; **Book all** stays in the row in both states | `web/features/bookings/components/bookings-view.ac.test.tsx` | T3 |
 | AC-18 | Retired: covered by the twin check ([prototype.md#twin-check](../04-web/prototype.md#twin-check), T-0058) | — | T2 |
 | AC-19 | Retired: covered by the twin check ([prototype.md#twin-check](../04-web/prototype.md#twin-check), T-0058) | — | T2 |

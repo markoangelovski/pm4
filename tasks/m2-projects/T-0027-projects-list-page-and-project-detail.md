@@ -1,6 +1,6 @@
 ---
 id: T-0027
-title: Projects list page and project detail page (stats, delete, restore, not found)
+title: Projects list page and project detail page (stats, delete, not found)
 milestone: M2
 app: web
 status: done
@@ -14,7 +14,7 @@ ac_files:
   - { path: web/features/projects/components/project-detail.ac.test.tsx, sha256: a216db9a4493afe14cd8b589774ef040e03affee4f0c9d411dada11ebbbf7494 }
 ---
 
-# T-0027: Projects list page and project detail page (stats, delete, restore, not found)
+# T-0027: Projects list page and project detail page (stats, delete, not found)
 
 **Tier reason:** Composes T1/T2 and installed primitives; behavior and copy fully stated
 

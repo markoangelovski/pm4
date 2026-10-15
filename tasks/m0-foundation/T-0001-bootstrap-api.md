@@ -182,7 +182,7 @@ worked through rather than guessed at, and are recorded here for the reviewer/ow
   runs); ended with `docker compose stop` (both containers `Exited (0)`).
 
 ### Notes / proposals for the owner
-- Rate limiting (`@nestjs/throttler`), BullMQ and the auth libraries are listed in `tech-stack.md`'s
+- Rate limiting (`@nestjs/throttler`) and the auth libraries are listed in `tech-stack.md`'s
   Backend table but intentionally not installed — out of this task's scope (auth/jobs modules,
   M1+). `T-0001`'s task file already excludes them ("Out: auth and feature modules...").
   `@nestjs/throttler` in particular needs an authenticated user for its per-user limit, so it's

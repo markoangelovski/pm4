@@ -33,7 +33,6 @@ Either way, fix the disagreement. Never ignore it.
 | Time capture | [01-requirements/time-logs.md](01-requirements/time-logs.md) | approved |
 | Bookings | [01-requirements/bookings.md](01-requirements/bookings.md) | approved |
 | Dashboard and reporting | [01-requirements/reporting.md](01-requirements/reporting.md) | approved |
-| Trash and soft delete | [01-requirements/trash.md](01-requirements/trash.md) | draft |
 | Integrations and connectors | [01-requirements/integrations.md](01-requirements/integrations.md) | draft |
 | Non-functional requirements | [01-requirements/non-functional.md](01-requirements/non-functional.md) | draft |
 | System overview | [02-architecture/system-overview.md](02-architecture/system-overview.md) | approved |
@@ -92,7 +91,7 @@ related: [api-endpoints, ADR-0001]
 | Open question | `OQ-###` | `OQ-004` | `open-questions.md` |
 | Task | `T-####` | `T-0012` | `../tasks/` |
 
-Area codes: `AUTH` auth/accounts · `LAND` public landing page · `PRJ` projects · `TSK` tasks · `TLOG` time capture (workdays, time logs) · `BOOK` bookings · `RPT` reporting · `TRASH` trash/soft delete · `INT` integrations and connectors · `SYS` system.
+Area codes: `AUTH` auth/accounts · `LAND` public landing page · `PRJ` projects · `TSK` tasks · `TLOG` time capture (workdays, time logs) · `BOOK` bookings · `RPT` reporting · `INT` integrations and connectors · `SYS` system.
 IDs are never reused or renumbered. Removed items are marked `(removed)`.
 
 ### Placeholders

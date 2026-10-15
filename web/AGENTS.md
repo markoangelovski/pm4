@@ -46,7 +46,7 @@ app/
     layout.tsx                   #   wraps the shell in AuthGuard (features/auth)
     app/                         #   the `/app` URL segment
       page.tsx                   #     dashboard `/app`
-      projects/  project/  tasks/  task/  time/  trash/  settings/
+      projects/  project/  tasks/  task/  time/  settings/
     layout/                      #   shell internals: header, sidebar, footer, logo
   components/shared/             # small shared pieces used by pages (not shadcn primitives)
 components/ui/                   # shadcn primitives — see the shadcn CLI rule below
@@ -112,11 +112,11 @@ The **first** of each pattern becomes the reference; its task is opus or sonnet
 | Need | Copy from | What to copy |
 | --- | --- | --- |
 | Query hook + key factory | `features/system/api.ts` | `systemKeys` factory + `useXxx` hook over `apiClient`; per-query option overrides only with a spec reason |
-| CRUD hooks + invalidation | `features/projects/api.ts` | `projectKeys`, `unwrap`, list/detail/create/update/delete/restore hooks and what each invalidates |
+| CRUD hooks + invalidation | `features/projects/api.ts` | `projectKeys`, `unwrap`, list/detail/create/update/delete hooks and what each invalidates |
 | Optimistic update with rollback | `features/tasks/api.ts` → `useUpdateTaskStatus` | `cancelQueries`, snapshot lists + detail, `setQueriesData` in place, restore + toast on error, `refetchType: "none"` on success |
 | Form dialog | `features/projects/schemas.ts` + `components/project-form-dialog.tsx` | zod schema, `xxxFormDefaults`, `toXxxInput`, `XXX_FIELD_MAP` + `applyFieldErrors`, submit-error toast |
 | List page with URL state | `features/projects/components/projects-list.tsx` | nuqs params, debounced search, loading / error + Retry / empty states, pagination |
-| Detail page states | `features/projects/components/project-detail.tsx` | not found, in the trash + Restore, `leaving` guard after delete |
+| Detail page states | `features/projects/components/project-detail.tsx` | not found, `leaving` guard after delete |
 | Entity combobox | `features/tasks/components/project-picker.tsx` | shadcn Combobox over a list hook, icon in the box, "No … found" |
 | Optional date field | `features/tasks/components/due-date-field.tsx` | Calendar in a Popover, `YYYY-MM-DD` via `format`, never `toISOString`; clear button |
 | Domain component | `features/system/components/version-badge.tsx` | `"use client"` component in `features/<domain>/components/` consuming the domain hook |
