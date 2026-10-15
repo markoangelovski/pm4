@@ -3,7 +3,7 @@ id: prod-glossary
 title: Glossary
 status: draft
 owner: Marko Angelovski
-last_updated: 2026-10-14
+last_updated: 2026-10-15
 related: [prod-vision, api-data-model]
 ---
 
@@ -39,6 +39,10 @@ Use these terms consistently in specs, code, UI copy and API names.
 | Connection | One user's configured link to an integration (for PMSPA: URL, email, password), with a status | — | — |
 | Connector | The page under **Connectors** in the sidebar where the user works with a connected integration (e.g. Connectors → PMSPA) | `/app/connectors/pmspa` | — |
 | PMSPA | An external project management app with an API; the first integration (FR-INT-*) | — | — |
+| Link (sync link) | The pairing of one PM4 record with one PMSPA record, created by an import or a push. Later syncs follow it, so nothing is created twice (FR-INT-010) | — | — |
+| Import | Bringing selected PMSPA records into PM4 from the connector page (FR-INT-011) | — | — |
+| Push | Sending a PM4 record to PMSPA from its own screen (FR-INT-012) | — | — |
+| Sync flag | The icon beside a linked PM4 record; its tooltip shows the last sync time ("Synced with PMSPA on 15 October 2026 at 22:50", FR-INT-010) | — | — |
 
 > The legacy Event level is dropped. The legacy names (Day, Event) are not used in new code.
 
@@ -55,3 +59,4 @@ Use these terms consistently in specs, code, UI copy and API names.
 - 2026-10-09: Added *Booking*.
 - 2026-10-09: Added the dashboard's *Worked / Booked / Target*.
 - 2026-10-14: Added *Integration*, *Connection*, *Connector* and *PMSPA* (req-integrations).
+- 2026-10-15: Added *Link*, *Import*, *Push* and *Sync flag* (req-integrations).
