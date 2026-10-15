@@ -25,7 +25,6 @@ export const projects = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
-    deletedAt: timestamp("deleted_at", { withTimezone: true }),
     id: uuid("id")
       .primaryKey()
       .default(sql`uuidv7()`),
@@ -52,7 +51,6 @@ export const tasks = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
-    deletedAt: timestamp("deleted_at", { withTimezone: true }),
     dueDate: date("due_date", { mode: "string" }),
     status: taskStatus("status").notNull().default("upcoming"),
     id: uuid("id")
