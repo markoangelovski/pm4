@@ -25,7 +25,7 @@ export type TaskSort = (typeof TASK_SORTS)[number];
 
 /** `GET /tasks` query (API-TSK-002). */
 export class ListTasksQueryDto extends PageQueryDto {
-  /** Filter to a single project; no value or foreign/trashed project → empty items. */
+  /** Filter to a single project; no value or a foreign or unknown project → empty items. */
   @IsOptional()
   @IsUUID()
   projectId?: string;

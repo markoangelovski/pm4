@@ -6,7 +6,6 @@ import {
 } from "@nestjs/common";
 import { isISO8601, isUUID } from "class-validator";
 import type { RefDto } from "../common/dto/ref.dto.js";
-import { InTrashException } from "../common/exceptions/in-trash.exception.js";
 import { ProjectsService } from "../projects/projects.service.js";
 import { TasksService } from "../tasks/tasks.service.js";
 import { UsersRepository } from "../users/users.repository.js";
@@ -68,18 +67,18 @@ export async function assertNotFuture(
   }
 }
 
+/** A live link (`title` set), else the retained name of a deleted one (data-model.md *Retained names*). */
 function toRef(
   id: string | null,
   title: string | null,
-  deleted: boolean,
   snapshot: string | null
 ): RefDto | null {
-  if (title !== null) return { id, title, deleted };
+  if (title !== null) return { id, title, deleted: false };
   if (snapshot !== null) return { id: null, title: snapshot, deleted: true };
   return null;
 }
 
-/** The `TimeLog` read model, including trashed and retained names. */
+/** The `TimeLog` read model, with the retained names of deleted links. */
 export function toTimeLogDto(row: TimeLogRow): TimeLogResponseDto {
   return {
     id: row.id,
@@ -87,18 +86,8 @@ export function toTimeLogDto(row: TimeLogRow): TimeLogResponseDto {
     durationMinutes: row.durationMinutes,
     text: row.text,
     title: row.title,
-    project: toRef(
-      row.projectId,
-      row.projectTitle,
-      row.projectDeletedAt !== null,
-      row.deletedProjectTitle
-    ),
-    task: toRef(
-      row.taskId,
-      row.taskTitle,
-      row.taskDeletedAt !== null || row.taskProjectDeletedAt !== null,
-      row.deletedTaskTitle
-    ),
+    project: toRef(row.projectId, row.projectTitle, row.deletedProjectTitle),
+    task: toRef(row.taskId, row.taskTitle, row.deletedTaskTitle),
     excludeFromStats: row.excludeFromStats
   };
 }
@@ -305,38 +294,18 @@ export class TimeLogsService {
         }
         return { taskId, projectId: current.projectId };
       }
-      try {
-        const task = await this.tasksService.findOwned(userId, taskId);
-        if (projectId !== null && projectId !== task.projectId) {
-          this.projectMismatch();
-        }
-        return { taskId, projectId: task.projectId };
-      } catch (error) {
-        if (
-          error instanceof NotFoundException ||
-          error instanceof InTrashException
-        ) {
-          throw new NotFoundException("Task not found.");
-        }
-        throw error;
+      const task = await this.tasksService.findOwned(userId, taskId);
+      if (projectId !== null && projectId !== task.projectId) {
+        this.projectMismatch();
       }
+      return { taskId, projectId: task.projectId };
     }
 
     if (projectId !== null) {
       if (current && current.projectId === projectId) {
         return { taskId: null, projectId };
       }
-      try {
-        await this.projectsService.findOwned(userId, projectId);
-      } catch (error) {
-        if (
-          error instanceof NotFoundException ||
-          error instanceof InTrashException
-        ) {
-          throw new NotFoundException("Project not found.");
-        }
-        throw error;
-      }
+      await this.projectsService.findOwned(userId, projectId);
       return { taskId: null, projectId };
     }
 

@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable } from "@nestjs/common";
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException
+} from "@nestjs/common";
 import { UsersRepository } from "../users/users.repository.js";
 import {
   DayResponseDto,
@@ -68,5 +72,13 @@ export class WorkdaysService {
     await assertNotFuture(this.usersRepository, userId, date, "date");
     await this.timeRepository.upsertWorkday(userId, date, startMinute);
     return { workDate: date, startMinute };
+  }
+
+  /** API-WD-004. */
+  async deleteDay(userId: string, date: string): Promise<void> {
+    assertDate(date, "date");
+    if (!(await this.timeRepository.deleteDay(userId, date))) {
+      throw new NotFoundException("Workday not found.");
+    }
   }
 }

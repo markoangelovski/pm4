@@ -14,11 +14,7 @@ const MAX_RANGE_DAYS = 366;
 /** The `Ref` of a project row: the live project, else the retained name (data-model.md *Retained names*). */
 function toProjectRef(row: ReportProjectRow): RefDto | null {
   if (row.projectTitle !== null) {
-    return {
-      id: row.projectId,
-      title: row.projectTitle,
-      deleted: row.projectDeletedAt !== null
-    };
+    return { id: row.projectId, title: row.projectTitle, deleted: false };
   }
   if (row.deletedProjectTitle !== null) {
     return { id: null, title: row.deletedProjectTitle, deleted: true };

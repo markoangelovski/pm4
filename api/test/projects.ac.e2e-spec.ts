@@ -271,7 +271,7 @@ describe("Projects API (feat-prj-api)", () => {
     });
   });
 
-  it("AC-5 API-PRJ-002: the list holds only A's active projects, with live task counts", async () => {
+  it("AC-5 API-PRJ-002: the list holds only A's projects, with live task counts", async () => {
     const a = await insertUser();
     const b = await insertUser();
     const counted = await insertProject(a.id, { title: "Counted" });
@@ -283,11 +283,6 @@ describe("Projects API (feat-prj-api)", () => {
     ] as const) {
       await insertTask(a.id, counted.id, { status });
     }
-    await insertTask(a.id, counted.id, {
-      status: "completed",
-      deleted_at: new Date()
-    });
-    await insertProject(a.id, { title: "Trashed", deleted_at: new Date() });
     await insertProject(b.id, { title: "B's project" });
 
     const response = await as(a).get("/projects");
@@ -391,36 +386,30 @@ describe("Projects API (feat-prj-api)", () => {
     }
   });
 
-  it("AC-9 API-PRJ-003: GET one: own → 200; another user's, unknown or malformed → not-found; trashed → in-trash", async () => {
+  it("AC-9 API-PRJ-003: GET one: own → 200; another user's, unknown, malformed or deleted → not-found", async () => {
     const a = await insertUser();
     const b = await insertUser();
     const created = await as(a).post("/projects", { title: "Mine" });
     const bs = await insertProject(b.id, { title: "B's" });
-    const trashed = await insertProject(a.id, {
-      title: "Trashed",
-      deleted_at: new Date()
-    });
+    const deleted = await insertProject(a.id, { title: "Deleted" });
+    expect((await as(a).delete(`/projects/${deleted.id}`)).status).toBe(204);
 
     const own = await as(a).get(`/projects/${created.body.id}`);
     expect(own.status).toBe(200);
     expect(own.body).toEqual(created.body);
 
-    for (const id of [bs.id, randomUUID(), "abc"]) {
+    for (const id of [bs.id, randomUUID(), "abc", deleted.id]) {
       const response = await as(a).get(`/projects/${id}`);
       expect(response.status, id).toBe(404);
-      expect(response.body.type).toBe(errorType("not-found"));
+      expect(response.headers["content-type"]).toContain(
+        "application/problem+json"
+      );
+      expect(response.body).toMatchObject({
+        type: errorType("not-found"),
+        title: "Not Found",
+        status: 404
+      });
     }
-
-    const inTrash = await as(a).get(`/projects/${trashed.id}`);
-    expect(inTrash.status).toBe(404);
-    expect(inTrash.headers["content-type"]).toContain(
-      "application/problem+json"
-    );
-    expect(inTrash.body).toMatchObject({
-      type: errorType("in-trash"),
-      title: "Not Found",
-      status: 404
-    });
   });
 
   it("AC-10 API-PRJ-004: PATCH changes only the given fields and bumps updatedAt", async () => {
@@ -492,12 +481,11 @@ describe("Projects API (feat-prj-api)", () => {
     expect(foreign.status).toBe(404);
     expect(foreign.body.type).toBe(errorType("not-found"));
 
-    const trashed = await insertProject(a.id, { deleted_at: new Date() });
-    const inTrash = await as(a).patch(`/projects/${trashed.id}`, {
-      title: "X"
-    });
-    expect(inTrash.status).toBe(404);
-    expect(inTrash.body.type).toBe(errorType("in-trash"));
+    const deleted = await insertProject(a.id);
+    expect((await as(a).delete(`/projects/${deleted.id}`)).status).toBe(204);
+    const gone = await as(a).patch(`/projects/${deleted.id}`, { title: "X" });
+    expect(gone.status).toBe(404);
+    expect(gone.body.type).toBe(errorType("not-found"));
   });
 
   it("AC-11 API-PRJ-003: a user lead shows the user's current name; once the user is gone, the saved name as text", async () => {
@@ -527,14 +515,12 @@ describe("Projects API (feat-prj-api)", () => {
     });
   });
 
-  it("AC-12 API-PRJ-005: DELETE moves the project to the trash, leaving its tasks and updatedAt alone", async () => {
+  it("AC-1 API-PRJ-005: DELETE removes the project and its tasks for good", async () => {
     const a = await insertUser();
     const b = await insertUser();
-    const project = await insertProject(a.id, {
-      title: "To trash",
-      updated_at: daysAgo(2)
-    });
+    const project = await insertProject(a.id, { title: "To delete" });
     await insertTask(a.id, project.id);
+    await insertTask(a.id, project.id, { status: "completed" });
     const url = `/projects/${project.id}`;
 
     const deleted = await as(a).delete(url);
@@ -542,62 +528,38 @@ describe("Projects API (feat-prj-api)", () => {
 
     const read = await as(a).get(url);
     expect(read.status).toBe(404);
-    expect(read.body.type).toBe(errorType("in-trash"));
+    expect(read.body.type).toBe(errorType("not-found"));
     const list = await as(a).get("/projects");
     expect(list.body.items).toEqual([]);
-    const row = (await findProjectRow(project.id))!;
-    expect(row.deleted_at).not.toBeNull();
-    expect(row.updated_at.toISOString()).toBe(project.updated_at.toISOString());
-    expect((await findTaskRows(project.id)).map((t) => t.deleted_at)).toEqual([
-      null
-    ]);
+    expect(await findProjectRow(project.id)).toBeNull();
+    expect(await findTaskRows(project.id)).toEqual([]);
 
     const again = await as(a).delete(url);
     expect(again.status).toBe(404);
-    expect(again.body.type).toBe(errorType("in-trash"));
+    expect(again.body.type).toBe(errorType("not-found"));
 
-    const bs = await insertProject(b.id);
+    const bs = await insertProject(b.id, {
+      title: "B's",
+      updated_at: daysAgo(2)
+    });
     const foreign = await as(a).delete(`/projects/${bs.id}`);
     expect(foreign.status).toBe(404);
     expect(foreign.body.type).toBe(errorType("not-found"));
+    const unchanged = (await findProjectRow(bs.id))!;
+    expect(unchanged.title).toBe("B's");
+    expect(unchanged.updated_at.toISOString()).toBe(
+      bs.updated_at.toISOString()
+    );
   });
 
-  it("AC-13 API-PRJ-006: restore brings a trashed project back; individually deleted tasks stay out", async () => {
+  it("AC-3 API-PRJ-005: there is no restore endpoint", async () => {
     const a = await insertUser();
-    const b = await insertUser();
-    const project = await insertProject(a.id, { title: "Restore me" });
-    await insertTask(a.id, project.id, { status: "upcoming" });
-    await insertTask(a.id, project.id, {
-      status: "completed",
-      deleted_at: daysAgo(1)
-    });
-    const url = `/projects/${project.id}`;
-    expect((await as(a).delete(url)).status).toBe(204);
+    const project = await insertProject(a.id);
+    expect((await as(a).delete(`/projects/${project.id}`)).status).toBe(204);
 
-    const restored = await as(a).post(`${url}/restore`);
-    expect(restored.status).toBe(204);
-    const read = await as(a).get(url);
-    expect(read.status).toBe(200);
-    expect(read.body.taskCounts).toEqual({
-      upcoming: 1,
-      inProgress: 0,
-      completed: 0,
-      total: 1
-    });
-
-    const before = (await findProjectRow(project.id))!;
-    const active = await as(a).post(`${url}/restore`);
-    expect(active.status).toBe(204);
-    const after = (await findProjectRow(project.id))!;
-    expect(after.deleted_at).toBeNull();
-    expect(after.updated_at.toISOString()).toBe(
-      before.updated_at.toISOString()
-    );
-
-    const bs = await insertProject(b.id, { deleted_at: new Date() });
-    const foreign = await as(a).post(`/projects/${bs.id}/restore`);
-    expect(foreign.status).toBe(404);
-    expect(foreign.body.type).toBe(errorType("not-found"));
+    const restore = await as(a).post(`/projects/${project.id}/restore`);
+    expect(restore.status).toBe(404);
+    expect(await findProjectRow(project.id)).toBeNull();
   });
 
   it("AC-14 FR-PRJ-007: being a project's lead gives no access to it", async () => {
@@ -618,7 +580,7 @@ describe("Projects API (feat-prj-api)", () => {
     expect(read.body.type).toBe(errorType("not-found"));
   });
 
-  it("AC-15 API-PRJ-001…006: every /projects endpoint without a token → 401", async () => {
+  it("AC-15 API-PRJ-001…005: every /projects endpoint without a token → 401", async () => {
     const server = app.getHttpServer();
     const id = randomUUID();
     // Built one at a time: supertest closes its ephemeral server after a request.
@@ -628,8 +590,7 @@ describe("Projects API (feat-prj-api)", () => {
       () => request(server).get(`/api/v1/projects/${id}`),
       () =>
         request(server).patch(`/api/v1/projects/${id}`).send({ title: "T" }),
-      () => request(server).delete(`/api/v1/projects/${id}`),
-      () => request(server).post(`/api/v1/projects/${id}/restore`)
+      () => request(server).delete(`/api/v1/projects/${id}`)
     ];
 
     for (const call of calls) {

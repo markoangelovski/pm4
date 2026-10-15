@@ -25,7 +25,7 @@ import {
 import { UpdateProjectDto } from "./dto/update-project.dto.js";
 import { ProjectsService } from "./projects.service.js";
 
-/** `/api/v1/projects` (API-PRJ-001…006). A trashed project → `404 in-trash`. */
+/** `/api/v1/projects` (API-PRJ-001…005). */
 @ApiBearerAuth("bearer")
 @Controller("projects")
 export class ProjectsController {
@@ -41,7 +41,7 @@ export class ProjectsController {
     return this.projectsService.create(user.id, dto);
   }
 
-  /** The caller's projects that aren't in the trash (API-PRJ-002). */
+  /** The caller's projects (API-PRJ-002). */
   @Get()
   @ApiProblemResponses(400, 401)
   list(
@@ -72,27 +72,15 @@ export class ProjectsController {
     return this.projectsService.update(user.id, id, dto);
   }
 
-  /** Move the project to the trash (API-PRJ-005). */
+  /** Delete the project and its tasks permanently (API-PRJ-005). */
   @Delete(":id")
   @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiNoContentResponse({ description: "Moved to the trash." })
+  @ApiNoContentResponse({ description: "Deleted." })
   @ApiProblemResponses(401, 404)
   remove(
     @CurrentUser() user: AuthUser,
     @Param("id") id: string
   ): Promise<void> {
     return this.projectsService.remove(user.id, id);
-  }
-
-  /** Take the project out of the trash (API-PRJ-006). */
-  @Post(":id/restore")
-  @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiNoContentResponse({ description: "Restored, or already active." })
-  @ApiProblemResponses(401, 404)
-  restore(
-    @CurrentUser() user: AuthUser,
-    @Param("id") id: string
-  ): Promise<void> {
-    return this.projectsService.restore(user.id, id);
   }
 }

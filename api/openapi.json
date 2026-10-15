@@ -645,7 +645,7 @@
             "bearer": []
           }
         ],
-        "summary": "The caller's projects that aren't in the trash (API-PRJ-002).",
+        "summary": "The caller's projects (API-PRJ-002).",
         "tags": [
           "Projects"
         ]
@@ -814,7 +814,7 @@
         ],
         "responses": {
           "204": {
-            "description": "Moved to the trash."
+            "description": "Deleted."
           },
           "401": {
             "description": "Missing, invalid or expired credentials.",
@@ -852,66 +852,7 @@
             "bearer": []
           }
         ],
-        "summary": "Move the project to the trash (API-PRJ-005).",
-        "tags": [
-          "Projects"
-        ]
-      }
-    },
-    "/api/v1/projects/{id}/restore": {
-      "post": {
-        "operationId": "ProjectsController_restore",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "Restored, or already active."
-          },
-          "401": {
-            "description": "Missing, invalid or expired credentials.",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetailsDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not found.",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetailsDto"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Unexpected error.",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetailsDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Take the project out of the trash (API-PRJ-006).",
+        "summary": "Delete the project and its tasks permanently (API-PRJ-005).",
         "tags": [
           "Projects"
         ]
@@ -1043,7 +984,7 @@
             "name": "projectId",
             "required": false,
             "in": "query",
-            "description": "Filter to a single project; no value or foreign/trashed project → empty items.",
+            "description": "Filter to a single project; no value or a foreign or unknown project → empty items.",
             "schema": {
               "format": "uuid",
               "type": "string"
@@ -1276,7 +1217,7 @@
         ],
         "responses": {
           "204": {
-            "description": "Moved to the trash."
+            "description": "Deleted."
           },
           "401": {
             "description": "Missing, invalid or expired credentials.",
@@ -1314,76 +1255,7 @@
             "bearer": []
           }
         ],
-        "summary": "Move the task to the trash (API-TSK-005).",
-        "tags": [
-          "Tasks"
-        ]
-      }
-    },
-    "/api/v1/tasks/{id}/restore": {
-      "post": {
-        "operationId": "TasksController_restore",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "Restored, or already active."
-          },
-          "401": {
-            "description": "Missing, invalid or expired credentials.",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetailsDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not found.",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetailsDto"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Conflict.",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetailsDto"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Unexpected error.",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetailsDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Take the task out of the trash (API-TSK-006).",
+        "summary": "Delete the task permanently (API-TSK-005).",
         "tags": [
           "Tasks"
         ]
@@ -1604,6 +1476,74 @@
           }
         ],
         "summary": "Set the day start (API-WD-002).",
+        "tags": [
+          "Workdays"
+        ]
+      },
+      "delete": {
+        "operationId": "WorkdaysController_deleteDay",
+        "parameters": [
+          {
+            "name": "date",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "date",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Deleted."
+          },
+          "400": {
+            "description": "Validation failed: one entry in errors[] per invalid field.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid or expired credentials.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Delete the day's start and logs (API-WD-004).",
         "tags": [
           "Workdays"
         ]
@@ -3286,7 +3226,7 @@
           },
           "project": {
             "nullable": true,
-            "description": "The project `Ref` (trashed or purged → `deleted: true`); `null` for `unsorted` and `nonprod`.",
+            "description": "The project `Ref` (a deleted project → its retained name, `deleted: true`); `null` for `unsorted` and `nonprod`.",
             "type": "object",
             "allOf": [
               {

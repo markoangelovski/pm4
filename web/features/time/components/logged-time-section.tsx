@@ -16,6 +16,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { formatDuration, formatWorkDate } from "@/lib/time";
 import { routes } from "@/lib/routes";
 import { TIME_LOG_PAGE_SIZE, useTimeLogs } from "../api";
+import { DeletedName } from "./deleted-marker";
 
 /** SCR-044: the logged time of one project (with a Task column) or one task. */
 export function LoggedTimeSection({
@@ -111,6 +112,8 @@ export function LoggedTimeSection({
                           >
                             {l.task.title}
                           </Link>
+                        ) : l.task ? (
+                          <DeletedName title={l.task.title} />
                         ) : (
                           <span className="text-muted-foreground">—</span>
                         )}

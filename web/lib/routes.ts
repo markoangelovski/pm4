@@ -11,7 +11,6 @@ export const routes = {
     project: "/app/project",
     tasks: "/app/tasks",
     task: "/app/task",
-    trash: "/app/trash",
     settings: "/app/settings",
     userProfile: "/app/user-profile"
   }

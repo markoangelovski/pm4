@@ -111,7 +111,7 @@ describe("time pure logic (feat-tlog-web)", () => {
     expect(dayFigures(480, long, null, 0).percentBillable).toBe(0);
   });
 
-  it("AC-5 FR-TLOG-003 FR-TLOG-015: groupLogs by project and by task, Unsorted and Non-prod last, first-appearance order, purged refs by title", () => {
+  it("AC-5 FR-TLOG-003 FR-TLOG-015: groupLogs by project and by task, Unsorted and Non-prod last, first-appearance order, deleted refs by title", () => {
     expect(summary(ownerLogs, "project")).toEqual([
       {
         key: "p1",
@@ -188,7 +188,7 @@ describe("time pure logic (feat-tlog-web)", () => {
       ["nonprod", ["n"]]
     ]);
 
-    // Purged refs (id null) group by their title.
+    // Deleted refs (id null) group by their title.
     const gone = (id: string) =>
       log({ id, project: ref(null, "Old site", true) });
     expect(summary([gone("g1"), gone("g2")], "project")).toEqual([

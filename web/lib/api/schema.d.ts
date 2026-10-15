@@ -162,7 +162,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** The caller's projects that aren't in the trash (API-PRJ-002). */
+        /** The caller's projects (API-PRJ-002). */
         get: operations["ProjectsController_list"];
         put?: never;
         /** Create a project (API-PRJ-001). */
@@ -184,29 +184,12 @@ export interface paths {
         get: operations["ProjectsController_get"];
         put?: never;
         post?: never;
-        /** Move the project to the trash (API-PRJ-005). */
+        /** Delete the project and its tasks permanently (API-PRJ-005). */
         delete: operations["ProjectsController_remove"];
         options?: never;
         head?: never;
         /** Change the given fields (API-PRJ-004). */
         patch: operations["ProjectsController_update"];
-        trace?: never;
-    };
-    "/api/v1/projects/{id}/restore": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Take the project out of the trash (API-PRJ-006). */
-        post: operations["ProjectsController_restore"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
         trace?: never;
     };
     "/api/v1/tasks": {
@@ -238,29 +221,12 @@ export interface paths {
         get: operations["TasksController_get"];
         put?: never;
         post?: never;
-        /** Move the task to the trash (API-TSK-005). */
+        /** Delete the task permanently (API-TSK-005). */
         delete: operations["TasksController_remove"];
         options?: never;
         head?: never;
         /** Change the given fields (API-TSK-004). */
         patch: operations["TasksController_update"];
-        trace?: never;
-    };
-    "/api/v1/tasks/{id}/restore": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Take the task out of the trash (API-TSK-006). */
-        post: operations["TasksController_restore"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
         trace?: never;
     };
     "/api/v1/workdays": {
@@ -292,7 +258,8 @@ export interface paths {
         /** Set the day start (API-WD-002). */
         put: operations["WorkdaysController_setStart"];
         post?: never;
-        delete?: never;
+        /** Delete the day's start and logs (API-WD-004). */
+        delete: operations["WorkdaysController_deleteDay"];
         options?: never;
         head?: never;
         patch?: never;
@@ -741,7 +708,7 @@ export interface components {
         ReportProjectKind: "project" | "unsorted" | "nonprod";
         ReportProjectDto: {
             kind: components["schemas"]["ReportProjectKind"];
-            /** @description The project `Ref` (trashed or purged → `deleted: true`); `null` for `unsorted` and `nonprod`. */
+            /** @description The project `Ref` (a deleted project → its retained name, `deleted: true`); `null` for `unsorted` and `nonprod`. */
             project: components["schemas"]["RefDto"] | null;
             workedMinutes: number;
             bookedMinutes: number;
@@ -1309,7 +1276,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Moved to the trash. */
+            /** @description Deleted. */
             204: {
                 headers: {
                     [name: string]: unknown;
@@ -1406,53 +1373,6 @@ export interface operations {
             };
         };
     };
-    ProjectsController_restore: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Restored, or already active. */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Missing, invalid or expired credentials. */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
-                };
-            };
-            /** @description Not found. */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
-                };
-            };
-            /** @description Unexpected error. */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
-                };
-            };
-        };
-    };
     TasksController_list: {
         parameters: {
             query?: {
@@ -1464,7 +1384,7 @@ export interface operations {
                 status?: components["schemas"]["TaskStatus"][];
                 /** @description Sort order; `title` compares case-insensitively. Ties break on `id` descending. */
                 sort?: "updatedAt:desc" | "updatedAt:asc" | "dueDate:asc" | "dueDate:desc" | "title:asc" | "title:desc";
-                /** @description Filter to a single project; no value or foreign/trashed project → empty items. */
+                /** @description Filter to a single project; no value or a foreign or unknown project → empty items. */
                 projectId?: string;
                 /** @description Case-insensitive "contains" filter on the title; empty = no filter. */
                 q?: string;
@@ -1621,7 +1541,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Moved to the trash. */
+            /** @description Deleted. */
             204: {
                 headers: {
                     [name: string]: unknown;
@@ -1700,62 +1620,6 @@ export interface operations {
             };
             /** @description Not found. */
             404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
-                };
-            };
-            /** @description Unexpected error. */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
-                };
-            };
-        };
-    };
-    TasksController_restore: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Restored, or already active. */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Missing, invalid or expired credentials. */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
-                };
-            };
-            /** @description Not found. */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
-                };
-            };
-            /** @description Conflict. */
-            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -1905,6 +1769,62 @@ export interface operations {
             };
             /** @description Missing, invalid or expired credentials. */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Unexpected error. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+        };
+    };
+    WorkdaysController_deleteDay: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                date: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation failed: one entry in errors[] per invalid field. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Missing, invalid or expired credentials. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Not found. */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -40,14 +40,7 @@ export const projects = pgTable(
     externalLink: varchar("external_link", { length: 500 }),
     projectLead: varchar("project_lead", { length: 100 })
   },
-  (t) => [
-    index("projects_user_id_active_idx")
-      .on(t.userId)
-      .where(sql`${t.deletedAt} IS NULL`),
-    index("projects_user_id_deleted_idx")
-      .on(t.userId, t.deletedAt)
-      .where(sql`${t.deletedAt} IS NOT NULL`)
-  ]
+  (t) => [index("projects_user_id_idx").on(t.userId)]
 );
 
 export const tasks = pgTable(
@@ -80,15 +73,8 @@ export const tasks = pgTable(
     projectLead: varchar("project_lead", { length: 100 })
   },
   (t) => [
-    index("tasks_project_id_active_idx")
-      .on(t.projectId)
-      .where(sql`${t.deletedAt} IS NULL`),
-    index("tasks_user_id_status_active_idx")
-      .on(t.userId, t.status)
-      .where(sql`${t.deletedAt} IS NULL`),
-    index("tasks_user_id_deleted_idx")
-      .on(t.userId, t.deletedAt)
-      .where(sql`${t.deletedAt} IS NOT NULL`)
+    index("tasks_project_id_idx").on(t.projectId),
+    index("tasks_user_id_status_idx").on(t.userId, t.status)
   ]
 );
 

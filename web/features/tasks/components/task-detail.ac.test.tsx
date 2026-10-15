@@ -68,13 +68,12 @@ const docs: Task = {
 
 const res = (status: number) => new Response(null, { status });
 
-function notFound(slug: string, extra: Record<string, unknown> = {}) {
+function notFound(slug: string) {
   const body = {
     type: `https://pm4.angelovski.top/errors/${slug}`,
     title: "Not Found",
     status: 404,
-    detail: "Not found.",
-    ...extra
+    detail: "Not found."
   };
   return {
     error: body,
@@ -207,7 +206,7 @@ describe("TaskDetail (feat-tsk-web)", () => {
     expect(screen.getAllByText("—")).toHaveLength(4);
   });
 
-  it("AC-14 FR-TSK-004 FR-TRASH-003 SCR-031: not found, in the trash, its project in the trash, error with Retry", async () => {
+  it("AC-14 FR-TSK-004 SCR-031: not found, and error with Retry", async () => {
     detailResult = () => notFound("not-found");
     const missing = renderDetail();
     expect(await screen.findByText("Task not found")).toBeInTheDocument();
@@ -215,51 +214,8 @@ describe("TaskDetail (feat-tsk-web)", () => {
       "href",
       "/app/tasks"
     );
+    expect(screen.queryByRole("button", { name: /Restore/ })).toBeNull();
     missing.unmount();
-
-    detailResult = () =>
-      notFound("in-trash", { projectId: "p1", projectInTrash: false });
-    const trashed = renderDetail();
-    expect(
-      await screen.findByText("This task is in the trash")
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("link", { name: "Back to tasks" })
-    ).toBeInTheDocument();
-    api.POST.mockResolvedValueOnce({ response: res(204) });
-    detailResult = () => ({ data: docs, response: res(200) });
-    fireEvent.click(screen.getByRole("button", { name: "Restore" }));
-    expect(
-      await screen.findByRole("heading", { name: "Write the docs" })
-    ).toBeInTheDocument();
-    expect(api.POST).toHaveBeenCalledWith(
-      "/api/v1/tasks/{id}/restore",
-      expect.objectContaining({ params: { path: { id: "t1" } } })
-    );
-    trashed.unmount();
-
-    api.POST.mockReset();
-    detailResult = () =>
-      notFound("in-trash", { projectId: "p1", projectInTrash: true });
-    const projectTrashed = renderDetail();
-    expect(
-      await screen.findByText("This task's project is in the trash")
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText("Restore the project to see this task again.")
-    ).toBeInTheDocument();
-    api.POST.mockResolvedValueOnce({ response: res(204) });
-    detailResult = () => ({ data: docs, response: res(200) });
-    fireEvent.click(screen.getByRole("button", { name: "Restore project" }));
-    expect(
-      await screen.findByRole("heading", { name: "Write the docs" })
-    ).toBeInTheDocument();
-    expect(api.POST).toHaveBeenCalledTimes(1);
-    expect(api.POST).toHaveBeenCalledWith(
-      "/api/v1/projects/{id}/restore",
-      expect.objectContaining({ params: { path: { id: "p1" } } })
-    );
-    projectTrashed.unmount();
 
     detailResult = () => ({
       error: "Internal Server Error",
@@ -280,7 +236,7 @@ describe("TaskDetail (feat-tsk-web)", () => {
     expect(detailCalls()).toBeGreaterThan(before);
   });
 
-  it("AC-15 FR-TSK-007 SCR-031: delete confirmation → DELETE, toast, the project's page, no refetch", async () => {
+  it("AC-11 FR-TSK-007 SCR-031: permanent delete confirmation → DELETE, toast, the project's page, no refetch", async () => {
     detailResult = () => ({ data: docs, response: res(200) });
     renderDetail();
     await screen.findByRole("heading", { name: "Write the docs" });
@@ -291,7 +247,7 @@ describe("TaskDetail (feat-tsk-web)", () => {
     expect(within(dialog).getByText("Delete task?")).toBeInTheDocument();
     expect(
       within(dialog).getByText(
-        "“Write the docs” moves to the trash. You can restore it for 31 days."
+        "“Write the docs” will be deleted permanently. Its logged time stays."
       )
     ).toBeInTheDocument();
     const before = detailCalls();
@@ -304,7 +260,7 @@ describe("TaskDetail (feat-tsk-web)", () => {
       "/api/v1/tasks/{id}",
       expect.objectContaining({ params: { path: { id: "t1" } } })
     );
-    expect(toast).toHaveBeenCalledWith("Moved to trash");
+    expect(toast).toHaveBeenCalledWith("Task deleted");
     // Let any refetch the delete might trigger run, then check none did.
     await new Promise((resolve) => setTimeout(resolve, 50));
     expect(detailCalls()).toBe(before);
@@ -347,7 +303,7 @@ describe("TaskDetail logged time (feat-proto-sync-web)", () => {
     vi.useRealTimers();
   });
 
-  it("AC-16 FR-TLOG-012 SCR-031 SCR-044: the task page shows Logged time for the task, not while it's in the trash", async () => {
+  it("AC-16 FR-TLOG-012 SCR-031 SCR-044: the task page shows Logged time for the task, not when it isn't found", async () => {
     detailResult = () => ({ data: docs, response: res(200) });
     const view = renderDetail();
     expect(await screen.findByText("Logged time")).toBeInTheDocument();
@@ -360,12 +316,9 @@ describe("TaskDetail logged time (feat-proto-sync-web)", () => {
     view.unmount();
 
     api.GET.mockClear();
-    detailResult = () =>
-      notFound("in-trash", { projectId: "p1", projectInTrash: false });
+    detailResult = () => notFound("not-found");
     renderDetail();
-    expect(
-      await screen.findByText("This task is in the trash")
-    ).toBeInTheDocument();
+    expect(await screen.findByText("Task not found")).toBeInTheDocument();
     expect(screen.queryByText("Logged time")).toBeNull();
     expect(timeLogQueries()).toEqual([]);
   });

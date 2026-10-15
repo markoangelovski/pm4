@@ -174,7 +174,7 @@ export function ProjectHours(props: { rows: ReportProject[] }): React.JSX.Elemen
 - `HoursSummary`: SCR-010's card; percentages `Math.floor(part / whole × 100)`, 0 when `whole` is 0; the meter bars cap at 100 %.
 - `RunningTotals`: SCR-010's card; the legend's totals are the last point that isn't `null`; y ticks `hourTicks` of the largest value.
 - `ProjectHours`: SCR-010's card; rows in API order; a bar's width is `worked / max(worked)` of the card, at least `2.5rem`. Project link `${routes.app.project}?id=`;
-  `project.deleted` → plain text and "(deleted)", no link.
+  `project.deleted` → plain text with the deleted marker, no link.
 - `page.tsx`: `<Suspense><DashboardView /></Suspense>`, `metadata.title` "Dashboard".
 
 ## Acceptance criteria
@@ -194,7 +194,7 @@ tasks 2 upcoming, 3 in progress, 4 completed.
 | AC-7 | `/app` without parameters: heading **Dashboard**, "October 2026", *Time range* shows "This month", the report is requested for 2026-10-01..2026-10-31; tiles: Projects `12`, "3 with time logged in this range"; Tasks `9` with Upcoming 2, In progress 3, Completed 4; Workdays `3`, "Days with a start time, of 7 weekdays so far"; Average start `08:35`, "Earliest 08:00 · latest 09:15" | `web/features/dashboard/components/dashboard-view.ac.test.tsx` | T2 |
 | AC-8 | Choosing *Last 7 days* sets `?from=2026-10-03&to=2026-10-09` and requests that range; choosing *This month* clears both; `?from=2025-01-01&to=2026-10-09` requests 1–31 Oct; picking 1 Sep and 9 Oct in *Pick dates* and **Apply** sets `?from=2026-09-01&to=2026-10-09` and the select shows "Custom range" | `web/features/dashboard/components/dashboard-view.ac.test.tsx` | T2 |
 | AC-9 | Worked · target · booked shows `11h 30m`, `21h` with "3 days × 7h", `6h`, "9h 30m under target", Worked of target `54%`, Booked of worked `52%`, "5h 30m still to book"; Running totals' legend shows `11h 30m`, `21h`, `6h` | `web/features/dashboard/components/dashboard-view.ac.test.tsx` | T2 |
-| AC-10 | Hours by project lists Anthropic, Nvidia, PM Internal, Unsorted, Non-prod in that order; Anthropic links to `/app/project?id=…` and shows `4h 15m` and "2h booked"; PM Internal is plain text with "(deleted)"; Unsorted and Non-prod show `—`; a report with no projects → "Nothing logged in this range." | `web/features/dashboard/components/dashboard-view.ac.test.tsx` | T2 |
+| AC-10 | Hours by project lists Anthropic, Nvidia, PM Internal, Unsorted, Non-prod in that order; Anthropic links to `/app/project?id=…` and shows `4h 15m` and "2h booked"; PM Internal is plain text with the deleted marker (an element labelled "deleted"); Unsorted and Non-prod show `—`; a report with no projects → "Nothing logged in this range." | `web/features/dashboard/components/dashboard-view.ac.test.tsx` | T2 |
 | AC-11 | Workdays card shows "by day"; its **Table** tab has 22 rows, the 6 Oct row "Tue, 6 Oct 2026", `08:30`, `5h 15m`, `2h`, `7h` | `web/features/dashboard/components/dashboard-view.ac.test.tsx` | T2 |
 | AC-12 | Report pending → no card content, skeletons; report error → "Couldn't load the dashboard." and **Retry** requests it again; the project count failing → `—` in Projects while the rest shows | `web/features/dashboard/components/dashboard-view.ac.test.tsx` | T2 |
 | AC-13 | In the browser: the start line and the stacked bars share one hover with SCR-010's tooltip; a bar of a past day opens Logs on that date; 1 Jan–30 Jun shows weekly bars; a custom range over 366 days disables **Apply** with "Pick at most 366 days."; the colours read in light and dark | manual | T2 |

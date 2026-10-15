@@ -25,7 +25,7 @@ import {
 import { UpdateTaskDto } from "./dto/update-task.dto.js";
 import { TasksService } from "./tasks.service.js";
 
-/** `/api/v1/tasks` (API-TSK-001…006). A trashed task → `404 in-trash`. */
+/** `/api/v1/tasks` (API-TSK-001…005). */
 @ApiBearerAuth("bearer")
 @Controller("tasks")
 export class TasksController {
@@ -72,27 +72,15 @@ export class TasksController {
     return this.tasksService.update(user.id, id, dto);
   }
 
-  /** Move the task to the trash (API-TSK-005). */
+  /** Delete the task permanently (API-TSK-005). */
   @Delete(":id")
   @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiNoContentResponse({ description: "Moved to the trash." })
+  @ApiNoContentResponse({ description: "Deleted." })
   @ApiProblemResponses(401, 404)
   remove(
     @CurrentUser() user: AuthUser,
     @Param("id") id: string
   ): Promise<void> {
     return this.tasksService.remove(user.id, id);
-  }
-
-  /** Take the task out of the trash (API-TSK-006). */
-  @Post(":id/restore")
-  @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiNoContentResponse({ description: "Restored, or already active." })
-  @ApiProblemResponses(401, 404, 409)
-  restore(
-    @CurrentUser() user: AuthUser,
-    @Param("id") id: string
-  ): Promise<void> {
-    return this.tasksService.restore(user.id, id);
   }
 }

@@ -3,7 +3,7 @@ id: api-endpoints
 title: API Endpoints
 status: approved
 owner: Marko Angelovski
-last_updated: 2026-10-14
+last_updated: 2026-10-15
 related: [api-conventions, api-data-model, req-auth, req-projects, req-tasks, req-time-logs, req-reporting]
 ---
 
@@ -50,6 +50,7 @@ defines its request, response and errors. Paths are relative to `/api/v1` unless
 | API-WD-001 | GET | `/workdays?from=&to=` → `{items: [{workDate, startMinute, totalMinutes}]}` (the calendar's marks) | FR-TLOG-001 | specified |
 | API-WD-002 | PUT | `/workdays/{date}` `{startMinute}` | FR-TLOG-009 | specified |
 | API-WD-003 | GET | `/workdays/{date}` → `Day` (the start, the total and the day's logs in entry order) | FR-TLOG-001/002/003/009/015/016 | specified |
+| API-WD-004 | DELETE | `/workdays/{date}` (the day's start and its logs, with their bookings) | FR-TLOG-019 | specified |
 | API-TLOG-001 | GET | `/time-logs?projectId=&taskId=&page=&pageSize=` → logs of one project or task (`BookingLog`), with `totalMinutes` and `bookedMinutes` | FR-TLOG-012 | specified |
 | API-TLOG-002 | POST | `/time-logs` `{workDate, durationMinutes, text, title?, projectId?, taskId?, dayStartMinute?}` | FR-TLOG-004/009 | specified |
 | API-TLOG-003 | — | (removed) | — | — |
@@ -313,6 +314,13 @@ The calendar marks the dates whose `totalMinutes` > 0.
 **200:** `Day`. A date with no workday and no logs → `{ workDate, startMinute: null, totalMinutes: 0, logs: [] }`. Any real date is valid, including the future (empty).
 **Errors:** 400 invalid date · 401
 
+### API-WD-004: Delete a day
+`DELETE /workdays/{date}` · Auth: bearer · Implements: FR-TLOG-019
+Deletes, in one statement, the caller's workday on `date` (its start) and all the caller's logs with that `workDate`; their
+`bookingDate` goes with them. Logs of other dates whose `bookingDate` is `date` keep it (OQ-152).
+**204**
+**Errors:** 400 invalid date · 401 · 404 `not-found` when the caller has no workday and no logs on `date` (so also any future date)
+
 ### API-TLOG-001: List the logs of a project or task
 `GET /time-logs?projectId=&taskId=&page=&pageSize=` · Auth: bearer · Implements: FR-TLOG-012
 **Query:** exactly one of `projectId`, `taskId` (a UUID), else `400` (both or neither: field `projectId`, "exactly one of projectId and taskId is
@@ -408,3 +416,4 @@ None.
 - 2026-10-14: Index status of API-BOOK-001/002 and API-RPT-001 set to `specified` (controllers and detail sections exist). API-SYS-001 detailed from the
   built `api/src/health/` and set to `specified`.
 - 2026-10-14: Approved by the owner.
+- 2026-10-15: API-WD-004 *Delete a day* (OQ-152, prototype `51c6200`). Back to `review` (feat-hard-delete).

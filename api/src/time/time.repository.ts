@@ -12,7 +12,6 @@ import {
   sql,
   type SQL
 } from "drizzle-orm";
-import { alias } from "drizzle-orm/pg-core";
 import { DRIZZLE, type DrizzleDb } from "../database/drizzle.js";
 import {
   projects,
@@ -51,7 +50,7 @@ export interface DayStart {
   startMinute: number;
 }
 
-/** A log with its task and project (also trashed ones) and the retained names. */
+/** A log with its task and project (also deleted ones) and the retained names. */
 export interface TimeLogRow {
   id: string;
   workDate: string;
@@ -65,13 +64,8 @@ export interface TimeLogRow {
   deletedTaskTitle: string | null;
   deletedProjectTitle: string | null;
   taskTitle: string | null;
-  taskDeletedAt: Date | null;
-  taskProjectDeletedAt: Date | null;
   projectTitle: string | null;
-  projectDeletedAt: Date | null;
 }
-
-const taskProject = alias(projects, "task_project");
 
 /** One dashboard day: its workday start (if any) and the sums of its logs. */
 export interface ReportDayRow {
@@ -81,12 +75,11 @@ export interface ReportDayRow {
   bookedMinutes: number;
 }
 
-/** One dashboard project row: a `kind` group, with the retained name for purged projects. */
+/** One dashboard project row: a `kind` group, with the retained name for deleted projects. */
 export interface ReportProjectRow {
   kind: ReportProjectKind;
   projectId: string | null;
   projectTitle: string | null;
-  projectDeletedAt: Date | null;
   deletedProjectTitle: string | null;
   workedMinutes: number;
   bookedMinutes: number;
@@ -178,6 +171,15 @@ export class TimeRepository {
           .where(and(eq(timeLogs.userId, userId), eq(timeLogs.id, id)));
       }
     });
+  }
+
+  /** API-WD-004 (D3): the day's workday and logs (their bookings go with them). false = there was neither. */
+  async deleteDay(userId: string, date: string): Promise<boolean> {
+    const result = await this.db.execute<{ n: number }>(sql`
+      WITH l AS (DELETE FROM ${timeLogs} WHERE ${timeLogs.userId} = ${userId} AND ${timeLogs.workDate} = ${date} RETURNING 1),
+           w AS (DELETE FROM ${workdays} WHERE ${workdays.userId} = ${userId} AND ${workdays.workDate} = ${date} RETURNING 1)
+      SELECT ((SELECT count(*) FROM l) + (SELECT count(*) FROM w))::int AS n`);
+    return result.rows[0].n > 0;
   }
 
   async deleteLog(userId: string, id: string): Promise<void> {
@@ -381,12 +383,10 @@ export class TimeRepository {
       project_id: string | null;
       deleted_project_title: string | null;
       project_title: string | null;
-      project_deleted_at: Date | null;
       worked: number;
       booked: number;
     }>(sql`
       SELECT g.kind, g.project_id, g.deleted_project_title, p.title AS project_title,
-             p.deleted_at AS project_deleted_at,
              SUM(g.duration_minutes)::int AS worked,
              COALESCE(SUM(g.duration_minutes) FILTER (WHERE g.booking_date IS NOT NULL), 0)::int AS booked
       FROM (
@@ -400,13 +400,12 @@ export class TimeRepository {
         WHERE user_id = ${userId} AND work_date BETWEEN ${from}::date AND ${to}::date
       ) g
       LEFT JOIN projects p ON p.id = g.project_id
-      GROUP BY g.kind, g.project_id, g.deleted_project_title, p.title, p.deleted_at
+      GROUP BY g.kind, g.project_id, g.deleted_project_title, p.title
     `);
     return result.rows.map((row) => ({
       kind: row.kind,
       projectId: row.project_id,
       projectTitle: row.project_title,
-      projectDeletedAt: row.project_deleted_at,
       deletedProjectTitle: row.deleted_project_title,
       workedMinutes: row.worked,
       bookedMinutes: row.booked
@@ -428,14 +427,10 @@ export class TimeRepository {
         deletedTaskTitle: timeLogs.deletedTaskTitle,
         deletedProjectTitle: timeLogs.deletedProjectTitle,
         taskTitle: tasks.title,
-        taskDeletedAt: tasks.deletedAt,
-        taskProjectDeletedAt: taskProject.deletedAt,
-        projectTitle: projects.title,
-        projectDeletedAt: projects.deletedAt
+        projectTitle: projects.title
       })
       .from(timeLogs)
       .leftJoin(tasks, eq(timeLogs.taskId, tasks.id))
-      .leftJoin(taskProject, eq(tasks.projectId, taskProject.id))
       .leftJoin(projects, eq(timeLogs.projectId, projects.id))
       .$dynamic();
   }

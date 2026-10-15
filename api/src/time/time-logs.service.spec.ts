@@ -135,7 +135,7 @@ describe("TimeLogsService", () => {
       });
     });
 
-    it("a purged-project log unlinked with projectId null → retained names and booking cleared", async () => {
+    it("a deleted-project log unlinked with projectId null → retained names and booking cleared", async () => {
       repository.findLog.mockResolvedValue({
         ...booked,
         projectId: null,
@@ -170,7 +170,7 @@ describe("TimeLogsService", () => {
       });
     });
 
-    it("a purged-project log keeps its booking through an edit", async () => {
+    it("a deleted-project log keeps its booking through an edit", async () => {
       repository.findLog.mockResolvedValue({
         ...booked,
         projectId: null,

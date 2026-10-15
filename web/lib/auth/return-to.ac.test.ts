@@ -71,7 +71,7 @@ describe("returnTo helpers (feat-land-app-route-split)", () => {
   });
 
   it("AC-5 FR-AUTH-001: postSignInPath exact outputs (default /app, also the Go to app target)", () => {
-    expect(postSignInPath("/app/trash")).toBe("/app/trash");
+    expect(postSignInPath("/app/settings")).toBe("/app/settings");
     expect(postSignInPath(null)).toBe("/app");
     expect(postSignInPath("//evil.example/")).toBe("/app");
     expect(postSignInPath("/app/projects?x=1")).toBe("/app/projects?x=1");

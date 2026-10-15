@@ -1,6 +1,5 @@
-import { ConflictException, NotFoundException } from "@nestjs/common";
+import { NotFoundException } from "@nestjs/common";
 import { Test, TestingModule } from "@nestjs/testing";
-import { InTrashException } from "../common/exceptions/in-trash.exception.js";
 import { ProjectsService } from "../projects/projects.service.js";
 import { ProjectLeadService } from "../users/project-lead.service.js";
 import { UsersRepository } from "../users/users.repository.js";
@@ -16,7 +15,6 @@ function row(overrides: Partial<TaskRow> = {}): TaskRow {
     id: ID,
     projectId: PROJECT_ID,
     projectTitle: "Web",
-    projectDeletedAt: null,
     title: "Fix",
     description: null,
     externalLink: null,
@@ -28,7 +26,6 @@ function row(overrides: Partial<TaskRow> = {}): TaskRow {
     dueDate: null,
     createdAt: new Date("2026-10-01T08:00:00.000Z"),
     updatedAt: new Date("2026-10-02T08:00:00.000Z"),
-    deletedAt: null,
     loggedMinutes: 0,
     ...overrides
   };
@@ -41,7 +38,7 @@ describe("TasksService", () => {
     findById: vi.fn(),
     list: vi.fn(),
     update: vi.fn(),
-    setDeletedAt: vi.fn()
+    delete: vi.fn()
   };
   const projectsService = { findOwned: vi.fn() };
 
@@ -86,57 +83,20 @@ describe("TasksService", () => {
     expect(repository.findById).not.toHaveBeenCalled();
   });
 
-  it("findOwned: missing → not found, not in-trash", async () => {
+  it("findOwned: missing → not found", async () => {
     repository.findById.mockResolvedValue(null);
-    const error = await service
-      .findOwned("user-1", ID)
-      .catch((e: unknown) => e);
-    expect(error).toBeInstanceOf(NotFoundException);
-    expect(error).not.toBeInstanceOf(InTrashException);
-  });
-
-  it("findOwned: a trashed task → in-trash unless allowed", async () => {
-    const trashed = row({ deletedAt: new Date() });
-    repository.findById.mockResolvedValue(trashed);
     await expect(service.findOwned("user-1", ID)).rejects.toBeInstanceOf(
-      InTrashException
+      NotFoundException
     );
-    await expect(
-      service.findOwned("user-1", ID, { allowTrashed: true })
-    ).resolves.toBe(trashed);
   });
 
-  it("findOwned: a trashed project → in-trash with projectInTrash", async () => {
-    const inTrashProject = row({ projectDeletedAt: new Date() });
-    repository.findById.mockResolvedValue(inTrashProject);
-    const error = await service
-      .findOwned("user-1", ID)
-      .catch((e: unknown) => e);
-    expect(error).toBeInstanceOf(InTrashException);
-    expect(JSON.stringify((error as InTrashException).getResponse())).toContain(
-      PROJECT_ID
-    );
-    await expect(
-      service.findOwned("user-1", ID, { allowTrashed: true })
-    ).resolves.toBe(inTrashProject);
-  });
-
-  it("create: a missing or trashed project → 404 'Project not found.', nothing inserted", async () => {
+  it("create: a missing project → 404 'Project not found.', nothing inserted", async () => {
     projectsService.findOwned.mockRejectedValueOnce(
       new NotFoundException("Project not found.")
     );
     await expect(
       service.create("user-1", { projectId: PROJECT_ID, title: "Fix" })
     ).rejects.toThrow("Project not found.");
-
-    projectsService.findOwned.mockRejectedValueOnce(
-      new InTrashException("Project is in the trash.")
-    );
-    const error = await service
-      .create("user-1", { projectId: PROJECT_ID, title: "Fix" })
-      .catch((e: unknown) => e);
-    expect(error).toBeInstanceOf(NotFoundException);
-    expect(error).not.toBeInstanceOf(InTrashException);
     expect(repository.insert).not.toHaveBeenCalled();
   });
 
@@ -200,52 +160,32 @@ describe("TasksService", () => {
     );
   });
 
-  it("update: a move into a trashed project → 404, nothing written", async () => {
+  it("update: a move into a missing project → 404, nothing written", async () => {
     repository.findById.mockResolvedValue(row());
     projectsService.findOwned.mockRejectedValue(
-      new InTrashException("Project is in the trash.")
+      new NotFoundException("Project not found.")
     );
-    const error = await service
-      .update("user-1", ID, { projectId: OTHER_PROJECT_ID })
-      .catch((e: unknown) => e);
-    expect(error).toBeInstanceOf(NotFoundException);
-    expect(error).not.toBeInstanceOf(InTrashException);
+    await expect(
+      service.update("user-1", ID, { projectId: OTHER_PROJECT_ID })
+    ).rejects.toThrow("Project not found.");
     expect(repository.update).not.toHaveBeenCalled();
   });
 
-  it("remove sets deletedAt; a trashed task → in-trash", async () => {
-    repository.findById.mockResolvedValue(row());
+  it("remove deletes the task; not the caller's → not found", async () => {
+    repository.delete.mockResolvedValue(true);
     await service.remove("user-1", ID);
-    expect(repository.setDeletedAt).toHaveBeenCalledWith(
-      "user-1",
-      ID,
-      expect.any(Date)
-    );
+    expect(repository.delete).toHaveBeenCalledWith("user-1", ID);
 
-    repository.findById.mockResolvedValue(row({ deletedAt: new Date() }));
+    repository.delete.mockResolvedValue(false);
     await expect(service.remove("user-1", ID)).rejects.toBeInstanceOf(
-      InTrashException
+      NotFoundException
     );
   });
 
-  it("restore clears deletedAt only for a trashed task", async () => {
-    repository.findById.mockResolvedValue(row({ deletedAt: new Date() }));
-    await service.restore("user-1", ID);
-    expect(repository.setDeletedAt).toHaveBeenCalledWith("user-1", ID, null);
-
-    repository.setDeletedAt.mockReset();
-    repository.findById.mockResolvedValue(row());
-    await service.restore("user-1", ID);
-    expect(repository.setDeletedAt).not.toHaveBeenCalled();
-  });
-
-  it("restore: a task in a trashed project → 409, nothing written", async () => {
-    repository.findById.mockResolvedValue(
-      row({ deletedAt: new Date(), projectDeletedAt: new Date() })
+  it("remove: a non-UUID id → not found, without a query", async () => {
+    await expect(service.remove("user-1", "abc")).rejects.toBeInstanceOf(
+      NotFoundException
     );
-    await expect(service.restore("user-1", ID)).rejects.toBeInstanceOf(
-      ConflictException
-    );
-    expect(repository.setDeletedAt).not.toHaveBeenCalled();
+    expect(repository.delete).not.toHaveBeenCalled();
   });
 });

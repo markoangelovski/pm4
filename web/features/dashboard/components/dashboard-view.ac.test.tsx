@@ -374,7 +374,11 @@ describe("DashboardView (feat-rpt-web)", () => {
     expect(
       within(card).queryByRole("link", { name: /PM Internal/ })
     ).not.toBeInTheDocument();
-    expect(around(/PM Internal/, "(deleted)", card)).toBeTruthy();
+    expect(
+      within(around(/PM Internal/, "1h", card)).getByRole("img", {
+        name: "deleted"
+      })
+    ).toBeInTheDocument();
 
     expect(within(card).queryByRole("link", { name: /Unsorted/ })).toBeNull();
     expect(within(card).queryByRole("link", { name: /Non-prod/ })).toBeNull();

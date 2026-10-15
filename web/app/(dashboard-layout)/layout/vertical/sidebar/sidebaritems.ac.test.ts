@@ -28,17 +28,11 @@ describe("Sidebar items (feat-shell-sidebar-sections)", () => {
     ]);
   });
 
-  it("AC-2 OQ-054: footerItems is one section without a heading: Trash, then Settings", () => {
+  it("AC-2 OQ-054: footerItems is one section without a heading: Settings only", () => {
     expect(footerItems).toHaveLength(1);
     expect(footerItems[0].heading).toBeUndefined();
     expect(shape(footerItems)).toEqual([
-      [
-        undefined,
-        [
-          ["trash", "Trash", "/app/trash"],
-          ["settings", "Settings", "/app/settings"]
-        ]
-      ]
+      [undefined, [["settings", "Settings", "/app/settings"]]]
     ]);
   });
 
@@ -53,7 +47,6 @@ describe("Sidebar items (feat-shell-sidebar-sections)", () => {
         "/app/tasks",
         "/app/time",
         "/app/bookings",
-        "/app/trash",
         "/app/settings"
       ].sort()
     );

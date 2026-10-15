@@ -52,10 +52,7 @@ describe("BookingsService", () => {
         deletedTaskTitle: null,
         deletedProjectTitle: "Old",
         taskTitle: null,
-        taskDeletedAt: null,
-        taskProjectDeletedAt: null,
-        projectTitle: null,
-        projectDeletedAt: null
+        projectTitle: null
       }
     ]);
     const result = await service.list("u", {

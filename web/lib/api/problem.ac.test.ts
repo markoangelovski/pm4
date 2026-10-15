@@ -7,11 +7,11 @@ import {
   type ProblemDetails
 } from "./problem";
 
-const inTrash: ProblemDetails = {
-  type: "https://pm4.angelovski.top/errors/in-trash",
+const projectNotFound: ProblemDetails = {
+  type: "https://pm4.angelovski.top/errors/not-found",
   title: "Not Found",
   status: 404,
-  detail: "The project is in the trash."
+  detail: "Project not found."
 };
 
 function problemResponse(body: ProblemDetails): Response {
@@ -31,7 +31,7 @@ const fieldMap = {
 } as const;
 
 describe("unwrap / unwrapVoid (feat-prj-web)", () => {
-  it("AC-1 API errors: 2xx → data; 404 in-trash → ApiError with slug and detail; 500 non-JSON → problem null; 204 → no throw", () => {
+  it("AC-1 API errors: 2xx → data; 404 not-found → ApiError with slug and detail; 500 non-JSON → problem null; 204 → no throw", () => {
     expect(
       unwrap({
         data: { id: "p1" },
@@ -41,15 +41,18 @@ describe("unwrap / unwrapVoid (feat-prj-web)", () => {
 
     let caught: unknown;
     try {
-      unwrap({ error: inTrash, response: problemResponse(inTrash) });
+      unwrap({
+        error: projectNotFound,
+        response: problemResponse(projectNotFound)
+      });
     } catch (e) {
       caught = e;
     }
     expect(caught).toBeInstanceOf(ApiError);
     const notFound = caught as ApiError;
     expect(notFound.status).toBe(404);
-    expect(notFound.slug).toBe("in-trash");
-    expect(notFound.problem?.detail).toBe("The project is in the trash.");
+    expect(notFound.slug).toBe("not-found");
+    expect(notFound.problem?.detail).toBe("Project not found.");
 
     caught = undefined;
     try {

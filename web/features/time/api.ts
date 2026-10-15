@@ -155,6 +155,20 @@ export function useDeleteLog(): UseMutationResult<void, Error, TimeLog> {
   });
 }
 
+/** API-WD-004: deletes the day's start and logs; invalidates timeKeys.all, projectKeys.all and taskKeys.all (D3). */
+export function useDeleteDay(): UseMutationResult<void, Error, string> {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (date: string) =>
+      unwrapVoid(
+        await apiClient.DELETE("/api/v1/workdays/{date}", {
+          params: { path: { date } }
+        })
+      ),
+    onSuccess: () => refreshAfterLogChange(queryClient)
+  });
+}
+
 /** API-WD-002, then invalidates timeKeys.day(date) and timeKeys.workdays(). */
 export function useSetDayStart(
   date: string

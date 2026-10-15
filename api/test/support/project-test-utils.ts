@@ -16,7 +16,6 @@ export interface ProjectDbRow {
   project_lead: string | null;
   created_at: Date;
   updated_at: Date;
-  deleted_at: Date | null;
 }
 
 export interface TaskDbRow {
@@ -27,7 +26,6 @@ export interface TaskDbRow {
   title: string;
   created_at: Date;
   updated_at: Date;
-  deleted_at: Date | null;
 }
 
 export async function insertProject(
@@ -42,15 +40,14 @@ export async function insertProject(
       | "project_lead_user_id"
       | "created_at"
       | "updated_at"
-      | "deleted_at"
     >
   > = {}
 ): Promise<ProjectDbRow> {
   const now = new Date();
   const result = await testDb().query<ProjectDbRow>(
     `INSERT INTO projects (user_id, title, description, external_link, project_lead,
-       project_lead_user_id, created_at, updated_at, deleted_at)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,
+       project_lead_user_id, created_at, updated_at)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
     [
       userId,
       fields.title ?? "Seeded project",
@@ -59,8 +56,7 @@ export async function insertProject(
       fields.project_lead ?? null,
       fields.project_lead_user_id ?? null,
       fields.created_at ?? now,
-      fields.updated_at ?? fields.created_at ?? now,
-      fields.deleted_at ?? null
+      fields.updated_at ?? fields.created_at ?? now
     ]
   );
   return result.rows[0];
@@ -69,17 +65,16 @@ export async function insertProject(
 export async function insertTask(
   userId: string,
   projectId: string,
-  fields: Partial<Pick<TaskDbRow, "status" | "title" | "deleted_at">> = {}
+  fields: Partial<Pick<TaskDbRow, "status" | "title">> = {}
 ): Promise<TaskDbRow> {
   const result = await testDb().query<TaskDbRow>(
-    `INSERT INTO tasks (user_id, project_id, status, title, deleted_at)
-     VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+    `INSERT INTO tasks (user_id, project_id, status, title)
+     VALUES ($1, $2, $3, $4) RETURNING *`,
     [
       userId,
       projectId,
       fields.status ?? "upcoming",
-      fields.title ?? "Seeded task",
-      fields.deleted_at ?? null
+      fields.title ?? "Seeded task"
     ]
   );
   return result.rows[0];

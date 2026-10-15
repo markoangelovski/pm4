@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
@@ -122,6 +123,12 @@ function LogForm({
     control,
     name: ["date", "dayStart", "duration", "project", "task"]
   });
+  // OQ-150: a deleted project/task stays in its box until another one is picked or the box is cleared.
+  const [keepDeleted, setKeepDeleted] = useState(true);
+  const deletedProject =
+    keepDeleted && log?.project && !log.project.id ? log.project.title : null;
+  const deletedTask =
+    keepDeleted && log?.task && !log.task.id ? log.task.title : null;
   const day = useDay(date);
   // Editing keeps the log's own date's start; moving it to a day without a start asks for one.
   const needsDayStart = day.data?.startMinute === null;
@@ -145,8 +152,11 @@ function LogForm({
       return;
     }
     try {
+      // Dropping a deleted name relinks the log too, which clears the saved names (API-TLOG-004).
+      const hadDeleted = [log?.project, log?.task].some((r) => r && !r.id);
       const linkChanged =
         !log ||
+        (hadDeleted && !keepDeleted) ||
         (values.project?.id ?? null) !== (log.project?.id ?? null) ||
         (values.task?.id ?? null) !== (log.task?.id ?? null);
       await save.mutateAsync(toLogInput(values, needsDayStart, linkChanged));
@@ -283,8 +293,10 @@ function LogForm({
                 <LogProjectPicker
                   id="log-project"
                   value={task ? task.project : field.value}
+                  deletedTitle={deletedProject}
                   disabled={!!task}
                   onChange={(p) => {
+                    setKeepDeleted(false);
                     field.onChange(p);
                     if (!p || (task && task.project.id !== p.id))
                       setValue("task", null);
@@ -307,8 +319,10 @@ function LogForm({
                 <TaskPicker
                   id="log-task"
                   value={field.value}
+                  deletedTitle={deletedTask}
                   projectId={project?.id ?? null}
                   onChange={(t) => {
+                    setKeepDeleted(false);
                     field.onChange(t);
                     if (t) setValue("project", t.project);
                   }}

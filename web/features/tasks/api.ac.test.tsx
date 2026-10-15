@@ -347,4 +347,20 @@ describe("task mutations (feat-tsk-web)", () => {
     );
     expect(invalidated(remove.queryClient, projectListKey)).toBe(true);
   });
+
+  it("AC-9 FR-TSK-007 FR-TLOG-014: useDeleteTask also invalidates the time queries", async () => {
+    const timeKey = ["time", "day", "2026-10-06"] as const;
+    api.DELETE.mockResolvedValueOnce({ response: res(204) });
+    const remove = setup(
+      () => useDeleteTask(),
+      (queryClient) => {
+        seed(queryClient);
+        queryClient.setQueryData(timeKey, {});
+      }
+    );
+    act(() => remove.result.current.mutate(task()));
+    await waitFor(() => expect(remove.result.current.isSuccess).toBe(true));
+    expect(invalidated(remove.queryClient, listKey)).toBe(true);
+    expect(invalidated(remove.queryClient, timeKey)).toBe(true);
+  });
 });

@@ -5,6 +5,7 @@ import { FolderKanban } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ProjectIcon } from "@/features/projects/components/project-icon";
 import { formatDuration } from "@/lib/time";
+import { DeletedName } from "@/features/time/components/deleted-marker";
 import { routes } from "@/lib/routes";
 import type { ReportProject } from "../stats";
 
@@ -19,12 +20,7 @@ function Name({ row }: { row: ReportProject }) {
   const project = row.project;
   const title = project?.title ?? "";
   if (!project || project.deleted || !project.id) {
-    return (
-      <span className="min-w-0 truncate">
-        <span>{title}</span>{" "}
-        <span className="text-muted-foreground">(deleted)</span>
-      </span>
-    );
+    return <DeletedName title={title} />;
   }
   return (
     <Link
