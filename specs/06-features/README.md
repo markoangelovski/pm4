@@ -47,3 +47,4 @@ A feature spec links to those. It doesn't copy them.
 | Dashboard API: the dashboard report | [rpt-api.md](rpt-api.md) | M5 | approved |
 | Dashboard web: the dashboard page | [rpt-web.md](rpt-web.md) | M5 | approved |
 | Prototype sync: logged time on projects and tasks, Dashboard and Bookings from the prototype | [proto-sync-web.md](proto-sync-web.md) | M4 | approved |
+| Permanent delete of projects and tasks, and Delete day | [hard-delete.md](hard-delete.md) | M4 | approved |

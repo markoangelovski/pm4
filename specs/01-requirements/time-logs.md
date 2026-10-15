@@ -3,7 +3,7 @@ id: req-time-logs
 title: Time Capture (Workdays and Time Logs)
 status: approved
 owner: Marko Angelovski
-last_updated: 2026-10-14
+last_updated: 2026-10-15
 related: [req-projects, req-tasks, req-reporting, api-endpoints, api-data-model, web-screens]
 ---
 
@@ -207,6 +207,16 @@ statistics** badge.
 **Acceptance criteria:**
 - Given a day with 7 h on projects and 1 h excluded, and a target of 7 h, then *Logged* is `8h`, *% billable* `100%`, *Overtime* `0h`, and the bar chart has a "Non-prod" bar of 1 h.
 
+### FR-TLOG-019: Delete day
+**Priority:** Must
+**Statement:** From the day view, after confirmation, the user deletes the viewed day: its workday start (FR-TLOG-009) and all
+its logs are deleted permanently, with their booking dates (FR-BOOK-004). Logs worked on other days and booked to that date
+keep their booking. A day with no start and no logs can't be deleted (OQ-152).
+**Acceptance criteria:**
+- Given a day with a start, two logs (one booked to that day) and a log of an earlier day booked to it, when the day is deleted,
+  then the day has no start and no logs, and the earlier day's log is still booked to it.
+- Given a day with no start and no logs, then **Delete day** is disabled.
+
 ## Out of scope
 - Ordering, inserting or repeating logs, per-log clock times, break logs, the legacy "event" level.
 - Per-day targets, a date-range view of the day screen, exports.
@@ -226,3 +236,4 @@ None.
 - 2026-10-09: Approved by the owner.
 - 2026-10-11: FR-TLOG-012: the booked total and each log's booking date; the row shows the log text, and its date links to the day (OQ-135, prototype `fa9a030`). Sample names renamed (OQ-136). Back to `review` (feat-proto-sync-web).
 - 2026-10-11: Approved by the owner.
+- 2026-10-15: FR-TLOG-019 *Delete day* (OQ-152). Back to `review` (feat-hard-delete).

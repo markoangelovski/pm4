@@ -7,7 +7,6 @@ import {
   closeTestClients,
   deleteTestUsers,
   insertUser,
-  testDb,
   type UserRow
 } from "./support/auth-test-utils.js";
 import {
@@ -49,7 +48,13 @@ interface Body extends TimeLogBody {
   startMinute: number | null;
   totalMinutes: number;
   logs: TimeLogBody[];
-  items: { workDate: string; startMinute: number; totalMinutes: number }[];
+  items: {
+    id: string;
+    workDate: string;
+    startMinute: number;
+    totalMinutes: number;
+    bookingDate: string | null;
+  }[];
   type: string;
   errors?: { field: string; message: string }[];
 }
@@ -62,18 +67,6 @@ interface Res {
 async function send(req: request.Test): Promise<Res> {
   const response = await req;
   return { status: response.status, body: response.body as Body };
-}
-
-async function trashTask(id: string): Promise<void> {
-  await testDb().query("UPDATE tasks SET deleted_at = now() WHERE id = $1", [
-    id
-  ]);
-}
-
-async function trashProject(id: string): Promise<void> {
-  await testDb().query("UPDATE projects SET deleted_at = now() WHERE id = $1", [
-    id
-  ]);
 }
 
 describe("Time logging API (feat-tlog-api)", () => {
@@ -160,11 +153,27 @@ describe("Time logging API (feat-tlog-api)", () => {
     return { a, p, q, t, u };
   };
 
-  const ref = (row: ProjectDbRow | TaskDbRow, deleted = false) => ({
+  const ref = (row: ProjectDbRow | TaskDbRow) => ({
     id: row.id,
     title: row.title,
-    deleted
+    deleted: false
   });
+
+  /** The `Ref` of a deleted project or task: no id, its retained name. */
+  const gone = (row: ProjectDbRow | TaskDbRow) => ({
+    id: null,
+    title: row.title,
+    deleted: true
+  });
+
+  /** Deletes a project (API-PRJ-005) or a task (API-TSK-005) of `user`. */
+  const remove = async (
+    user: UserRow,
+    kind: "projects" | "tasks",
+    id: string
+  ) => {
+    expect((await as(user).delete(`/${kind}/${id}`)).status).toBe(204);
+  };
 
   it("AC-3 API-TLOG-002: POST the first log of a date → 201, trimmed text, no link; the day has the start and the log", async () => {
     const a = await insertUser({ time_zone: "Europe/Zagreb" });
@@ -396,7 +405,7 @@ describe("Time logging API (feat-tlog-api)", () => {
     expect((await getDay(a, TODAY)).logs).toHaveLength(2);
   });
 
-  describe("AC-9 API-TLOG-002: project-only links; unknown, foreign or trashed links → 404", () => {
+  describe("AC-9 API-TLOG-002: project-only links; unknown, foreign or deleted links → 404", () => {
     it("AC-9 API-TLOG-002: projectId only → project set, task null; a completed task → 201", async () => {
       const { a, p } = await seedA();
       const done = await insertTask(a.id, p.id, {
@@ -428,10 +437,12 @@ describe("Time logging API (feat-tlog-api)", () => {
         "Project not found."
       ],
       [
-        "a trashed project",
-        async (a) => ({
-          projectId: (await insertProject(a.id, { deleted_at: new Date() })).id
-        }),
+        "a deleted project",
+        async (a) => {
+          const project = await insertProject(a.id);
+          await remove(a, "projects", project.id);
+          return { projectId: project.id };
+        },
         "Project not found."
       ],
       [
@@ -448,21 +459,22 @@ describe("Time logging API (feat-tlog-api)", () => {
         "Task not found."
       ],
       [
-        "a trashed task",
+        "a deleted task",
         async (a) => {
           const project = await insertProject(a.id);
-          const task = await insertTask(a.id, project.id, {
-            deleted_at: new Date()
-          });
+          const task = await insertTask(a.id, project.id);
+          await remove(a, "tasks", task.id);
           return { taskId: task.id };
         },
         "Task not found."
       ],
       [
-        "a task of a trashed project",
+        "a task of a deleted project",
         async (a) => {
-          const project = await insertProject(a.id, { deleted_at: new Date() });
-          return { taskId: (await insertTask(a.id, project.id)).id };
+          const project = await insertProject(a.id);
+          const task = await insertTask(a.id, project.id);
+          await remove(a, "projects", project.id);
+          return { taskId: task.id };
         },
         "Task not found."
       ]
@@ -768,30 +780,39 @@ describe("Time logging API (feat-tlog-api)", () => {
     expect((await getDay(a, TODAY)).logs.map((l) => l.id)).toEqual([other.id]);
   });
 
-  it("AC-16 API-TLOG-004: a log keeps its link to a task trashed later; a different trashed task → 404", async () => {
-    const { a, p, t } = await seedA();
+  it("AC-16 API-TLOG-004: a log of a task deleted later keeps its name until relinked; the deleted id → 404", async () => {
+    const { a, p, q, t, u } = await seedA();
     const log = await createLog(a, { taskId: t.id });
-    const other = await insertTask(a.id, p.id, { title: "Old task" });
-    await trashTask(t.id);
-    await trashTask(other.id);
-
-    const text = await as(a).patch(`/time-logs/${log.id}`, { text: "x" });
-    expect(text.status).toBe(200);
-
-    const same = await as(a).patch(`/time-logs/${log.id}`, { taskId: t.id });
-    expect(same.status).toBe(200);
+    await remove(a, "tasks", t.id);
 
     expect((await getDay(a, TODAY)).logs[0]).toMatchObject({
-      text: "x",
-      task: ref(t, true),
+      task: gone(t),
       project: ref(p)
     });
 
-    const different = await as(a).patch(`/time-logs/${log.id}`, {
-      taskId: other.id
+    const text = await as(a).patch(`/time-logs/${log.id}`, { text: "x" });
+    expect(text.status).toBe(200);
+    expect(text.body).toMatchObject({
+      text: "x",
+      task: gone(t),
+      project: ref(p)
     });
-    expect(different.status).toBe(404);
-    expect(different.body.type).toBe(errorType("not-found"));
+
+    const deletedId = await as(a).patch(`/time-logs/${log.id}`, {
+      taskId: t.id
+    });
+    expect(deletedId.status).toBe(404);
+    expect(deletedId.body.type).toBe(errorType("not-found"));
+
+    const relinked = await as(a).patch(`/time-logs/${log.id}`, {
+      taskId: u.id
+    });
+    expect(relinked.status).toBe(200);
+    expect(relinked.body).toMatchObject({ task: ref(u), project: ref(q) });
+    expect((await getDay(a, TODAY)).logs[0]).toMatchObject({
+      task: ref(u),
+      project: ref(q)
+    });
   });
 
   it("AC-17 API-TLOG-006: DELETE removes the log and keeps the workday; again, foreign or malformed ids → 404", async () => {
@@ -841,44 +862,62 @@ describe("Time logging API (feat-tlog-api)", () => {
     });
   });
 
-  it("AC-19 API-WD-003: logs of trashed projects and tasks stay in their day with deleted: true and count", async () => {
-    const a = await insertUser();
-    const p2 = await insertProject(a.id, { title: "Trashed project" });
-    const p3 = await insertProject(a.id, { title: "Live project" });
-    const t3 = await insertTask(a.id, p3.id, { title: "Trashed task" });
-    const p4 = await insertProject(a.id, { title: "Project trashed later" });
-    const t4 = await insertTask(a.id, p4.id, {
-      title: "Task in a trashed project"
-    });
+  it("AC-4 FR-TLOG-014: logs of deleted projects and tasks keep their names, bookings and minutes", async () => {
+    const a = await insertUser({ time_zone: "Europe/Zagreb" });
+    const p = await insertProject(a.id, { title: "Deleted project" });
+    const t = await insertTask(a.id, p.id, { title: "Its task" });
+    const q = await insertProject(a.id, { title: "Live project" });
+    const u = await insertTask(a.id, q.id, { title: "Deleted task" });
 
     const byProject = await createLog(a, {
-      projectId: p2.id,
+      projectId: p.id,
       durationMinutes: 15
     });
-    const byTask = await createLog(a, { taskId: t3.id, durationMinutes: 30 });
-    const byProjectTask = await createLog(a, {
-      taskId: t4.id,
+    const byTask = await createLog(a, { taskId: t.id, durationMinutes: 30 });
+    const byOtherTask = await createLog(a, {
+      taskId: u.id,
       durationMinutes: 45
     });
-    await trashProject(p2.id);
-    await trashTask(t3.id);
-    await trashProject(p4.id);
+    const booked = await as(a).put("/bookings", {
+      logIds: [byProject.id, byTask.id],
+      bookingDate: TODAY
+    });
+    expect(booked.status, JSON.stringify(booked.body)).toBe(200);
+
+    await remove(a, "projects", p.id);
+    await remove(a, "tasks", u.id);
 
     const day = await getDay(a, TODAY);
     const find = (id: string) => day.logs.find((l) => l.id === id);
-    expect(find(byProject.id)).toMatchObject({
-      project: ref(p2, true),
-      task: null
-    });
-    expect(find(byTask.id)).toMatchObject({
-      project: ref(p3),
-      task: ref(t3, true)
-    });
-    expect(find(byProjectTask.id)).toMatchObject({
-      project: ref(p4, true),
-      task: ref(t4, true)
+    expect(find(byProject.id)).toMatchObject({ project: gone(p), task: null });
+    expect(find(byTask.id)).toMatchObject({ project: gone(p), task: gone(t) });
+    expect(find(byOtherTask.id)).toMatchObject({
+      project: ref(q),
+      task: gone(u)
     });
     expect(day.totalMinutes).toBe(90);
+
+    const bookings = await as(a).get(`/bookings?from=${TODAY}&to=${TODAY}`);
+    expect(bookings.status).toBe(200);
+    const bookingOf = (id: string) =>
+      bookings.body.items.find((i) => i.id === id)?.bookingDate;
+    expect(bookingOf(byProject.id)).toBe(TODAY);
+    expect(bookingOf(byTask.id)).toBe(TODAY);
+
+    for (const link of [
+      { projectId: p.id },
+      { taskId: t.id },
+      { taskId: u.id }
+    ]) {
+      const response = await as(a).post("/time-logs", {
+        workDate: TODAY,
+        durationMinutes: 15,
+        text: "Work",
+        ...link
+      });
+      expect(response.status, JSON.stringify(link)).toBe(404);
+      expect(response.body.type).toBe(errorType("not-found"));
+    }
   });
 
   describe("AC-20 API-WD-*, API-TLOG-*: every endpoint needs a token", () => {

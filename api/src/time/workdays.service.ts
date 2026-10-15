@@ -69,4 +69,10 @@ export class WorkdaysService {
     await this.timeRepository.upsertWorkday(userId, date, startMinute);
     return { workDate: date, startMinute };
   }
+
+  /** API-WD-004. */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- stub (feat-hard-delete)
+  deleteDay(userId: string, date: string): Promise<void> {
+    throw new Error("not implemented (feat-hard-delete)");
+  }
 }

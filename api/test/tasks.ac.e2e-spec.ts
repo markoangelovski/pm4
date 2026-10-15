@@ -53,8 +53,6 @@ interface Body extends TaskBody {
   pageSize: number;
   taskCounts: Record<string, number>;
   type: string;
-  projectId?: string;
-  projectInTrash?: boolean;
   errors?: { field: string; message: string }[];
 }
 
@@ -84,21 +82,19 @@ async function insertTaskWith(
     status?: TaskStatusValue;
     due_date?: string | null;
     updated_at?: Date;
-    deleted_at?: Date | null;
   } = {}
 ): Promise<TaskDbRow> {
   const at = fields.updated_at ?? new Date();
   const result = await testDb().query<TaskDbRow>(
-    `INSERT INTO tasks (user_id, project_id, status, title, due_date, created_at, updated_at, deleted_at)
-     VALUES ($1, $2, $3, $4, $5, $6, $6, $7) RETURNING *`,
+    `INSERT INTO tasks (user_id, project_id, status, title, due_date, created_at, updated_at)
+     VALUES ($1, $2, $3, $4, $5, $6, $6) RETURNING *`,
     [
       userId,
       projectId,
       fields.status ?? "upcoming",
       fields.title ?? "Seeded task",
       fields.due_date ?? null,
-      at,
-      fields.deleted_at ?? null
+      at
     ]
   );
   return result.rows[0];
@@ -153,6 +149,20 @@ describe("Tasks API (feat-tsk-api)", () => {
 
   const fieldsOf = (body: { errors?: { field: string }[] }) =>
     (body.errors ?? []).map((e) => e.field);
+
+  /** A's project, deleted through API-PRJ-005. */
+  const deletedProject = async (user: UserRow) => {
+    const project = await insertProject(user.id, { title: "Deleted" });
+    expect((await as(user).delete(`/projects/${project.id}`)).status).toBe(204);
+    return project;
+  };
+
+  /** A task of `projectId`, deleted through API-TSK-005. */
+  const deletedTask = async (user: UserRow, projectId: string) => {
+    const task = await insertTask(user.id, projectId, { title: "Deleted" });
+    expect((await as(user).delete(`/tasks/${task.id}`)).status).toBe(204);
+    return task;
+  };
 
   /** Titles of A's tasks for a `/tasks` query, in response order. */
   const titlesFor = async (user: UserRow, query: string) => {
@@ -310,11 +320,11 @@ describe("Tasks API (feat-tsk-api)", () => {
     });
   });
 
-  it("AC-4 API-TSK-001: a project that is another user's, unknown or in the trash → 404 not-found, nothing created", async () => {
+  it("AC-4 API-TSK-001: a project that is another user's, unknown or deleted → 404 not-found, nothing created", async () => {
     const a = await insertUser();
     const b = await insertUser();
     const bs = await insertProject(b.id);
-    const trashed = await insertProject(a.id, { deleted_at: new Date() });
+    const deleted = await deletedProject(a);
     const own = await insertProject(a.id);
 
     // Control: the endpoint exists and creates in A's own active project.
@@ -324,7 +334,7 @@ describe("Tasks API (feat-tsk-api)", () => {
     });
     expect(control.status).toBe(201);
 
-    for (const projectId of [bs.id, randomUUID(), trashed.id]) {
+    for (const projectId of [bs.id, randomUUID(), deleted.id]) {
       const response = await as(a).post("/tasks", { projectId, title: "T" });
       expect(response.status, projectId).toBe(404);
       expect(response.body.type).toBe(errorType("not-found"));
@@ -337,22 +347,18 @@ describe("Tasks API (feat-tsk-api)", () => {
     expect(Number(count.rows[0].n)).toBe(1);
   });
 
-  it("AC-5 API-TSK-002: projectId lists only that project's active tasks; foreign or trashed → empty; malformed → 400", async () => {
+  it("AC-5 API-TSK-002: projectId lists only that project's tasks; foreign or deleted → empty; malformed → 400", async () => {
     const a = await insertUser();
     const b = await insertUser();
     const p = await insertProject(a.id, { title: "P" });
     const q = await insertProject(a.id, { title: "Q" });
-    const trashed = await insertProject(a.id, { deleted_at: new Date() });
     const bs = await insertProject(b.id);
     await insertTask(a.id, p.id, { title: "P one" });
     await insertTask(a.id, p.id, { title: "P two" });
-    await insertTask(a.id, p.id, {
-      title: "P deleted",
-      deleted_at: new Date()
-    });
+    await deletedTask(a, p.id);
     await insertTask(a.id, q.id, { title: "Q one" });
-    await insertTask(a.id, trashed.id, { title: "In trashed project" });
     await insertTask(b.id, bs.id, { title: "B's task" });
+    const deleted = await deletedProject(a);
 
     const own = await as(a).get(`/tasks?projectId=${p.id}`);
     expect(own.status).toBe(200);
@@ -363,7 +369,7 @@ describe("Tasks API (feat-tsk-api)", () => {
     ]);
     expect(own.body.items.every((t) => t.project.id === p.id)).toBe(true);
 
-    for (const projectId of [bs.id, trashed.id]) {
+    for (const projectId of [bs.id, deleted.id]) {
       const response = await as(a).get(`/tasks?projectId=${projectId}`);
       expect(response.status, projectId).toBe(200);
       expect(response.body).toMatchObject({ items: [], total: 0 });
@@ -374,15 +380,16 @@ describe("Tasks API (feat-tsk-api)", () => {
     expect(fieldsOf(malformed.body)).toContain("projectId");
   });
 
-  it("AC-6 API-TSK-002: without projectId → A's tasks across projects, none from a trashed project", async () => {
+  it("AC-6 API-TSK-002: without projectId → A's tasks across projects, none from a deleted project", async () => {
     const a = await insertUser();
     const b = await insertUser();
     const p = await insertProject(a.id, { title: "P" });
     const q = await insertProject(a.id, { title: "Q" });
-    const trashed = await insertProject(a.id, { deleted_at: new Date() });
+    const gone = await insertProject(a.id, { title: "Gone" });
     await insertTask(a.id, p.id, { title: "In P" });
     await insertTask(a.id, q.id, { title: "In Q" });
-    await insertTask(a.id, trashed.id, { title: "In trashed project" });
+    await insertTask(a.id, gone.id, { title: "In a deleted project" });
+    expect((await as(a).delete(`/projects/${gone.id}`)).status).toBe(204);
     await insertTask(b.id, (await insertProject(b.id)).id, { title: "B's" });
 
     const response = await as(a).get("/tasks");
@@ -493,7 +500,7 @@ describe("Tasks API (feat-tsk-api)", () => {
     }
   });
 
-  it("AC-10 API-TSK-003: GET one: own → 200; foreign, unknown or malformed → not-found; deleted or in a trashed project → in-trash", async () => {
+  it("AC-10 API-TSK-003: GET one: own → 200; foreign, unknown, malformed, deleted or of a deleted project → not-found", async () => {
     const a = await insertUser();
     const b = await insertUser();
     const p = await insertProject(a.id, { title: "P" });
@@ -502,40 +509,29 @@ describe("Tasks API (feat-tsk-api)", () => {
       title: "Mine"
     });
     const bs = await insertTask(b.id, (await insertProject(b.id)).id);
-    const deleted = await insertTask(a.id, p.id, { deleted_at: new Date() });
-    const trashedProject = await insertProject(a.id, {
-      deleted_at: new Date()
-    });
-    const inTrashedProject = await insertTask(a.id, trashedProject.id);
+    const deleted = await deletedTask(a, p.id);
+    const gone = await insertProject(a.id);
+    const ofDeletedProject = await insertTask(a.id, gone.id);
+    expect((await as(a).delete(`/projects/${gone.id}`)).status).toBe(204);
 
     const own = await as(a).get(`/tasks/${created.body.id}`);
     expect(own.status).toBe(200);
     expect(own.body).toEqual(created.body);
 
-    for (const id of [bs.id, randomUUID(), "abc"]) {
+    for (const id of [
+      bs.id,
+      randomUUID(),
+      "abc",
+      deleted.id,
+      ofDeletedProject.id
+    ]) {
       const response = await as(a).get(`/tasks/${id}`);
       expect(response.status, id).toBe(404);
+      expect(response.headers["content-type"]).toContain(
+        "application/problem+json"
+      );
       expect(response.body.type).toBe(errorType("not-found"));
     }
-
-    const individually = await as(a).get(`/tasks/${deleted.id}`);
-    expect(individually.status).toBe(404);
-    expect(individually.headers["content-type"]).toContain(
-      "application/problem+json"
-    );
-    expect(individually.body).toMatchObject({
-      type: errorType("in-trash"),
-      projectId: p.id,
-      projectInTrash: false
-    });
-
-    const viaProject = await as(a).get(`/tasks/${inTrashedProject.id}`);
-    expect(viaProject.status).toBe(404);
-    expect(viaProject.body).toMatchObject({
-      type: errorType("in-trash"),
-      projectId: trashedProject.id,
-      projectInTrash: true
-    });
   });
 
   it("AC-11 API-TSK-004: PATCH status → 200, updatedAt later, the project's updatedAt unchanged, counts follow", async () => {
@@ -608,7 +604,7 @@ describe("Tasks API (feat-tsk-api)", () => {
     expect(empty.body.title).toBe("Full");
   });
 
-  it("AC-13 API-TSK-004: PATCH projectId moves the task; a foreign or trashed project → 404 not-found, task unchanged", async () => {
+  it("AC-13 API-TSK-004: PATCH projectId moves the task; a foreign or deleted project → 404 not-found, task unchanged", async () => {
     const a = await insertUser();
     const b = await insertUser();
     const p = await insertProject(a.id, { title: "P" });
@@ -634,8 +630,8 @@ describe("Tasks API (feat-tsk-api)", () => {
     );
 
     const bs = await insertProject(b.id);
-    const trashed = await insertProject(a.id, { deleted_at: new Date() });
-    for (const projectId of [bs.id, trashed.id]) {
+    const deleted = await deletedProject(a);
+    for (const projectId of [bs.id, deleted.id]) {
       const response = await as(a).patch(url, { projectId });
       expect(response.status, projectId).toBe(404);
       expect(response.body.type).toBe(errorType("not-found"));
@@ -643,91 +639,87 @@ describe("Tasks API (feat-tsk-api)", () => {
     expect((await findTaskRow(task.id))!.project_id).toBe(q.id);
   });
 
-  it("AC-14 API-TSK-004/005: PATCH or DELETE a deleted task → in-trash; another user's → not-found", async () => {
+  it("AC-14 API-TSK-004/005: PATCH or DELETE a deleted task or another user's → not-found", async () => {
     const a = await insertUser();
     const b = await insertUser();
     const p = await insertProject(a.id);
-    const deleted = await insertTask(a.id, p.id, { deleted_at: new Date() });
-    const bs = await insertTask(b.id, (await insertProject(b.id)).id);
+    const deleted = await deletedTask(a, p.id);
+    const bs = await insertTask(b.id, (await insertProject(b.id)).id, {
+      title: "B's"
+    });
 
-    const patched = await as(a).patch(`/tasks/${deleted.id}`, { title: "X" });
-    expect(patched.status).toBe(404);
-    expect(patched.body.type).toBe(errorType("in-trash"));
-    const again = await as(a).delete(`/tasks/${deleted.id}`);
-    expect(again.status).toBe(404);
-    expect(again.body.type).toBe(errorType("in-trash"));
-
-    const foreignPatch = await as(a).patch(`/tasks/${bs.id}`, { title: "X" });
-    expect(foreignPatch.status).toBe(404);
-    expect(foreignPatch.body.type).toBe(errorType("not-found"));
-    const foreignDelete = await as(a).delete(`/tasks/${bs.id}`);
-    expect(foreignDelete.status).toBe(404);
-    expect(foreignDelete.body.type).toBe(errorType("not-found"));
-    expect((await findTaskRow(bs.id))!.deleted_at).toBeNull();
+    for (const id of [deleted.id, bs.id]) {
+      const patched = await as(a).patch(`/tasks/${id}`, { title: "X" });
+      expect(patched.status, id).toBe(404);
+      expect(patched.body.type).toBe(errorType("not-found"));
+      const removed = await as(a).delete(`/tasks/${id}`);
+      expect(removed.status, id).toBe(404);
+      expect(removed.body.type).toBe(errorType("not-found"));
+    }
+    expect((await findTaskRow(bs.id))!.title).toBe("B's");
   });
 
-  it("AC-15 API-TSK-005: DELETE → 204; the task is in the trash, out of lists and counts; the project's updatedAt unchanged", async () => {
+  it("AC-2 API-TSK-005: DELETE removes the task for good; its project's counts and updatedAt follow", async () => {
     const a = await insertUser();
     const p: ProjectDbRow = await insertProject(a.id, {
       updated_at: daysAgo(2)
     });
-    const task = await insertTask(a.id, p.id, { title: "To trash" });
+    const task = await insertTask(a.id, p.id, { title: "To delete" });
     await insertTask(a.id, p.id, { title: "Stays" });
     const url = `/tasks/${task.id}`;
 
     const deleted = await as(a).delete(url);
     expect(deleted.status).toBe(204);
+    expect(await findTaskRow(task.id)).toBeNull();
 
-    const read = await as(a).get(url);
-    expect(read.status).toBe(404);
-    expect(read.body.type).toBe(errorType("in-trash"));
+    for (const response of [
+      await as(a).get(url),
+      await as(a).patch(url, { title: "X" }),
+      await as(a).delete(url)
+    ]) {
+      expect(response.status).toBe(404);
+      expect(response.body.type).toBe(errorType("not-found"));
+    }
     expect(await titlesFor(a, "")).toEqual(["Stays"]);
     expect(await titlesFor(a, `?projectId=${p.id}`)).toEqual(["Stays"]);
-    expect((await as(a).get(`/projects/${p.id}`)).body.taskCounts.total).toBe(
-      1
-    );
-    expect((await findTaskRow(task.id))!.deleted_at).not.toBeNull();
+    expect((await as(a).get(`/projects/${p.id}`)).body.taskCounts).toEqual({
+      upcoming: 1,
+      inProgress: 0,
+      completed: 0,
+      total: 1
+    });
     expect((await findProjectRow(p.id))!.updated_at.toISOString()).toBe(
       p.updated_at.toISOString()
     );
+
+    const gone = await insertProject(a.id);
+    expect((await as(a).delete(`/projects/${gone.id}`)).status).toBe(204);
+    const created = await as(a).post("/tasks", {
+      projectId: gone.id,
+      title: "T"
+    });
+    expect(created.status).toBe(404);
+    expect(created.body.type).toBe(errorType("not-found"));
+    const stays = (await as(a).get(`/tasks?projectId=${p.id}`)).body.items[0];
+    const moved = await as(a).patch(`/tasks/${stays.id}`, {
+      projectId: gone.id
+    });
+    expect(moved.status).toBe(404);
+    expect(moved.body.type).toBe(errorType("not-found"));
+    expect((await findTaskRow(stays.id))!.project_id).toBe(p.id);
   });
 
-  it("AC-16 API-TSK-006: restore brings a deleted task back; active → 204; in a trashed project → 409; foreign → not-found", async () => {
+  it("AC-3 API-TSK-005: there is no restore endpoint", async () => {
     const a = await insertUser();
-    const b = await insertUser();
     const p = await insertProject(a.id);
-    const deleted = await insertTask(a.id, p.id, { deleted_at: daysAgo(1) });
-    const active = await insertTask(a.id, p.id);
-    const trashedProject = await insertProject(a.id, {
-      deleted_at: new Date()
-    });
-    const inTrashedProject = await insertTask(a.id, trashedProject.id, {
-      deleted_at: daysAgo(1)
-    });
-    const bs = await insertTask(b.id, (await insertProject(b.id)).id, {
-      deleted_at: daysAgo(1)
-    });
+    const task = await deletedTask(a, p.id);
 
-    const restored = await as(a).post(`/tasks/${deleted.id}/restore`);
-    expect(restored.status).toBe(204);
-    expect((await as(a).get(`/tasks/${deleted.id}`)).status).toBe(200);
-
-    const noop = await as(a).post(`/tasks/${active.id}/restore`);
-    expect(noop.status).toBe(204);
-    expect((await findTaskRow(active.id))!.deleted_at).toBeNull();
-
-    const conflict = await as(a).post(`/tasks/${inTrashedProject.id}/restore`);
-    expect(conflict.status).toBe(409);
-    expect(conflict.body.type).toBe(errorType("conflict"));
-    expect((await findTaskRow(inTrashedProject.id))!.deleted_at).not.toBeNull();
-
-    const foreign = await as(a).post(`/tasks/${bs.id}/restore`);
-    expect(foreign.status).toBe(404);
-    expect(foreign.body.type).toBe(errorType("not-found"));
-    expect((await findTaskRow(bs.id))!.deleted_at).not.toBeNull();
+    const restore = await as(a).post(`/tasks/${task.id}/restore`);
+    expect(restore.status).toBe(404);
+    expect(await findTaskRow(task.id)).toBeNull();
   });
 
-  it("AC-17 API-TSK-001…006: every /tasks endpoint without a token → 401", async () => {
+  it("AC-17 API-TSK-001…005: every /tasks endpoint without a token → 401", async () => {
     const server = app.getHttpServer();
     const id = randomUUID();
     // Built one at a time: supertest closes its ephemeral server after a request.
@@ -739,8 +731,7 @@ describe("Tasks API (feat-tsk-api)", () => {
           .send({ projectId: randomUUID(), title: "T" }),
       () => request(server).get(`/api/v1/tasks/${id}`),
       () => request(server).patch(`/api/v1/tasks/${id}`).send({ title: "T" }),
-      () => request(server).delete(`/api/v1/tasks/${id}`),
-      () => request(server).post(`/api/v1/tasks/${id}/restore`)
+      () => request(server).delete(`/api/v1/tasks/${id}`)
     ];
 
     for (const call of calls) {

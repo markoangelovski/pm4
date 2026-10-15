@@ -6,7 +6,6 @@ import {
   closeTestClients,
   deleteTestUsers,
   insertUser,
-  testDb,
   type UserRow
 } from "./support/auth-test-utils.js";
 import { insertProject, insertTask } from "./support/project-test-utils.js";
@@ -91,7 +90,9 @@ describe("Dashboard report API (feat-rpt-api)", () => {
             .put(`/api/v1${url}`)
             .set("Authorization", auth)
             .send(body)
-        )
+        ),
+      delete: (url: string) =>
+        send(request(server).delete(`/api/v1${url}`).set("Authorization", auth))
     };
   };
 
@@ -287,46 +288,39 @@ describe("Dashboard report API (feat-rpt-api)", () => {
     ]);
   });
 
-  it("AC-5 API-RPT-001: a trashed project's row is marked deleted; purged projects group under their retained name", async () => {
-    const { user, projects, logs } = await seed();
-    await testDb().query(
-      "UPDATE projects SET deleted_at = now() WHERE id = $1",
-      [projects.internal.id]
+  it("AC-5 API-RPT-001: a deleted project's minutes are one row under its retained name; live projects aren't deleted", async () => {
+    const { user, projects } = await seed();
+    expect(
+      (await as(user).delete(`/projects/${projects.internal.id}`)).status
+    ).toBe(204);
+
+    const deleted = await report(user, "2026-10-01", "2026-10-09");
+    expect(deleted.projects).toContainEqual(
+      projectRow({ id: null, title: "PM Internal", deleted: true }, 60, 0)
+    );
+    expect(deleted.projects).toContainEqual(
+      projectRow(ref(projects.nvidia), 240, 240)
     );
 
-    const trashed = await report(user, "2026-10-01", "2026-10-09");
-    expect(trashed.projects).toContainEqual(
-      projectRow(
-        { id: projects.internal.id, title: "PM Internal", deleted: true },
-        60,
-        0
-      )
-    );
-
-    const other = await insertProject(user.id, { title: "Other" });
-    const otherLog = await createLog(user, {
+    const again = await insertProject(user.id, { title: "PM Internal" });
+    await createLog(user, {
       workDate: "2026-10-07",
       durationMinutes: 30,
-      projectId: other.id
+      projectId: again.id
     });
-    await testDb().query(
-      `UPDATE time_logs SET project_id = NULL, deleted_project_title = 'Old'
-       WHERE id = ANY($1)`,
-      [[logs.b, otherLog]]
-    );
+    expect((await as(user).delete(`/projects/${again.id}`)).status).toBe(204);
 
-    const purged = await report(user, "2026-10-01", "2026-10-09");
-    const projectRows = purged.projects.filter((p) => p.kind === "project");
-    expect(projectRows).toContainEqual(
-      projectRow({ id: null, title: "Old", deleted: true }, 90, 0)
+    const merged = await report(user, "2026-10-01", "2026-10-09");
+    const internal = merged.projects.filter(
+      (p) => p.project?.title === "PM Internal"
     );
-    expect(projectRows.filter((p) => p.project?.title === "Old")).toHaveLength(
-      1
-    );
-    expect(projectRows.map((p) => p.project?.id)).not.toContain(
-      projects.internal.id
-    );
-    expect(projectRows.map((p) => p.project?.id)).not.toContain(other.id);
+    expect(internal).toEqual([
+      projectRow({ id: null, title: "PM Internal", deleted: true }, 90, 0)
+    ]);
+    for (const row of merged.projects) {
+      if (row.project?.id)
+        expect(row.project.deleted, row.project.title).toBe(false);
+    }
   });
 
   it("AC-6 API-RPT-001: another user's logs and workdays never appear; a range with nothing → empty lists", async () => {

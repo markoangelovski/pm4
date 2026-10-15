@@ -310,7 +310,7 @@ describe("Logged time API (feat-proto-sync-web)", () => {
     expect(anonymous.status).toBe(401);
   });
 
-  it("AC-6 API-PRJ-002/003: a project's loggedMinutes sums all its logs (its tasks', excluded and trashed ones too), only the caller's", async () => {
+  it("AC-6 API-PRJ-002/003: a project's loggedMinutes sums all its logs (its tasks', excluded and deleted ones too), only the caller's", async () => {
     const { a, b, projects, tasks } = await seed();
     const { p, q, bProject } = projects;
 

@@ -1,5 +1,15 @@
-import { Body, Controller, Get, Param, Put, Query } from "@nestjs/common";
-import { ApiBearerAuth, ApiParam } from "@nestjs/swagger";
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  Put,
+  Query
+} from "@nestjs/common";
+import { ApiBearerAuth, ApiNoContentResponse, ApiParam } from "@nestjs/swagger";
 import { ApiProblemResponses } from "../common/decorators/api-problem-responses/api-problem-responses.decorator.js";
 import {
   type AuthUser,
@@ -14,7 +24,7 @@ import {
 import { WorkdaysQueryDto } from "./dto/workdays-query.dto.js";
 import { WorkdaysService } from "./workdays.service.js";
 
-/** `/api/v1/workdays` (API-WD-001…003). */
+/** `/api/v1/workdays` (API-WD-001…004). */
 @ApiBearerAuth("bearer")
 @Controller("workdays")
 export class WorkdaysController {
@@ -51,5 +61,18 @@ export class WorkdaysController {
     @Body() dto: SetWorkdayDto
   ): Promise<WorkdayResponseDto> {
     return this.workdaysService.setStart(user.id, date, dto.startMinute);
+  }
+
+  /** Delete the day's start and logs (API-WD-004). */
+  @Delete(":date")
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiParam({ name: "date", type: String, format: "date" })
+  @ApiNoContentResponse({ description: "Deleted." })
+  @ApiProblemResponses(400, 401, 404)
+  deleteDay(
+    @CurrentUser() user: AuthUser,
+    @Param("date") date: string
+  ): Promise<void> {
+    return this.workdaysService.deleteDay(user.id, date);
   }
 }

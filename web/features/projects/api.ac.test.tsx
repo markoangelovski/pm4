@@ -9,7 +9,6 @@ import {
   useDeleteProject,
   useProject,
   useProjects,
-  useRestoreProject,
   type Project,
   type ProjectInput
 } from "./api";
@@ -49,6 +48,7 @@ const listKey = projectKeys.list({
   pageSize: 25
 });
 const tasksKey = ["tasks", "list", {}] as const;
+const timeKey = ["time", "day", "2026-10-06"] as const;
 
 const ok = (status = 200) => new Response(null, { status });
 
@@ -76,7 +76,7 @@ function setup<T>(hook: () => T) {
   return { queryClient, ...renderHook(hook, { wrapper }) };
 }
 
-/** Seeds a list, a detail and a task list, so invalidation and removal can be observed. */
+/** Seeds a list, a detail, a task list and a day, so invalidation and removal can be observed. */
 function seed(queryClient: QueryClient) {
   queryClient.setQueryData(listKey, {
     items: [],
@@ -86,6 +86,7 @@ function seed(queryClient: QueryClient) {
   });
   queryClient.setQueryData(projectKeys.detail("p1"), project);
   queryClient.setQueryData(tasksKey, []);
+  queryClient.setQueryData(timeKey, {});
 }
 
 const invalidated = (queryClient: QueryClient, key: readonly unknown[]) =>
@@ -134,7 +135,7 @@ describe("project mutations (feat-prj-web)", () => {
     DELETE.mockReset();
   });
 
-  it("AC-6 FR-PRJ-001 FR-PRJ-005 FR-TRASH-002: create sets the detail and invalidates lists; delete and restore also invalidate tasks", async () => {
+  it("AC-6 FR-PRJ-001 FR-PRJ-005: create sets the detail and invalidates lists; delete also invalidates tasks", async () => {
     const created = { ...project, id: "p2", title: "New" };
     POST.mockResolvedValueOnce({ data: created, response: ok(201) });
     const create = setup(() => useCreateProject());
@@ -165,21 +166,19 @@ describe("project mutations (feat-prj-web)", () => {
     ).toBeUndefined();
     expect(invalidated(remove.queryClient, listKey)).toBe(true);
     expect(invalidated(remove.queryClient, tasksKey)).toBe(true);
-    remove.unmount();
+  });
 
-    POST.mockResolvedValueOnce({ response: ok(204) });
-    const restore = setup(() => useRestoreProject());
-    seed(restore.queryClient);
-    act(() => restore.result.current.mutate("p1"));
-    await waitFor(() => expect(restore.result.current.isSuccess).toBe(true));
-    expect(POST).toHaveBeenCalledWith(
-      "/api/v1/projects/{id}/restore",
-      expect.objectContaining({ params: { path: { id: "p1" } } })
-    );
-    expect(invalidated(restore.queryClient, projectKeys.detail("p1"))).toBe(
-      true
-    );
-    expect(invalidated(restore.queryClient, listKey)).toBe(true);
-    expect(invalidated(restore.queryClient, tasksKey)).toBe(true);
+  it("AC-9 FR-PRJ-005 FR-TLOG-014: useDeleteProject also invalidates the time queries", async () => {
+    DELETE.mockResolvedValueOnce({ response: ok(204) });
+    const remove = setup(() => useDeleteProject());
+    seed(remove.queryClient);
+    act(() => remove.result.current.mutate("p1"));
+    await waitFor(() => expect(remove.result.current.isSuccess).toBe(true));
+    expect(
+      remove.queryClient.getQueryData(projectKeys.detail("p1"))
+    ).toBeUndefined();
+    expect(invalidated(remove.queryClient, listKey)).toBe(true);
+    expect(invalidated(remove.queryClient, tasksKey)).toBe(true);
+    expect(invalidated(remove.queryClient, timeKey)).toBe(true);
   });
 });

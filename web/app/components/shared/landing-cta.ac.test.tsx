@@ -38,7 +38,7 @@ describe("LandingCta (feat-land-app-route-split)", () => {
       ["returnTo=https%3A%2F%2Fevil.example%2F", "/auth/sign-in"],
       ["returnTo=%2Fhome", "/auth/sign-in"],
       [
-        "returnTo=%2Fapp%2Ftasks&returnTo=%2Fapp%2Ftrash",
+        "returnTo=%2Fapp%2Ftasks&returnTo=%2Fapp%2Fsettings",
         "/auth/sign-in?returnTo=%2Fapp%2Ftasks"
       ]
     ];

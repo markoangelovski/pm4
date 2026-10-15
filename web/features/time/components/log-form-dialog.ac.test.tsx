@@ -1,7 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ReactNode } from "react";
 import { QueryClientProvider } from "@tanstack/react-query";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within
+} from "@testing-library/react";
 import { createQueryClient } from "@/lib/query-client";
 import type { Me } from "@/features/users/api";
 import type { Project } from "@/features/projects/api";
@@ -535,6 +541,60 @@ describe("LogFormDialog (feat-tlog-web)", () => {
     await waitFor(() => expect(api.PATCH).toHaveBeenCalledTimes(2));
     expect(lastBody(api.PATCH)).toMatchObject({
       projectId: null,
+      taskId: null
+    });
+  });
+
+  it("AC-14 FR-TLOG-014 SCR-041: a deleted project stays in its box with the marker until another is picked or the box is cleared", async () => {
+    const orphan: TimeLog = {
+      ...editedLog,
+      project: { id: null, title: "Old site", deleted: true },
+      task: null
+    };
+    const projectGroup = () =>
+      projectField().closest('[data-slot="input-group"]') as HTMLElement;
+
+    const textOnly = renderDialog({ log: orphan });
+    await waitFor(() => expect(projectField().value).toBe("Old site"));
+    expect(
+      within(projectGroup()).getByRole("img", { name: "deleted" })
+    ).toBeInTheDocument();
+    change("Log text", "Old fixes");
+    api.PATCH.mockResolvedValueOnce({ data: orphan, response: res(200) });
+    submit("Save");
+    await waitFor(() =>
+      expect(textOnly.onOpenChange).toHaveBeenCalledWith(false)
+    );
+    expect(lastBody(api.PATCH)).not.toHaveProperty("projectId");
+    expect(lastBody(api.PATCH)).not.toHaveProperty("taskId");
+    textOnly.unmount();
+
+    const cleared = renderDialog({ log: orphan });
+    await waitFor(() => expect(projectField().value).toBe("Old site"));
+    clear(projectField());
+    await waitFor(() => expect(projectField().value).toBe(""));
+    expect(
+      within(projectGroup()).queryByRole("img", { name: "deleted" })
+    ).toBeNull();
+    api.PATCH.mockResolvedValueOnce({ data: orphan, response: res(200) });
+    submit("Save");
+    await waitFor(() => expect(api.PATCH).toHaveBeenCalledTimes(2));
+    expect(lastBody(api.PATCH)).toMatchObject({
+      projectId: null,
+      taskId: null
+    });
+    cleared.unmount();
+
+    renderDialog({ log: orphan });
+    await waitFor(() => expect(projectField().value).toBe("Old site"));
+    type(projectField(), "Man");
+    pick(await screen.findByRole("option", { name: "Manhatan" }));
+    await waitFor(() => expect(projectField().value).toBe("Manhatan"));
+    api.PATCH.mockResolvedValueOnce({ data: orphan, response: res(200) });
+    submit("Save");
+    await waitFor(() => expect(api.PATCH).toHaveBeenCalledTimes(3));
+    expect(lastBody(api.PATCH)).toMatchObject({
+      projectId: "p1",
       taskId: null
     });
   });

@@ -8,6 +8,7 @@ import {
   timeKeys,
   useCreateLog,
   useDay,
+  useDeleteDay,
   useDeleteLog,
   useSetDayStart,
   useUpdateLog,
@@ -226,5 +227,36 @@ describe("time hooks (feat-tlog-web)", () => {
       expect.objectContaining({ body: { dailyTargetMinutes: 450 } })
     );
     expect(updateMe.queryClient.getQueryData(userKeys.me())).toEqual(saved);
+  });
+});
+
+describe("Delete day hook (feat-hard-delete)", () => {
+  beforeEach(() => {
+    Object.values(api).forEach((fn) => fn.mockReset());
+  });
+
+  it("AC-10 FR-TLOG-019: useDeleteDay → DELETE /api/v1/workdays/{date}; invalidates time, projects and tasks", async () => {
+    const projectsKey = ["projects", "detail", "p1"] as const;
+    const tasksKey = ["tasks", "list", {}] as const;
+    api.DELETE.mockResolvedValueOnce({ response: res(204) });
+    const remove = setup(
+      () => useDeleteDay(),
+      (queryClient) => {
+        seedTime(queryClient);
+        queryClient.setQueryData(projectsKey, {});
+        queryClient.setQueryData(tasksKey, []);
+      }
+    );
+
+    act(() => remove.result.current.mutate("2026-10-06"));
+    await waitFor(() => expect(remove.result.current.isSuccess).toBe(true));
+
+    expect(api.DELETE).toHaveBeenCalledWith(
+      "/api/v1/workdays/{date}",
+      expect.objectContaining({ params: { path: { date: "2026-10-06" } } })
+    );
+    expectAllTimeInvalidated(remove.queryClient);
+    expect(invalidated(remove.queryClient, projectsKey)).toBe(true);
+    expect(invalidated(remove.queryClient, tasksKey)).toBe(true);
   });
 });

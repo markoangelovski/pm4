@@ -1,6 +1,6 @@
 # Task Board
 
-**Next free ID:** T-0060
+**Next free ID:** T-0064
 
 | ID | Title | Milestone | App | Size | Status | Depends on |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -63,5 +63,9 @@
 | [T-0057](m4-time-logs/T-0057-pm4-multi-task-acs-and-manual-blocks.md) | pm4 handles ACs of several tasks and keeps manual blocks | M4 | infra | S | done | — |
 | [T-0058](m4-time-logs/T-0058-pm4-twins-check.md) | pm4 compares production files with their prototype twins (pm4 twins, in check) | M4 | infra | S | done | T-0057 |
 | [T-0059](m4-time-logs/T-0059-retire-proto-sync-web-twin-checks.md) | Retire proto-sync-web's own twin checks (AC-18, AC-19, AC-22); the twin check covers them | M4 | spec | S | done | T-0058 |
+| [T-0060](m4-time-logs/T-0060-permanent-delete-of-projects-and-tasks.md) | Permanent delete of projects and tasks, restore removed, migration 0005 | M4 | api | M | ready | — |
+| [T-0061](m4-time-logs/T-0061-delete-day-api-wd-004-the.md) | Delete day (API-WD-004), the time read model, the in-trash exception and the Problem mechanism removed | M4 | api | M | blocked | T-0060 |
+| [T-0062](m4-time-logs/T-0062-promote-the-prototype-the-marker-delete.md) | Promote the prototype: the marker, delete dialogs, relink, Delete day; Trash page, route and link removed | M4 | web | M | blocked | T-0061 |
+| [T-0063](m4-time-logs/T-0063-drop-deleted-at-migration-0006-after.md) | Drop deleted_at (migration 0006), after the release with T1–T3 is live (D2) | M4 | api | S | blocked | T-0062 |
 
 M0–M5 are done. M6 (Integrations) has no tasks yet; its tasks are created with the `write-task` skill once its feature specs are approved.

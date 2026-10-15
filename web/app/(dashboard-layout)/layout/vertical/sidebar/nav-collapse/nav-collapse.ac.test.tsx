@@ -55,13 +55,12 @@ describe("NavCollapse sections (feat-shell-sidebar-sections)", () => {
     expect(screen.getAllByText("...")).toHaveLength(3);
   });
 
-  it("AC-6 OQ-054: at /app/settings the Settings footer link is active and Trash isn't", () => {
+  it("AC-6 OQ-054: at /app/settings the Settings footer link, the footer's only link, is active", () => {
     nav.pathname = "/app/settings";
     render(<NavCollapse menu={footerItems} />);
     const settings = screen.getByRole("link", { name: "Settings" });
-    const trash = screen.getByRole("link", { name: "Trash" });
+    expect(screen.getAllByRole("link")).toEqual([settings]);
     expect(settings).toHaveAttribute("href", "/app/settings");
     expect(settings.querySelector(".bg-primary")).not.toBeNull();
-    expect(trash.querySelector(".bg-primary")).toBeNull();
   });
 });

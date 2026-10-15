@@ -150,31 +150,15 @@ describe("ProjectDetail (feat-prj-web)", () => {
     expect(stats.getByText("50 %")).toBeInTheDocument();
   });
 
-  it("AC-14 FR-PRJ-003 FR-TRASH-002 SCR-021: not found, in the trash with Restore, and error with Retry", async () => {
+  it("AC-14 FR-PRJ-003 SCR-021: not found, and error with Retry", async () => {
     detailResult = () => notFound("not-found");
     const missing = renderDetail();
     expect(await screen.findByText("Project not found")).toBeInTheDocument();
     expect(
       screen.getByRole("link", { name: "Back to projects" })
     ).toHaveAttribute("href", "/app/projects");
+    expect(screen.queryByRole("button", { name: "Restore" })).toBeNull();
     missing.unmount();
-
-    detailResult = () => notFound("in-trash");
-    const trashed = renderDetail();
-    expect(
-      await screen.findByText("This project is in the trash")
-    ).toBeInTheDocument();
-    api.POST.mockResolvedValueOnce({ response: res(204) });
-    detailResult = () => ({ data: website, response: res(200) });
-    fireEvent.click(screen.getByRole("button", { name: "Restore" }));
-    expect(
-      await screen.findByRole("heading", { name: "Website" })
-    ).toBeInTheDocument();
-    expect(api.POST).toHaveBeenCalledWith(
-      "/api/v1/projects/{id}/restore",
-      expect.objectContaining({ params: { path: { id: "p1" } } })
-    );
-    trashed.unmount();
 
     detailResult = () => ({
       error: "Internal Server Error",
@@ -195,7 +179,7 @@ describe("ProjectDetail (feat-prj-web)", () => {
     expect(detailCalls()).toBeGreaterThan(before);
   });
 
-  it("AC-15 FR-PRJ-005 SCR-021: delete confirmation; Cancel sends nothing; Delete → DELETE, toast, the list, no refetch", async () => {
+  it("AC-11 FR-PRJ-005 SCR-021: permanent delete confirmation; Cancel sends nothing; Delete → DELETE, toast, the list, no refetch", async () => {
     detailResult = () => ({ data: website, response: res(200) });
     renderDetail();
     await screen.findByRole("heading", { name: "Website" });
@@ -205,7 +189,7 @@ describe("ProjectDetail (feat-prj-web)", () => {
     expect(within(dialog).getByText("Delete project?")).toBeInTheDocument();
     expect(
       within(dialog).getByText(
-        "“Website” and its tasks move to the trash. You can restore them for 31 days."
+        "“Website” and its tasks will be deleted permanently. Their logged time stays."
       )
     ).toBeInTheDocument();
     fireEvent.click(within(dialog).getByRole("button", { name: "Cancel" }));
@@ -225,7 +209,7 @@ describe("ProjectDetail (feat-prj-web)", () => {
       "/api/v1/projects/{id}",
       expect.objectContaining({ params: { path: { id: "p1" } } })
     );
-    expect(toast).toHaveBeenCalledWith("Moved to trash");
+    expect(toast).toHaveBeenCalledWith("Project deleted");
     // Let any refetch the delete might trigger run, then check none did.
     await new Promise((resolve) => setTimeout(resolve, 50));
     expect(detailCalls()).toBe(before);
@@ -263,7 +247,7 @@ describe("ProjectDetail logged time (feat-proto-sync-web)", () => {
     });
   });
 
-  it("AC-15 FR-TLOG-012 SCR-021 SCR-044: the project page shows Logged time for the project, not while it's in the trash", async () => {
+  it("AC-15 FR-TLOG-012 SCR-021 SCR-044: the project page shows Logged time for the project, not when it isn't found", async () => {
     detailResult = () => ({ data: website, response: res(200) });
     const view = renderDetail();
     expect(await screen.findByText("Logged time")).toBeInTheDocument();
@@ -276,11 +260,9 @@ describe("ProjectDetail logged time (feat-proto-sync-web)", () => {
     view.unmount();
 
     api.GET.mockClear();
-    detailResult = () => notFound("in-trash");
+    detailResult = () => notFound("not-found");
     renderDetail();
-    expect(
-      await screen.findByText("This project is in the trash")
-    ).toBeInTheDocument();
+    expect(await screen.findByText("Project not found")).toBeInTheDocument();
     expect(screen.queryByText("Logged time")).toBeNull();
     expect(timeLogQueries()).toEqual([]);
   });

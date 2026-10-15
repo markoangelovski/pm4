@@ -351,7 +351,7 @@ describe("DayView (feat-tlog-web)", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("AC-17 FR-TLOG-003 FR-TLOG-008 FR-TLOG-014 SCR-042: rows per view, links, deleted refs, delete with confirmation", async () => {
+  it("AC-17 FR-TLOG-003 FR-TLOG-008 SCR-042: rows per view, links, delete with confirmation", async () => {
     const byProject = renderView();
     await loaded();
     fireEvent.click(await screen.findByRole("button", { name: /^Manhatan/ }));
@@ -366,15 +366,6 @@ describe("DayView (feat-tlog-web)", () => {
     ).not.toBeInTheDocument();
     byProject.unmount();
 
-    days["2026-10-07"] = dayOf("2026-10-07", 480, [
-      ...ownerLogs,
-      log({
-        id: "l5",
-        durationMinutes: 15,
-        text: "Old fixes",
-        project: ref(null, "Old site", true)
-      })
-    ]);
     renderView("?view=sequential");
     await loaded();
     const panel = await screen.findByRole("tabpanel");
@@ -386,12 +377,6 @@ describe("DayView (feat-tlog-web)", () => {
     expect(
       within(full).getByRole("link", { name: "Specifications 01" })
     ).toHaveAttribute("href", "/app/task?id=t1");
-    const deleted = rowOf("Old fixes", panel);
-    expect(within(deleted).getByText(/Old site/)).toBeInTheDocument();
-    expect(within(deleted).getByText(/\(deleted\)/)).toBeInTheDocument();
-    expect(
-      within(deleted).queryByRole("link", { name: /Old site/ })
-    ).not.toBeInTheDocument();
 
     // Delete: a failure keeps the dialog, then a success closes it.
     const chat = rowOf("Chat with coworker", panel);
@@ -425,6 +410,121 @@ describe("DayView (feat-tlog-web)", () => {
     await waitFor(() =>
       expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument()
     );
+  });
+
+  it("AC-12 FR-TLOG-019 SCR-040: Delete day: disabled on an empty day; the confirmation; Cancel, a failure, then Delete", async () => {
+    days = {};
+    const empty = renderView();
+    await loaded();
+    fireEvent.click(screen.getByRole("button", { name: "Day actions" }));
+    expect(
+      await screen.findByRole("menuitem", { name: "Delete day" })
+    ).toHaveAttribute("aria-disabled", "true");
+    empty.unmount();
+
+    days = {
+      "2026-10-06": dayOf("2026-10-06", 480, [
+        log({ id: "d1", durationMinutes: 60, text: "Planning" }),
+        log({
+          id: "d2",
+          durationMinutes: 30,
+          text: "Review",
+          project: manhatan
+        })
+      ])
+    };
+    const { onUrlUpdate } = renderView("?date=2026-10-06");
+    await screen.findByText("Tuesday, 6 October 2026");
+    // The day has loaded once its groups show.
+    await screen.findByRole("button", { name: /^Manhatan/ });
+    const openDialog = async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Day actions" }));
+      fireEvent.click(
+        await screen.findByRole("menuitem", { name: "Delete day" })
+      );
+      return screen.findByRole("alertdialog");
+    };
+
+    let dialog = await openDialog();
+    expect(within(dialog).getByText("Delete day?")).toBeInTheDocument();
+    expect(
+      within(dialog).getByText(
+        "Tuesday, 6 October 2026: its start time and its 2 logs (1h 30m) will be deleted permanently, with their bookings."
+      )
+    ).toBeInTheDocument();
+    fireEvent.click(within(dialog).getByRole("button", { name: "Cancel" }));
+    await waitFor(() =>
+      expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument()
+    );
+    expect(api.DELETE).not.toHaveBeenCalled();
+
+    dialog = await openDialog();
+    api.DELETE.mockResolvedValueOnce({
+      error: "Internal Server Error",
+      response: res(500)
+    });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Delete" }));
+    await waitFor(() =>
+      expect(toast.error).toHaveBeenCalledWith("Couldn't delete the day.")
+    );
+    expect(screen.getByRole("alertdialog")).toBeInTheDocument();
+
+    api.DELETE.mockResolvedValueOnce({ response: res(204) });
+    days = {};
+    fireEvent.click(within(dialog).getByRole("button", { name: "Delete" }));
+    await waitFor(() =>
+      expect(toast.success).toHaveBeenCalledWith("Day deleted")
+    );
+    expect(api.DELETE).toHaveBeenLastCalledWith(
+      "/api/v1/workdays/{date}",
+      expect.objectContaining({ params: { path: { date: "2026-10-06" } } })
+    );
+    await waitFor(() =>
+      expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument()
+    );
+    expect(screen.getByText("Tuesday, 6 October 2026")).toBeInTheDocument();
+    expect(
+      onUrlUpdate.mock.calls.every(
+        ([event]) => event.searchParams.get("date") === "2026-10-06"
+      )
+    ).toBe(true);
+  });
+
+  it("AC-13 FR-TLOG-014 SCR-040 SCR-042: a deleted project and task show as plain text with the deleted marker; their group has no project icon", async () => {
+    const gone = log({
+      id: "l5",
+      durationMinutes: 15,
+      text: "Old fixes",
+      project: ref(null, "Old site", true),
+      task: ref(null, "Old task", true)
+    });
+    days["2026-10-07"] = dayOf("2026-10-07", 480, [...ownerLogs, gone]);
+
+    const byProject = renderView();
+    await loaded();
+    const projectIcons = (trigger: HTMLElement) =>
+      trigger.querySelectorAll('span[aria-hidden="true"].rounded-md').length;
+    const deletedGroup = await screen.findByRole("button", {
+      name: /^Old site/
+    });
+    expect(
+      within(deletedGroup).getByRole("img", { name: "deleted" })
+    ).toBeInTheDocument();
+    expect(projectIcons(deletedGroup)).toBe(0);
+    expect(projectIcons(group(/^Manhatan/))).toBe(1);
+    byProject.unmount();
+
+    renderView("?view=sequential");
+    await loaded();
+    const panel = await screen.findByRole("tabpanel");
+    const row = rowOf("Old fixes", panel);
+    expect(within(row).getByText("Old site")).toBeInTheDocument();
+    expect(within(row).getByText("Old task")).toBeInTheDocument();
+    expect(within(row).getAllByRole("img", { name: "deleted" })).toHaveLength(
+      2
+    );
+    expect(within(row).queryByRole("link")).toBeNull();
+    expect(within(row).queryByText(/\(deleted\)/)).toBeNull();
   });
 
   it("AC-18 FR-TLOG-001 FR-TLOG-002 SCR-040: empty day, error with Retry, calendar marks and picking, Next / Today, a future date", async () => {
