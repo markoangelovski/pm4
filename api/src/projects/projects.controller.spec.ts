@@ -9,8 +9,7 @@ describe("ProjectsController", () => {
     list: vi.fn(),
     get: vi.fn(),
     update: vi.fn(),
-    remove: vi.fn(),
-    restore: vi.fn()
+    remove: vi.fn()
   };
   const user = { id: "user-1" };
 
@@ -31,7 +30,6 @@ describe("ProjectsController", () => {
     service.get.mockResolvedValue(project);
     service.update.mockResolvedValue(project);
     service.remove.mockResolvedValue(undefined);
-    service.restore.mockResolvedValue(undefined);
 
     const body = { title: "T" };
     const query = {
@@ -52,7 +50,5 @@ describe("ProjectsController", () => {
     expect(service.update).toHaveBeenCalledWith("user-1", "p-1", body);
     await controller.remove(user, "p-1");
     expect(service.remove).toHaveBeenCalledWith("user-1", "p-1");
-    await controller.restore(user, "p-1");
-    expect(service.restore).toHaveBeenCalledWith("user-1", "p-1");
   });
 });

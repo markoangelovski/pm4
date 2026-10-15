@@ -20,7 +20,7 @@ gets **Delete day** (FR-TLOG-019, SCR-040, API-WD-004). The code keeps nothing o
 ## Decisions
 | # | Decision | Source |
 | --- | --- | --- |
-| D1 | API-PRJ-005 / API-TSK-005 run in one transaction: lock the rows (`FOR UPDATE`), save the names on the logs, delete. The lock makes a concurrent log insert linking them wait, then fail its FK, so no log loses its name. | Agent |
+| D1 | API-PRJ-005 / API-TSK-005 run in one transaction: lock the rows (`FOR UPDATE`), save the names on the logs, delete. The lock makes a concurrent log insert linking them wait, then fail its FK, so no log loses its name. API-PRJ-005 locks the project's tasks before the project, the order a log insert's FK checks take (task, then project), so the two can't deadlock. | Agent · owner (2026-10-15) |
 | D2 | Two releases. Migration `0005` (T1) replaces the partial indexes with plain ones and deletes the rows whose `deleted_at` is set, saving their names on their logs first. The owner commits and pushes the feature without T4. T4 then drops `deleted_at` (migration `0006`, repeating the data step for rows set in between) and is committed and pushed alone. | OQ-153, OQ-154 (owner, 2026-10-15) |
 | D3 | API-WD-004 is one SQL statement (two `DELETE … RETURNING` CTEs), so it needs no transaction. Nothing to delete → `404`. | OQ-152 (owner) · prototype `proposed-types.ts` |
 | D4 | Problem bodies carry only `type`, `title`, `status`, `detail` and `errors`; `type`'s slug comes from the status alone. | Owner (2026-10-14) |
@@ -29,12 +29,13 @@ gets **Delete day** (FR-TLOG-019, SCR-040, API-WD-004). The code keeps nothing o
 | D7 | The test step adds the contract stubs (*Contract stubs* under *Interfaces*), runs `npm run openapi:export` and `npm run api:types`, and promotes T3's three new components, so both apps typecheck while the tests fail. | Agent |
 
 ## Scope
-**In:** API-PRJ-005/API-TSK-005 as permanent deletes; every read and filter of `deleted_at` removed from `api/src`; the restore
-endpoints, the in-trash exception and the Problem `problemType`/`extensions` mechanism removed; `TRASH_RETENTION_DAYS` removed from
-`api/.env.example`; migrations `0005` and `0006` (D2); API-WD-004. In `web/`: the prototype's changes (the deleted marker, the delete
-dialogs, the edit-log relink, Delete day), the restore hooks removed, the `/app/trash` page, its route and its sidebar link removed.
+**In:** API-PRJ-005/API-TSK-005 as permanent deletes; `api/src` reads and filters no `deleted_at`; projects and tasks have
+no restore endpoints; Problem bodies carry only the D4 members, with no in-trash type; `api/.env.example` lists only the current
+settings; migrations `0005` and `0006` (D2); API-WD-004. In `web/`: the prototype's changes (the deleted marker, the delete
+dialogs, the edit-log relink, Delete day); the hooks, routes and sidebar match the prototype (no restore hooks; the sidebar footer
+is Settings only).
 
-**Test step (main session, before T1):** rewrites the acceptance tests that cover the removed behaviour to the ACs below and to the
+**Test step (main session, before T1):** brings the acceptance tests in line with the ACs below and to the
 already-updated ACs of feat-prj-api, feat-tsk-api, feat-tlog-api, feat-rpt-api, feat-rpt-web, feat-prj-web, feat-tsk-web and feat-shell-sidebar-sections;
 replaces `/app/trash` with `/app/settings` in `web/lib/auth/return-to.ac.test.ts` and `web/app/components/shared/landing-cta.ac.test.tsx`,
 and the `in-trash` sample with a `not-found` one in `web/lib/api/problem.ac.test.ts`; adds the stubs of D7. Then `pm4 hash`.
@@ -106,10 +107,12 @@ and the `in-trash` sample with a `not-found` one in `web/lib/api/problem.ac.test
 /** API-PRJ-005 (D1): the project and, by the cascade, its tasks; their names stay on the logs. false = not the caller's. */
 async delete(userId: string, id: string): Promise<boolean> {
   return this.db.transaction(async (tx) => {
+    // Tasks before the project: the order a log insert's FK checks lock them (D1).
+    await tx.select({ id: tasks.id }).from(tasks)
+      .where(and(eq(tasks.userId, userId), eq(tasks.projectId, id))).for("update");
     const [project] = await tx.select({ title: projects.title }).from(projects)
       .where(and(eq(projects.userId, userId), eq(projects.id, id))).for("update");
     if (!project) return false;
-    await tx.select({ id: tasks.id }).from(tasks).where(eq(tasks.projectId, id)).for("update");
     await tx.update(timeLogs).set({ deletedTaskTitle: tasks.title }).from(tasks)
       .where(and(eq(timeLogs.userId, userId), eq(timeLogs.taskId, tasks.id), eq(tasks.projectId, id)));
     await tx.update(timeLogs).set({ deletedProjectTitle: project.title })
@@ -257,9 +260,9 @@ test "$(grep -c 'DROP COLUMN "deleted_at"' api/drizzle/0006_*.sql)" = 2
 ## Tasks
 | # | Task | App | Size | Tier | Why this tier | Depends on |
 | --- | --- | --- | --- | --- | --- | --- |
-| T1 | Permanent delete of projects and tasks, restore removed, migration `0005` | api | M | opus | Transactions over several tables with row locks (D1); a data migration | — |
-| T2 | Delete day (API-WD-004), the time read model, the in-trash exception and the Problem mechanism removed | api | M | haiku | Signatures and SQL spelled out; copy `time-logs.controller.ts` `remove` | T1 |
-| T3 | Promote the prototype: the marker, delete dialogs, relink, Delete day; Trash page, route and link removed | web | M | haiku | Promote + twins (D5); hooks spelled out | T2 |
+| T1 | Permanent delete of projects and tasks, migration `0005` | api | M | opus | Transactions over several tables with row locks (D1); a data migration | — |
+| T2 | Delete day (API-WD-004), the time read model and Problem bodies | api | M | haiku | Signatures and SQL spelled out; copy `time-logs.controller.ts` `remove` | T1 |
+| T3 | Promote the prototype: the marker, delete dialogs, relink, Delete day; Settings-only sidebar footer | web | M | haiku | Promote + twins (D5); hooks spelled out | T2 |
 | T4 | Drop `deleted_at` (migration `0006`), after the release with T1–T3 is live (D2) | api | S | haiku | Generated migration plus the data step from *Interfaces* | T3 |
 
 ## Open questions
@@ -267,3 +270,4 @@ None.
 
 ## Changelog
 - 2026-10-15: Initial draft (OQ-152…OQ-154). To `review`.
+- 2026-10-15: D1: API-PRJ-005 locks the project's tasks before the project (review finding, owner).

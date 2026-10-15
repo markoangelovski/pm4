@@ -1,6 +1,5 @@
 import { NotFoundException } from "@nestjs/common";
 import { Test, TestingModule } from "@nestjs/testing";
-import { InTrashException } from "../common/exceptions/in-trash.exception.js";
 import { ProjectLeadService } from "../users/project-lead.service.js";
 import { UsersRepository } from "../users/users.repository.js";
 import { type ProjectRow, ProjectsRepository } from "./projects.repository.js";
@@ -20,7 +19,6 @@ function row(overrides: Partial<ProjectRow> = {}): ProjectRow {
     leadAvatarUrl: null,
     createdAt: new Date("2026-10-01T08:00:00.000Z"),
     updatedAt: new Date("2026-10-02T08:00:00.000Z"),
-    deletedAt: null,
     counts: { upcoming: 2, inProgress: 1, completed: 1 },
     loggedMinutes: 0,
     ...overrides
@@ -34,7 +32,7 @@ describe("ProjectsService", () => {
     findById: vi.fn(),
     list: vi.fn(),
     update: vi.fn(),
-    setDeletedAt: vi.fn()
+    delete: vi.fn()
   };
   const findLeadUser = vi.fn();
 
@@ -76,22 +74,15 @@ describe("ProjectsService", () => {
     expect(repository.findById).not.toHaveBeenCalled();
   });
 
-  it("findOwned: missing → not found; trashed → in-trash unless allowed", async () => {
+  it("findOwned: missing → not found", async () => {
     repository.findById.mockResolvedValue(null);
-    const missing = await service
-      .findOwned("user-1", ID)
-      .catch((e: unknown) => e);
-    expect(missing).toBeInstanceOf(NotFoundException);
-    expect(missing).not.toBeInstanceOf(InTrashException);
-
-    const trashed = row({ deletedAt: new Date() });
-    repository.findById.mockResolvedValue(trashed);
     await expect(service.findOwned("user-1", ID)).rejects.toBeInstanceOf(
-      InTrashException
+      NotFoundException
     );
-    await expect(
-      service.findOwned("user-1", ID, { allowTrashed: true })
-    ).resolves.toBe(trashed);
+
+    const project = row();
+    repository.findById.mockResolvedValue(project);
+    await expect(service.findOwned("user-1", ID)).resolves.toBe(project);
   });
 
   it("create stores the lead columns and missing optional fields as null", async () => {
@@ -142,37 +133,29 @@ describe("ProjectsService", () => {
     expect(repository.update).toHaveBeenLastCalledWith("user-1", ID, {});
   });
 
-  it("update on a trashed project → in-trash, nothing written", async () => {
-    repository.findById.mockResolvedValue(row({ deletedAt: new Date() }));
+  it("update on a missing project → not found, nothing written", async () => {
+    repository.findById.mockResolvedValue(null);
     await expect(
       service.update("user-1", ID, { title: "X" })
-    ).rejects.toBeInstanceOf(InTrashException);
+    ).rejects.toBeInstanceOf(NotFoundException);
     expect(repository.update).not.toHaveBeenCalled();
   });
 
-  it("remove sets deletedAt; a trashed project → in-trash", async () => {
-    repository.findById.mockResolvedValue(row());
+  it("remove deletes the project; not the caller's → not found", async () => {
+    repository.delete.mockResolvedValue(true);
     await service.remove("user-1", ID);
-    expect(repository.setDeletedAt).toHaveBeenCalledWith(
-      "user-1",
-      ID,
-      expect.any(Date)
-    );
+    expect(repository.delete).toHaveBeenCalledWith("user-1", ID);
 
-    repository.findById.mockResolvedValue(row({ deletedAt: new Date() }));
+    repository.delete.mockResolvedValue(false);
     await expect(service.remove("user-1", ID)).rejects.toBeInstanceOf(
-      InTrashException
+      NotFoundException
     );
   });
 
-  it("restore clears deletedAt only for a trashed project", async () => {
-    repository.findById.mockResolvedValue(row({ deletedAt: new Date() }));
-    await service.restore("user-1", ID);
-    expect(repository.setDeletedAt).toHaveBeenCalledWith("user-1", ID, null);
-
-    repository.setDeletedAt.mockReset();
-    repository.findById.mockResolvedValue(row());
-    await service.restore("user-1", ID);
-    expect(repository.setDeletedAt).not.toHaveBeenCalled();
+  it("remove: a non-UUID id → not found, without a query", async () => {
+    await expect(service.remove("user-1", "abc")).rejects.toBeInstanceOf(
+      NotFoundException
+    );
+    expect(repository.delete).not.toHaveBeenCalled();
   });
 });

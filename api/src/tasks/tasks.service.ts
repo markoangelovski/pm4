@@ -1,10 +1,5 @@
-import {
-  ConflictException,
-  Injectable,
-  NotFoundException
-} from "@nestjs/common";
+import { Injectable, NotFoundException } from "@nestjs/common";
 import { isUUID } from "class-validator";
-import { InTrashException } from "../common/exceptions/in-trash.exception.js";
 import { ProjectLeadService } from "../users/project-lead.service.js";
 import { ProjectsService } from "../projects/projects.service.js";
 import { CreateTaskDto } from "./dto/create-task.dto.js";
@@ -20,7 +15,7 @@ import {
   TasksRepository
 } from "./tasks.repository.js";
 
-/** Tasks (API-TSK-001…006), always the caller's own. */
+/** Tasks (API-TSK-001…005), always the caller's own. */
 @Injectable()
 export class TasksService {
   constructor(
@@ -30,18 +25,8 @@ export class TasksService {
   ) {}
 
   async create(userId: string, dto: CreateTaskDto): Promise<TaskResponseDto> {
-    // A missing, foreign or trashed project is a plain 404 (D5).
-    try {
-      await this.projectsService.findOwned(userId, dto.projectId);
-    } catch (error) {
-      if (
-        error instanceof InTrashException ||
-        error instanceof NotFoundException
-      ) {
-        throw new NotFoundException("Project not found.");
-      }
-      throw error;
-    }
+    // A missing or foreign project → 404 (D5).
+    await this.projectsService.findOwned(userId, dto.projectId);
 
     const lead = (await this.projectLeadService.toColumns(dto, false))!;
     const id = await this.tasksRepository.insert(userId, {
@@ -85,17 +70,7 @@ export class TasksService {
 
     // Moving: the target project is checked like on create (D5).
     if (dto.projectId !== undefined && dto.projectId !== task.projectId) {
-      try {
-        await this.projectsService.findOwned(userId, dto.projectId);
-      } catch (error) {
-        if (
-          error instanceof InTrashException ||
-          error instanceof NotFoundException
-        ) {
-          throw new NotFoundException("Project not found.");
-        }
-        throw error;
-      }
+      await this.projectsService.findOwned(userId, dto.projectId);
     }
 
     const lead = await this.projectLeadService.toColumns(dto, true);
@@ -112,62 +87,21 @@ export class TasksService {
     return this.get(userId, id);
   }
 
-  /** Moves the task to the trash. */
+  /** Deletes the task permanently (API-TSK-005). */
   async remove(userId: string, id: string): Promise<void> {
-    await this.findOwned(userId, id);
-    await this.tasksRepository.setDeletedAt(userId, id, new Date());
-  }
-
-  /**
-   * Takes the task out of the trash; if the task's project is in the trash,
-   * raises 409. An active task → no change.
-   */
-  async restore(userId: string, id: string): Promise<void> {
-    const task = await this.findOwned(userId, id, { allowTrashed: true });
-
-    // Check if the task's project is in the trash
-    if (task.projectDeletedAt !== null) {
-      throw new ConflictException({
-        message:
-          "The task's project is in the trash. Restore the project instead.",
-        problemType: "conflict"
-      });
-    }
-
-    if (task.deletedAt !== null) {
-      await this.tasksRepository.setDeletedAt(userId, id, null);
+    if (!isUUID(id) || !(await this.tasksRepository.delete(userId, id))) {
+      throw new NotFoundException("Task not found.");
     }
   }
 
-  /**
-   * The caller's task by id. A non-UUID or
-   * missing id → `404 not-found`; a trashed one → `404 in-trash`
-   * unless `allowTrashed`; a task whose project is in the trash
-   * → `404 in-trash` with `projectInTrash: true`.
-   */
-  async findOwned(
-    userId: string,
-    id: string,
-    opts: { allowTrashed?: boolean } = {}
-  ): Promise<TaskRow> {
+  /** The caller's task by id. A non-UUID or missing id → `404 not-found`. */
+  async findOwned(userId: string, id: string): Promise<TaskRow> {
     const task = isUUID(id)
       ? await this.tasksRepository.findById(userId, id)
       : null;
-
     if (!task) {
       throw new NotFoundException("Task not found.");
     }
-
-    if (
-      !opts.allowTrashed &&
-      (task.deletedAt !== null || task.projectDeletedAt !== null)
-    ) {
-      throw new InTrashException("Task is in the trash.", {
-        projectId: task.projectId,
-        projectInTrash: task.projectDeletedAt !== null
-      });
-    }
-
     return task;
   }
 
@@ -177,7 +111,7 @@ export class TasksService {
       project: {
         id: row.projectId,
         title: row.projectTitle,
-        deleted: row.projectDeletedAt !== null
+        deleted: false
       },
       title: row.title,
       description: row.description,

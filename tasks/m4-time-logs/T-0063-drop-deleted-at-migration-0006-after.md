@@ -3,7 +3,7 @@ id: T-0063
 title: Drop deleted_at (migration 0006), after the release with T1–T3 is live (D2)
 milestone: M4
 app: api
-status: blocked
+status: ready
 size: S
 tier: haiku
 depends_on: [T-0062]

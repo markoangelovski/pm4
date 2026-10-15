@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable } from "@nestjs/common";
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException
+} from "@nestjs/common";
 import { UsersRepository } from "../users/users.repository.js";
 import {
   DayResponseDto,
@@ -71,8 +75,10 @@ export class WorkdaysService {
   }
 
   /** API-WD-004. */
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- stub (feat-hard-delete)
-  deleteDay(userId: string, date: string): Promise<void> {
-    throw new Error("not implemented (feat-hard-delete)");
+  async deleteDay(userId: string, date: string): Promise<void> {
+    assertDate(date, "date");
+    if (!(await this.timeRepository.deleteDay(userId, date))) {
+      throw new NotFoundException("Workday not found.");
+    }
   }
 }

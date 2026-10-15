@@ -7,8 +7,6 @@ import {
   eq,
   ilike,
   inArray,
-  isNotNull,
-  isNull,
   sql,
   type SQL
 } from "drizzle-orm";
@@ -37,12 +35,11 @@ export interface TaskValues {
   dueDate: string | null;
 }
 
-/** A task with its lead user's current name/avatar, project title and deleted status. */
+/** A task with its lead user's current name/avatar and its project's title. */
 export interface TaskRow extends LeadRow {
   id: string;
   projectId: string;
   projectTitle: string;
-  projectDeletedAt: Date | null;
   title: string;
   description: string | null;
   externalLink: string | null;
@@ -50,7 +47,6 @@ export interface TaskRow extends LeadRow {
   dueDate: string | null;
   createdAt: Date;
   updatedAt: Date;
-  deletedAt: Date | null;
   /** Minutes of all the caller's logs on the task (OQ-132). */
   loggedMinutes: number;
 }
@@ -79,7 +75,7 @@ export class TasksRepository {
     return row.id;
   }
 
-  /** The caller's task, including a trashed one (`deletedAt` set). */
+  /** The caller's task. */
   async findById(userId: string, id: string): Promise<TaskRow | null> {
     const [row] = await this.selectRows(userId)
       .where(and(eq(tasks.userId, userId), eq(tasks.id, id)))
@@ -87,7 +83,7 @@ export class TasksRepository {
     return row ?? null;
   }
 
-  /** A page of the caller's active tasks (not in trash), plus the total that match. */
+  /** A page of the caller's tasks, plus the total that match. */
   async list(
     userId: string,
     filter: {
@@ -103,8 +99,6 @@ export class TasksRepository {
 
     const where = and(
       eq(tasks.userId, userId),
-      isNull(tasks.deletedAt),
-      isNull(projects.deletedAt),
       filter.projectId ? eq(tasks.projectId, filter.projectId) : undefined,
       filter.status && filter.status.length > 0
         ? inArray(tasks.status, filter.status)
@@ -150,26 +144,26 @@ export class TasksRepository {
   }
 
   /**
-   * Moves an active task to the trash, or a trashed one out of it; doesn't
-   * touch `updatedAt`. A row already in the target state is left alone.
+   * API-TSK-005: deletes the task; its name stays on its logs, which keep
+   * their project. `false` = not the caller's.
    */
-  async setDeletedAt(
-    userId: string,
-    id: string,
-    deletedAt: Date | null
-  ): Promise<void> {
-    await this.db
-      .update(tasks)
-      .set({ deletedAt })
-      .where(
-        and(
-          eq(tasks.userId, userId),
-          eq(tasks.id, id),
-          deletedAt === null
-            ? isNotNull(tasks.deletedAt)
-            : isNull(tasks.deletedAt)
-        )
-      );
+  async delete(userId: string, id: string): Promise<boolean> {
+    return this.db.transaction(async (tx) => {
+      const [task] = await tx
+        .select({ title: tasks.title })
+        .from(tasks)
+        .where(and(eq(tasks.userId, userId), eq(tasks.id, id)))
+        .for("update");
+      if (!task) return false;
+      await tx
+        .update(timeLogs)
+        .set({ deletedTaskTitle: task.title })
+        .where(and(eq(timeLogs.userId, userId), eq(timeLogs.taskId, id)));
+      await tx
+        .delete(tasks)
+        .where(and(eq(tasks.userId, userId), eq(tasks.id, id)));
+      return true;
+    });
   }
 
   /**
@@ -181,7 +175,6 @@ export class TasksRepository {
         id: tasks.id,
         projectId: tasks.projectId,
         projectTitle: projects.title,
-        projectDeletedAt: projects.deletedAt,
         title: tasks.title,
         description: tasks.description,
         externalLink: tasks.externalLink,
@@ -193,7 +186,6 @@ export class TasksRepository {
         dueDate: tasks.dueDate,
         createdAt: tasks.createdAt,
         updatedAt: tasks.updatedAt,
-        deletedAt: tasks.deletedAt,
         loggedMinutes:
           sql<number>`(SELECT coalesce(sum(${timeLogs.durationMinutes}), 0) FROM ${timeLogs}
           WHERE ${timeLogs.userId} = ${userId} AND ${timeLogs.taskId} = ${tasks.id})`.mapWith(

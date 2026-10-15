@@ -6,8 +6,6 @@ import {
   desc,
   eq,
   ilike,
-  isNotNull,
-  isNull,
   or,
   sql,
   type SQL
@@ -36,7 +34,6 @@ export interface ProjectRow extends LeadRow {
   externalLink: string | null;
   createdAt: Date;
   updatedAt: Date;
-  deletedAt: Date | null;
   counts: { upcoming: number; inProgress: number; completed: number };
   /** Minutes of all the caller's logs on the project (OQ-132). */
   loggedMinutes: number;
@@ -66,7 +63,7 @@ export class ProjectsRepository {
     return row.id;
   }
 
-  /** The caller's project, including a trashed one (`deletedAt` set). */
+  /** The caller's project. */
   async findById(userId: string, id: string): Promise<ProjectRow | null> {
     const [row] = await this.selectRows(userId, id)
       .where(and(eq(projects.userId, userId), eq(projects.id, id)))
@@ -74,7 +71,7 @@ export class ProjectsRepository {
     return row ? toRow(row) : null;
   }
 
-  /** A page of the caller's active projects, plus the total that match. */
+  /** A page of the caller's projects, plus the total that match. */
   async list(
     userId: string,
     q: string | null,
@@ -88,7 +85,6 @@ export class ProjectsRepository {
     const leadName = sql`coalesce(${lead.displayName}, ${projects.projectLead})`;
     const where = and(
       eq(projects.userId, userId),
-      isNull(projects.deletedAt),
       pattern ? or(titleMatch, ilike(leadName, pattern)) : undefined
     );
     const orderBy = titleMatch
@@ -118,41 +114,52 @@ export class ProjectsRepository {
     await this.db
       .update(projects)
       .set({ ...values, updatedAt: sql`now()` })
-      .where(
-        and(
-          eq(projects.userId, userId),
-          eq(projects.id, id),
-          isNull(projects.deletedAt)
-        )
-      );
+      .where(and(eq(projects.userId, userId), eq(projects.id, id)));
   }
 
   /**
-   * Moves an active project to the trash, or a trashed one out of it; doesn't
-   * touch `updatedAt`. A row already in the target state is left alone.
+   * API-PRJ-005: deletes the project and, by the cascade, its tasks; their
+   * names stay on the logs. `false` = not the caller's.
    */
-  async setDeletedAt(
-    userId: string,
-    id: string,
-    deletedAt: Date | null
-  ): Promise<void> {
-    await this.db
-      .update(projects)
-      .set({ deletedAt })
-      .where(
-        and(
-          eq(projects.userId, userId),
-          eq(projects.id, id),
-          deletedAt === null
-            ? isNotNull(projects.deletedAt)
-            : isNull(projects.deletedAt)
-        )
-      );
+  async delete(userId: string, id: string): Promise<boolean> {
+    return this.db.transaction(async (tx) => {
+      // Tasks before the project: the order a log insert's FK checks lock them (D1).
+      await tx
+        .select({ id: tasks.id })
+        .from(tasks)
+        .where(and(eq(tasks.userId, userId), eq(tasks.projectId, id)))
+        .for("update");
+      const [project] = await tx
+        .select({ title: projects.title })
+        .from(projects)
+        .where(and(eq(projects.userId, userId), eq(projects.id, id)))
+        .for("update");
+      if (!project) return false;
+      await tx
+        .update(timeLogs)
+        .set({ deletedTaskTitle: tasks.title })
+        .from(tasks)
+        .where(
+          and(
+            eq(timeLogs.userId, userId),
+            eq(timeLogs.taskId, tasks.id),
+            eq(tasks.projectId, id)
+          )
+        );
+      await tx
+        .update(timeLogs)
+        .set({ deletedProjectTitle: project.title })
+        .where(and(eq(timeLogs.userId, userId), eq(timeLogs.projectId, id)));
+      await tx
+        .delete(projects)
+        .where(and(eq(projects.userId, userId), eq(projects.id, id)));
+      return true;
+    });
   }
 
   /**
    * `projects` with the lead user (`LEFT JOIN users AS lead`) and the counts of
-   * the caller's tasks that aren't individually deleted, per project.
+   * the caller's tasks, per project.
    */
   private selectRows(userId: string, projectId?: string) {
     const c = this.db
@@ -175,7 +182,6 @@ export class ProjectsRepository {
       .where(
         and(
           eq(tasks.userId, userId),
-          isNull(tasks.deletedAt),
           projectId ? eq(tasks.projectId, projectId) : undefined
         )
       )
@@ -194,7 +200,6 @@ export class ProjectsRepository {
         leadAvatarUrl: lead.avatarUrl,
         createdAt: projects.createdAt,
         updatedAt: projects.updatedAt,
-        deletedAt: projects.deletedAt,
         upcoming: sql<number>`coalesce(${c.upcoming}, 0)`.mapWith(Number),
         inProgress: sql<number>`coalesce(${c.inProgress}, 0)`.mapWith(Number),
         completed: sql<number>`coalesce(${c.completed}, 0)`.mapWith(Number),

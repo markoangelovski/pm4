@@ -1,6 +1,5 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { isUUID } from "class-validator";
-import { InTrashException } from "../common/exceptions/in-trash.exception.js";
 import { ProjectLeadService } from "../users/project-lead.service.js";
 import { CreateProjectDto } from "./dto/create-project.dto.js";
 import { ListProjectsQueryDto } from "./dto/list-projects-query.dto.js";
@@ -15,7 +14,7 @@ import {
   ProjectsRepository
 } from "./projects.repository.js";
 
-/** Projects (API-PRJ-001…006), always the caller's own. */
+/** Projects (API-PRJ-001…005), always the caller's own. */
 @Injectable()
 export class ProjectsService {
   constructor(
@@ -72,38 +71,23 @@ export class ProjectsService {
     return this.get(userId, id);
   }
 
-  /** Moves the project to the trash; its tasks aren't changed. */
+  /** Deletes the project and its tasks permanently (API-PRJ-005). */
   async remove(userId: string, id: string): Promise<void> {
-    await this.findOwned(userId, id);
-    await this.projectsRepository.setDeletedAt(userId, id, new Date());
-  }
-
-  /** Takes the project out of the trash; an active project → no change. */
-  async restore(userId: string, id: string): Promise<void> {
-    const project = await this.findOwned(userId, id, { allowTrashed: true });
-    if (project.deletedAt !== null) {
-      await this.projectsRepository.setDeletedAt(userId, id, null);
+    if (!isUUID(id) || !(await this.projectsRepository.delete(userId, id))) {
+      throw new NotFoundException("Project not found.");
     }
   }
 
   /**
    * The caller's project by id (shared with feat-tsk-api). A non-UUID or
-   * missing id → `404 not-found` (D11); a trashed one → `404 in-trash`
-   * unless `allowTrashed`.
+   * missing id → `404 not-found` (D11).
    */
-  async findOwned(
-    userId: string,
-    id: string,
-    opts: { allowTrashed?: boolean } = {}
-  ): Promise<ProjectRow> {
+  async findOwned(userId: string, id: string): Promise<ProjectRow> {
     const project = isUUID(id)
       ? await this.projectsRepository.findById(userId, id)
       : null;
     if (!project) {
       throw new NotFoundException("Project not found.");
-    }
-    if (project.deletedAt !== null && !opts.allowTrashed) {
-      throw new InTrashException("Project is in the trash.");
     }
     return project;
   }

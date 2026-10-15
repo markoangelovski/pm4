@@ -1,9 +1,9 @@
 ---
 id: T-0062
-title: Promote the prototype: the marker, delete dialogs, relink, Delete day; Trash page, route and link removed
+title: Promote the prototype: the marker, delete dialogs, relink, Delete day; Settings-only sidebar footer
 milestone: M4
 app: web
-status: blocked
+status: done
 size: M
 tier: haiku
 depends_on: [T-0061]
@@ -22,7 +22,7 @@ ac_files:
   - { path: web/app/(dashboard-layout)/layout/vertical/sidebar/nav-collapse/nav-collapse.ac.test.tsx, sha256: 54b42fbccdd0cbd28938aa2e146434055412826c87308c1bd857966b32faecb1 }
 ---
 
-# T-0062: Promote the prototype: the marker, delete dialogs, relink, Delete day; Trash page, route and link removed
+# T-0062: Promote the prototype: the marker, delete dialogs, relink, Delete day; Settings-only sidebar footer
 
 **Tier reason:** Promote + twins (D5); hooks spelled out
 
@@ -31,9 +31,23 @@ Work from the brief: `node scripts/pm4.mjs brief T-0062`. Verify with `node scri
 ## Implementation notes
 _Implementer: what changed, and anything the reviewer should look at._
 
+- Regenerated `web/lib/api/schema.d.ts` (`npm run api:types`): the workdays path has `delete` (API-WD-004), no restore paths.
+- Promoted the three P rows (deleted-marker, day-menu, delete-day-dialog): already identical to the prototype, nothing changed.
+- Twins (D5): the 15 "Replaced by the twin" files copied from `proto/` with the `@/proto/` import rewrite, then prettier. `pm4 twins`: 64 equal.
+- `features/time/api.ts` and `proto/features/time/api.ts`: `useDeleteDay` calls `apiClient.DELETE("/api/v1/workdays/{date}")` without a cast; `proto/features/time/` has no `proposed-types.ts`.
+- `routes.ts` and the sidebar match the prototype: the sidebar footer is Settings only; `sidebaritems.test.ts` footer expects `["Settings"]`.
+- `lib/api/problem.ts`: `slug` comment examples are `("not-found", "validation", …)`.
+- Reviewer: `web/features/time/components/day-view.tsx` and `log-form-dialog.tsx` came from the twins, so their diffs are the prototype's; a jsdom "Not implemented: navigation" message appears in the vitest output of the related suites (source not traced); all suites pass.
+- `node scripts/pm4.mjs check T-0062` (PASS T-0062): ac hashes ok (10); scope ok; pending AC-19 (later task, excluded); web lint ok; web format:check ok; web typecheck ok; web test ok; web build ok; web api:types ok; check AC-16 ok; check AC-17 ok; check AC-19 skipped (later task); twins ok (64 equal); manual (owner verifies): AC-7, AC-18.
+
 ### Attempts
 | # | Tier | Result | Summary |
 | --- | --- | --- | --- |
+| 1 | haiku | PASS | Promoted twins, real `useDeleteDay`, Settings-only footer, schema regenerated; `pm4 check` PASS |
 
 ## Review
-_Filled in by `review-feature`._
+**Verdict: approve** (Opus reviewer, 2026-10-15). Twins equal (64), `useDeleteDay` without the cast, no `@/proto/*` import in production code, AC-17 clean. No findings.
+
+Owner still verifies AC-18 (and the Day actions menu and delete dialogs at 360 px, keyboard, dark theme).
+
+Tier feedback: haiku was right.

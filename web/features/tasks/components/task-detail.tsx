@@ -4,7 +4,6 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useQueryState } from "nuqs";
-import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { ArrowLeft, ExternalLink, Pencil, SearchX, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -12,7 +11,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Empty,
   EmptyContent,
-  EmptyDescription,
   EmptyHeader,
   EmptyMedia,
   EmptyTitle
@@ -20,18 +18,12 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { ProjectIcon } from "@/features/projects/components/project-icon";
 import { useMe } from "@/features/users/api";
-import { useRestoreProject } from "@/features/projects/api";
 import { ProjectLeadLabel } from "@/features/users/components/project-lead-label";
 import { DeleteTaskDialog } from "@/features/tasks/components/delete-task-dialog";
 import { DueDateBadge } from "@/features/tasks/components/due-date-badge";
 import { TaskFormDialog } from "@/features/tasks/components/task-form-dialog";
 import { TaskStatusSelect } from "@/features/tasks/components/task-status-select";
-import {
-  useTask,
-  useRestoreTask,
-  taskKeys,
-  type Task
-} from "@/features/tasks/api";
+import { useTask, type Task } from "@/features/tasks/api";
 import { LoggedTimeSection } from "@/features/time/components/logged-time-section";
 import { formatDateTime } from "@/lib/time";
 import { isApiError } from "@/lib/api/problem";
@@ -56,9 +48,6 @@ export function TaskDetail() {
   const id = idParam ?? "";
   const [leaving, setLeaving] = useState(false);
   const query = useTask(id, !leaving);
-  const restore = useRestoreTask();
-  const restoreProject = useRestoreProject();
-  const queryClient = useQueryClient();
   const task = query.data;
   const [editing, setEditing] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -69,77 +58,6 @@ export function TaskDetail() {
   const error = query.error;
   if (query.isPending) {
     body = <DetailSkeleton />;
-  } else if (isApiError(error, 404, "in-trash")) {
-    const problem = error.problem as {
-      projectInTrash?: boolean;
-      projectId?: string;
-    } | null;
-    const projectInTrash = problem?.projectInTrash === true;
-    if (projectInTrash) {
-      const projectId = problem?.projectId;
-      body = (
-        <Empty>
-          <EmptyHeader>
-            <EmptyMedia variant="icon">
-              <Trash2 />
-            </EmptyMedia>
-            <EmptyTitle>This task&apos;s project is in the trash</EmptyTitle>
-            <EmptyDescription>
-              Restore the project to see this task again.
-            </EmptyDescription>
-          </EmptyHeader>
-          <EmptyContent className="flex-row justify-center">
-            {typeof projectId === "string" && (
-              <Button
-                disabled={restoreProject.isPending}
-                onClick={() =>
-                  restoreProject.mutate(projectId, {
-                    onSuccess: () => {
-                      void queryClient.invalidateQueries({
-                        queryKey: taskKeys.detail(id)
-                      });
-                    },
-                    onError: () => toast.error("Couldn't restore the project.")
-                  })
-                }
-                className="cursor-pointer"
-              >
-                Restore project
-              </Button>
-            )}
-            <BackToTasks />
-          </EmptyContent>
-        </Empty>
-      );
-    } else {
-      body = (
-        <Empty>
-          <EmptyHeader>
-            <EmptyMedia variant="icon">
-              <Trash2 />
-            </EmptyMedia>
-            <EmptyTitle>This task is in the trash</EmptyTitle>
-            <EmptyDescription>
-              Restore it to see and edit it again.
-            </EmptyDescription>
-          </EmptyHeader>
-          <EmptyContent className="flex-row justify-center">
-            <Button
-              disabled={restore.isPending}
-              onClick={() =>
-                restore.mutate(id, {
-                  onError: () => toast.error("Couldn't restore the task.")
-                })
-              }
-              className="cursor-pointer"
-            >
-              Restore
-            </Button>
-            <BackToTasks />
-          </EmptyContent>
-        </Empty>
-      );
-    }
   } else if (isApiError(error, 404)) {
     body = (
       <Empty>
@@ -198,7 +116,7 @@ export function TaskDetail() {
             onDeleted={() => {
               setLeaving(true);
               router.push(`${routes.app.project}?id=${task.project.id}`);
-              toast("Moved to trash");
+              toast("Task deleted");
             }}
           />
         </>

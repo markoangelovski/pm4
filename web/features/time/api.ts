@@ -159,9 +159,12 @@ export function useDeleteLog(): UseMutationResult<void, Error, TimeLog> {
 export function useDeleteDay(): UseMutationResult<void, Error, string> {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (): Promise<void> => {
-      throw new Error("not implemented (feat-hard-delete)");
-    },
+    mutationFn: async (date: string) =>
+      unwrapVoid(
+        await apiClient.DELETE("/api/v1/workdays/{date}", {
+          params: { path: { date } }
+        })
+      ),
     onSuccess: () => refreshAfterLogChange(queryClient)
   });
 }

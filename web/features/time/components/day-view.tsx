@@ -26,9 +26,12 @@ import { formatDuration, today as todayIn } from "@/lib/time";
 import { useMe } from "@/features/users/api";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDay } from "../api";
-import { groupLogs, rowFields } from "../day";
+import { groupLogs, rowFields, type LogGroup } from "../day";
+import type { Ref } from "../types";
+import { DeletedName } from "./deleted-marker";
 import { DayCharts, logColors } from "./day-charts";
 import { DayHeader } from "./day-header";
+import { DayMenu } from "./day-menu";
 import { DayPicker } from "./day-picker";
 import { LogFormDialog } from "./log-form-dialog";
 import { LogRow } from "./log-row";
@@ -136,6 +139,7 @@ export function DayView() {
         today={today}
         timeZone={timeZone}
         onChange={setDate}
+        actions={<DayMenu day={day} />}
       />
       <DayHeader
         day={day}
@@ -223,7 +227,9 @@ export function DayView() {
                       {groups[by].map((g) => (
                         <AccordionItem key={g.key} value={g.key}>
                           <AccordionTrigger className="cursor-pointer items-center gap-2 py-3 hover:no-underline sm:gap-3">
-                            {g.key !== "unsorted" && g.key !== "nonprod" ? (
+                            {g.key !== "unsorted" &&
+                            g.key !== "nonprod" &&
+                            !g.key.startsWith("deleted:") ? (
                               <ProjectIcon
                                 project={{ id: g.key }}
                                 className="size-5 rounded-md"
@@ -234,16 +240,8 @@ export function DayView() {
                                 "Unsorted"
                               ) : g.key === "nonprod" ? (
                                 "Non-prod"
-                              ) : g.task ? (
-                                <>
-                                  {g.project}{" "}
-                                  <span className="text-muted-foreground">
-                                    ·
-                                  </span>{" "}
-                                  {g.task}
-                                </>
                               ) : (
-                                g.project
+                                <GroupName group={g} by={by} />
                               )}
                             </span>
                             <span className="hidden text-xs text-muted-foreground sm:inline">
@@ -289,5 +287,29 @@ export function DayView() {
         onSaved={setDate}
       />
     </div>
+  );
+}
+
+/** A deleted project or task: its name with the deleted marker (FR-TLOG-014). */
+function GroupPart({ ref_, title }: { ref_: Ref | null; title: string }) {
+  return ref_ && !ref_.id ? <DeletedName title={title} /> : <>{title}</>;
+}
+
+/** A project group's name, or "Project · Task" by task. A group's logs share its refs, so the first log tells
+ *  whether they are deleted (a deleted group's key is `deleted:<title>`, so it has no icon either). */
+function GroupName({ group, by }: { group: LogGroup; by: "project" | "task" }) {
+  const first = group.logs[0];
+  if (by === "project")
+    return <GroupPart ref_={first.project} title={group.project ?? ""} />;
+  return (
+    <>
+      {group.project ? (
+        <>
+          <GroupPart ref_={first.project} title={group.project} />{" "}
+          <span className="text-muted-foreground">·</span>{" "}
+        </>
+      ) : null}
+      <GroupPart ref_={first.task} title={group.task ?? ""} />
+    </>
   );
 }

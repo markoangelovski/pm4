@@ -28,7 +28,7 @@ export class ApiError extends Error {
     this.name = "ApiError";
   }
 
-  /** The last path segment of `problem.type` ("not-found", "in-trash", "validation", …), or null. */
+  /** The last path segment of `problem.type` ("not-found", "validation", …), or null. */
   get slug(): string | null {
     const type = this.problem?.type;
     if (!type) return null;

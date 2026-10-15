@@ -4,7 +4,6 @@ import {
   CalendarCheck,
   FolderKanban,
   ListTodo,
-  Trash2,
   Settings,
   type LucideIcon
 } from "lucide-react";
@@ -30,7 +29,7 @@ export interface MenuItem {
 /**
  * PM4 navigation, grouped under headings (routing.md: Navigation):
  * Dashboard, Project management (Projects, Tasks) and Time (Logs, Bookings).
- * Trash and Settings live in `footerItems`.
+ * Settings lives in `footerItems`.
  */
 const SidebarContent: MenuItem[] = [
   {
@@ -76,7 +75,6 @@ export default SidebarContent;
 export const footerItems: MenuItem[] = [
   {
     items: [
-      { id: "trash", name: "Trash", icon: Trash2, url: routes.app.trash },
       {
         id: "settings",
         name: "Settings",

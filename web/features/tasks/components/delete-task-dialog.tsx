@@ -46,7 +46,7 @@ export function DeleteTaskDialog({
         <AlertDialogHeader>
           <AlertDialogTitle>Delete task?</AlertDialogTitle>
           <AlertDialogDescription>
-            “{task.title}” moves to the trash. You can restore it for 31 days.
+            “{task.title}” will be deleted permanently. Its logged time stays.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter className="rounded-b-md">

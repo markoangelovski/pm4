@@ -26,7 +26,7 @@ export class ReportProjectDto {
   @ApiProperty({ enum: REPORT_PROJECT_KINDS, enumName: "ReportProjectKind" })
   kind: ReportProjectKind;
 
-  /** The project `Ref` (trashed or purged → `deleted: true`); `null` for `unsorted` and `nonprod`. */
+  /** The project `Ref` (a deleted project → its retained name, `deleted: true`); `null` for `unsorted` and `nonprod`. */
   @ApiProperty({ type: RefDto, nullable: true })
   project: RefDto | null;
 

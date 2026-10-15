@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { useDeleteProject, type Project } from "@/features/projects/api";
 import { routes } from "@/lib/routes";
 
-/** SCR-021's delete confirmation; confirm → trash, the list and a toast (OQ-086). */
+/** SCR-021's delete confirmation; confirm → permanent delete, the list and a toast (OQ-086). */
 export function DeleteProjectDialog({
   project,
   open,
@@ -25,7 +25,7 @@ export function DeleteProjectDialog({
   project: Project;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  /** Called after the project moved to the trash, so its page stops fetching and rendering it. */
+  /** Called after the project is deleted, so its page stops fetching and rendering it. */
   onDeleted?: () => void;
 }) {
   const router = useRouter();
@@ -36,8 +36,8 @@ export function DeleteProjectDialog({
         <AlertDialogHeader>
           <AlertDialogTitle>Delete project?</AlertDialogTitle>
           <AlertDialogDescription>
-            “{project.title}” and its tasks move to the trash. You can restore
-            them for 31 days.
+            “{project.title}” and its tasks will be deleted permanently. Their
+            logged time stays.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter className="rounded-b-md">
@@ -52,7 +52,7 @@ export function DeleteProjectDialog({
                 onSuccess: () => {
                   onDeleted?.();
                   router.push(routes.app.projects);
-                  toast("Moved to trash");
+                  toast("Project deleted");
                 },
                 onError: () => toast.error("Couldn't delete the project.")
               })
