@@ -5,8 +5,7 @@ import {
   FolderKanban,
   House,
   ListTodo,
-  Settings,
-  Trash2
+  Settings
 } from "lucide-react";
 import { routes as realRoutes } from "@/lib/routes";
 import { routes } from "@/proto/lib/routes";
@@ -54,7 +53,6 @@ export const protoSidebarItems: MenuItem[] = [
 export const protoFooterItems: MenuItem[] = [
   {
     items: [
-      { id: "trash", name: "Trash", icon: Trash2, url: routes.app.trash },
       {
         id: "settings",
         name: "Settings",

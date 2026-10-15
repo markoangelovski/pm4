@@ -45,8 +45,10 @@ export const projectKeys = {
   detail: (id: string) => [...projectKeys.details(), id] as const
 };
 
-/** Task queries live under this key (feat-tsk-web); a project's trash state changes them. */
+/** Task queries live under this key (feat-tsk-web); deleting a project deletes its tasks. */
 const TASKS_KEY = ["tasks"] as const;
+/** Time queries live under this key (feat-tlog-web); their logs show a deleted project's name. */
+const TIME_KEY = ["time"] as const;
 
 /** API-PRJ-002. q "" omitted from the request; placeholderData: keepPreviousData. */
 export function useProjects(
@@ -84,7 +86,7 @@ export function useProject(
           signal
         })
       ),
-    // The app default is one retry; a missing or trashed project won't appear on a retry.
+    // The app default is one retry; a missing or deleted project won't appear on a retry.
     retry: (failureCount, error) => !isApiError(error, 404) && failureCount < 1,
     enabled
   });
@@ -127,7 +129,7 @@ export function useUpdateProject(
   });
 }
 
-/** API-PRJ-005. onSuccess: removeQueries(detail(id)), invalidate lists() and ["tasks"]. */
+/** API-PRJ-005. onSuccess: removeQueries(detail(id)), invalidate lists(), ["tasks"] and ["time"]. */
 export function useDeleteProject(): UseMutationResult<void, Error, string> {
   const queryClient = useQueryClient();
   return useMutation({
@@ -140,28 +142,10 @@ export function useDeleteProject(): UseMutationResult<void, Error, string> {
     onSuccess: (_data, id) => {
       queryClient.removeQueries({ queryKey: projectKeys.detail(id) });
       // Not returned: the dialog's onDeleted must run right away to disable the
-      // detail query, not after the lists refetch (the trashed project would 404).
+      // detail query, not after the lists refetch (the deleted project would 404).
       void queryClient.invalidateQueries({ queryKey: projectKeys.lists() });
       void queryClient.invalidateQueries({ queryKey: TASKS_KEY });
+      void queryClient.invalidateQueries({ queryKey: TIME_KEY });
     }
-  });
-}
-
-/** API-PRJ-006. onSuccess: invalidate detail(id), lists() and ["tasks"]. */
-export function useRestoreProject(): UseMutationResult<void, Error, string> {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (id: string) =>
-      unwrapVoid(
-        await apiClient.POST("/api/v1/projects/{id}/restore", {
-          params: { path: { id } }
-        })
-      ),
-    onSuccess: (_data, id) =>
-      Promise.all([
-        queryClient.invalidateQueries({ queryKey: projectKeys.detail(id) }),
-        queryClient.invalidateQueries({ queryKey: projectKeys.lists() }),
-        queryClient.invalidateQueries({ queryKey: TASKS_KEY })
-      ])
   });
 }

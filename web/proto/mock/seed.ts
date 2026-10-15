@@ -95,6 +95,8 @@ const ago = (n: number) =>
   format(addDays(new Date(todayStr + "T12:00:00"), -n), "yyyy-MM-dd");
 const ref = (p: ProjectRef) => ({ id: p.id, title: p.title, deleted: false });
 const taskRef = (t: TaskRef) => ({ id: t.id, title: t.title, deleted: false });
+/** A link to a deleted task or project: the log keeps its name (FR-TLOG-014). */
+const deletedRef = (title: string) => ({ id: null, title, deleted: true });
 let n = 0;
 const seed = (
   workDate: string,
@@ -192,6 +194,18 @@ const recent: TimeSeed = {
     seed(todayStr, 30, "Weekly s Peterom.", "Tesla", "t-tesla-meet"),
     seed(todayStr, 45, "Weekly s Tesla timom.", "Tesla", "t-tesla-meet"),
     seed(todayStr, 15, "Sync s Annom nakon za QA.", "Tesla", "t-tesla-meet"),
+    // A deleted task of a live project: the task is plain text with the marker, the project a link.
+    {
+      ...seed(
+        todayStr,
+        30,
+        "Wrapped up the audit notes.",
+        "Audit",
+        undefined,
+        "p-nvidia"
+      ),
+      task: deletedRef("Security audit")
+    },
     seed(
       ago(1),
       120,
@@ -202,6 +216,21 @@ const recent: TimeSeed = {
     seed(ago(1), 60, "Reviewed pull requests.", null, undefined, "p-nvidia"),
     seed(ago(1), 90, "Test pass on the new release.", "QA", "t-tesla-qa"),
     seed(ago(1), 45, "Planning call with the team.", null),
+    // A deleted project and its deleted task, and one of its logs without a task.
+    {
+      ...seed(
+        ago(1),
+        60,
+        "Handover of the old website to the client.",
+        "Handover"
+      ),
+      project: deletedRef("Old Website"),
+      task: deletedRef("Launch")
+    },
+    {
+      ...seed(ago(1), 30, "Final invoice for the old website.", null),
+      project: deletedRef("Old Website")
+    },
     seed(
       ago(2),
       240,

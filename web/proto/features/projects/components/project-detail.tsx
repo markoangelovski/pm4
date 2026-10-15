@@ -3,14 +3,12 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useQueryState } from "nuqs";
-import { toast } from "sonner";
 import { ArrowLeft, ExternalLink, FolderX, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Empty,
   EmptyContent,
-  EmptyDescription,
   EmptyHeader,
   EmptyMedia,
   EmptyTitle
@@ -23,11 +21,7 @@ import { ProjectLeadLabel } from "@/proto/features/users/components/project-lead
 import { ProjectTaskStats } from "@/proto/features/projects/components/project-task-stats";
 import { LoggedTimeSection } from "@/proto/features/time/components/logged-time-section";
 import { TasksList } from "@/proto/features/tasks/components/tasks-list";
-import {
-  useProject,
-  useRestoreProject,
-  type Project
-} from "@/proto/features/projects/api";
+import { useProject, type Project } from "@/proto/features/projects/api";
 import { useMe } from "@/proto/features/users/api";
 import { formatDateTime } from "@/lib/time";
 import { isApiError } from "@/lib/api/problem";
@@ -51,7 +45,6 @@ export function ProjectDetail() {
   const id = idParam ?? "";
   const [leaving, setLeaving] = useState(false);
   const query = useProject(id, !leaving);
-  const restore = useRestoreProject();
   const project = query.data;
   const [editing, setEditing] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -62,34 +55,6 @@ export function ProjectDetail() {
   const error = query.error;
   if (query.isPending) {
     body = <DetailSkeleton />;
-  } else if (isApiError(error, 404, "in-trash")) {
-    body = (
-      <Empty>
-        <EmptyHeader>
-          <EmptyMedia variant="icon">
-            <Trash2 />
-          </EmptyMedia>
-          <EmptyTitle>This project is in the trash</EmptyTitle>
-          <EmptyDescription>
-            Restore it to see and edit it again.
-          </EmptyDescription>
-        </EmptyHeader>
-        <EmptyContent className="flex-row justify-center">
-          <Button
-            disabled={restore.isPending}
-            onClick={() =>
-              restore.mutate(id, {
-                onError: () => toast.error("Couldn't restore the project.")
-              })
-            }
-            className="cursor-pointer"
-          >
-            Restore
-          </Button>
-          <BackToProjects />
-        </EmptyContent>
-      </Empty>
-    );
   } else if (isApiError(error, 404)) {
     body = (
       <Empty>

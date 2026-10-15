@@ -20,17 +20,12 @@ import { Badge } from "@/components/ui/badge";
 import { formatDuration } from "@/lib/time";
 import { routes } from "@/proto/lib/routes";
 import type { Ref, TimeLog } from "../types";
+import { DeletedName } from "./deleted-marker";
 import { DeleteLogDialog } from "./delete-log-dialog";
 import { LogFormDialog } from "./log-form-dialog";
 
 function RefLink({ ref_, href }: { ref_: Ref; href: string }) {
-  if (!ref_.id || ref_.deleted) {
-    return (
-      <span className="text-muted-foreground">
-        {ref_.title} <span className="italic">(deleted)</span>
-      </span>
-    );
-  }
+  if (!ref_.id || ref_.deleted) return <DeletedName title={ref_.title} />;
   return (
     <Link
       href={`${href}?id=${ref_.id}`}

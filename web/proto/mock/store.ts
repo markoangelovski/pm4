@@ -49,7 +49,14 @@ export function nextId(prefix: string): string {
   return `${prefix}${state.seq}`;
 }
 
-const without = (m: Record<string, string>, key: string) =>
+/** A log's link to a deleted task or project: the name stays, the id goes (FR-TLOG-014). */
+const gone = (ref: NonNullable<TimeLog["project"]>) => ({
+  id: null,
+  title: ref.title,
+  deleted: true
+});
+
+const without = <T>(m: Record<string, T>, key: string) =>
   Object.fromEntries(Object.entries(m).filter(([k]) => k !== key));
 
 /** Sets the start of `input.workDate` to `dayStart` unless the day already has one. */
@@ -67,6 +74,30 @@ export const mock = {
   },
   setTasks(tasks: Task[]) {
     set({ tasks });
+  },
+  /** Deletes the project and its tasks; their logs keep the names (data-model.md *Retained names*). */
+  deleteProject(id: string) {
+    const taskIds = new Set(
+      state.tasks.filter((t) => t.project.id === id).map((t) => t.id)
+    );
+    set({
+      projects: state.projects.filter((p) => p.id !== id),
+      tasks: state.tasks.filter((t) => !taskIds.has(t.id)),
+      logs: state.logs.map((l) => ({
+        ...l,
+        project: l.project?.id === id ? gone(l.project) : l.project,
+        task: l.task?.id && taskIds.has(l.task.id) ? gone(l.task) : l.task
+      }))
+    });
+  },
+  /** Deletes the task; its logs keep its name and stay linked to its project. */
+  deleteTask(id: string) {
+    set({
+      tasks: state.tasks.filter((t) => t.id !== id),
+      logs: state.logs.map((l) =>
+        l.task?.id === id ? { ...l, task: gone(l.task) } : l
+      )
+    });
   },
   addLog(input: Omit<TimeLog, "id">, dayStart?: number): TimeLog {
     const log = { ...input, id: nextId("l") };
@@ -88,6 +119,19 @@ export const mock = {
   deleteLog(id: string) {
     const bookings = without(state.bookings, id);
     set({ logs: state.logs.filter((l) => l.id !== id), bookings });
+  },
+  /** API-WD-004: the day's start and its logs go, with their bookings; other days' bookings to it stay. */
+  deleteDay(date: string) {
+    const gone = new Set(
+      state.logs.filter((l) => l.workDate === date).map((l) => l.id)
+    );
+    set({
+      logs: state.logs.filter((l) => !gone.has(l.id)),
+      starts: without(state.starts, date),
+      bookings: Object.fromEntries(
+        Object.entries(state.bookings).filter(([id]) => !gone.has(id))
+      )
+    });
   },
   setStart(date: string, minute: number) {
     set({ starts: { ...state.starts, [date]: minute } });

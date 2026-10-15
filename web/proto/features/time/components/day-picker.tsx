@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { addDays, format, parseISO } from "date-fns";
 import { CalendarIcon, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -20,12 +20,15 @@ export function DayPicker({
   date,
   today,
   timeZone,
-  onChange
+  onChange,
+  actions
 }: {
   date: string;
   today: string;
   timeZone: string;
   onChange: (date: string) => void;
+  /** Shown after **Today** (the day's ⋯ menu). */
+  actions?: ReactNode;
 }) {
   const [open, setOpen] = useState(false);
   const [month, setMonth] = useState(() => parseISO(date));
@@ -109,6 +112,7 @@ export function DayPicker({
         >
           Today
         </Button>
+        {actions}
       </div>
     </div>
   );

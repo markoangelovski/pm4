@@ -100,7 +100,7 @@ function projects(
   const p = all.find((x) => x.id === id);
   if (!p) return notFound();
   if (method === "DELETE") {
-    mock.setProjects(all.filter((x) => x.id !== id));
+    mock.deleteProject(id);
     return noContent();
   }
   if (method === "PATCH") {
@@ -151,7 +151,7 @@ function tasks(
   const t = all.find((x) => x.id === id);
   if (!t) return notFound();
   if (method === "DELETE") {
-    mock.setTasks(all.filter((x) => x.id !== id));
+    mock.deleteTask(id);
     return noContent();
   }
   if (method === "PATCH") {
@@ -179,6 +179,16 @@ function workdays(
         totalMinutes: dayOf(d).totalMinutes
       }));
     return json({ items });
+  }
+  if (method === "DELETE") {
+    const s = getMockState();
+    if (
+      s.starts[date] === undefined &&
+      !s.logs.some((l) => l.workDate === date)
+    )
+      return notFound();
+    mock.deleteDay(date);
+    return noContent();
   }
   if (method === "PUT") {
     mock.setStart(date, Number(body.startMinute));
@@ -259,9 +269,13 @@ function timeLogs(
   const old = s.logs.find((l) => l.id === id);
   if (!id || !old) return notFound();
   if (method === "PATCH") {
+    // API-TLOG-004: without projectId/taskId the link (or the deleted names) stays.
+    const { project, task, ...fields } = toLog();
+    const relink = "projectId" in body || "taskId" in body;
     mock.updateLog(id, {
       ...old,
-      ...toLog(),
+      ...fields,
+      ...(relink ? { project, task } : {}),
       workDate: String(body.workDate ?? old.workDate)
     });
     return json(getMockState().logs.find((l) => l.id === id));

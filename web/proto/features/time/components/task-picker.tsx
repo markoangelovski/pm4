@@ -9,20 +9,26 @@ import {
   ComboboxList
 } from "@/components/ui/combobox";
 import { useState } from "react";
+import { InputGroupAddon } from "@/components/ui/input-group";
 import { useTasks } from "@/proto/features/tasks/api";
 import { TASK_STATUSES } from "@/proto/features/tasks/status";
 import type { TaskRef } from "../types";
+import { DeletedMarker } from "./deleted-marker";
 
-const label = (t: TaskRef) => `${t.project.title} · ${t.title}`;
+const label = (t: TaskRef) =>
+  t.id ? `${t.project.title} · ${t.title}` : t.title;
 
 export function TaskPicker({
   id,
   value,
+  deletedTitle,
   onChange,
   projectId
 }: {
   id?: string;
   value: TaskRef | null;
+  /** A deleted task's name, shown with the deleted marker while `value` is null (OQ-150). */
+  deletedTitle?: string | null;
   onChange: (t: TaskRef | null) => void;
   projectId: string | null;
 }) {
@@ -46,11 +52,16 @@ export function TaskPicker({
   const shown = needle
     ? items.filter((t) => label(t).toLowerCase().includes(needle))
     : items;
+  // The deleted task is the box's value, never an option (its empty id marks it): picking one or clearing replaces it.
+  const deleted: TaskRef | null =
+    !value && deletedTitle
+      ? { id: "", title: deletedTitle, project: { id: "", title: "" } }
+      : null;
   return (
     <Combobox<TaskRef>
       items={shown}
       filter={null}
-      value={value}
+      value={value ?? deleted}
       onValueChange={(next) => onChange(next ?? null)}
       itemToStringLabel={label}
       isItemEqualToValue={(a, b) => a.id === b.id}
@@ -63,9 +74,15 @@ export function TaskPicker({
       <ComboboxInput
         id={id}
         placeholder="No task"
-        showClear={!!value}
+        showClear={!!(value ?? deleted)}
         className="w-full rounded-md! [&_button]:cursor-pointer"
-      />
+      >
+        {deleted ? (
+          <InputGroupAddon align="inline-start">
+            <DeletedMarker className="size-4" />
+          </InputGroupAddon>
+        ) : null}
+      </ComboboxInput>
       <ComboboxContent>
         <ComboboxEmpty>No tasks found</ComboboxEmpty>
         <ComboboxList>
