@@ -3,7 +3,7 @@ id: prod-scope
 title: Scope and Milestones
 status: review
 owner: Marko Angelovski
-last_updated: 2026-10-14
+last_updated: 2026-10-15
 related: [prod-vision, req-overview, req-integrations]
 ---
 
@@ -23,7 +23,7 @@ Defines what is in and out of scope for the MVP, and the milestone order that `t
 - Deleting is permanent. Time logs stay when their project or task is deleted, and keep its name.
 - Dashboard: project and task counts, and for a date range the workdays' start times, the hours worked against the daily target,
   the booked hours, running totals and the hours per project.
-- Integrations (M6): Settings → Integrations and the PMSPA connector: one connection per user, its status, sync with PMSPA and a Connectors page (req-integrations).
+- Integrations (M6): Settings → Integrations and the PMSPA connector: one connection per user, its status, importing PMSPA entities on a Connectors page and pushing PM4 entities to PMSPA (req-integrations).
 
 ## Out of scope (MVP)
 - Sharing, teams, roles (single user per account). A project lead who is a PM4 user gets no access.
@@ -61,3 +61,4 @@ Each milestone corresponds to a folder in `tasks/`.
 - 2026-10-14: Approved by the owner.
 - 2026-10-14: M6 Integrations: the PMSPA connector joins the scope (OQ-141). Back to `review`.
 - 2026-10-14: M7 Landing page: the landing page gets a complete redesign after M6 (OQ-151).
+- 2026-10-15: M6 wording follows the connector capabilities: import from PMSPA, push to PMSPA (req-integrations).

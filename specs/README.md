@@ -33,7 +33,7 @@ Either way, fix the disagreement. Never ignore it.
 | Time capture | [01-requirements/time-logs.md](01-requirements/time-logs.md) | approved |
 | Bookings | [01-requirements/bookings.md](01-requirements/bookings.md) | approved |
 | Dashboard and reporting | [01-requirements/reporting.md](01-requirements/reporting.md) | approved |
-| Integrations and connectors | [01-requirements/integrations.md](01-requirements/integrations.md) | draft |
+| Integrations and connectors | [01-requirements/integrations.md](01-requirements/integrations.md) | review |
 | Non-functional requirements | [01-requirements/non-functional.md](01-requirements/non-functional.md) | draft |
 | System overview | [02-architecture/system-overview.md](02-architecture/system-overview.md) | approved |
 | Tech stack | [02-architecture/tech-stack.md](02-architecture/tech-stack.md) | approved |
