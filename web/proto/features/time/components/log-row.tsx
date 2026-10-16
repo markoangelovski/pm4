@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import { formatDuration } from "@/lib/time";
+import { SyncFlag } from "@/proto/features/integrations/components/sync-flag";
 import { routes } from "@/proto/lib/routes";
 import type { Ref, TimeLog } from "../types";
 import { DeletedName } from "./deleted-marker";
@@ -80,14 +81,22 @@ export function LogRow({
         >
           {log.text}
         </p>
-        {log.excludeFromStats ? (
-          <Badge
-            variant="outline"
-            className="mt-0.5 font-normal text-muted-foreground"
-          >
-            Excluded from statistics
-          </Badge>
-        ) : null}
+        <div className="flex flex-wrap items-center gap-1.5 empty:hidden">
+          {log.excludeFromStats ? (
+            <Badge
+              variant="outline"
+              className="mt-0.5 font-normal text-muted-foreground"
+            >
+              Excluded from statistics
+            </Badge>
+          ) : null}
+          <SyncFlag
+            type="time-log"
+            id={log.id}
+            variant="tag"
+            className="mt-0.5"
+          />
+        </div>
         {project || task ? (
           <p className="flex flex-wrap items-center gap-x-1.5 pt-0.5 text-xs text-muted-foreground">
             {project ? (

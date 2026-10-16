@@ -11,9 +11,19 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import FullLogo from "./full-logo";
 import NavCollapse from "./nav-collapse";
-import { protoFooterItems, protoSidebarItems } from "./proto-sidebar-items";
+import { usePmspaConnection } from "@/proto/features/integrations/api";
+import {
+  connectorItems,
+  protoFooterItems,
+  protoSidebarItems
+} from "./proto-sidebar-items";
 
 export function ProtoSidebar() {
+  const { data: connection } = usePmspaConnection();
+  const menu =
+    connection && connection.status !== "not-configured"
+      ? [...protoSidebarItems, connectorItems]
+      : protoSidebarItems;
   return (
     <Sidebar
       variant="inset"
@@ -33,7 +43,7 @@ export function ProtoSidebar() {
           <SidebarGroup className="flex items-center justify-center group-data-[state=collapsed]:px-2 px-3 py-4">
             <div className="w-full flex flex-col gap-4">
               <Suspense fallback={<Skeleton className="h-8 w-full" />}>
-                <NavCollapse menu={protoSidebarItems} className="text-sm" />
+                <NavCollapse menu={menu} className="text-sm" />
               </Suspense>
             </div>
           </SidebarGroup>

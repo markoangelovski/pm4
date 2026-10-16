@@ -4,8 +4,20 @@
 import createClient from "openapi-fetch";
 import type { components, paths } from "@/lib/api/schema";
 import type { TimeLog } from "@/proto/features/time/types";
+import type {
+  PmspaImportDto,
+  PmspaImportSelectionDto,
+  PmspaLinkType,
+  PmspaPaths,
+  PmspaPushDto,
+  PmspaPushTargetDto,
+  PmspaSyncDto,
+  PmspaSyncTargetDto,
+  SavePmspaConnectionDto
+} from "@/proto/features/integrations/proposed-types";
 import { today } from "@/lib/time";
 import { getMockState, mock, nextId } from "./store";
+import * as pmspa from "./pmspa";
 
 /** Every mock response waits this long, so loading states show. */
 export const MOCK_LATENCY_MS = 150;
@@ -100,10 +112,16 @@ function projects(
   const p = all.find((x) => x.id === id);
   if (!p) return notFound();
   if (method === "DELETE") {
+    const taskIds = getMockState()
+      .tasks.filter((t) => t.project.id === id)
+      .map((t) => t.id);
     mock.deleteProject(id);
+    pmspa.deleted("project", [id]);
+    pmspa.deleted("task", taskIds);
     return noContent();
   }
   if (method === "PATCH") {
+    pmspa.touched("project", id);
     const next = { ...p, ...body } as Project;
     mock.setProjects(all.map((x) => (x.id === id ? next : x)));
     return json(withCounts(next));
@@ -152,9 +170,11 @@ function tasks(
   if (!t) return notFound();
   if (method === "DELETE") {
     mock.deleteTask(id);
+    pmspa.deleted("task", [id]);
     return noContent();
   }
   if (method === "PATCH") {
+    pmspa.touched("task", id);
     const next = { ...t, ...body } as Task;
     mock.setTasks(all.map((x) => (x.id === id ? next : x)));
     return json(withLogged(next));
@@ -269,6 +289,7 @@ function timeLogs(
   const old = s.logs.find((l) => l.id === id);
   if (!id || !old) return notFound();
   if (method === "PATCH") {
+    pmspa.touched("time-log", id);
     // API-TLOG-004: without projectId/taskId the link (or the deleted names) stays.
     const { project, task, ...fields } = toLog();
     const relink = "projectId" in body || "taskId" in body;
@@ -282,6 +303,7 @@ function timeLogs(
   }
   if (method === "DELETE") {
     mock.deleteLog(id);
+    pmspa.deleted("time-log", [id]);
     return noContent();
   }
   return json(old);
@@ -397,6 +419,113 @@ function dashboard(q: URLSearchParams) {
   return json({ days, projects });
 }
 
+const notConnected = () =>
+  problem(409, "Conflict", "PMSPA isn't connected (pmspa-not-connected).");
+
+/** `/integrations/pmspa/**` (req-integrations, proposed-types.ts). */
+function integrations(
+  method: string,
+  rest: string[],
+  q: URLSearchParams,
+  body: Body
+) {
+  const [name, sub, a, b] = rest;
+  if (name !== "pmspa") return notFound();
+  if (!sub) {
+    if (method === "DELETE") {
+      pmspa.disconnect();
+      return noContent();
+    }
+    if (method === "PUT") {
+      const input = body as unknown as SavePmspaConnectionDto;
+      const urlError = pmspa.urlProblem(input.url);
+      if (urlError)
+        return new Response(
+          JSON.stringify({
+            type: "https://pm4.angelovski.top/errors/validation",
+            title: "Validation failed",
+            status: 400,
+            detail: "Validation failed",
+            errors: [{ field: "url", message: urlError }]
+          }),
+          {
+            status: 400,
+            headers: { "Content-Type": "application/problem+json" }
+          }
+        );
+      const saved = pmspa.saveConnection(input);
+      if ("slug" in saved)
+        return new Response(
+          JSON.stringify({
+            type: "https://pm4.angelovski.top/errors/pmspa-account-switch",
+            title: "Different PMSPA account",
+            status: 409,
+            detail: "The credentials log in as a different PMSPA account.",
+            linkCount: saved.linkCount,
+            accountEmail: saved.accountEmail
+          }),
+          {
+            status: 409,
+            headers: { "Content-Type": "application/problem+json" }
+          }
+        );
+      return json(saved);
+    }
+    return json(pmspa.connectionDto());
+  }
+  if (sub === "test") {
+    const c = pmspa.testConnection();
+    return c ? json(c) : notFound();
+  }
+  if (sub === "links") {
+    if (method === "DELETE")
+      return pmspa.unlink(a as PmspaLinkType, b) ? noContent() : notFound();
+    if (a && b) {
+      if (!pmspa.isConnected()) return notConnected();
+      const detail = pmspa.linkDetail(a as PmspaLinkType, b);
+      return detail ? json(detail) : notFound();
+    }
+    return json({ items: pmspa.activeLinks(q.get("type") as PmspaLinkType) });
+  }
+  if (!pmspa.isConnected()) return notConnected();
+  if (sub === "projects") {
+    if (!a) return json({ items: pmspa.listProjects() });
+    const tasks = pmspa.listTasks(a);
+    return tasks ? json({ items: tasks }) : notFound();
+  }
+  if (sub === "days")
+    return json({
+      items: pmspa.listDays(q.get("from") ?? "", q.get("to") ?? "")
+    });
+  if (sub === "import" && a === "preview")
+    return json({
+      items: pmspa.importPreview(body as unknown as PmspaImportSelectionDto)
+    });
+  if (sub === "import") {
+    const input = body as unknown as PmspaImportDto;
+    return json(pmspa.runImport(input.selection, input.choices));
+  }
+  if (sub === "sync" && a === "preview") {
+    const items = pmspa.pushPreview(body as unknown as PmspaSyncTargetDto);
+    return items ? json({ items }) : notFound();
+  }
+  if (sub === "sync") {
+    const input = body as unknown as PmspaSyncDto;
+    const out = pmspa.runPush(input.target, input.choices);
+    return out ? json(out) : notFound();
+  }
+  if (sub === "push" && a === "preview") {
+    const items = pmspa.pushPreview(body as unknown as PmspaPushTargetDto);
+    return items ? json({ items }) : notFound();
+  }
+  if (sub === "push") {
+    const input = body as unknown as PmspaPushDto;
+    const out = pmspa.runPush(input.target, input.choices);
+    return out ? json(out) : notFound();
+  }
+  return notFound();
+}
+
 /** Answers one API request from the store. */
 function handle(
   method: string,
@@ -404,7 +533,7 @@ function handle(
   q: URLSearchParams,
   body: Body
 ): Response {
-  const [res, id] = path.replace(/^\/api\/v1\//, "").split("/");
+  const [res, id, ...rest] = path.replace(/^\/api\/v1\//, "").split("/");
   switch (res) {
     case "auth":
       return noContent();
@@ -436,6 +565,8 @@ function handle(
       return timeLogs(method, id, q, body);
     case "bookings":
       return bookings(method, q, body);
+    case "integrations":
+      return integrations(method, [id, ...rest], q, body);
     case "reports":
       return id === "dashboard" ? dashboard(q) : notFound();
   }
@@ -446,6 +577,17 @@ function handle(
   );
 }
 
+/** Calls that make PM4's API call PMSPA (the connection reads and the flags' link lists don't). */
+function reachesPmspa(method: string, path: string): boolean {
+  const m = /\/integrations\/pmspa(?:\/(.*))?$/.exec(path);
+  if (!m) return false;
+  const sub = m[1] ?? "";
+  if (sub === "") return method === "PUT";
+  if (sub === "links") return false;
+  if (sub.startsWith("links/")) return method === "GET";
+  return true;
+}
+
 async function mockFetch(request: Request): Promise<Response> {
   const url = new URL(request.url);
   const text =
@@ -453,12 +595,15 @@ async function mockFetch(request: Request): Promise<Response> {
       ? ""
       : await request.text();
   const body = text ? (JSON.parse(text) as Body) : {};
-  await new Promise((r) => setTimeout(r, MOCK_LATENCY_MS));
+  const wake = reachesPmspa(request.method, url.pathname)
+    ? pmspa.wakeDelay()
+    : 0;
+  await new Promise((r) => setTimeout(r, MOCK_LATENCY_MS + wake));
   return handle(request.method, url.pathname, url.searchParams, body);
 }
 
 /** Same surface as `apiClient` in `lib/api/client`; the base URL is never requested. */
-export const apiClient = createClient<paths>({
+export const apiClient = createClient<paths & PmspaPaths>({
   baseUrl: "http://proto.localhost",
   fetch: mockFetch
 });

@@ -51,6 +51,7 @@ import {
   TableRow
 } from "@/components/ui/table";
 import { ProjectFormDialog } from "@/proto/features/projects/components/project-form-dialog";
+import { SyncFlag } from "@/proto/features/integrations/components/sync-flag";
 import { ProjectIcon } from "@/proto/features/projects/components/project-icon";
 import { ProjectLeadLabel } from "@/proto/features/users/components/project-lead-label";
 import { TaskStatusBadges } from "@/proto/features/projects/components/task-status-badges";
@@ -281,6 +282,7 @@ export function ProjectsList() {
                               >
                                 {project.title}
                               </Link>
+                              <SyncFlag type="project" id={project.id} />
                             </div>
                           </TableCell>
                           <TableCell className="whitespace-nowrap">

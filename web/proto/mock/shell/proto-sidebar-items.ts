@@ -3,6 +3,7 @@ import {
   CalendarCheck,
   Clock,
   FolderKanban,
+  Globe,
   House,
   ListTodo,
   Settings
@@ -49,6 +50,19 @@ export const protoSidebarItems: MenuItem[] = [
     ]
   }
 ];
+
+/** FR-INT-006: below Time once a PMSPA connection is saved, whatever its status. */
+export const connectorItems: MenuItem = {
+  heading: "Connectors",
+  items: [
+    {
+      id: "pmspa",
+      name: "PMSPA",
+      icon: Globe,
+      url: routes.app.connectors.pmspa
+    }
+  ]
+};
 
 export const protoFooterItems: MenuItem[] = [
   {

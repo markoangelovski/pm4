@@ -19,6 +19,8 @@ import { ProjectFormDialog } from "@/proto/features/projects/components/project-
 import { ProjectIcon } from "@/proto/features/projects/components/project-icon";
 import { ProjectLeadLabel } from "@/proto/features/users/components/project-lead-label";
 import { ProjectTaskStats } from "@/proto/features/projects/components/project-task-stats";
+import { PushToPmspaButton } from "@/proto/features/integrations/components/push-button";
+import { SyncFlag } from "@/proto/features/integrations/components/sync-flag";
 import { LoggedTimeSection } from "@/proto/features/time/components/logged-time-section";
 import { TasksList } from "@/proto/features/tasks/components/tasks-list";
 import { useProject, type Project } from "@/proto/features/projects/api";
@@ -142,9 +144,12 @@ function ProjectView({
           <div className="flex min-w-0 items-center gap-3">
             <ProjectIcon project={project} className="size-10" />
             <div className="flex min-w-0 flex-col gap-0.5">
-              <h1 className="min-w-0 text-2xl font-semibold break-words">
-                {project.title}
-              </h1>
+              <div className="flex min-w-0 items-center gap-2">
+                <h1 className="min-w-0 text-2xl font-semibold break-words">
+                  {project.title}
+                </h1>
+                <SyncFlag type="project" id={project.id} />
+              </div>
               <div className="flex flex-wrap gap-x-3 text-xs text-muted-foreground">
                 <DateStamp
                   label="Created"
@@ -159,7 +164,11 @@ function ProjectView({
               </div>
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
+            <PushToPmspaButton
+              target={{ type: "project", id: project.id }}
+              label={`“${project.title}”`}
+            />
             <Button
               variant="outline"
               onClick={onEdit}

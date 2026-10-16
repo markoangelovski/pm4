@@ -77,6 +77,7 @@ import { useDebouncedValue } from "@/lib/use-debounced-value";
 import { useMe } from "@/proto/features/users/api";
 import { formatShortDate } from "@/lib/time";
 import { LoggedTotal } from "@/proto/features/time/components/logged-total";
+import { SyncFlag } from "@/proto/features/integrations/components/sync-flag";
 import { routes } from "@/proto/lib/routes";
 import { cn } from "@/lib/utils";
 
@@ -340,16 +341,19 @@ export function TasksList({
                   }}
                 >
                   <TableCell className="max-w-96 pl-4">
-                    <Link
-                      href={href}
-                      className={cn(
-                        "block truncate font-medium hover:text-primary hover:underline",
-                        task.status === "completed" &&
-                          "text-muted-foreground line-through decoration-muted-foreground/50"
-                      )}
-                    >
-                      {task.title}
-                    </Link>
+                    <div className="flex min-w-0 items-center gap-2">
+                      <Link
+                        href={href}
+                        className={cn(
+                          "block min-w-0 truncate font-medium hover:text-primary hover:underline",
+                          task.status === "completed" &&
+                            "text-muted-foreground line-through decoration-muted-foreground/50"
+                        )}
+                      >
+                        {task.title}
+                      </Link>
+                      <SyncFlag type="task" id={task.id} />
+                    </div>
                   </TableCell>
                   {showProject ? (
                     <TableCell className="max-w-60">

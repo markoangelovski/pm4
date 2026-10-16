@@ -19,6 +19,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ProjectIcon } from "@/proto/features/projects/components/project-icon";
 import { useMe } from "@/proto/features/users/api";
 import { ProjectLeadLabel } from "@/proto/features/users/components/project-lead-label";
+import { PushToPmspaButton } from "@/proto/features/integrations/components/push-button";
+import { SyncFlag } from "@/proto/features/integrations/components/sync-flag";
 import { DeleteTaskDialog } from "@/proto/features/tasks/components/delete-task-dialog";
 import { DueDateBadge } from "@/proto/features/tasks/components/due-date-badge";
 import { TaskFormDialog } from "@/proto/features/tasks/components/task-form-dialog";
@@ -147,9 +149,12 @@ function TaskView({
         </Link>
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="flex min-w-0 flex-col gap-1.5">
-            <h1 className="min-w-0 text-2xl font-semibold break-words">
-              {task.title}
-            </h1>
+            <div className="flex min-w-0 items-center gap-2">
+              <h1 className="min-w-0 text-2xl font-semibold break-words">
+                {task.title}
+              </h1>
+              <SyncFlag type="task" id={task.id} />
+            </div>
             <div className="flex flex-wrap gap-x-3 text-xs text-muted-foreground">
               <span>
                 Created {me ? formatDateTime(task.createdAt, me.timeZone) : "—"}
@@ -162,6 +167,10 @@ function TaskView({
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <TaskStatusSelect task={task} className="h-8! w-36" />
+            <PushToPmspaButton
+              target={{ type: "task", id: task.id }}
+              label={`“${task.title}”`}
+            />
             <Button
               variant="outline"
               onClick={onEdit}
