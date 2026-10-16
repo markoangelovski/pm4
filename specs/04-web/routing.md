@@ -3,7 +3,7 @@ id: web-routing
 title: Routing and Navigation
 status: approved
 owner: Marko Angelovski
-last_updated: 2026-10-14
+last_updated: 2026-10-17
 related: [web-static-export, web-screens, web-prototype, req-landing, req-auth, feat-land-app-route-split, ADR-0012]
 ---
 
@@ -41,12 +41,14 @@ and the client reads `id` with `useSearchParams` (inside `<Suspense>`).
 | `/app/time?date=&view=project\|task\|sequential` | SCR-040 Day view (workday header, charts, logs, view switch, calendar); `view` absent = `project` | required |
 | `/app/bookings?from=&to=` | SCR-045 Bookings (per-day figures, project rows, booking dates); `from`/`to` absent or invalid = the current month up to today | required |
 | `/app/user-profile` | SCR-051 Profile (Google identity, sign out of all devices) | required |
-| `/app/settings?tab=` | SCR-050 Settings (tabs; `tab` absent = `user`: daily target, time zone) | required |
+| `/app/settings?tab=` | SCR-050 Settings (tabs; `tab` absent = `user`: daily target, time zone; `integrations`: SCR-052, FR-INT-001) | required |
+| `/app/connectors/pmspa?tab=projects\|time&week=` | SCR-060 PMSPA connector (FR-INT-007); `tab` absent = `projects`; `week` = any date of the week shown on the Time tab (Monday-based), absent = this week | required |
 | `/proto/app/**` | UI prototype twins of the `/app/**` routes (same params). **Dev server on localhost only**, not in the build: in production it's the not-found page (`prototype.md`, ADR-0012) | mocked (always signed in) |
 
 ## Navigation
 - Sidebar (OQ-054), in sections with a heading (shown in capitals):
-  **Dashboard** → Default (`/app`) · **Project management** → Projects, Tasks · **Time** → Logs (`/app/time`), Bookings (`/app/bookings`).
+  **Dashboard** → Default (`/app`) · **Project management** → Projects, Tasks · **Time** → Logs (`/app/time`), Bookings (`/app/bookings`)
+  · **Connectors** → PMSPA (`/app/connectors/pmspa`, globe icon), only while a PMSPA connection is saved (FR-INT-006).
   A fixed footer at the bottom of the sidebar (stays put while the nav scrolls) holds Settings.
   The app logo links to `/app`.
 - Header: a global **Log time** button (FR-TLOG-011), the theme toggle and the user's avatar. The avatar
@@ -121,3 +123,5 @@ and the client reads `id` with `useSearchParams` (inside `<Suspense>`).
 - 2026-10-09: `/app?from=&to=`, the dashboard range (OQ-130). Back to `review`.
 - 2026-10-11: `/proto/app/**` prototype routes, dev only (ADR-0012). Back to `review`.
 - 2026-10-11: Approved by the owner.
+- 2026-10-17: `/app/connectors/pmspa?tab=&week=` (SCR-060), `/app/settings?tab=integrations`, and the **Connectors** sidebar section (FR-INT-001, FR-INT-006, FR-INT-007). Back to `review` (feat-int-web).
+- 2026-10-17: Approved by the owner.

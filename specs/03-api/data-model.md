@@ -3,8 +3,8 @@ id: api-data-model
 title: Data Model
 status: draft
 owner: Marko Angelovski
-last_updated: 2026-10-14
-related: [api-conventions, prod-glossary, req-projects, req-tasks, req-time-logs, ADR-0008]
+last_updated: 2026-10-17
+related: [api-conventions, req-integrations, prod-glossary, req-projects, req-tasks, req-time-logs, ADR-0008]
 ---
 
 # Data Model
@@ -21,6 +21,10 @@ users 1──* projects 1──* tasks       (FK ON DELETE CASCADE)
 users 1──* workdays                   PK (user_id, work_date)
 users 1──* time_logs *──0..1 tasks    (FK ON DELETE SET NULL)
                      *──0..1 projects (FK ON DELETE SET NULL)
+users 1──0..1 pmspa_connections       PK user_id (M6)
+projects 1──0..1 pmspa_project_links  PK project_id (FK ON DELETE CASCADE)
+tasks 1──0..1 pmspa_task_links        PK task_id (FK ON DELETE CASCADE)
+time_logs 1──0..1 pmspa_log_links     PK time_log_id (FK ON DELETE CASCADE)
 ```
 
 Deletes are **permanent** (hard deletes). Every user-owned table references
@@ -151,6 +155,44 @@ Indexes: `(user_id, work_date, id)` (day view, calendar marks), `(task_id) WHERE
 `(project_id) WHERE project_id IS NOT NULL` (task/project sections and totals, and FK SET NULL on delete),
 `(user_id, booking_date) WHERE booking_date IS NOT NULL` (the Bookings range: logs booked into it from outside it, API-BOOK-001).
 
+### pmspa_connections
+One user's PMSPA connection (req-integrations FR-INT-002…005). Deleted on **Disconnect**; the links stay.
+
+| Column | Type | Constraints |
+| --- | --- | --- |
+| last_checked_at | timestamptz | not null. Written only with the status: on save, on Test connection, and when a call changes the status (OQ-178) |
+| last_sync_at | timestamptz | null until the first import, sync or push |
+| status | enum `pmspa_status` (`connected`, `invalid-credentials`, `unreachable`) | not null. *Not configured* = no row |
+| user_id | uuid | PK, FK → users ON DELETE CASCADE |
+| pmspa_user_id | bytea (12 B, a PMSPA ObjectId) | null until a check succeeds. The PMSPA account the credentials log in as (OQ-161) |
+| url | varchar(500) | not null, `https://` (or `http://localhost` in development, OQ-160) |
+| email | varchar(254) | not null |
+| password_enc | bytea | not null. AES-256-GCM: 12-byte IV ‖ ciphertext ‖ 16-byte tag, under `PMSPA_ENCRYPTION_KEY` (FR-INT-003) |
+
+No other index (the PK serves every read). The PMSPA token, avatar and role live in Redis, not here (FR-INT-003, OQ-166).
+
+### pmspa_project_links, pmspa_task_links, pmspa_log_links
+A **link** pairs one PM4 record with one PMSPA record (req-integrations *Model*, design principle 1). One table per
+type, so each link's PM4 record is a real foreign key: deleting the PM4 record drops its link through the cascade
+(design principle 8), and no delete code has to know about PMSPA. The three tables have the same columns; only the
+PM4 key differs.
+
+| Column | Type | Constraints |
+| --- | --- | --- |
+| synced_at | timestamptz | not null. The last import, sync or push that wrote or confirmed this pair |
+| origin | enum `pmspa_link_origin` (`imported`, `pushed`, `linked`) | not null. Set when the link is made, kept by later syncs (OQ-164) |
+| project_id / task_id / time_log_id | uuid | PK, FK → projects / tasks / time_logs ON DELETE CASCADE |
+| user_id | uuid | not null, FK → users ON DELETE CASCADE |
+| pmspa_user_id | bytea (12 B) | not null. The PMSPA account the link was made with; only links of the connected account are **active** (OQ-162) |
+| pmspa_id | bytea (12 B) | not null. The PMSPA project, task or log ObjectId |
+| pm4_hash | bytea (8 B) | not null. Fingerprint of PM4's shared fields as last synced (OQ-176) |
+| pmspa_hash | bytea (8 B) | not null. Fingerprint of PMSPA's shared fields as last synced (OQ-176) |
+
+Indexes: the PK; unique `(user_id, pmspa_user_id, pmspa_id)`, which finds a PMSPA record's link and lists a user's
+active links (prefix `user_id, pmspa_user_id`). A PMSPA record is linked to at most one PM4 record per user and account.
+The fingerprint is the first 8 bytes of SHA-256 over the side's shared fields in a fixed order (the feature specs
+`feat-int-sync-api` and `feat-int-time-api` list them). Two users linking the same PMSPA account each have their own rows.
+
 ## Retained names (FR-TLOG-014)
 - **On delete** (in one transaction): first save the names on the linked logs, then delete the row. The FKs
   then set `task_id`/`project_id` to NULL.
@@ -170,9 +212,11 @@ Row ≈ 24 B header + data + 4 B line pointer, plus index entries (~32–40 B pe
 | Table | ~Data/row | Indexes/row | ~Total/row |
 | --- | --- | --- | --- |
 | time_logs (avg text 80 chars, linked, booked) | 179 B | pkey + (user, date, id) + task + project + (user, booking date) ≈ 170 B | ~355 B |
+| pmspa_log_links | ~90 B | pkey + unique (user, account, PMSPA id) ≈ 90 B | ~180 B |
 
 A heavy user who switches often (20 logs/day, 250 days/yr) ≈ 5,000 logs ≈ **1.8 MB/yr**, or ~2.8 MB/yr
-with bloat and history overhead. **0.5 GB ≈ 180 user-years.** Dropping the legacy event level saves a
+with bloat and history overhead. **0.5 GB ≈ 180 user-years.** Syncing every log with PMSPA adds a log link per log (~0.9 MB/yr for the same user, ≈ 120
+user-years with links). Dropping the legacy event level saves a
 row and ~4 index entries per block. Keys are UUIDv7 (16 B, OQ-027).
 
 ## Migrations
@@ -196,3 +240,5 @@ None.
 - 2026-10-09: `time_logs.exclude_from_stats` (OQ-119); `users.daily_target_minutes` defaults to 420 (OQ-115).
 - 2026-10-09: `time_logs.booking_date` and its partial index (feat-book-api, OQ-122…OQ-125).
 - 2026-10-10: Replacing a log's link clears its retained names (owner, from the feat-book-api review).
+- 2026-10-17: `pmspa_connections` and the three link tables (M6, OQ-161, OQ-162, OQ-164, OQ-176, OQ-178; feat-int-conn-api, feat-int-sync-api, feat-int-time-api).
+- 2026-10-17: The owner approved `pmspa_connections`, `pmspa_project_links`, `pmspa_task_links` and `pmspa_log_links` for feat-int-conn-api, feat-int-sync-api and feat-int-time-api.

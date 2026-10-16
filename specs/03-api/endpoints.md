@@ -3,8 +3,8 @@ id: api-endpoints
 title: API Endpoints
 status: approved
 owner: Marko Angelovski
-last_updated: 2026-10-15
-related: [api-conventions, api-data-model, req-auth, req-projects, req-tasks, req-time-logs, req-reporting]
+last_updated: 2026-10-17
+related: [api-conventions, api-data-model, req-auth, req-projects, req-tasks, req-time-logs, req-reporting, req-integrations]
 ---
 
 # API Endpoints
@@ -62,6 +62,22 @@ defines its request, response and errors. Paths are relative to `/api/v1` unless
 | API-BOOK-002 | PUT | `/bookings` `{logIds, bookingDate}` → `{items: BookingLog[]}` (book, re-date or remove, one or many logs) | FR-BOOK-004/005 | specified |
 | API-RPT-001 | GET | `/reports/dashboard?from=&to=` → `{days: ReportDay[], projects: ReportProject[]}` (worked and booked minutes per day and per project) | FR-RPT-002…006 | specified |
 | API-RPT-002 | — | (removed, OQ-129) | — | — |
+| API-INT-001 | GET | `/integrations/pmspa` → `PmspaConnection` | FR-INT-001, FR-INT-004, FR-INT-006 | specified |
+| API-INT-002 | PUT | `/integrations/pmspa` `{url, email, password?, confirmAccountSwitch?}` → `PmspaConnection` (saves, then checks) | FR-INT-002, FR-INT-003 | specified |
+| API-INT-003 | POST | `/integrations/pmspa/test` → `PmspaConnection` | FR-INT-004 | specified |
+| API-INT-004 | DELETE | `/integrations/pmspa` (connection and token; links kept) | FR-INT-005 | specified |
+| API-INT-005 | GET | `/integrations/pmspa/projects` → `{items: PmspaProject[]}` (live) | FR-INT-007 | specified |
+| API-INT-006 | GET | `/integrations/pmspa/projects/{id}/tasks` → `{items: PmspaTask[]}` (live) | FR-INT-007 | specified |
+| API-INT-007 | GET | `/integrations/pmspa/days?from=&to=` → `{items: PmspaDay[]}` (live) | FR-INT-007 | specified |
+| API-INT-008 | POST | `/integrations/pmspa/import/preview` `PmspaImportSelection` → `SyncPreview` | FR-INT-011 | specified |
+| API-INT-009 | POST | `/integrations/pmspa/import` `{selection, choices}` → `SyncResult` | FR-INT-011 | specified |
+| API-INT-010 | POST | `/integrations/pmspa/push/preview` `{type: day, id}` → `SyncPreview` | FR-INT-012 | specified |
+| API-INT-011 | POST | `/integrations/pmspa/push` `{target, choices}` → `SyncResult` | FR-INT-012 | specified |
+| API-INT-012 | GET | `/integrations/pmspa/links?type=` → `{items: PmspaLink[]}` (active links, for the sync flags) | FR-INT-010 | specified |
+| API-INT-013 | DELETE | `/integrations/pmspa/links/{type}/{id}` (unlink; both records stay) | FR-INT-010 | specified |
+| API-INT-014 | GET | `/integrations/pmspa/links/{type}/{id}` → `PmspaLinkDetail` (the counterpart, live) | FR-INT-010 | specified |
+| API-INT-015 | POST | `/integrations/pmspa/sync/preview` `{type: project\|task, id}` → `SyncPreview` | FR-INT-008, FR-INT-012 | specified |
+| API-INT-016 | POST | `/integrations/pmspa/sync` `{target, choices}` → `SyncResult` | FR-INT-008, FR-INT-012 | specified |
 
 ## Endpoint details
 
@@ -389,6 +405,179 @@ log; nothing changes on any error.
 Empty range → `{ days: [], projects: [] }`. The project and task counts of FR-RPT-002 come from API-PRJ-002 and API-TSK-002 (`total`).
 **Errors:** 400 validation · 401
 
+### Shared PMSPA shapes
+The connector's endpoints (req-integrations). PMSPA ids are 24-hex ObjectId strings; PM4 ids are UUIDs.
+```ts
+PmspaConnectionStatus = "not-configured" | "connected" | "invalid-credentials" | "unreachable"
+PmspaAccount = { id: string, email: string, avatarUrl: string | null, role: "admin" | "user" }
+  // from PMSPA's who-am-I; avatarUrl only when its host is images.unsplash.com, else null (OQ-166)
+PmspaConnection = { status, url: string | null, email: string | null, account: PmspaAccount | null,
+                    lastCheckedAt: string | null, lastSyncAt: string | null }   // never a password or token
+PmspaLinkType = "project" | "task" | "time-log"
+PmspaLinkOrigin = "imported" | "pushed" | "linked"                              // OQ-164
+PmspaLink = { pm4Id: string, origin, syncedAt: string }
+PmspaRecordLink = { pm4Id: string, pm4Title: string, origin, syncedAt: string }
+PmspaRecordDetail = { type: "project", title, lead, done: boolean }
+                  | { type: "task", title, projectTitle, column: PmspaColumn }
+                  | { type: "time-log", title, eventTitle }                      // OQ-170
+PmspaLinkDetail = { origin, syncedAt, pmspa: PmspaRecordDetail | null }         // null = gone in PMSPA
+PmspaColumn = "Upcoming" | "In Progress" | "Completed"
+PmspaProject = { id, title, done: boolean, taskCount: integer, link: PmspaRecordLink | null }
+PmspaTask = { id, projectId, title, column: PmspaColumn, link: PmspaRecordLink | null }
+PmspaLog = { id, title, durationMinutes: integer, linked: boolean }
+PmspaEvent = { id, title, task: { id, title, projectTitle } | null, booked: boolean, logs: PmspaLog[] }
+PmspaDay = { date: "YYYY-MM-DD", startMinute: integer | null, totalMinutes: integer,
+             linkState: "linked" | "partly-linked" | "not-linked", events: PmspaEvent[] }
+SyncRecordType = "project" | "task" | "day" | "event"
+SyncAction = "create" | "update" | "skip" | "differs"
+SyncDirection = "to-pm4" | "to-pmspa"
+SyncFieldDiff = { field: string, pm4: string | null, pmspa: string | null }
+SyncCandidate = { id, title, groupId: string | null, detail: string | null, differences: SyncFieldDiff[] }
+SyncPreviewItem = { key, parentKey: string | null, type: SyncRecordType, title, detail: string | null,
+                    action: SyncAction, direction: SyncDirection | null, reason: string | null,
+                    linkedId: string | null, parent: boolean, optional: boolean,
+                    candidates: SyncCandidate[], differences: SyncFieldDiff[], warnings: string[] }
+SyncPreview = { items: SyncPreviewItem[] }
+SyncChoice = { key, kind: "create" } | { key, kind: "link", id, overwrite: SyncDirection | null } | { key, kind: "skip" }
+SyncOutcome = "created" | "updated" | "linked" | "skipped" | "failed"
+SyncResultItem = { key, parentKey, type, title, newTitle: string | null, outcome: SyncOutcome, reason: string | null }
+SyncResult = { items: SyncResultItem[], syncedAt: string }
+```
+- A preview row's `key` is `<type>:<id>`, the id on the side the row starts from (PMSPA on import, PM4 on sync and push;
+  an event row of a push is `event:<group key>`). A commit recomputes the preview and applies `choices` by `key`; a
+  choice whose key isn't in the recomputed preview is ignored. A row without a choice: `create`, or for a row that
+  differs, `link` to its counterpart with its suggested `direction` (OQ-173).
+- Rules per row (FR-INT-008, FR-INT-011, FR-INT-012) are in the feature specs `feat-int-sync-api` and `feat-int-time-api`.
+
+### PMSPA errors
+Every endpoint that calls PMSPA can answer, besides its own errors (Problem Details, conventions.md#errors, with the
+slug as the last path segment of `type`):
+
+| Status | Slug | When |
+| --- | --- | --- |
+| 409 | `pmspa-not-connected` | No saved connection |
+| 409 | `pmspa-invalid-credentials` | PMSPA rejected the stored credentials on re-login; the status becomes Invalid credentials |
+| 502 | `pmspa-unreachable` | PMSPA couldn't be reached or didn't answer within 60 s (OQ-165); the status becomes Unreachable |
+| 502 | `pmspa-error` | PMSPA answered a read with an unexpected error |
+| 503 | `pmspa-rate-limited` | PMSPA answered 429, or the host is paused after one (OQ-177). Extension `retryAfterSeconds` (integer) |
+| 409 | `pmspa-sync-running` | Import, sync and push only: another import, sync or push of this user is still running |
+
+A write that PMSPA rejects inside an import, sync or push isn't an error of the endpoint: that record's result is
+`failed` with PMSPA's reason (design principle 9).
+
+### API-INT-001: Get the PMSPA connection
+`GET /integrations/pmspa` · Auth: bearer · Implements: FR-INT-001, FR-INT-004, FR-INT-006
+Reads the stored row; no PMSPA call. No row → `{status: "not-configured", url: null, email: null, account: null,
+lastCheckedAt: null, lastSyncAt: null}`. `account` is what the last successful check returned (who-am-I), kept in
+Redis without expiry and deleted on disconnect; null before the first successful check or when Redis lost it.
+**200:** `PmspaConnection`
+**Errors:** 401
+
+### API-INT-002: Save the PMSPA connection
+`PUT /integrations/pmspa` · Auth: bearer · Implements: FR-INT-002, FR-INT-003, FR-INT-004
+**Request body:** `{ url: string(≤500), email: string(email, ≤254), password?: string(1–200), confirmAccountSwitch?: boolean }`.
+URL rule (FR-INT-002): `https://` and a public host; in `development` also `http://localhost` / `http://127.0.0.1`.
+`password` is required without a stored connection; omitted = keep the stored one. Saving checks the connection
+(login + who-am-I) and stores the settings whatever the result. When the check logs in as another PMSPA account than
+the user's links (active or kept) and links exist, nothing is stored and the answer is `409` `pmspa-account-switch`
+unless `confirmAccountSwitch` is true; confirmed → the old account's links are deleted, then the row is stored.
+**200:** `PmspaConnection` (the status the check found)
+**Errors:** 400 validation (`url`, `email`, `password`) · 401 · 409 `pmspa-account-switch` (extensions `linkCount`, `accountEmail`) · 503 `pmspa-rate-limited`
+
+### API-INT-003: Test the PMSPA connection
+`POST /integrations/pmspa/test` · Auth: bearer · Implements: FR-INT-004
+Logs in again with the stored credentials (ignoring the cached token), then who-am-I; writes the status and
+*last checked* (OQ-178). A login as another account than the row's `pmspa_user_id` sets Invalid credentials.
+**200:** `PmspaConnection`
+**Errors:** 401 · 404 (no connection) · 503 `pmspa-rate-limited`
+
+### API-INT-004: Disconnect PMSPA
+`DELETE /integrations/pmspa` · Auth: bearer · Implements: FR-INT-005
+Deletes the connection row and the cached token. The links stay (inactive). Idempotent.
+**204** · **Errors:** 401
+
+### API-INT-005: List PMSPA projects
+`GET /integrations/pmspa/projects` · Auth: bearer · Implements: FR-INT-007
+Every project of the connected account, read live (all pages of `projects.list`, 50 per page, sorted by title).
+`taskCount` = PMSPA's `openTasksCount + closedTasksCount`. `link` = the active link's PM4 record, else null.
+**200:** `{ items: PmspaProject[] }`
+**Errors:** 401 · *PMSPA errors*
+
+### API-INT-006: List a PMSPA project's tasks
+`GET /integrations/pmspa/projects/{id}/tasks` · Auth: bearer · Implements: FR-INT-007
+All tasks of one PMSPA project of the connected account (`tasks.listByProject`, all pages), PMSPA's order.
+**200:** `{ items: PmspaTask[] }` (PMSPA's 404 for no tasks → `[]`)
+**Errors:** 400 (`id` not 24-hex) · 401 · 404 (not a project of the connected account) · *PMSPA errors*
+
+### API-INT-007: List PMSPA days
+`GET /integrations/pmspa/days?from=&to=` · Auth: bearer · Implements: FR-INT-007
+The connected account's days from `from` to `to` (inclusive, `YYYY-MM-DD`, at most 7 days: one week of the Time tab), newest
+first, each with its events and logs (`days.findByRange` for the range, then the one-day form per day found: the range form
+returns event ids only). `startMinute` = PMSPA `start` × 60, rounded to 15. `totalMinutes`,
+`durationMinutes` = hours × 60, rounded. `linkState` from the day's log links. A day without events isn't returned.
+**200:** `{ items: PmspaDay[] }`
+**Errors:** 400 validation (`from`, `to`, range) · 401 · *PMSPA errors*
+
+### API-INT-008: Preview an import
+`POST /integrations/pmspa/import/preview` · Auth: bearer · Implements: FR-INT-011
+**Request body:** `PmspaImportSelection` = `{ projects: { id: string(24-hex), taskIds: string(24-hex)[] | null }[] (≤ 50), dates?: string(YYYY-MM-DD)[] (≤ 7) }`
+(`taskIds: null` = all of the project's tasks; `dates` arrives with feat-int-time-api). Writes nothing.
+**200:** `SyncPreview`
+**Errors:** 400 validation · 401 · *PMSPA errors*
+
+### API-INT-009: Import
+`POST /integrations/pmspa/import` · Auth: bearer · Implements: FR-INT-011
+**Request body:** `{ selection: PmspaImportSelection, choices: SyncChoice[] (≤ 500) }`. Recomputes the preview, writes
+record by record (parents first), sets `last_sync_at`.
+**200:** `SyncResult`
+**Errors:** 400 validation · 401 · *PMSPA errors* (incl. `pmspa-sync-running`)
+
+### API-INT-010: Preview a day push
+`POST /integrations/pmspa/push/preview` · Auth: bearer · Implements: FR-INT-012
+**Request body:** `{ type: "day", id: string(YYYY-MM-DD) }` (not in the future in the user's zone). Writes nothing. A
+day without logs → `{ items: [] }`.
+**200:** `SyncPreview`
+**Errors:** 400 validation · 401 · *PMSPA errors*
+
+### API-INT-011: Push a day
+`POST /integrations/pmspa/push` · Auth: bearer · Implements: FR-INT-012
+**Request body:** `{ target: { type: "day", id }, choices: SyncChoice[] (≤ 500) }`. As API-INT-009, PM4 → PMSPA.
+**200:** `SyncResult`
+**Errors:** 400 validation · 401 · *PMSPA errors* (incl. `pmspa-sync-running`)
+
+### API-INT-012: List active links
+`GET /integrations/pmspa/links?type=project|task|time-log` · Auth: bearer · Implements: FR-INT-010
+The user's links of that type whose PMSPA account is the connected one; no PMSPA call. No connection, or no account
+yet → `{ items: [] }`.
+**200:** `{ items: PmspaLink[] }`
+**Errors:** 400 validation (`type`) · 401
+
+### API-INT-013: Unlink
+`DELETE /integrations/pmspa/links/{type}/{id}` · Auth: bearer · Implements: FR-INT-010
+Deletes the link of the user's PM4 record `id` (any account). Both records stay; no PMSPA call.
+**204** · **Errors:** 400 validation · 401 · 404 (no such link)
+
+### API-INT-014: Get a link with its PMSPA counterpart
+`GET /integrations/pmspa/links/{type}/{id}` · Auth: bearer · Implements: FR-INT-010
+The active link of PM4 record `id` and its PMSPA record, read live (`projects.getOne`, `tasks.getOne` with its
+project, or the log's event via `days.findByRange` on the PM4 log's work date). Nothing is stored. PMSPA has no such
+record any more → `pmspa: null`.
+**200:** `PmspaLinkDetail`
+**Errors:** 400 validation · 401 · 404 (no active link) · *PMSPA errors*
+
+### API-INT-015: Preview a sync
+`POST /integrations/pmspa/sync/preview` · Auth: bearer · Implements: FR-INT-008, FR-INT-012
+**Request body:** `{ type: "project" | "task", id: uuid }` (a PM4 record of the user). A project brings its tasks as
+optional rows; a task its project as a parent when that isn't linked. Writes nothing.
+**200:** `SyncPreview`
+**Errors:** 400 validation · 401 · 404 (no such project or task) · *PMSPA errors*
+
+### API-INT-016: Sync
+`POST /integrations/pmspa/sync` · Auth: bearer · Implements: FR-INT-008, FR-INT-012
+**Request body:** `{ target: { type, id }, choices: SyncChoice[] (≤ 500) }`. As API-INT-009, both ways per row.
+**200:** `SyncResult`
+**Errors:** 400 validation · 401 · 404 · *PMSPA errors* (incl. `pmspa-sync-running`)
+
 ## Open questions
 None.
 
@@ -417,3 +606,5 @@ None.
   built `api/src/health/` and set to `specified`.
 - 2026-10-14: Approved by the owner.
 - 2026-10-15: API-WD-004 *Delete a day* (OQ-152, prototype `51c6200`). Back to `review` (feat-hard-delete).
+- 2026-10-17: API-INT-001…016 with the shared PMSPA shapes and *PMSPA errors* (prototype `eefe787` `proposed-types.ts`; OQ-164…OQ-180). Back to `review` (feat-int-conn-api, feat-int-sync-api, feat-int-time-api).
+- 2026-10-17: Approved by the owner.

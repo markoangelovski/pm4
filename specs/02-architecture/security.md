@@ -3,7 +3,7 @@ id: sec
 title: Security
 status: approved
 owner: Marko Angelovski
-last_updated: 2026-10-14
+last_updated: 2026-10-17
 related: [web-routing, req-auth, arch-env, api-conventions, ADR-0007, NFR-004, NFR-005]
 ---
 
@@ -98,9 +98,21 @@ same `user_identities` table (`provider` = the configured provider key). Provide
   no DB/Redis) aren't limited.
 - Never log tokens, codes, secrets or full request bodies of auth endpoints.
 
+## Outbound calls to PMSPA (M6, req-integrations)
+- **Only the API calls PMSPA.** The browser never sees the PMSPA URL's credentials or token (FR-INT-003).
+- **SSRF (OQ-145, OQ-160):** the PMSPA URL must be `https://`; the host's resolved addresses are checked on save and
+  before every call, and a private, loopback, link-local or unique-local address (IPv4 and IPv6) is refused. Redirects
+  aren't followed. In `development` only, `http://localhost` and `http://127.0.0.1` (any port) are allowed.
+- **Credentials at rest:** the password and the cached PMSPA token are encrypted with AES-256-GCM (random 12-byte IV,
+  auth tag) under `PMSPA_ENCRYPTION_KEY` (environments.md). Neither is ever returned, logged or put in an error.
+- **Ownership on the PMSPA side:** PMSPA doesn't enforce it on every write, so before writing to a PMSPA project, task or
+  event the API checks it belongs to the connected PMSPA account (design principle 10, OQ-161).
+- **Budget:** a 60-second timeout per call; a 429 pauses every call to that host until `Retry-After` (OQ-177).
+- PMSPA payloads are never logged, only the operation, status and duration.
+
 ## Web hardening
 - CSP via `<meta http-equiv="Content-Security-Policy">` (Pages can't set headers). Roughly:
-  `default-src 'self'; connect-src 'self' <API origin>; img-src 'self' data: https://*.googleusercontent.com; script-src 'self' <hashes needed by Next>; style-src 'self' 'unsafe-inline'; frame-ancestors` (not
+  `default-src 'self'; connect-src 'self' <API origin>; img-src 'self' data: https://*.googleusercontent.com https://images.unsplash.com; script-src 'self' <hashes needed by Next>; style-src 'self' 'unsafe-inline'; frame-ancestors` (not
   enforceable via meta. Accept the risk). TODO: finalize and verify against the Next export output.
 - No third-party scripts or analytics (they would widen the XSS surface for the refresh token).
 - Render user text as text. No `dangerouslySetInnerHTML`.
@@ -140,3 +152,5 @@ Secrets live in Azure App Settings and in GitHub Actions secrets. They are never
 - 2026-10-02: Approved by the owner.
 - 2026-10-03: The project-lead exception: other users' public profile in the lead picker and in project/task responses, no access (OQ-076, OQ-077, OQ-089). Back to `review` (feat-prj-api).
 - 2026-10-03: Approved by the owner.
+- 2026-10-17: Outbound calls to PMSPA (SSRF, encryption, ownership checks, budget) and `https://images.unsplash.com` in `img-src` (OQ-166) (feat-int-conn-api, feat-int-web). Back to `review`.
+- 2026-10-17: Approved by the owner.
