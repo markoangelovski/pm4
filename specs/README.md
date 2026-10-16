@@ -38,17 +38,17 @@ Either way, fix the disagreement. Never ignore it.
 | System overview | [02-architecture/system-overview.md](02-architecture/system-overview.md) | approved |
 | Tech stack | [02-architecture/tech-stack.md](02-architecture/tech-stack.md) | approved |
 | Repository layout | [02-architecture/repositories.md](02-architecture/repositories.md) | approved |
-| Environments and config | [02-architecture/environments.md](02-architecture/environments.md) | approved |
+| Environments and config | [02-architecture/environments.md](02-architecture/environments.md) | review |
 | Deployment and CI/CD | [02-architecture/deployment.md](02-architecture/deployment.md) | approved |
-| Security | [02-architecture/security.md](02-architecture/security.md) | approved |
+| Security | [02-architecture/security.md](02-architecture/security.md) | review |
 | API conventions | [03-api/conventions.md](03-api/conventions.md) | approved |
 | Data model | [03-api/data-model.md](03-api/data-model.md) | draft |
-| API endpoints | [03-api/endpoints.md](03-api/endpoints.md) | approved |
+| API endpoints | [03-api/endpoints.md](03-api/endpoints.md) | review |
 | Static export constraints | [04-web/static-export.md](04-web/static-export.md) | approved |
 | Template adaptation | [04-web/template-adaptation.md](04-web/template-adaptation.md) | approved |
 | Web conventions | [04-web/conventions.md](04-web/conventions.md) | approved |
-| Routing and navigation | [04-web/routing.md](04-web/routing.md) | approved |
-| Screens | [04-web/screens.md](04-web/screens.md) | approved |
+| Routing and navigation | [04-web/routing.md](04-web/routing.md) | review |
+| Screens | [04-web/screens.md](04-web/screens.md) | review |
 | UI prototype | [04-web/prototype.md](04-web/prototype.md) | approved |
 | Testing strategy | [05-quality/testing.md](05-quality/testing.md) | draft |
 | Code style | [05-quality/code-style.md](05-quality/code-style.md) | draft |

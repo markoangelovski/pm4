@@ -3,7 +3,7 @@ id: arch-env
 title: Environments and Configuration
 status: approved
 owner: Marko Angelovski
-last_updated: 2026-10-14
+last_updated: 2026-10-17
 related: [arch-deployment, sec]
 ---
 
@@ -47,6 +47,7 @@ Validated at startup. The app refuses to boot if something is missing or invalid
 | `GOOGLE_CALLBACK_URL` | no | `https://pm4-api-heagfvepgbcje5c3.westeurope-01.azurewebsites.net/api/v1/auth/google/callback` |
 | `JWT_ACCESS_SECRET` | **yes** | Signs access tokens (≥ 32 random bytes) |
 | `ACCESS_TOKEN_TTL` / `REFRESH_TOKEN_TTL` | no | `15m` / `30d` (sliding; OQ-023, OQ-024) |
+| `PMSPA_ENCRYPTION_KEY` | **yes** | 32 random bytes, base64. Encrypts the stored PMSPA passwords and cached PMSPA tokens (AES-256-GCM, FR-INT-003). Changing it makes every stored PMSPA password unreadable: users then save their password again |
 | `AUTH_ALLOWED_EMAILS` | no | Comma-separated sign-up allow-list. Empty = open sign-up (OQ-022, security.md §Sign-up policy) |
 
 Each app commits a `.env.example` with every variable and dummy values.
@@ -73,3 +74,5 @@ Each app commits a `.env.example` with every variable and dummy values.
 - 2026-09-27: Filled in the real web domain and API host. REDIS_URL is plain `redis://` (Redis Cloud free tier, TLS off).
 - 2026-10-02: `NEXT_PUBLIC_APP_VERSION`, derived from `web/package.json` at build time (OQ-051).
 - 2026-10-03: `NEXT_PUBLIC_APP_VERSION` is the release version stamped by `web-deploy` (OQ-098).
+- 2026-10-17: `PMSPA_ENCRYPTION_KEY` (FR-INT-003, feat-int-conn-api). Back to `review`.
+- 2026-10-17: Approved by the owner.

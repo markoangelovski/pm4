@@ -1,10 +1,10 @@
 ---
 id: req-integrations
 title: Integrations and connectors
-status: review
+status: approved
 owner: Marko Angelovski
-last_updated: 2026-10-16
-related: [prod-scope, sec, web-routing, web-screens, OQ-138, OQ-139, OQ-140, OQ-141, OQ-142, OQ-143, OQ-144, OQ-145, OQ-146, OQ-147, OQ-148, OQ-155, OQ-156, OQ-157, OQ-158, OQ-159, OQ-160, OQ-161, OQ-162]
+last_updated: 2026-10-17
+related: [prod-scope, sec, web-routing, web-screens, OQ-138, OQ-139, OQ-140, OQ-141, OQ-142, OQ-143, OQ-144, OQ-145, OQ-146, OQ-147, OQ-148, OQ-155, OQ-156, OQ-157, OQ-158, OQ-159, OQ-160, OQ-161, OQ-162, OQ-163, OQ-164, OQ-165, OQ-166, OQ-167, OQ-168, OQ-169, OQ-170, OQ-171, OQ-172, OQ-173, OQ-174, OQ-175, OQ-176, OQ-177, OQ-178, OQ-179, OQ-180, OQ-181, OQ-182]
 ---
 
 # Integrations and connectors
@@ -22,8 +22,8 @@ The connector does four things (owner, 2026-10-15):
 | --- | --- | --- | --- |
 | C1 | **Connect**: configure, test and remove the connection to PMSPA | Settings → Integrations | FR-INT-001…006 |
 | C2 | **Map**: each PMSPA entity type maps to a PM4 entity type, field by field | Fixed in code; the UI shows only the per-record links (OQ-156) | FR-INT-009, FR-INT-010 |
-| C3 | **Import**: browse the user's PMSPA entities (projects, tasks, …) and pick which ones to bring into PM4 | Connectors → PMSPA | FR-INT-007, FR-INT-011 |
-| C4 | **Push**: send a PM4 entity (a project, a task, a day's logs) to PMSPA from that entity's own screen | Project detail, task detail, the day view, only while connected | FR-INT-012 |
+| C3 | **Import**: browse the user's PMSPA entities (projects, tasks, days) and pick which ones to bring into PM4 | Connectors → PMSPA | FR-INT-007, FR-INT-011 |
+| C4 | **Sync and push** from a PM4 entity's own screen: **Sync with PMSPA** for a project or a task (both ways), **Push to PMSPA** for a day's logs | Project detail, task detail, the day view, only while connected | FR-INT-008, FR-INT-012 |
 
 The functionality inventory (OQ-155) says what the PMSPA API can read and write for each entity and which of C3 and C4
 each entity gets. The entity mapping (OQ-148) and the import and push rules follow from it.
@@ -31,10 +31,11 @@ each entity gets. The entity mapping (OQ-148) and the import and push rules foll
 ## Scope
 **In (M6, OQ-141):** the Integrations settings tab; one PMSPA connection per user (URL, email, password); credentials
 encrypted at rest; the connection status with a manual test; disconnecting; the **Connectors** sidebar section with the
-**PMSPA** item; the `/app/connectors/pmspa` page for browsing and importing PMSPA entities; a push action on the PM4
-entities that can go to PMSPA.
+**PMSPA** item; the `/app/connectors/pmspa` page for browsing and importing PMSPA entities; **Sync with PMSPA** on the
+project and task details; **Push to PMSPA** on the day view; sync flags.
 **Out:** integrations other than PMSPA; more than one PMSPA connection per user (OQ-144); a PMSPA favicon (OQ-143).
-**TBD:** the connector page layout (OQ-140), settled in the prototype.
+**UI:** the confirmed prototype `eefe787` (OQ-140). The feature specs are `feat-int-conn-api`, `feat-int-sync-api`,
+`feat-int-time-api` and `feat-int-web` (OQ-175).
 
 ## Model
 - An **integration** is a kind of external system PM4 can connect to. Today there is one: **PMSPA**.
@@ -48,8 +49,10 @@ entities that can go to PMSPA.
   This follows from the security rules (no secrets in the web app, the backend owns data and business rules).
 - The **connection status** is one of: **Not configured**, **Connected**, **Invalid credentials**, **Unreachable**. It also
   records when it was **last checked** (OQ-142).
-- A **link** pairs one PM4 record with one PMSPA record (e.g. PM4 project `p_1` ↔ PMSPA project `884`). Import and push
-  create links, and later syncs follow them, so the same record is never created twice (FR-INT-010). Projects and tasks
+- A **link** pairs one PM4 record with one PMSPA record (e.g. PM4 project `p_1` ↔ PMSPA project `884`). Import, sync and
+  push create links, and later syncs follow them, so the same record is never created twice (FR-INT-010). A link
+  records its **origin**, set when it is made and kept by later syncs (OQ-164): `imported` (the PM4 record was created
+  from PMSPA), `pushed` (the PMSPA record was created from PM4) or `linked` (two existing records were paired). Projects and tasks
   are linked one to one. **Each PM4 time log is linked to its PMSPA log** (every log inside a PMSPA event has its own
   ID), so a log can be followed when it moves to another task (OQ-162). PMSPA IDs are stored only in the links, never
   on PM4's projects, tasks or logs.
@@ -59,27 +62,30 @@ entities that can go to PMSPA.
 ## Connector design principles
 Agreed by the owner on 2026-10-15 (OQ-139). They are common practice for connectors between two APIs, and the
 requirements below follow them.
-1. **Links live in PM4's own table**, not in the projects, tasks or logs tables: user, entity type, PM4 ID, PMSPA ID, last
-   synced at, and a fingerprint of what was synced. The core schema stays free of PMSPA columns. Links are kept on
+1. **Links live in PM4's own tables**, not in the projects, tasks or logs tables: user, PM4 ID, PMSPA ID, the PMSPA
+   account, origin, last synced at, and a **fingerprint of each side** as last synced (OQ-176). The core schema stays free of PMSPA columns. Links are kept on
    disconnect and reused on reconnect to the same account (FR-INT-005).
 2. **Browse live, store only what's imported.** The connector page reads PMSPA through PM4's API on demand (paged, never
    cached in the database). Only the records the user imports are stored, as ordinary PM4 records. This keeps within the
    storage quota (`specs/03-api/data-model.md`).
-3. **The user starts every sync** (Import, Push). No background or scheduled sync in M6. Automatic sync can come later,
+3. **The user starts every sync** (Import, Sync, Push). No background or scheduled sync in M6. Automatic sync can come later,
    once manual sync has shown how the two systems behave.
-4. **Idempotent.** Importing or pushing a linked record again updates its counterpart instead of creating a second one.
+4. **Idempotent.** Importing, syncing or pushing a linked record again updates its counterpart (or leaves it) instead of
+   creating a second one.
 5. **Parents first.** A task needs its project linked first, a log its task and project. Importing a task imports or
    links its project. Pushing a task asks to push its project first.
 6. **Preview, then write.** Before an import or push changes anything, the user sees what will be created, updated or
    skipped.
-7. **Detect conflicts, don't merge them silently.** The fingerprint shows when a record changed on the other side since
-   the last sync. If both sides changed, the user chooses which wins. No field-level merging.
+7. **Show differences, don't merge them silently.** A linked project or task whose shared fields differ is shown field
+   by field, and the user chooses which side wins (FR-INT-008, OQ-173). The fingerprints say which side changed since
+   the last sync (OQ-176), which preselects the choice. No field-level merging.
 8. **Deletes don't propagate.** Deleting a record on one side never deletes its counterpart. The link is dropped, and the
    other side's record stays.
 9. **Partial failure is reported per record.** One rejected record doesn't roll back the rest. Every failed record is
    listed with PMSPA's reason.
-10. **Be a good API client.** Every PMSPA call has a timeout. PM4 respects PMSPA's paging and rate limits, retries only
-    safe calls (reads), and never logs credentials or PMSPA payloads.
+10. **Be a good API client.** Every PMSPA call has a 60-second timeout (a cold start isn't a failure, OQ-165). PM4
+    respects PMSPA's paging and rate limits (a 429 pauses every call to that host, FR-INT-014), retries only safe calls
+    (reads), and never logs credentials or PMSPA payloads.
 
 ## PMSPA API summary
 From the PMSPA API documentation the owner shared on 2026-10-15 (`docs-pmspa/connector/`, local and git-ignored; entry
@@ -149,15 +155,18 @@ starts (FR-INT-002 allows it in development).
 | PM4 | PMSPA | Rule |
 | --- | --- | --- |
 | Workday `work_date`, `start_minute` (15-minute steps) | Day `day` (`YYYY-MM-DD`), `start` (decimal hour, 0–23.99) | `start` = minutes ÷ 60. Back: rounded to the nearest 15 minutes |
-| The PM4 logs of one task on one work date | **One event** for that task and day: `title` (3–150) = the task title, `task` = the task's link | Logs added later to that task and day join the same event |
-| PM4 logs with a project but no task, or with neither (Unsorted), on one work date | One event per project and day without a `task`, `title` = the project title; one event per day for Unsorted, `title` "Unsorted" | Nothing is left out of a push |
+| Workday start on push | `days.createEvent` `start` | Every event create sends the PM4 day's start (an event created without one resets PMSPA's start to 0). PMSPA has no day update: a push that creates no event leaves PMSPA's start, and the day row warns "PMSPA keeps <HH:mm>: a day's start changes only when an event is added." (OQ-179). Import sets the PM4 start only when the PM4 day has none |
+| The PM4 logs of one task on one work date | **One event** for that task and day: `task` = the task's link, `title` = the task's **project** title (OQ-167). Two tasks of one project make two events with the same title, told apart by their task | Logs added later to that task and day join the same event |
+| PM4 logs with a project but no task, on one work date | One event per project and day without a `task`, `title` = the project title (OQ-167) | |
+| PM4 logs with neither (Unsorted), on one work date | One event per log title and day, `title` = the log title; logs without a title share one event "Unsorted" per day (OQ-167) | Nothing is left out of a push |
+| Event title length | PMSPA needs 3–150 characters | A title under 3 characters gets " · Time" (e.g. "AI · Time"); one over 150 is cut to 149 plus "…" (OQ-167, supersedes OQ-163) |
 | Time log `text` (1000) | Log `title` (3–350) | Push cuts a text over 350 characters to 349 plus "…", and the preview warns about it. Import: the log's title becomes the text |
-| Time log `title` (100, optional) | Event `title` | Import: the event's title becomes each of its logs' title, cut to 100 characters. Push sends no log title (the event title is the task's) |
+| Time log `title` (100, optional) | Event `title` | Import: the event's title (cut to 100) becomes the title of each log the import **creates**; an import never changes the title of a log that is already linked (OQ-169). Push sends no log title (the event is titled after the project, or after the log title for Unsorted) |
 | `duration_minutes` (15-minute steps) | Log `duration` (hours, 0.25–24) | Hours = minutes ÷ 60. PMSPA only uses 0.25 h steps (owner); a value off that step fails its import with the reason |
 | `task_id` / `project_id` | Event `task` | Import: through the task's link (parents first); an event without a task imports as Unsorted |
-| A log moved to another task | The log moved to another event | Followed both ways through the log's link (OQ-162). **Import:** when a PMSPA event's task changed, its PM4 logs move to the new task's PM4 counterpart (their project follows; an unlinked new task is imported first). **Push:** when a PM4 log moved to another task, project or Unsorted, its PMSPA log leaves the old event and joins the event for its new task (or project, or Unsorted) and day, which is created if missing; an event left without logs is deleted. A log changed on both sides since the last sync is a conflict (FR-INT-008) |
+| A log moved to another task | The log moved to another event | Followed both ways through the log's link (OQ-162). **Import:** when a PMSPA event's task changed, its PM4 logs move to the new task's PM4 counterpart (their project follows; an unlinked new task is imported first). **Push:** when a PM4 log moved to another task, project or Unsorted, its PMSPA log leaves the old event and joins the event for its new task (or project, or Unsorted) and day, which is created if missing; an event left without logs is deleted. A log changed on both sides since the last sync: the action decides, a push writes PM4's version and an import PMSPA's, and the event row warns about it (OQ-180) |
 | `booking_date` (a date, or none) | Event `booked` (boolean) | Push: booked when every log of the event has a booking date. **Import: always not booked**; the user books in PM4 |
-| `exclude_from_stats` | none | Not synced |
+| `exclude_from_stats` | An event titled "nonprod" | **Push:** a day's logs excluded from statistics all go to one event "nonprod" without a task, whatever their task or project (their task isn't pushed as a parent for them). **Import:** the logs of an event titled "nonprod" (case and surrounding spaces ignored) are excluded from statistics and land in Unsorted; a PM4 log already linked to one that is excluded keeps its task, project and title, and the import updates only its text and duration (OQ-168) |
 
 ## Requirements
 
@@ -219,16 +228,23 @@ never logged. Disconnecting deletes both.
 **Priority:** Must
 **Statement:** The Integrations tab shows the PMSPA connection status (Model) and when it was last checked, with a
 **Test connection** button. The status is checked on save, on **Test connection**, and whenever the API calls PMSPA
-(OQ-142). While connected, it shows **Connected as <PMSPA email>** and the time of the last import or push.
+(OQ-142). While connected, it shows the PMSPA account (OQ-166): its avatar, its email and "Signed in to <host> as an
+admin" (or "a user"), and the time of the last sync (import, sync or push).
 **Rules:**
-- The check is `POST /v1/auth/login`, then `POST /v1/auth` (who am I), which returns the PMSPA user ID (OQ-138). Each
-  call has a 15-second timeout.
+- The check is `POST /v1/auth/login`, then `POST /v1/auth` (who am I), which returns the PMSPA user ID, email, avatar URL
+  and role (OQ-138, OQ-166). Each call has a **60-second** timeout (OQ-165).
 - **Connected**: PMSPA accepted the credentials. **Invalid credentials**: PMSPA rejected them. **Unreachable**: PMSPA
   couldn't be reached or didn't answer in time.
+- **Written only on change** (OQ-178): the stored status and *last checked* are written on save, on **Test
+  connection**, and when a PMSPA call changes the status. A call that changes nothing writes nothing.
+- **Account details:** only the PMSPA user ID and email are stored (OQ-161). The avatar and role come from the last
+  check and are kept with the cached token. The avatar shows only from `https://images.unsplash.com` (allowed in the
+  CSP's `img-src`); any other host, or none, shows the initials (OQ-166).
 **Acceptance criteria:**
 - Given correct credentials, when I click **Test connection**, then the status is "Connected" and *last checked* is now.
 - Given a wrong password, when I save, then the settings are stored and the status is "Invalid credentials".
 - Given a URL that doesn't answer, when I click **Test connection**, then the status is "Unreachable".
+- Given a connected account whose PMSPA call succeeds, then the connection row isn't written.
 
 ### FR-INT-005: Disconnect
 **Priority:** Must
@@ -257,9 +273,10 @@ connection the section is hidden.
 ### FR-INT-007: PMSPA connector page
 **Priority:** Must
 **Statement:** `/app/connectors/pmspa` is where the user browses their PMSPA entities and imports them into PM4 (C3,
-FR-INT-011). It lists the importable PMSPA entities (which ones: OQ-155), read live from PMSPA (design principle 2), and
-shows for each record whether it's already linked to a PM4 record. The layout is TBD (OQ-140, settled in the prototype).
-Whatever it holds:
+FR-INT-011). It lists the importable PMSPA entities (*Functionality inventory*), read live from PMSPA (design principle
+2), and shows for each record whether it's already linked to a PM4 record. Layout (OQ-140, prototype `eefe787`): the
+connection card, then two tabs: **Projects & tasks** (`?tab=projects`, the default) and **Time** (`?tab=time&week=`), each
+with select-all, **Expand all** / **Collapse all** and **Import**.
 - Without a connection, it shows that PMSPA isn't connected, with a link to `/app/settings?tab=integrations`.
 - With a connection whose status isn't "Connected", it shows the status and the same link.
 **Acceptance criteria:**
@@ -268,13 +285,35 @@ Whatever it holds:
 
 ### FR-INT-008: Synchronization
 **Priority:** Must
-**Statement:** Data moves between PM4 and PMSPA only through Import (FR-INT-011) and Push (FR-INT-012), which the user
-starts, following the design principles (OQ-139). A **conflict** is a linked record that changed on both sides since its
-last sync (design principle 7). The preview marks it, and the user chooses per record: keep PM4's version, take PMSPA's,
-or skip it.
+**Statement:** Data moves between PM4 and PMSPA only through Import (FR-INT-011), Sync and Push (FR-INT-012), which the
+user starts, following the design principles (OQ-139). For projects and tasks (OQ-172, OQ-173, OQ-174):
+- **Link** pairs two records and writes nothing. **Sync** overwrites one side's shared fields with the other's.
+- **Comparing:** every import or sync compares the **current values of all shared fields** of each linked project or
+  task: project title, description, lead and external link; for a task also status (column) and due date, the due date
+  only when the PM4 task has one (PMSPA always does). PM4's text is compared as PMSPA would store it (title cut to 150,
+  description to 350). Empty text is no value.
+- **Same → Up to date** (nothing to do). **Different → Differs:** the preview row shows the differing fields side by side
+  (PM4 | PMSPA) and three choices: **Link only** (write nothing), **Overwrite PMSPA**, **Overwrite PM4**. The difference
+  comes back on every sync until the two sides match.
+- **Preselected:** the side that changed since the last sync (only PM4 changed → Overwrite PMSPA; only PMSPA → Overwrite
+  PM4), else Link only. Changed = the fingerprint of the side's current shared values differs from the one stored on the
+  link (OQ-176).
+- **Clearing:** PMSPA ignores empty values on update, so Overwrite PMSPA can't clear a PMSPA description, lead or link;
+  PMSPA keeps it and the row warns "PMSPA can't clear the <Field>: it keeps its value." (OQ-181).
+- **Not linked:** **Create new** (the default) or **Link to existing ▾**: once a record is picked, the row shows the
+  same field table and the same three choices.
+- **Link only writes nothing and isn't counted.** When no row writes, the dialog's button reads "Sync 0 records" and is
+  disabled; the link isn't marked synced then.
+- **The result** lists every record's outcome; a record whose title an overwrite changed shows "<old> → <new>".
+For time, the day view pushes (PM4 → PMSPA) and the connector page imports (PMSPA → PM4); logs aren't compared field by
+field (FR-INT-011, FR-INT-012).
 **Acceptance criteria:**
-- Given a linked task renamed in PM4 and in PMSPA since the last sync, when I push it, then the preview marks it as a conflict and nothing is written until I choose.
-- Given that conflict, when I choose to keep PM4's version, then PMSPA gets PM4's title.
+- Given a linked task renamed in PM4 and in PMSPA since the last sync, when I sync it, then the preview shows the row as "Differs" with the titles side by side, **Link only** preselected, and nothing is written until I confirm.
+- Given that row, when I choose **Overwrite PMSPA** and sync, then PMSPA gets PM4's title and the result shows "<PMSPA title> → <PM4 title>".
+- Given a linked project whose description was changed only in PMSPA, when I sync it, then **Overwrite PM4** is preselected.
+- Given a linked pair whose fields match, when I sync it, then its row is "Up to date" and nothing is written.
+- Given a preview where every row is Link only or up to date, then the button reads "Sync 0 records" and is disabled.
+- Given a linked pair kept different with **Link only**, when I sync it again, then it shows as "Differs" again.
 
 ### FR-INT-009: Entity mapping
 **Priority:** Must
@@ -287,17 +326,22 @@ editor. The UI works only with individual records: import, push, the sync flag a
 **Priority:** Must
 **Statement:** PM4 keeps a link for every record that was imported from PMSPA or pushed to it (Model, design principle 1).
 The user can **unlink** a record: the link is dropped and both records stay.
-**Sync flag** (owner, 2026-10-15): once a PM4 record has been synced with PMSPA (imported or pushed), the PM4 UI shows a
-small **sync flag** icon beside it. Hovering over the flag, or focusing it with the keyboard, shows a tooltip with the last
-sync time in the user's time zone, in the app's date-and-time style (`d MMMM yyyy` and `HH:mm`): "Synced with PMSPA on
-15 October 2026 at 22:50". The flag shows only while the record is linked and a connection is saved (FR-INT-005). It updates after every import or push of that
-record. It shows next to the name on the project and task lists and details, and on log rows (OQ-157). The icon is
-chosen in the prototype (OQ-140).
+**Sync flag** (owner, 2026-10-15; OQ-164, OQ-170): once a PM4 record has been linked (imported, synced, pushed or
+linked to an existing record), the PM4 UI shows a small **sync flag** (RefreshCw icon) beside it. Its label says which
+way the link was made and when it last synced, in the user's time zone: "Synced from PMSPA" (`imported`), "Synced to
+PMSPA" (`pushed`) or "Synced with PMSPA" (`linked`), then " on 15 October 2026 at 22:50". On the project and task lists
+and details it is the icon alone, with the label as its tooltip; on log rows it is a tag with the short date ("Synced
+to PMSPA on 15 Oct 2026"). A click opens a popover with the label, the PMSPA counterpart read live (project: title,
+lead, done; task: title, its PMSPA project, column; log: text and event title), how changes reach PMSPA (sync the
+project or task, push the day) and **Unlink**. The live read happens only while the popover is open, is cached 5
+minutes and isn't retried; nothing of it is stored in PM4. The flag shows only while the record is linked and a
+connection to the links' account is saved (FR-INT-005). It updates after every import, sync or push of that record.
 **Acceptance criteria:**
 - Given a PM4 project imported from PMSPA, when I import it again, then the PM4 project is updated and no second project is created.
 - Given a linked project, when I unlink it, then both the PM4 and the PMSPA project still exist and the project shows as not linked.
 - Given a linked PM4 project, when I delete it, then the link is dropped and the PMSPA project still exists.
-- Given a PM4 project last synced on 15 October 2026 at 22:50 in my time zone, when I hover over its sync flag, then I see "Synced with PMSPA on 15 October 2026 at 22:50".
+- Given a PM4 project imported from PMSPA and last synced on 15 October 2026 at 22:50 in my time zone, when I hover over its sync flag, then I see "Synced from PMSPA on 15 October 2026 at 22:50".
+- Given a linked task, when I click its sync flag, then the popover shows the PMSPA task's title, project and column, read from PMSPA, and **Unlink**.
 - Given a PM4 project that was never synced, or was unlinked, then it shows no sync flag.
 
 ### FR-INT-011: Import from PMSPA
@@ -307,38 +351,71 @@ preview lists what will be created, updated or skipped (design principle 6). Imp
 counterpart and a link, or updates the counterpart if it's already linked. A child brings its parent (design
 principle 5). Importable: projects, tasks, and days with their events (*Functionality inventory*). Selecting a project
 lets the user include all, some or none of its tasks (OQ-157).
-**Link to existing** (OQ-157): for each PMSPA project or task that isn't linked yet, the preview offers **Create new**
-(the default) or **Link to existing ▾**, a picker of the user's PM4 records of the same type (for a task, within the
-linked project). Linking to an existing record creates the link and updates that record from PMSPA, so the same project
-isn't created twice when it already exists on both sides.
+**Link to existing** (OQ-157, OQ-173): for each PMSPA project or task that isn't linked yet, the preview offers **Create
+new** (the default) or **Link to existing ▾**, a picker of the user's unlinked PM4 records of the same type, the
+closest title first (for a task, following its project row's choice). Once one is picked, the row shows the field table
+and Link only / Overwrite PMSPA / Overwrite PM4 (FR-INT-008), so the same project isn't created twice when it already
+exists on both sides. A linked project or task is compared as in FR-INT-008 (no longer PMSPA-only).
+**Time:** importing a day sets the PM4 day start when PM4 has none, and imports each event's logs: an event's task
+through its link (an unlinked task is imported first, with its project), an event without a task as Unsorted, an event
+"nonprod" as excluded from statistics (OQ-168). A log already imported is updated (text, duration, task) unless it is
+unchanged in PMSPA since the last sync. Imported logs are never booked. A log whose duration isn't a 0.25 h step fails
+with the reason; the event's other logs are imported.
 **Acceptance criteria:**
 - Given a PMSPA project that isn't linked, when I select it and import, then a PM4 project is created and linked to it.
 - Given a PMSPA task whose project isn't linked, when I import the task, then its project is imported too.
 - Given an import of two records where PMSPA rejects one, then the other is imported and the failed one is listed with the reason.
-- Given a PMSPA project "Acme" and a PM4 project "Acme", when I import it with **Link to existing** → "Acme", then no new PM4 project is created and the PM4 project is linked.
+- Given a PMSPA project "Acme" and a PM4 project "Acme", when I import it with **Link to existing** → "Acme" and **Link only**, then no new PM4 project is created, the PM4 project is linked and neither side changes.
 - Given an imported event of task A whose task was changed to task B in PMSPA, when I import it again, then its PM4 logs are linked to B's PM4 counterpart (B is imported first if it isn't linked).
 
-### FR-INT-012: Push to PMSPA
+### FR-INT-012: Sync with PMSPA and Push to PMSPA
 **Priority:** Must
-**Statement:** While a PMSPA connection is saved, **Push to PMSPA** is on the project detail (SCR-021), the task detail
-and the day view (SCR-040, the day's logs) (OQ-157). It is disabled with the connection status as its hint while the
-status isn't **Connected**, and hidden without a connection. Its form (button or menu item) is chosen in the prototype.
-Pushing creates the PMSPA counterpart and a link, or updates it if it's already linked. The user confirms a preview
-first. Pushing a project includes its tasks by default; the preview lets the user leave them out. Pushing a task or a
-log whose parent isn't linked pushes the parent too (design principle 5). As on import, the preview offers **Link to
-existing ▾** for a record that isn't linked yet, to pick its PMSPA counterpart instead of creating one.
+**Statement:** While a PMSPA connection is saved, the project detail (SCR-021) and the task detail (SCR-031) have **Sync
+with PMSPA**, and the day view (SCR-040) has **Push to PMSPA** for the day's logs (OQ-157, OQ-172). Each is disabled
+with the connection status as its hint while the status isn't **Connected**, and hidden without a connection. The day
+view's button is also disabled on a day without logs. Each opens a preview first (design principle 6), the user
+confirms, and the result lists every record's outcome.
+- **Sync a project or a task** (both ways, FR-INT-008): a project includes its tasks by default and the preview lets the
+  user untick them; a task whose project isn't linked brings its project (design principle 5). Not linked: **Create new**
+  in PMSPA or **Link to existing ▾** (PMSPA records of the same type). The dialog is "Sync “<title>” with PMSPA", its
+  button "Sync N records".
+- **Push a day:** the day's logs go to PMSPA as events (*Entity mapping → Time*), with any unlinked task as a parent
+  (a project's logs without a task need no project in PMSPA). A linked log unchanged since the last push is skipped. A
+  log moved to another task, project or Unsorted in PM4 leaves its old event and joins the new one; an event left without
+  logs is deleted (OQ-162). An event is booked when every one of its logs has a booking date. The button reads
+  "Push N records".
 **Acceptance criteria:**
-- Given no connection, then no PM4 screen shows the push action.
-- Given a connected account and a PM4 project that isn't linked, when I push it and confirm, then a PMSPA project is created and the PM4 project shows as linked.
-- Given a linked PM4 project that I renamed, when I push it, then the PMSPA project gets the new name and no second PMSPA project is created.
+- Given no connection, then no PM4 screen shows Sync with PMSPA or Push to PMSPA.
+- Given a connected account and a PM4 project that isn't linked, when I sync it with **Create new** and confirm, then a PMSPA project is created and the PM4 project shows as linked.
+- Given a linked PM4 project that I renamed, when I sync it with **Overwrite PMSPA**, then the PMSPA project gets the new name and no second PMSPA project is created.
 - Given a pushed log of task A that I moved to task B in PM4, when I push the day, then the PMSPA log is in B's event for that day, and A's event is deleted if it has no logs left.
+- Given a day whose logs are excluded from statistics, when I push it, then they go to one event "nonprod" without a task.
+
+### FR-INT-013: Slow PMSPA answers
+**Priority:** Must
+**Statement:** PMSPA runs on an Azure F1 plan, so its first answer after idling can take up to a minute (OQ-165). Under
+any PMSPA call that has taken 3 seconds (save, test, browse, refresh, preview, import, sync, push, the sync flag's
+popover), the UI shows "PMSPA is waking up. This can take up to a minute." The API's PMSPA timeout is 60 seconds.
+**Acceptance criteria:**
+- Given PMSPA answers after 10 seconds, when I open the connector page, then after 3 seconds I see the waking-up hint, and then the projects.
+
+### FR-INT-014: PMSPA rate limit
+**Priority:** Must
+**Statement:** When PMSPA answers 429, the API stops calling that PMSPA host until its `Retry-After` has passed, for every
+PM4 user (they share one outbound IP), and answers `503` `pmspa-rate-limited` with `retryAfterSeconds` (OQ-177). The UI
+shows "PMSPA is busy. Try again in N minutes." where the call was made. Nothing is retried automatically.
+The other PMSPA problems get their own line too (OQ-182): another sync running → "Another import, sync or push is still
+running."; rejected credentials → "PMSPA rejected the saved email or password."; unreachable → "PMSPA couldn't be
+reached."; anything else the screen's generic line. A failed import, sync or push says "Some records may have been
+written: open the preview again to see where things stand."
+**Acceptance criteria:**
+- Given PMSPA answered 429 with `Retry-After: 600`, when any user's next PMSPA call comes within 10 minutes, then the API answers 503 `pmspa-rate-limited` without calling PMSPA.
 
 ## Next steps
-1. Build the prototype from this spec (owner's order for this feature: spec first, then the prototype), then write
-   the feature specs and update the layer specs (routing, screens, endpoints, data model).
+1. Feature specs, in order (OQ-175): `feat-int-conn-api` → `feat-int-sync-api` → `feat-int-time-api` → `feat-int-web`.
 
 ## Open questions
-OQ-140 (settled in the prototype)
+None.
 
 ## Changelog
 - 2026-10-14: Initial draft (OQ-138…OQ-147). Owner's order for this feature: spec first, then the prototype.
@@ -356,3 +433,9 @@ OQ-140 (settled in the prototype)
   of task follows both ways (OQ-162).
 - 2026-10-16: Functionality inventory (OQ-155) and entity mapping (OQ-148) confirmed. Status `review`; the page layout
   (OQ-140) is settled in the prototype.
+- 2026-10-17: Folded in the prototype decisions (OQ-140, OQ-163…OQ-174) and OQ-175…OQ-182: link origin, both-side
+  fingerprints, Link vs Sync with the field comparison (FR-INT-008), **Sync with PMSPA** for projects and tasks and
+  **Push to PMSPA** for days (FR-INT-012), event titles, "nonprod" and log titles on import (*Entity mapping → Time*),
+  the sync flag's popover (FR-INT-010), account details and status writes (FR-INT-004), slow answers (FR-INT-013) and
+  the rate limit (FR-INT-014). OQ-140 settled by prototype `eefe787`.
+- 2026-10-17: Approved by the owner.
