@@ -180,3 +180,4 @@ None.
 - 2026-10-17: Initial draft (prototype `eefe787`; OQ-140, OQ-175, OQ-182). Ready for review.
 - 2026-10-17: Approved by the owner.
 - 2026-10-17: Test step: D1 spelled out (the type table, the five fixes the looser generated schemas need, checked by a trial switch); the prototype components row is T1, T2 (T1 switches their imports); `api:types` and the stubs land with the tests. Approved by the owner.
+- 2026-10-17: Opus review (approve). Accepted deviation: the dialog keeps the commit failure as `useState<{ error: unknown } | null>`, not `useState<unknown>`, so no failure and a rejection with `undefined` stay distinct. Follow-ups: OQ-197, OQ-198, OQ-199.

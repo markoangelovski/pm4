@@ -3,7 +3,7 @@ id: T-0079
 title: Types switch (D1), features/integrations/api.ts, sync.ts with pmspaProblemText, the Settings → Integrations tab, routes and the Connectors sidebar section
 milestone: M6
 app: web
-status: ready
+status: done
 size: M
 tier: haiku
 depends_on: []
@@ -24,9 +24,26 @@ Work from the brief: `node scripts/pm4.mjs brief T-0079`. Verify with `node scri
 ## Implementation notes
 _Implementer: what changed, and anything the reviewer should look at._
 
+- D1: `proto/features/integrations/types.ts` (aliases of the generated schema, plus `PmspaAccountSwitchProblem`); `proposed-types.ts` removed; imports switched in the 15 proto files; `PmspaPaths` dropped from `mock/client.ts`; the five looser-schema fixes; `dates ?? []` in `mock/pmspa.ts`. `api:types` already up to date (no diff).
+- D2: production twins of `types.ts`, `api.ts`, `schemas.ts`, `sync.ts`, the five connector components and `settings-view.tsx` (sed + Prettier). The proto `sync-preview-dialog.tsx` and the rest of the connector page are T2.
+- D3 (T1 part): `pmspaProblemText` in proto and production `sync.ts`; `pmspa-connection-card.tsx` toasts use it (proto and twin).
+- D4: `connectors-nav.tsx` (`ConnectorsNav`), `connectorItems` in `sidebaritems.ts`, `<ConnectorsNav />` in `app-sidebar.tsx`; `routes.app.connectors.pmspa` in `lib/routes.ts`.
+- Not done (T2): the connector page route `app/(dashboard-layout)/app/connectors/pmspa/page.tsx`, and the production twin of `sync-preview-dialog.tsx` (still the typed stub). That stub is why `twins` FAILs and why AC-7/AC-8 (`sync-preview-dialog.ac.test.tsx`) fail. Expected for T1.
+
+Check summary (`node scripts/pm4.mjs check T-0079`):
+```
+ac hashes: ok (3) · scope: ok · pending ACs (later tasks, excluded): AC-7, AC-8, AC-9, AC-10
+web lint: ok · web format:check: ok · web typecheck: ok · web test: ok · web build: ok · web api:types: ok
+check AC-9: skipped (later task)
+twins: FAIL (1): web/features/integrations/components/sync-preview-dialog.tsx (T2 stub, not yet promoted)
+FAIL T-0079
+```
+AC-1…AC-6 pass (`api.ac.test.tsx`, `sync.ac.test.ts`, `connectors-nav.ac.test.tsx`).
+
 ### Attempts
 | # | Tier | Result | Summary |
 | --- | --- | --- | --- |
+| 1 | haiku | done (check FAIL on T2 stub twin) | Types switch, D2 twins, D3 helper and toasts, D4 sidebar; AC-1…AC-6 pass; format fixed with `npm run format` |
 
 ## Review
-_Filled in by `review-feature`._
+**Verdict: approve** (Opus, 2026-10-17). Feature check passes (`pm4 check --feature int-web`: all gates ok, twins 83 equal, AC-10 manual). D1 types, D3 `pmspaProblemText`, D4 sidebar and routes match the spec; the recorded FAIL was T-0080's dialog stub, gone after promotion. No findings. Tier: haiku right.

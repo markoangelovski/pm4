@@ -8,13 +8,12 @@ import type {
   PmspaImportDto,
   PmspaImportSelectionDto,
   PmspaLinkType,
-  PmspaPaths,
   PmspaPushDto,
   PmspaPushTargetDto,
   PmspaSyncDto,
   PmspaSyncTargetDto,
   SavePmspaConnectionDto
-} from "@/proto/features/integrations/proposed-types";
+} from "@/proto/features/integrations/types";
 import { today } from "@/lib/time";
 import { getMockState, mock, nextId } from "./store";
 import * as pmspa from "./pmspa";
@@ -422,7 +421,7 @@ function dashboard(q: URLSearchParams) {
 const notConnected = () =>
   problem(409, "Conflict", "PMSPA isn't connected (pmspa-not-connected).");
 
-/** `/integrations/pmspa/**` (req-integrations, proposed-types.ts). */
+/** `/integrations/pmspa/**` (req-integrations, types.ts). */
 function integrations(
   method: string,
   rest: string[],
@@ -603,7 +602,7 @@ async function mockFetch(request: Request): Promise<Response> {
 }
 
 /** Same surface as `apiClient` in `lib/api/client`; the base URL is never requested. */
-export const apiClient = createClient<paths & PmspaPaths>({
+export const apiClient = createClient<paths>({
   baseUrl: "http://proto.localhost",
   fetch: mockFetch
 });

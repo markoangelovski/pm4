@@ -1,6 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import type { PmspaConnectionStatus } from "../proposed-types";
+import type { PmspaConnectionStatus } from "../types";
 import { STATUS_LABEL } from "../sync";
 
 const DOT: Record<PmspaConnectionStatus, string> = {

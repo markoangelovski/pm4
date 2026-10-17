@@ -28,7 +28,7 @@ import type {
   SyncPreviewItemDto,
   SyncResultDto,
   SyncResultItemDto
-} from "@/proto/features/integrations/proposed-types";
+} from "@/proto/features/integrations/types";
 import type { TimeLog } from "@/proto/features/time/types";
 import { MOCK_TZ } from "./seed";
 import { getMockState, mock, nextId } from "./store";
@@ -970,7 +970,7 @@ export function importPreview(sel: PmspaImportSelectionDto): Item[] {
     }
   }
 
-  for (const date of [...sel.dates].sort()) {
+  for (const date of [...(sel.dates ?? [])].sort()) {
     const events = remote.events.filter((e) => e.date === date);
     const dayKey = `day:${date}`;
     const logs = events.flatMap((e) => e.logs);

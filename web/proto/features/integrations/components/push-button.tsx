@@ -19,7 +19,7 @@ import type {
   PmspaPushTargetDto,
   PmspaSyncTargetDto,
   SyncChoiceDto
-} from "../proposed-types";
+} from "../types";
 import { STATUS_LABEL } from "../sync";
 import { SyncPreviewDialog } from "./sync-preview-dialog";
 
@@ -123,6 +123,7 @@ export function PushToPmspaButton({
         items={preview.data?.items}
         isPending={preview.isPending}
         isError={preview.isError}
+        error={preview.error}
         onRetry={load}
         onRun={run}
       />

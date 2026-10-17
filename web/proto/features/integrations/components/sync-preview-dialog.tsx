@@ -38,6 +38,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { cn } from "@/lib/utils";
 import { ColdStartHint } from "./cold-start-hint";
+import { pmspaProblemText } from "../sync";
 import type {
   SyncAction,
   SyncCandidateDto,
@@ -49,7 +50,7 @@ import type {
   SyncRecordType,
   SyncResultDto,
   SyncResultItemDto
-} from "../proposed-types";
+} from "../types";
 
 /** `sync`: a project or task, both ways (OQ-172); `push`: a day's logs to PMSPA; `import`: the connector page. */
 export type SyncMode = "import" | "push" | "sync";
@@ -220,6 +221,7 @@ export function SyncPreviewDialog({
   items,
   isPending,
   isError,
+  error,
   onRetry,
   onRun
 }: {
@@ -231,6 +233,7 @@ export function SyncPreviewDialog({
   items: SyncPreviewItemDto[] | undefined;
   isPending: boolean;
   isError: boolean;
+  error: unknown;
   onRetry: () => void;
   onRun: (choices: SyncChoiceDto[]) => Promise<SyncResultDto>;
 }) {
@@ -246,6 +249,7 @@ export function SyncPreviewDialog({
             items={items}
             isPending={isPending}
             isError={isError}
+            error={error}
             onRetry={onRetry}
             onRun={onRun}
           />
@@ -262,6 +266,7 @@ function PreviewBody({
   items,
   isPending,
   isError,
+  error,
   onRetry,
   onRun
 }: {
@@ -271,12 +276,14 @@ function PreviewBody({
   items: SyncPreviewItemDto[] | undefined;
   isPending: boolean;
   isError: boolean;
+  error: unknown;
   onRetry: () => void;
   onRun: (choices: SyncChoiceDto[]) => Promise<SyncResultDto>;
 }) {
   const [choices, setChoices] = useState<Choices>({});
   const [running, setRunning] = useState(false);
-  const [failed, setFailed] = useState(false);
+  // The commit's failure, if any: its error decides the line (OQ-182).
+  const [failure, setFailure] = useState<{ error: unknown } | null>(null);
   const [result, setResult] = useState<SyncResultDto | null>(null);
   const { verb, doing } = VERB[mode];
 
@@ -302,7 +309,10 @@ function PreviewBody({
   } else if (isError || !items) {
     body = (
       <div className="flex flex-col items-start gap-3 p-6 text-sm">
-        <p>Couldn&apos;t prepare the preview. PMSPA may be unreachable.</p>
+        <p>
+          {pmspaProblemText(error) ??
+            "Couldn't prepare the preview. PMSPA may be unreachable."}
+        </p>
         <Button variant="outline" className="cursor-pointer" onClick={onRetry}>
           Retry
         </Button>
@@ -361,11 +371,11 @@ function PreviewBody({
 
   async function run() {
     setRunning(true);
-    setFailed(false);
+    setFailure(null);
     try {
       setResult(await onRun(Object.values(choices)));
-    } catch {
-      setFailed(true);
+    } catch (e) {
+      setFailure({ error: e });
     } finally {
       setRunning(false);
     }
@@ -380,10 +390,12 @@ function PreviewBody({
       {body}
       <DialogFooter className="mx-0 mb-0 items-center gap-3 rounded-b-md border-t p-4 sm:justify-between">
         <div className="text-xs text-muted-foreground">
-          {failed ? (
+          {failure ? (
             <span className="text-destructive">
-              Couldn&apos;t {verb.toLowerCase()}. Nothing was changed. Try
-              again.
+              {pmspaProblemText(failure.error) ??
+                `Couldn't ${verb.toLowerCase()}.`}{" "}
+              Some records may have been written: open the preview again to see
+              where things stand.
             </span>
           ) : running ? (
             <ColdStartHint active />
@@ -399,12 +411,7 @@ function PreviewBody({
           </DialogClose>
           <Button
             className="cursor-pointer"
-            disabled={
-              isPending ||
-              !items ||
-              running ||
-              toWrite.length === 0
-            }
+            disabled={isPending || !items || running || toWrite.length === 0}
             onClick={() => void run()}
           >
             {running
@@ -496,7 +503,9 @@ function PreviewRow({
           <PairCompare
             title={item.title}
             differences={item.differences}
-            overwrite={choice?.kind === "link" ? choice.overwrite : null}
+            overwrite={
+              choice?.kind === "link" ? (choice.overwrite ?? null) : null
+            }
             onChange={(overwrite) =>
               choose({
                 key: item.key,
@@ -628,7 +637,7 @@ function LinkChoice({
         <PairCompare
           title={item.title}
           differences={linkedTo.differences}
-          overwrite={choice.overwrite}
+          overwrite={choice.overwrite ?? null}
           onChange={(overwrite) => onChoice({ ...choice, overwrite })}
         />
       ) : null}

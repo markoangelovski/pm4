@@ -25,7 +25,7 @@ import type {
   SavePmspaConnectionDto,
   SyncPreviewDto,
   SyncResultDto
-} from "./proposed-types";
+} from "./types";
 
 export type PmspaConnection = PmspaConnectionDto;
 

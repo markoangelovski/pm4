@@ -50,8 +50,8 @@ import type {
   PmspaProjectDto,
   PmspaRecordLinkDto,
   PmspaTaskDto
-} from "../proposed-types";
-import { syncedLine } from "../sync";
+} from "../types";
+import { pmspaProblemText, syncedLine } from "../sync";
 import { ExpandAllButton } from "./expand-all-button";
 
 /** Per selected PMSPA project: all its tasks, or the picked ones (none = the project alone, OQ-157). */
@@ -149,7 +149,9 @@ export function PmspaProjectsTab({
       <Empty>
         <EmptyHeader>
           <EmptyTitle>Couldn&apos;t read your PMSPA projects.</EmptyTitle>
-          <EmptyDescription>PMSPA may be unreachable.</EmptyDescription>
+          <EmptyDescription>
+            {pmspaProblemText(query.error) ?? "PMSPA may be unreachable."}
+          </EmptyDescription>
         </EmptyHeader>
         <EmptyContent>
           <Button

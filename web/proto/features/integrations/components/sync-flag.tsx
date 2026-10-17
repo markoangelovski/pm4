@@ -19,7 +19,7 @@ import {
 import { useMe } from "@/proto/features/users/api";
 import { cn } from "@/lib/utils";
 import { usePmspaLinks, useUnlink } from "../api";
-import type { PmspaLinkType } from "../proposed-types";
+import type { PmspaLinkType } from "../types";
 import { ORIGIN_LABEL, formatSyncedDate, syncedLine } from "../sync";
 import { PmspaRecordNote } from "./pmspa-record-note";
 

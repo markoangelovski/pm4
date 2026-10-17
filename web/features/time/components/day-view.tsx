@@ -22,7 +22,7 @@ import {
   AccordionTrigger
 } from "@/components/ui/accordion";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { formatDuration, today as todayIn } from "@/lib/time";
+import { formatDuration, formatWorkDate, today as todayIn } from "@/lib/time";
 import { useMe } from "@/features/users/api";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDay } from "../api";
@@ -31,6 +31,7 @@ import type { Ref } from "../types";
 import { DeletedName } from "./deleted-marker";
 import { DayCharts, logColors } from "./day-charts";
 import { DayHeader } from "./day-header";
+import { PushToPmspaButton } from "@/features/integrations/components/push-button";
 import { DayMenu } from "./day-menu";
 import { DayPicker } from "./day-picker";
 import { LogFormDialog } from "./log-form-dialog";
@@ -139,7 +140,17 @@ export function DayView() {
         today={today}
         timeZone={timeZone}
         onChange={setDate}
-        actions={<DayMenu day={day} />}
+        actions={
+          <>
+            <PushToPmspaButton
+              target={{ type: "day", id: date }}
+              label={`the logs of ${formatWorkDate(date)}`}
+              disabled={day.logs.length === 0}
+              disabledHint="This day has no logs to push."
+            />
+            <DayMenu day={day} />
+          </>
+        }
       />
       <DayHeader
         day={day}

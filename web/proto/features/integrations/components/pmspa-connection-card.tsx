@@ -42,7 +42,7 @@ import {
   useTestPmspaConnection,
   type PmspaConnection
 } from "../api";
-import type { SavePmspaConnectionDto } from "../proposed-types";
+import type { SavePmspaConnectionDto } from "../types";
 import {
   PMSPA_CONNECTION_FIELD_MAP,
   pmspaConnectionDefaults,
@@ -50,7 +50,7 @@ import {
   toSavePmspaConnection,
   type PmspaConnectionFormValues
 } from "../schemas";
-import { formatSyncedAt } from "../sync";
+import { formatSyncedAt, pmspaProblemText } from "../sync";
 import { ColdStartHint } from "./cold-start-hint";
 import { ConnectionStatusBadge } from "./connection-status-badge";
 import { PmspaAccount } from "./pmspa-account";
@@ -196,7 +196,9 @@ function ConnectionForm({ connection }: { connection: PmspaConnection }) {
           return;
         }
         if (!applyFieldErrors(error, setError, PMSPA_CONNECTION_FIELD_MAP))
-          toast.error("Couldn't save the connection.");
+          toast.error(
+            pmspaProblemText(error) ?? "Couldn't save the connection."
+          );
       }
     });
   }
@@ -285,7 +287,11 @@ function ConnectionForm({ connection }: { connection: PmspaConnection }) {
                 onClick={() =>
                   test.mutate(undefined, {
                     onSuccess: (c) => toastStatus(c, false),
-                    onError: () => toast.error("Couldn't test the connection.")
+                    onError: (error) =>
+                      toast.error(
+                        pmspaProblemText(error) ??
+                          "Couldn't test the connection."
+                      )
                   })
                 }
               >
@@ -402,7 +408,10 @@ function DisconnectDialog({
                   onOpenChange(false);
                   toast("PMSPA disconnected");
                 },
-                onError: () => toast.error("Couldn't disconnect PMSPA.")
+                onError: (error) =>
+                  toast.error(
+                    pmspaProblemText(error) ?? "Couldn't disconnect PMSPA."
+                  )
               })
             }
             className="cursor-pointer"
