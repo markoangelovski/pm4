@@ -528,15 +528,97 @@ describe("PMSPA connection API (feat-int-conn-api)", () => {
 
     const server = app.getHttpServer();
     const path = "/api/v1/integrations/pmspa";
+    // Lazy: supertest starts and closes its own listener per request.
     const anonymous = [
-      request(server).get(path),
-      request(server)
-        .put(path)
-        .send({ url: PMSPA_URL, email: "x@pmspa.test", password: "secret" }),
-      request(server).post(`${path}/test`),
-      request(server).delete(path)
+      () => request(server).get(path),
+      () =>
+        request(server)
+          .put(path)
+          .send({ url: PMSPA_URL, email: "x@pmspa.test", password: "secret" }),
+      () => request(server).post(`${path}/test`),
+      () => request(server).delete(path)
     ];
-    for (const req of anonymous) expect((await req).status).toBe(401);
+    for (const call of anonymous) expect((await call()).status).toBe(401);
     expect((await findConnection(a.id))?.status).toBe("connected");
+  });
+
+  it("AC-18 FR-INT-003: a save or Test that doesn't connect clears the cached token and account", async () => {
+    const a = await newUser();
+    const cached = () => testRedis().exists(tokenKey(a.id), accountKey(a.id));
+
+    await connect(a);
+    expect(await cached()).toBe(2);
+    const wrong = await as(a).put({
+      url: PMSPA_URL,
+      email: "x@pmspa.test",
+      password: "wrong"
+    });
+    expect(wrong.body.status).toBe("invalid-credentials");
+    expect(await cached()).toBe(0);
+
+    await connect(a);
+    expect(await cached()).toBe(2);
+    fake.unreachable = true;
+    const offline = await as(a).put({
+      url: PMSPA_URL,
+      email: "x@pmspa.test",
+      password: "secret"
+    });
+    expect(offline.body.status).toBe("unreachable");
+    expect(await cached()).toBe(0);
+    fake.unreachable = false;
+
+    await connect(a);
+    expect(await cached()).toBe(2);
+    fake.accounts[0].password = "changed";
+    const rejected = await as(a).test();
+    expect(rejected.body.status).toBe("invalid-credentials");
+    expect(await cached()).toBe(0);
+    fake.accounts[0].password = "secret";
+
+    await connect(a);
+    expect(await cached()).toBe(2);
+    fake.accounts[0].id = "65f1a0c0ffee00000000000c";
+    const switched = await as(a).test();
+    expect(switched.status).toBe(200);
+    expect(switched.body.status).toBe("invalid-credentials");
+    expect(await cached()).toBe(0);
+  });
+
+  it("AC-19 FR-INT-003 FR-INT-004: a stored password that no longer decrypts counts as invalid credentials", async () => {
+    const a = await newUser();
+    await connect(a);
+    await testDb().query(
+      "UPDATE pmspa_connections SET password_enc = $1 WHERE user_id = $2",
+      [Buffer.alloc(40, 9), a.id]
+    );
+    // The token key goes so `request` has to log in; the account key stays to show it's cleared.
+    await testRedis().del(tokenKey(a.id));
+    expect(await testRedis().exists(accountKey(a.id))).toBe(1);
+    const rowBefore = await findConnection(a.id);
+    const callsBefore = fake.calls.length;
+
+    const unsaved = await as(a).put({ url: PMSPA_URL, email: "x@pmspa.test" });
+    expect(unsaved.status).toBe(400);
+    expect(unsaved.body.errors?.map((e) => e.field)).toContain("password");
+    expect(await findConnection(a.id)).toEqual(rowBefore);
+
+    await expect(
+      app
+        .get(PmspaClient)
+        .request(a.id, { method: "GET", path: "/v1/projects" })
+    ).rejects.toMatchObject({ slug: "pmspa-invalid-credentials" });
+    expect((await findConnection(a.id))?.status).toBe("invalid-credentials");
+    expect(await testRedis().exists(tokenKey(a.id), accountKey(a.id))).toBe(0);
+
+    await testRedis().set(accountKey(a.id), "{}");
+    const tested = await as(a).test();
+    expect(tested.status).toBe(200);
+    expect(tested.body.status).toBe("invalid-credentials");
+    expect(await testRedis().exists(tokenKey(a.id), accountKey(a.id))).toBe(0);
+    expect(fake.calls.length).toBe(callsBefore);
+
+    const saved = await connect(a);
+    expect(saved.body.status).toBe("connected");
   });
 });

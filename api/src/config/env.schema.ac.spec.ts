@@ -13,7 +13,9 @@ const validConfig = {
   GOOGLE_CLIENT_ID: "client-id",
   GOOGLE_CLIENT_SECRET: "client-secret",
   GOOGLE_CALLBACK_URL: "http://localhost:3001/api/v1/auth/google/callback",
-  JWT_ACCESS_SECRET: "x".repeat(32)
+  JWT_ACCESS_SECRET: "x".repeat(32),
+  // Required since feat-int-conn-api (OQ-184). Dummy key: 32 bytes of 0x07.
+  PMSPA_ENCRYPTION_KEY: Buffer.alloc(32, 7).toString("base64")
 };
 
 describe("validateEnv: auth variables (feat-auth-api-session)", () => {

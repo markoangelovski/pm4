@@ -6,7 +6,7 @@ owner: Marko Angelovski
 last_updated: 2026-10-17
 milestone: M6
 requirements: [FR-INT-002, FR-INT-003, FR-INT-004, FR-INT-005, FR-INT-013, FR-INT-014, API-INT-001, API-INT-002, API-INT-003, API-INT-004]
-related: [req-integrations, api-endpoints, api-data-model, sec, arch-environments, feat-int-sync-api, feat-int-time-api, feat-int-web, OQ-138, OQ-142, OQ-145, OQ-160, OQ-161, OQ-165, OQ-166, OQ-177, OQ-178, OQ-183]
+related: [req-integrations, api-endpoints, api-data-model, sec, arch-environments, feat-int-sync-api, feat-int-time-api, feat-int-web, OQ-138, OQ-142, OQ-145, OQ-160, OQ-161, OQ-165, OQ-166, OQ-177, OQ-178, OQ-183, OQ-186, OQ-187, OQ-188]
 prototype: eefe787
 ---
 
@@ -66,20 +66,22 @@ the OpenAPI export.
 | api | `api/src/common/filters/problem-details/problem-exception.ts` | C | T1 | D2 |
 | api | `api/src/common/filters/problem-details/problem-details.filter.ts`, `api/src/common/filters/problem-details/problem-details.filter.spec.ts` | M | T1 | D2 |
 | api | `api/src/common/decorators/api-problem-responses/api-problem-responses.decorator.ts` | M | T1 | Add `502`, `503` |
-| api | `api/src/config/env.schema.ts`, `api/src/config/app-config.service.ts`, `api/src/config/env.schema.spec.ts`, `api/.env.example`, `api/test/setup-env.ts` | M | T1 | `PMSPA_ENCRYPTION_KEY` |
+| api | `api/src/config/env.schema.ts`, `api/src/config/app-config.service.ts`, `api/src/config/env.schema.spec.ts`, `api/.env.example`, `api/test/setup-env.ts`, `api/src/config/app-config.service.spec.ts` | M | T1 | `PMSPA_ENCRYPTION_KEY` (fixtures get a dummy key, OQ-184) |
+| api | `api/src/config/env.schema.ac.spec.ts` | M | tests | feat-auth-api-session's AC-6 fixture gets a dummy key (OQ-184) |
 | api | `api/src/integrations/pmspa/pmspa-problems.ts` | C | T1 | Hand-written |
 | api | `api/src/integrations/pmspa/pmspa-host-guard.ts` | C/M | tests, T2 | Typed stub in the test step (OQ-183), implemented in T2 |
 | api | `api/src/integrations/pmspa/pmspa-store.ts` | C | T2 | Hand-written |
 | api | `api/src/integrations/pmspa/pmspa-transport.ts` | C/M | tests, T4 | Typed stub in the test step (OQ-183), implemented in T4 |
-| api | `api/src/integrations/pmspa/pmspa-crypto.spec.ts`, `api/src/integrations/pmspa/pmspa-host-guard.spec.ts`, `api/src/integrations/pmspa/pmspa-store.spec.ts` | C | T2 | Unit tests |
+| api | `api/src/integrations/pmspa/pmspa-host-guard.spec.ts`, `api/src/integrations/pmspa/pmspa-store.spec.ts` | C | T2 | Unit tests (AC-15 covers the crypto) |
 | api | `api/src/integrations/pmspa/pmspa-transport.spec.ts` | C | T4 | Unit tests |
 | api | `api/src/database/schema/integrations.ts`, `api/src/database/schema/index.ts` | C/M | T3 | Tables, enums, `objectId`, `bytea` |
-| api | `api/drizzle/0007_*.sql`, `api/drizzle/meta/*` | C/M | T3 | `npm run db:generate` |
+| api | `api/drizzle/0007_pmspa.sql`, `api/drizzle/meta/*` | C/M | T3 | `npm run db:generate -- --name pmspa` |
 | api | `api/src/integrations/pmspa/pmspa.module.ts` | C/M | T3, T4, T5 | `npx nest g module integrations/pmspa --flat` (T3); providers (T4); controller and service (T5) |
 | api | `api/src/integrations/pmspa/pmspa-connection.controller.ts`, `api/src/integrations/pmspa/pmspa-connection.controller.spec.ts`, `api/src/integrations/pmspa/pmspa-connection.service.ts`, `api/src/integrations/pmspa/pmspa-connection.service.spec.ts` | C | T5 | `npx nest g controller integrations/pmspa/pmspa-connection --flat`, `npx nest g service integrations/pmspa/pmspa-connection --flat` |
 | api | `api/src/integrations/pmspa/pmspa-connection.repository.ts`, `api/src/integrations/pmspa/pmspa-connection.repository.spec.ts`, `api/src/integrations/pmspa/pmspa-client.spec.ts` | C | T4 | Hand-written |
 | api | `api/src/integrations/pmspa/pmspa-client.ts` | C/M | tests, T4 | Typed stub in the test step (OQ-183), implemented in T4 |
-| api | `api/src/integrations/pmspa/dto/pmspa-connection-response.dto.ts`, `api/src/integrations/pmspa/dto/save-pmspa-connection.dto.ts` | C | T5 | Hand-written |
+| api | `api/src/integrations/pmspa/dto/pmspa-connection-response.dto.ts` | C | T2 | Hand-written; T2 because the store and `PmspaCheck` use `PmspaAccountDto` (OQ-185) |
+| api | `api/src/integrations/pmspa/dto/save-pmspa-connection.dto.ts` | C | T5 | Hand-written |
 | api | `api/src/app.module.ts` | M | T3 | The CLI adds `PmspaModule` |
 | api | `api/openapi.json` | M | T5 | `npm run openapi:export` |
 
@@ -90,11 +92,15 @@ the OpenAPI export.
 // api/src/common/filters/problem-details/problem-exception.ts
 export class ProblemException extends HttpException {
   constructor(status: number, readonly slug: string, readonly title: string, detail: string,
-              readonly extensions: Record<string, unknown> = {}) { super(detail, status); }
+              readonly extensions: ProblemExtensions = {}) { super(detail, status); }
 }
+/** Extension members never redefine the standard ones (RFC 9457). */
+export type ProblemExtensions = Record<string, unknown> &
+  { type?: never; title?: never; status?: never; detail?: never; instance?: never; errors?: never };
 ```
 The filter: a `ProblemException` → `type` `<WEB_APP_URL>/errors/<slug>`, its `title`, `detail` = the message (also for 5xx: these
-details are written for the user), and the `extensions` spread into the body after the standard members. Everything else is unchanged.
+details are written for the user), and the `extensions` spread into the body after the standard members. A `ProblemException` is an expected
+condition: the filter logs it with `warn` (status and slug, no stack), never `error`. Everything else is unchanged.
 `ProblemStatus` gains `502` (`ApiBadGatewayResponse`, "PMSPA failed or couldn't be reached.") and `503` (`ApiServiceUnavailableResponse`, "PMSPA is busy.").
 ```ts
 // api/src/integrations/pmspa/pmspa-problems.ts: one factory per row of endpoints.md *PMSPA errors*, plus the account switch
@@ -168,7 +174,8 @@ default 900)`, then throw `pmspaProblems.rateLimited(seconds)`. Logs only method
 // pmspa-store.ts (D5)
 @Injectable() export class PmspaStore {
   constructor(redis: Redis, crypto: PmspaCrypto);
-  getToken(userId: string): Promise<string | null>;  setToken(userId: string, token: string): Promise<void>;   // EX 82800
+  getToken(userId: string): Promise<string | null>;  // a token that no longer decrypts → warn (no value), delete the key, null
+  setToken(userId: string, token: string): Promise<void>;   // EX 82800
   getAccount(userId: string): Promise<PmspaAccountDto | null>;  setAccount(userId: string, a: PmspaAccountDto): Promise<void>;
   clear(userId: string): Promise<void>;                // token and account
   pausedFor(host: string): Promise<number>;            // PTTL rounded up to seconds; 0 = not paused
@@ -201,7 +208,7 @@ export const pmspaConnections = pgTable("pmspa_connections", {
 The migration is generated, never hand-written.
 `pmspa.module.ts` imports `DatabaseModule` and `RedisModule` (as `projects.module.ts`); `ConfigModule` is global. T3 creates it empty;
 T4 adds the providers `PmspaCrypto`, `PmspaHostGuard`, `PmspaStore`, `PmspaTransport`, `PmspaConnectionRepository`, `PmspaClient`,
-`{ provide: PMSPA_FETCH, useValue: globalThis.fetch }`, `{ provide: DNS_LOOKUP, useValue: (h) => dns.promises.lookup(h, { all: true }) }` and exports `PmspaClient`;
+`{ provide: PMSPA_FETCH, useValue: globalThis.fetch }`, `{ provide: DNS_LOOKUP, useValue: defaultDnsLookup }` (exported by `pmspa-host-guard.ts`: `dns.promises.lookup(h, { all: true })`) and exports `PmspaClient`;
 T5's CLI adds the controller and service.
 
 ### Repository and client (T4)
@@ -228,6 +235,7 @@ export type PmspaCheck = { status: "connected"; token: string; account: PmspaAcc
 }
 ```
 `request`: no row → `pmspaProblems.notConnected()`. Token = `store.getToken`, else a login with the decrypted password (`check`, then `setToken`, `setAccount`).
+A stored password that no longer decrypts (`PMSPA_ENCRYPTION_KEY` changed) counts as a failed login, without calling PMSPA (OQ-187).
 Send; a `500` whose `body.error.name` (or `body.name`) is `TokenExpiredError` or `JsonWebTokenError` → log in again once and resend. A failed login →
 `setStatus(invalid-credentials)` if it changed, `store.clear`, throw `invalidCredentials()`. `PmspaUnreachableError` → `setStatus(unreachable)` if it
 changed, throw `unreachable()`. A response (any status) → `setStatus(connected)` if the stored status wasn't `connected`. Returns the response;
@@ -251,13 +259,15 @@ disconnect(userId): Promise<void>;
 // pmspa-connection.controller.ts: @ApiBearerAuth('bearer') @Controller('integrations/pmspa'):
 // @Get() get · @Put() save (@HttpCode 200) · @Post('test') @HttpCode(200) test · @Delete() @HttpCode(204) disconnect; @ApiProblemResponses per endpoints.md
 ```
-`save`: the URL rule (400 `url`); no row and no `password` → 400 `password` "Enter the password."; `host guard` `private` → 400 `url`
-(`PMSPA_URL_MESSAGES.private`). Password = `dto.password` or the stored one (decrypted). `check`. When connected: the previous account =
+`save`: the URL rule (400 `url`); no `password` and no stored one that decrypts (no row, or the key changed, OQ-187) → 400 `password`
+"Enter the password."; `host guard` `private` → 400 `url` (`PMSPA_URL_MESSAGES.private`). Password = `dto.password` or the stored one (decrypted). `check`. When connected: the previous account =
 the row's `pmspa_user_id`, else any link's `pmspa_user_id` of the user; it differs and `countOtherAccountLinks > 0` → without
 `confirmAccountSwitch` throw `accountSwitch(count, account.email)` (nothing stored), with it `switchAccount`. Else `upsert` with the check's status,
-`pmspa_user_id` (the new one when connected, else the stored one), `last_checked_at = now`. Connected → `setToken` and `setAccount`.
-`test`: no row → 404. `check` with the stored credentials; a connected account other than `pmspa_user_id` → Invalid credentials (D8);
-write the status (also when unchanged: Test always writes, D6); token and account as save.
+`pmspa_user_id` (the new one when connected, else the stored one), `last_checked_at = now`. Connected → `setToken` and `setAccount`; otherwise `store.clear`, because a cached token may belong to
+the previous URL or account (OQ-186).
+`test`: no row → 404. A stored password that no longer decrypts → Invalid credentials without calling PMSPA (OQ-187). Else `check` with the
+stored credentials; a connected account other than `pmspa_user_id` → Invalid credentials (D8). Write the status (also when unchanged: Test
+always writes, D6). Connected (and not D8) → `setToken` and `setAccount`; otherwise `store.clear` (OQ-186).
 `disconnect`: `repo.delete`, `store.clear`. `get`: the row and `store.getAccount` (`account` null unless the status is connected).
 
 ### Test doubles (tests)
@@ -296,6 +306,8 @@ Signed in as user A unless stated; B is another user. `FakePmspa` has account X 
 | AC-12 | `request` with `fake.unreachable` → throws `pmspa-unreachable` and the status becomes unreachable; the next successful `request` → connected; a successful call while connected writes nothing (`last_checked_at` unchanged) | `api/test/pmspa-connection.ac.e2e-spec.ts` | T5 |
 | AC-13 | `fake.rateLimitOnce = 600`: `POST /test` → `503` `…/errors/pmspa-rate-limited`, `retryAfterSeconds 600`; then B's `PUT` to the same host → `503` and the fake got no call | `api/test/pmspa-connection.ac.e2e-spec.ts` | T5 |
 | AC-14 | B never sees A's connection (`GET` as B → not-configured); every endpoint without a token → `401` | `api/test/pmspa-connection.ac.e2e-spec.ts` | T5 |
+| AC-18 | After connecting as X: `PUT` with password `wrong` → no token or account key for A in Redis; connected again, `PUT` with `fake.unreachable` → no keys; connected again, `POST /test` after the password changed in the fake → no keys; connected again, `POST /test` when the fake answers with another account id (D8) → `invalid-credentials`, no keys (OQ-186) | `api/test/pmspa-connection.ac.e2e-spec.ts` | T5 |
+| AC-19 | After connecting, A's `password_enc` is replaced by bytes that don't decrypt and the token key is deleted: `PUT {url, email}` (no password) → `400` naming `password`, the row unchanged; `PmspaClient.request` → throws `pmspa-invalid-credentials`, status `invalid-credentials`; `POST /test` → `200` `invalid-credentials`, no token key; neither called PMSPA; `PUT` with password `secret` → `200` connected (OQ-187) | `api/test/pmspa-connection.ac.e2e-spec.ts` | T5 |
 | AC-15 | `PmspaCrypto`: `decrypt(encrypt(s)) === s`; two `encrypt(s)` differ; a flipped byte → throws | `api/src/integrations/pmspa/pmspa-crypto.ac.spec.ts` | T2 |
 | AC-16 | `pmspaUrlProblem`: `https://pmspa.example.com` → null; `http://pmspa.example.com` → not-https; `https://10.1.2.3`, `https://[::1]`, `https://[fd00::1]`, `https://169.254.1.1`, `https://localhost` → private; `ftp://x`, `x` → not-a-url; `http://localhost:3000` → null in development, not-https in production; `isPrivateAddress("::ffff:192.168.1.1")` → true | `api/src/integrations/pmspa/pmspa-url-policy.ac.spec.ts` | T2 |
 | AC-17 | `api/openapi.json` has the four operations under `/api/v1/integrations/pmspa` with `bearer`; `PmspaConnectionResponseDto` has no `password` property | `check` | T5 |
@@ -334,3 +346,8 @@ None.
 - 2026-10-17: Approved by the owner.
 - 2026-10-17: Tasks re-split for Haiku (owner): T1–T5, T2 haiku and T4 sonnet; Files, AC and *Interfaces* task tags follow; module wiring per task. Ready for review.
 - 2026-10-17: Approved by the owner. Test step: typed stubs of the host guard, transport and client for the e2e test (OQ-183).
+- 2026-10-17: Implementation: the env fixtures get a dummy key (OQ-184); the response DTO file moves to T2 (OQ-185).
+- 2026-10-17: After the Opus review (owner approved its suggestions): the token cache is cleared whenever a save or Test doesn't connect (OQ-186,
+  AC-18); a stored password that no longer decrypts is treated as invalid credentials (OQ-187, AC-19); AC-14's anonymous requests are built
+  lazily (OQ-188); `ProblemExtensions` can't redefine the standard members; problems log at `warn`; `getToken` logs and drops an undecryptable
+  token; the module uses `defaultDnsLookup`; the migration is named `0007_pmspa`; `pmspa-crypto.spec.ts` is dropped (AC-15 covers it).

@@ -18,6 +18,7 @@ describe("AppConfigService", () => {
     JWT_ACCESS_SECRET: "x".repeat(32),
     ACCESS_TOKEN_TTL: 900,
     REFRESH_TOKEN_TTL: 2592000,
+    PMSPA_ENCRYPTION_KEY: Buffer.alloc(32, 7).toString("base64"),
     AUTH_ALLOWED_EMAILS: ["owner@example.com"]
   };
 
@@ -50,6 +51,13 @@ describe("AppConfigService", () => {
     expect(service.accessTokenTtlSeconds).toBe(900);
     expect(service.refreshTokenTtlSeconds).toBe(2592000);
     expect(service.allowedEmails).toEqual(["owner@example.com"]);
+  });
+
+  it("pmspaEncryptionKey decodes to a 32-byte Buffer", () => {
+    const key = service.pmspaEncryptionKey;
+    expect(Buffer.isBuffer(key)).toBe(true);
+    expect(key.length).toBe(32);
+    expect(key.equals(Buffer.alloc(32, 7))).toBe(true);
   });
 
   it("isProduction is false outside production", () => {

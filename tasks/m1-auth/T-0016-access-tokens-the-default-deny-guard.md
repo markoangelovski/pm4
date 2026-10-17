@@ -11,7 +11,7 @@ feature_spec: specs/06-features/auth-api-session.md
 spec_row: T2
 ac_files:
   - { path: api/test/me.ac.e2e-spec.ts, sha256: 6cfdbf1cf84d6299c22659ccbcd8a2c594df4672536b24765996601e89690f71 }
-  - { path: api/src/config/env.schema.ac.spec.ts, sha256: 3995cc24bce437441a6cf340e278af914394868d1df53b0e3c1fce29db558da5 }
+  - { path: api/src/config/env.schema.ac.spec.ts, sha256: abd6f42cbcf8bb9a38d0004c1dc8ea4a534b4e95e5c47588acae92d532525524 }
 ---
 
 # T-0016: Access tokens, the default-deny guard and GET /me

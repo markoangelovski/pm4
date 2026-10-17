@@ -13,7 +13,8 @@ const validConfig = {
   JWT_ACCESS_SECRET: "x".repeat(32),
   ACCESS_TOKEN_TTL: "1h",
   REFRESH_TOKEN_TTL: "7d",
-  AUTH_ALLOWED_EMAILS: "Owner@Example.com"
+  AUTH_ALLOWED_EMAILS: "Owner@Example.com",
+  PMSPA_ENCRYPTION_KEY: Buffer.alloc(32, 7).toString("base64")
 };
 
 describe("validateEnv", () => {
@@ -33,7 +34,8 @@ describe("validateEnv", () => {
       JWT_ACCESS_SECRET: "x".repeat(32),
       ACCESS_TOKEN_TTL: 3600,
       REFRESH_TOKEN_TTL: 604800,
-      AUTH_ALLOWED_EMAILS: ["owner@example.com"]
+      AUTH_ALLOWED_EMAILS: ["owner@example.com"],
+      PMSPA_ENCRYPTION_KEY: Buffer.alloc(32, 7).toString("base64")
     });
   });
 
@@ -78,6 +80,21 @@ describe("validateEnv", () => {
     expect(() => validateEnv({ ...validConfig, PORT: "70000" })).toThrow(
       /PORT/
     );
+  });
+
+  it("rejects a PMSPA_ENCRYPTION_KEY that does not decode to 32 bytes", () => {
+    expect(() =>
+      validateEnv({
+        ...validConfig,
+        PMSPA_ENCRYPTION_KEY: Buffer.alloc(16, 7).toString("base64")
+      })
+    ).toThrow(/PMSPA_ENCRYPTION_KEY[\s\S]*32 bytes/);
+  });
+
+  it("rejects a missing PMSPA_ENCRYPTION_KEY", () => {
+    expect(() =>
+      validateEnv({ ...validConfig, PMSPA_ENCRYPTION_KEY: undefined })
+    ).toThrow(/PMSPA_ENCRYPTION_KEY/);
   });
 
   it("rejects an empty CORS_ORIGINS", () => {

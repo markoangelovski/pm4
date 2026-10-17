@@ -4,3 +4,4 @@
 export * from "./users.js";
 export * from "./projects.js";
 export * from "./time.js";
+export * from "./integrations.js";

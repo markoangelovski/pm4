@@ -72,6 +72,20 @@ export const envSchema = z.object({
     .min(32, "JWT_ACCESS_SECRET must be at least 32 characters"),
   ACCESS_TOKEN_TTL: duration.prefault("15m"),
   REFRESH_TOKEN_TTL: duration.prefault("30d"),
+  // PMSPA connector (feat-int-conn-api, FR-INT-003): AES-256-GCM key for the
+  // stored PMSPA passwords and tokens. Base64 of exactly 32 random bytes.
+  PMSPA_ENCRYPTION_KEY: z
+    .string()
+    .refine(
+      (value) =>
+        /^[A-Za-z0-9+/]+={0,2}$/.test(value) &&
+        value.length % 4 === 0 &&
+        Buffer.from(value, "base64").length === 32,
+      {
+        message:
+          "PMSPA_ENCRYPTION_KEY must be base64 that decodes to exactly 32 bytes"
+      }
+    ),
   AUTH_ALLOWED_EMAILS: z
     .string()
     .prefault("")

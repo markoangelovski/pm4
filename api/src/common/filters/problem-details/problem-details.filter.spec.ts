@@ -8,9 +8,10 @@ import {
   NotFoundException,
   UnauthorizedException
 } from "@nestjs/common";
-import { vi } from "vitest";
+import { vi, type MockInstance } from "vitest";
 import { AppConfigService } from "../../../config/app-config.service.js";
 import { ProblemDetailsFilter } from "./problem-details.filter.js";
+import { ProblemException } from "./problem-exception.js";
 
 interface ProblemDetailsBody {
   type: string;
@@ -47,13 +48,22 @@ function createHost() {
 
 describe("ProblemDetailsFilter", () => {
   let filter: ProblemDetailsFilter;
+  let errorLog: MockInstance<(...args: unknown[]) => void>;
+  let warnLog: MockInstance<(...args: unknown[]) => void>;
   const configService = {
     webAppUrl: "https://pm4.example.com"
   } as AppConfigService;
 
   beforeEach(() => {
     filter = new ProblemDetailsFilter(configService);
-    vi.spyOn(Logger.prototype, "error").mockImplementation(() => undefined);
+    errorLog = vi
+      .spyOn(Logger.prototype, "error")
+      .mockImplementation(() => undefined);
+    errorLog.mockClear();
+    warnLog = vi
+      .spyOn(Logger.prototype, "warn")
+      .mockImplementation(() => undefined);
+    warnLog.mockClear();
   });
 
   it("400: formats a validation error with field errors", () => {
@@ -159,5 +169,82 @@ describe("ProblemDetailsFilter", () => {
       status: 500,
       detail: "An unexpected error occurred."
     });
+  });
+
+  it("ProblemException: uses its slug, title and detail, and spreads its extensions", () => {
+    const { host, send, status } = createHost();
+
+    filter.catch(
+      new ProblemException(
+        503,
+        "pmspa-rate-limited",
+        "PMSPA is busy",
+        "PMSPA is busy. Try again later.",
+        {
+          retryAfterSeconds: 30
+        }
+      ),
+      host
+    );
+
+    expect(status).toHaveBeenCalledWith(503);
+    expect(send).toHaveBeenCalledWith({
+      type: "https://pm4.example.com/errors/pmspa-rate-limited",
+      title: "PMSPA is busy",
+      status: 503,
+      detail: "PMSPA is busy. Try again later.",
+      retryAfterSeconds: 30
+    });
+  });
+
+  it("ProblemException: shows the detail for a 502 instead of masking it", () => {
+    const { host, send } = createHost();
+
+    filter.catch(
+      new ProblemException(
+        502,
+        "pmspa-error",
+        "PMSPA failed",
+        "PMSPA answered with an error."
+      ),
+      host
+    );
+
+    expect(send).toHaveBeenCalledWith({
+      type: "https://pm4.example.com/errors/pmspa-error",
+      title: "PMSPA failed",
+      status: 502,
+      detail: "PMSPA answered with an error."
+    });
+  });
+
+  it("ProblemException: logs a 5xx at warn with status and slug, no stack, never at error", () => {
+    const { host } = createHost();
+
+    filter.catch(
+      new ProblemException(
+        503,
+        "pmspa-rate-limited",
+        "PMSPA is busy",
+        "PMSPA is busy. Try again later.",
+        { retryAfterSeconds: 30 }
+      ),
+      host
+    );
+
+    expect(warnLog).toHaveBeenCalledTimes(1);
+    const message = String(warnLog.mock.calls[0]?.[0]);
+    expect(message).toContain("503");
+    expect(message).toContain("pmspa-rate-limited");
+    expect(message).not.toContain("\n    at ");
+    expect(errorLog).not.toHaveBeenCalled();
+  });
+
+  it("other 5xx errors still log at error with the stack", () => {
+    const { host } = createHost();
+    filter.catch(new Error("boom"), host);
+
+    expect(errorLog).toHaveBeenCalledTimes(1);
+    expect(String(errorLog.mock.calls[0]?.[0])).toContain("boom");
   });
 });
