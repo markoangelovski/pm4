@@ -3,7 +3,7 @@ id: T-0078
 title: The push commit: event writes, moves, D3 linking, empty-event deletes, the push endpoint (API-INT-011)
 milestone: M6
 app: api
-status: review
+status: done
 size: L
 tier: sonnet
 depends_on: [T-0077]

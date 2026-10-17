@@ -3,7 +3,7 @@ id: T-0074
 title: Time mapping (pmspa-time-fields.ts), the PMSPA days client, API-INT-007 and the time-log link detail
 milestone: M6
 app: api
-status: review
+status: done
 size: M
 tier: haiku
 depends_on: []

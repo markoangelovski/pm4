@@ -3,7 +3,7 @@ id: T-0077
 title: The import commit of day and event rows (API-INT-009 dates)
 milestone: M6
 app: api
-status: review
+status: done
 size: M
 tier: haiku
 depends_on: [T-0076]

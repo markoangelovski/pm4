@@ -3,7 +3,7 @@ id: T-0076
 title: Time DTOs, the time snapshot loader, the import preview with dates, the push preview (API-INT-008 dates, API-INT-010)
 milestone: M6
 app: api
-status: review
+status: done
 size: M
 tier: haiku
 depends_on: [T-0075]

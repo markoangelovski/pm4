@@ -3,7 +3,7 @@ id: T-0075
 title: Time preview rows (pmspa-time-preview.ts), pure, and the exported row builders of pmspa-preview.ts
 milestone: M6
 app: api
-status: review
+status: done
 size: M
 tier: sonnet
 depends_on: [T-0074]
