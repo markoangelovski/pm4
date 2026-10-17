@@ -1,6 +1,6 @@
 # Task Board
 
-**Next free ID:** T-0074
+**Next free ID:** T-0079
 
 | ID | Title | Milestone | App | Size | Status | Depends on |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -77,5 +77,10 @@
 | [T-0071](m6-integrations/T-0071-preview-rows-pmspa-preview-ts-import.md) | Preview rows (pmspa-preview.ts): import and sync rows over a snapshot, pure | M6 | api | M | done | T-0069, T-0070 |
 | [T-0072](m6-integrations/T-0072-sync-dtos-the-snapshot-loader-the.md) | Sync DTOs, the snapshot loader, the two preview endpoints (API-INT-008, API-INT-015) | M6 | api | M | done | T-0071 |
 | [T-0073](m6-integrations/T-0073-the-commits-lock-row-by-row.md) | The commits: lock, row-by-row writes on both sides, links and hashes, last_sync_at (API-INT-009, API-INT-016) | M6 | api | L | done | T-0072 |
+| [T-0074](m6-integrations/T-0074-time-mapping-pmspa-time-fields-ts.md) | Time mapping (pmspa-time-fields.ts), the PMSPA days client, API-INT-007 and the time-log link detail | M6 | api | M | ready | — |
+| [T-0075](m6-integrations/T-0075-time-preview-rows-pmspa-time-preview.md) | Time preview rows (pmspa-time-preview.ts), pure, and the exported row builders of pmspa-preview.ts | M6 | api | M | blocked | T-0074 |
+| [T-0076](m6-integrations/T-0076-time-dtos-the-time-snapshot-loader.md) | Time DTOs, the time snapshot loader, the import preview with dates, the push preview (API-INT-008 dates, API-INT-010) | M6 | api | M | blocked | T-0075 |
+| [T-0077](m6-integrations/T-0077-the-import-commit-of-day-and.md) | The import commit of day and event rows (API-INT-009 dates) | M6 | api | M | blocked | T-0076 |
+| [T-0078](m6-integrations/T-0078-the-push-commit-event-writes-moves.md) | The push commit: event writes, moves, D3 linking, empty-event deletes, the push endpoint (API-INT-011) | M6 | api | L | blocked | T-0077 |
 
 M0–M5 are done. M6 (Integrations) is in progress: feat-int-conn-api first, then int-sync-api, int-time-api and int-web (OQ-175).

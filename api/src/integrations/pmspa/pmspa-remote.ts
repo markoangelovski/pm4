@@ -27,6 +27,33 @@ export interface PmspaTaskWrite extends PmspaProjectWrite {
   dueAt: string | null;
 }
 
+/** A log of a PMSPA event (feat-int-time-api). */
+export interface RemoteLog {
+  id: string;
+  title: string;
+  /** Hours. */
+  duration: number;
+}
+
+/** A PMSPA event with its logs. */
+export interface RemoteEvent {
+  id: string;
+  dayId: string;
+  date: string;
+  title: string;
+  taskId: string | null;
+  booked: boolean;
+  logs: RemoteLog[];
+}
+
+/** A PMSPA day: `start` is a decimal hour. */
+export interface RemoteDay {
+  id: string;
+  date: string;
+  start: number | null;
+  events: RemoteEvent[];
+}
+
 type Json = Record<string, unknown>;
 
 const isRecord = (v: unknown): v is Json =>
