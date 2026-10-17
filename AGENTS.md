@@ -122,7 +122,7 @@ task file, no feature spec, no Opus review). Details: `specs/05-quality/task-rou
 | Write the feature spec (reads code first; no open questions left) | Main session (Opus), owner approves | `write-spec` |
 | Create task files from the spec's task list | Script (`pm4 tasks`) | `write-task` |
 | Write the acceptance tests (+ typed stubs), then **owner commits** | Main session (Opus) | `write-acceptance-tests` |
-| Implement each task (`pm4 promote` copies confirmed prototype files first) | Tier on the task: Haiku / Sonnet / Opus | `implement-task` |
+| Implement each task (`pm4 promote` copies confirmed prototype files first) | Tier on the task: Haiku / Sonnet | `implement-task` |
 | Review the whole feature, then **owner commits** | Opus reviewer | `review-feature` |
 
 Commit points keep each diff reviewable: the confirmed prototype is its own commit, the working tree is clean before the first task, tasks of

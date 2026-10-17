@@ -62,7 +62,7 @@ not contradict the root `AGENTS.md`/`CLAUDE.md` or `../specs` — read those fir
 
 ## Patterns to copy
 The **first** module, repository, DTO and guard of a kind become the reference; their tasks are
-opus/sonnet (`../specs/05-quality/task-routing.md`). Add them to this table when they land.
+sonnet (`../specs/05-quality/task-routing.md`). Add them to this table when they land.
 
 | Need | Copy from | What to copy |
 | --- | --- | --- |

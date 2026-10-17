@@ -106,7 +106,7 @@ doesn't support ESLint 10; peer ranges). The reasons are in T-0002's *Implementa
 - Playwright is **not** set up yet — that's M1+, once there's a real API to run journeys against.
 
 ## Patterns to copy
-The **first** of each pattern becomes the reference; its task is opus or sonnet
+The **first** of each pattern becomes the reference; its task is sonnet
 (`../specs/05-quality/task-routing.md`). Add new ones here when they land.
 
 | Need | Copy from | What to copy |

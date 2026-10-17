@@ -33,11 +33,11 @@ yourself unless something goes wrong. The script and the subagent's report are e
 ## 4. Escalate (`specs/05-quality/task-routing.md#escalation`)
 - `BLOCKED: spec` → `pm4 status $ARGUMENTS blocked`, write the question into the task, propose an `OQ-###` to the owner.
 - `BLOCKED: test` → check the test yourself. Fix it and re-run `pm4 hash <spec>` if it's wrong; then re-delegate at the same tier.
-- `FAILED`, or the check fails → one row in *Attempts*, then re-delegate at the next tier. `FAILED` at opus → blocked, ask the owner.
+- `FAILED`, or the check fails → one row in *Attempts*, then re-delegate at the next tier. `FAILED` at sonnet → blocked, ask the owner.
 
 ## 5. Hand off
 - `node scripts/pm4.mjs status $ARGUMENTS review`. This unblocks dependent tasks.
 - Tell the owner in a few lines: the files changed, the check summary, and the attempts.
 - Next: the next `ready` task of the feature. After the last one, suggest `review-feature <spec>`.
-  A quick-lane task goes straight to the owner's review (or to `review-feature <T-####>` if its tier is opus).
+  A quick-lane task goes straight to the owner's review.
 - Don't commit. The owner commits after their review (AGENTS.md §3).

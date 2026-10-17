@@ -3,8 +3,8 @@ id: qa-task-routing
 title: Task Routing and Escalation
 status: review
 owner: Marko Angelovski
-last_updated: 2026-10-11
-related: [qa-testing, qa-dod, feat-template, web-prototype, ADR-0012]
+last_updated: 2026-10-17
+related: [qa-testing, qa-dod, feat-template, web-prototype, ADR-0012, OQ-189]
 ---
 
 # Task Routing and Escalation
@@ -17,7 +17,7 @@ typing, and scripts (`scripts/pm4.mjs`) do the bookkeeping.
 ## Lanes
 | Lane | Use when | Flow |
 | --- | --- | --- |
-| **Quick** | One app, ≤ 3 files, size S. The behavior is already in an approved spec, or it's a bug fix with an obvious expected result, or tooling/docs. No new pattern, no auth/security logic, no contract or schema change | The main session writes a quick-lane task file (`tasks/_TEMPLATE.md`) → `implement-task` → `pm4 check` → the owner reviews the diff. No feature spec, no Opus review (unless the tier is opus) |
+| **Quick** | One app, ≤ 3 files, size S. The behavior is already in an approved spec, or it's a bug fix with an obvious expected result, or tooling/docs. No new pattern, no auth/security logic, no contract or schema change | The main session writes a quick-lane task file (`tasks/_TEMPLATE.md`) → `implement-task` → `pm4 check` → the owner reviews the diff. No feature spec, no Opus review |
 | **Feature** | Everything else | *(web UI only)* `prototype` → owner confirms → owner commits → `write-spec` → owner approves → `write-task` (`pm4 tasks`) → `write-acceptance-tests` (+ `pm4 hash`) → owner commits → `implement-task` per task (`pm4 promote` first) → `review-feature` → owner commits |
 
 **Prototype first.** A feature that adds or changes web UI starts in the UI prototype
@@ -38,27 +38,30 @@ change itself. Delegating costs a fresh subagent context, which is more than the
 | `scripts/pm4.mjs` | — | Task files, BOARD, hashes, readiness, briefs, prototype promotion, scope check, gates |
 
 ## Choosing a tier
-**Haiku first.** Every task starts at `haiku` unless one of the triggers below applies. Escalation
-(below) catches the tasks Haiku can't finish, so a tier is never raised "to be safe".
+**Haiku first, Sonnet at most** (OQ-189). Every task starts at `haiku` unless a sonnet trigger below applies.
+No task is written for `opus`: the main session spells out the decisions an opus task would have made, so Sonnet
+types them, and the Opus feature review checks them. Escalation (below) catches the tasks Haiku can't finish, so a
+tier is never raised "to be safe".
 
 | Tier | When |
 | --- | --- |
-| **opus** | Any of: the **first** instance of a pattern (the first feature module, repository, `features/<domain>/api.ts`, form); auth, tokens or ownership checks beyond copying an existing guard; concurrency or ordering (e.g. dense log positions); transactions over several tables; performance-sensitive queries. These stay above Haiku because passing tests don't prove them correct, so a weak attempt wouldn't surface as `FAILED` |
-| **sonnet** | No opus trigger, and the spec deliberately leaves code-level judgment open: non-trivial React state or effects, cache invalidation spread over several hooks, or a refactor of existing code across many (≳ 8) files |
+| **sonnet** | Any of: the **first** instance of a pattern (the first feature module, repository, `features/<domain>/api.ts`, form); auth, tokens or ownership checks beyond copying an existing guard; concurrency or ordering (e.g. dense log positions); writes over several tables or systems, partial failure, locks; performance-sensitive queries. These stay above Haiku because passing tests don't prove them correct, so a weak attempt wouldn't surface as `FAILED`. For each, the spec's *Interfaces* spells out the algorithm step by step (order, what's written when, what each failure does). Also: the spec deliberately leaves code-level judgment open: non-trivial React state or effects, cache invalidation spread over several hooks, a large port that maps onto new data access, or a refactor of existing code across many (≳ 8) files |
 | **haiku** | Everything else: one app, every file either has a pattern to copy (*Read first*) or is fully specified in *Interfaces*, the business rules are stated in the spec. Size and file count don't matter |
 
 Rules of thumb:
 - A decision Haiku would have to make that the spec doesn't make is a spec gap, not a tier problem:
   fill *Interfaces* until it's typing, or the implementer stops with `BLOCKED: spec`.
-- When a pattern appears for the first time, make it its own (opus) task. Later tasks copy it at haiku.
+- When a pattern appears for the first time, make it its own (sonnet) task. Later tasks copy it at haiku.
+- A task too big or too risky for one Sonnet context is split along pure/I-O lines (pure mappers and row builders
+  at haiku or sonnet, the orchestration at sonnet), not raised to opus.
 - Don't split below what one subagent context handles well: every task costs a fresh context
   (roughly 10–15k tokens before any work). Two small edits to the same files are one task.
 - **Promoting a confirmed prototype screen is haiku** ("promote `proto/…`; wire per *Interfaces*"): the
   prototype made the UI decisions, and the spec lists the delta. One task per screen (promote + wire), not
-  separate UI and data tasks. An opus trigger in the wiring (e.g. the first `api.ts` of a domain) still applies.
+  separate UI and data tasks. A sonnet trigger in the wiring (e.g. the first `api.ts` of a domain) still applies.
 - A contract change is two tasks: the `api` task (exports `openapi.json`), then a `web` task that depends on it.
 - Write a one-line reason next to every tier: for haiku, the pattern it copies (e.g. "copy `x.dto.ts`");
-  for sonnet or opus, the trigger.
+  for sonnet, the trigger.
 - Revisit the triggers from the *Attempts* tables after each feature. If more than about a third of
   haiku attempts end in `FAILED`, a sonnet trigger is missing.
 
@@ -69,10 +72,10 @@ The implementer stops and returns one of:
 | --- | --- | --- |
 | `BLOCKED: spec` | The spec is ambiguous, contradictory or wrong, or a needed file, pattern or dependency is missing | `status: blocked`, the question goes into the task, and a proposed `OQ-###` goes to the owner. A higher tier won't help |
 | `BLOCKED: test` | An acceptance test contradicts the spec, or can't pass as written | The main session (test author) checks it. If the test is wrong, it fixes the test, re-runs `pm4 hash`, records it in *Attempts*, and re-delegates at the same tier. If the test is right, it re-delegates and explains why |
-| `FAILED` | The acceptance tests still fail after **two** fix attempts | Re-delegate at the next tier (haiku → sonnet → opus), with the previous report and the failing `pm4 check` output. The diff stays |
+| `FAILED` | The acceptance tests still fail after **two** fix attempts | Re-delegate at the next tier (haiku → sonnet), with the previous report and the failing `pm4 check` output. The diff stays |
 
 - Each `FAILED` climbs one tier. A task is never retried at the same tier after `FAILED`.
-- `FAILED` at opus → `status: blocked`, ask the owner.
+- `FAILED` at sonnet → `status: blocked`, ask the owner (an opus attempt is the owner's call).
 - Every attempt gets a row in the task's *Attempts* table.
 
 ## Changelog
@@ -82,3 +85,4 @@ The implementer stops and returns one of:
 - 2026-10-04: Haiku first. Every task starts at haiku unless an opus or sonnet trigger applies; the
   file-count and size limits on haiku are gone. Escalation unchanged.
 - 2026-10-11: Prototype first for web UI (ADR-0012); promoting a confirmed prototype screen is a haiku task.
+- 2026-10-17: Sonnet is the highest task tier (OQ-189): the opus triggers became sonnet triggers that need the algorithm spelled out in *Interfaces*; `FAILED` at sonnet → blocked.
