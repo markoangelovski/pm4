@@ -6,7 +6,7 @@ owner: Marko Angelovski
 last_updated: 2026-10-17
 milestone: M6
 requirements: [FR-INT-007, FR-INT-008, FR-INT-009, FR-INT-010, FR-INT-011, FR-INT-012, API-INT-005, API-INT-006, API-INT-008, API-INT-009, API-INT-012, API-INT-013, API-INT-014, API-INT-015, API-INT-016]
-related: [req-integrations, api-endpoints, api-data-model, feat-int-conn-api, feat-int-time-api, feat-int-web, OQ-157, OQ-159, OQ-164, OQ-170, OQ-172, OQ-173, OQ-174, OQ-176, OQ-181]
+related: [req-integrations, api-endpoints, api-data-model, feat-int-conn-api, feat-int-time-api, feat-int-web, OQ-157, OQ-159, OQ-164, OQ-170, OQ-172, OQ-173, OQ-174, OQ-176, OQ-181, OQ-189]
 prototype: eefe787
 ---
 
@@ -45,7 +45,7 @@ the OpenAPI export.
 
 **Non-goals** (implementers must not touch these):
 - Anything in `web/`. Days, events, logs, `dates` on import, the push endpoints, API-INT-007, the `time-log` case of API-INT-014 (feat-int-time-api).
-- The connection endpoints and `PmspaClient`'s behavior (feat-int-conn-api), except `PmspaStore`'s lock methods.
+- The connection endpoints and `PmspaClient`'s behavior (feat-int-conn-api), except `PmspaStore`'s lock methods and the connection repository's `setLastSyncAt`.
 - `projects/*`, `tasks/*` other than injecting their exported services. The link tables' schema (it exists).
 - `api/test/*` files written in the test step.
 
@@ -70,14 +70,17 @@ the OpenAPI export.
 | api | `api/src/integrations/pmspa/pmspa-fields.ac.spec.ts` | C | tests | The pure mapping |
 | api | `api/src/integrations/pmspa/pmspa-fields.ts` | C/M | tests, T1 | Typed stubs in the test step, implemented in T1 |
 | api | `api/src/integrations/pmspa/pmspa-remote.ts`, `api/src/integrations/pmspa/pmspa-remote.spec.ts` | C | T1 | Hand-written |
+| api | `api/src/integrations/pmspa/pmspa-writes.ts`, `api/src/integrations/pmspa/pmspa-writes.spec.ts` | C | T1 | Hand-written |
+| api | `api/src/integrations/pmspa/pmspa-preview.ts`, `api/src/integrations/pmspa/pmspa-preview.spec.ts` | C | T3 | Hand-written |
 | api | `api/src/integrations/pmspa/pmspa-links.repository.ts`, `api/src/integrations/pmspa/pmspa-links.repository.spec.ts`, `api/src/integrations/pmspa/pmspa-sync.repository.ts`, `api/src/integrations/pmspa/pmspa-sync.repository.spec.ts` | C | T2 | Hand-written |
 | api | `api/src/integrations/pmspa/pmspa-browse.controller.ts`, `api/src/integrations/pmspa/pmspa-browse.controller.spec.ts`, `api/src/integrations/pmspa/pmspa-links.controller.ts`, `api/src/integrations/pmspa/pmspa-links.controller.spec.ts`, `api/src/integrations/pmspa/pmspa-links.service.ts`, `api/src/integrations/pmspa/pmspa-links.service.spec.ts` | C | T2 | `npx nest g controller integrations/pmspa/pmspa-browse --flat`, the same for `pmspa-links` (controller and service) |
 | api | `api/src/integrations/pmspa/dto/pmspa-browse.dto.ts`, `api/src/integrations/pmspa/dto/pmspa-links.dto.ts` | C | T2 | Hand-written |
-| api | `api/src/integrations/pmspa/pmspa-store.ts`, `api/src/integrations/pmspa/pmspa-store.spec.ts` | M | T3 | `lock`, `unlock` (D4) |
-| api | `api/src/integrations/pmspa/pmspa-sync.service.ts`, `api/src/integrations/pmspa/pmspa-sync.service.spec.ts`, `api/src/integrations/pmspa/pmspa-sync.controller.ts`, `api/src/integrations/pmspa/pmspa-sync.controller.spec.ts` | C | T3 | `npx nest g service integrations/pmspa/pmspa-sync --flat`, `npx nest g controller integrations/pmspa/pmspa-sync --flat` |
-| api | `api/src/integrations/pmspa/dto/sync.dto.ts` | C | T3 | Hand-written |
-| api | `api/src/integrations/pmspa/pmspa.module.ts` | M | T2, T3 | Controllers, providers; imports `ProjectsModule`, `TasksModule` |
-| api | `api/openapi.json` | M | T2, T3 | `npm run openapi:export` |
+| api | `api/src/integrations/pmspa/pmspa-sync.service.ts`, `api/src/integrations/pmspa/pmspa-sync.service.spec.ts`, `api/src/integrations/pmspa/pmspa-sync.controller.ts`, `api/src/integrations/pmspa/pmspa-sync.controller.spec.ts` | C/M | T4, T5 | T4: `npx nest g service integrations/pmspa/pmspa-sync --flat`, `npx nest g controller integrations/pmspa/pmspa-sync --flat`, the previews; T5: the commits |
+| api | `api/src/integrations/pmspa/dto/sync.dto.ts` | C | T4 | Hand-written |
+| api | `api/src/integrations/pmspa/pmspa-store.ts`, `api/src/integrations/pmspa/pmspa-store.spec.ts` | M | T5 | `lock`, `unlock` (D4) |
+| api | `api/src/integrations/pmspa/pmspa-connection.repository.ts`, `api/src/integrations/pmspa/pmspa-connection.repository.spec.ts` | M | T5 | `setLastSyncAt` only |
+| api | `api/src/integrations/pmspa/pmspa.module.ts` | M | T2, T4 | Controllers, providers; T4 imports `ProjectsModule`, `TasksModule` |
+| api | `api/openapi.json` | M | T2, T4, T5 | `npm run openapi:export` |
 
 ## Interfaces
 
@@ -91,6 +94,7 @@ export interface RemoteTask { id: string; projectId: string; title: string; desc
   pl: string | null; kanboard: string | null; dueAt: number }   // epoch ms
 export interface Pm4Project { id: string; title: string; description: string | null; externalLink: string | null; leadName: string | null }
 export interface Pm4Task extends Pm4Project { projectId: string; status: TaskStatus; dueDate: string | null }
+export interface SyncFieldDiff { field: string; pm4: string | null; pmspa: string | null }   // dto/sync.dto.ts's SyncFieldDiffDto implements it
 export const COLUMN: Record<TaskStatus, PmspaColumn>;  export const STATUS: Record<PmspaColumn, TaskStatus>;
 export function cut(s: string, max: number): string;            // over max → first max-1 chars + "…"
 export function val(s: string | null | undefined): string | null; // trimmed-empty → null, else s
@@ -129,6 +133,28 @@ export interface PmspaTaskWrite extends PmspaProjectWrite { column: PmspaColumn;
 ```
 Reads: a status other than 2xx and 404 → `pmspaProblems.error()`. Writes: non-2xx (PMSPA answers 201 to some updates) → `PmspaWriteError`.
 Writes send strings only (`done` as `"true"`/`"false"`), null fields left out. `taskCount` = `openTasksCount + closedTasksCount`.
+Response bodies (from the yaml; no need to read it otherwise): lists `{ projects: [...] }` / `{ tasks: [...] }` with `stats.remaining`
+(another page while `remaining > 0`); one record `{ project }` / `{ task }`; `GET /v1/tasks?task=` answers `{ task }`. Project fields:
+`_id` → `id`, `owner` → `userId`, `title`, `description`, `pl`, `kanboard`, `done`, `openTasksCount`, `closedTasksCount` (absent text
+fields → null). Task fields: `_id`, `project` → `projectId`, `title`, `description`, `column`, `pl`, `kanboard`, `dueDate` → `dueAt`.
+
+### Writes (T1)
+```ts
+// api/src/integrations/pmspa/pmspa-writes.ts: pure, *Entity mapping* in both directions. Port of the prototype's
+// pmspaProjectFields, pm4ProjectFields, pmspaTaskFields, pm4TaskFields (D6…D8, D11)
+export function toPmspaProject(p: Pm4Project): PmspaProjectWrite;
+//   title cut(150); description val → cut(350); pl = val(leadName); kanboard = linkVal(externalLink)
+export function toPmspaTask(t: Pm4Task): PmspaTaskWrite;
+//   the project fields + column COLUMN[status], done = status === "completed", dueAt = dueDate ? dueAtOf(dueDate) : null
+export interface Pm4ProjectWrite { title: string; description: string | null; externalLink: string | null;
+  projectLeadName?: string | null; projectLeadUserId?: null }     // structurally a CreateProjectDto / UpdateProjectDto
+export interface Pm4TaskWrite extends Pm4ProjectWrite { status: TaskStatus; dueDate: string; projectId: string }  // Create/UpdateTaskDto
+export function toPm4Project(r: RemoteProject, current: Pm4Project | null): Pm4ProjectWrite;
+//   title = r.title; description = val(r.description); externalLink = linkVal(r.kanboard);
+//   lead: current?.leadName === val(r.pl) → both lead keys left out (D6); else projectLeadName = val(r.pl) cut(100), projectLeadUserId null
+export function toPm4Task(r: RemoteTask, current: Pm4Task | null, pm4ProjectId: string, timeZone: string): Pm4TaskWrite;
+//   the project fields + status STATUS[r.column], dueDate = dueDateOf(r.dueAt, timeZone), projectId = pm4ProjectId
+```
 
 ### Links (T2)
 ```ts
@@ -152,33 +178,93 @@ titles(userId, type: "project" | "task", ids: string[]): Promise<Map<string, str
 missing in PMSPA → `pmspa: null`; no active link → 404). Controllers: `@Controller("integrations/pmspa")` with `links`, `links/:type/:id`,
 `projects`, `projects/:id/tasks` (an id not 24-hex → 400; not in `listProjects` → 404 "PMSPA project not found.").
 
-### Sync engine (T3)
+### Preview rows (T3)
 ```ts
-// dto/sync.dto.ts: the Shared PMSPA shapes as classes (SyncPreviewItemDto, SyncChoiceDto as a discriminated union validated by `kind`, …)
-export class PmspaImportSelectionDto { projects: { id: string; taskIds: string[] | null }[] }   // ≤ 50, 24-hex ids
-export class PmspaImportDto { selection: PmspaImportSelectionDto; choices: SyncChoiceDto[] }    // ≤ 500
-export class PmspaSyncTargetDto { type: "project" | "task"; id: string }                        // uuid
-export class PmspaSyncDto { target: PmspaSyncTargetDto; choices: SyncChoiceDto[] }
-// pmspa-sync.service.ts
-importPreview(userId, sel): Promise<SyncPreviewDto>;  importRun(userId, dto): Promise<SyncResultDto>;
-syncPreview(userId, target): Promise<SyncPreviewDto>; syncRun(userId, dto): Promise<SyncResultDto>;
-// pmspa-sync.controller.ts: POST import/preview, import, sync/preview, sync (@HttpCode 200), @ApiProblemResponses(400, 401, 404, 409, 502, 503)
+// api/src/integrations/pmspa/pmspa-preview.ts: pure, no I/O. Port of the prototype's row(), createAction, pairAction, leadDetail,
+// sortByMatch, the four *Candidates functions, importPreview (projects and tasks only, no `dates`), pushPreview (project and task
+// targets only) and choiceFor, with the prototype's mock state replaced by the snapshot. Every user-visible string as in the prototype.
+export interface SyncSnapshot {
+  timeZone: string;
+  pm4Projects: Pm4Project[]; pm4Tasks: Pm4Task[];   // all the user's
+  remoteProjects: RemoteProject[];                  // listProjects
+  remoteTasks: RemoteTask[];                        // import: listTasks of each selected project that exists; sync: listAllTasks
+  links: LinkRow[];                                 // active project and task links of the connection's account
+}
+export function importRows(s: SyncSnapshot, sel: PmspaImportSelectionDto): SyncPreviewItemDto[];
+export function syncRows(s: SyncSnapshot, target: PmspaSyncTargetDto): SyncPreviewItemDto[] | null;  // null: target not in pm4Projects / pm4Tasks
+export function choiceFor(choices: SyncChoiceDto[], item: SyncPreviewItemDto): SyncChoiceDto;
 ```
-Rows are built exactly as the prototype builds them for projects and tasks, with these production inputs:
-- **Linked** = an active link (`byPm4` / `byPmspa` with the connection's `pmspa_user_id`) whose other side still exists; otherwise the row is
-  "not linked" (a stale link is replaced when the row is written). `pm4Changed` = `fingerprint(tuple of current PM4)` ≠ `pm4_hash`;
-  `pmspaChanged` likewise. Up to date / differs, the direction and the reason strings: the prototype's `pairAction`.
-- **Import** (`importPreview`): the selected projects that `listProjects` returns (others are ignored), their tasks (`taskIds` null = all, from
-  `listTasks`). Row fields, details, warnings ("Done in PMSPA: …"), candidates (`pm4ProjectCandidates`, `pm4TaskCandidates`): the prototype's.
-- **Sync** (`syncPreview`): target missing → 404. A project brings all its PM4 tasks as `optional` rows; a task brings its project as a parent
-  row (reason "Parent of the pushed task" when unlinked). Candidates from `listProjects` / `listAllTasks` (unlinked ones, `groupId` the PMSPA
-  project). Title / description warnings and D11's warnings on rows that differ.
-- **Commit:** lock (D4), recompute (D2), then per row the prototype's `choiceFor` and `syncPair` (create, link to a candidate, overwrite one
-  side, Link only per D3). A `link` choice whose `id` isn't among the row's candidates (or its counterpart) → `failed` "The chosen record
-  can't be linked.". `overwrite` writes per *Entity mapping* (D5…D9, D11), including the task's project when its counterpart exists, and
-  `newTitle` (OQ-174). After each written row: the link's `synced_at` = now and both hashes = the tuples after the write (D1); origin
-  `imported` / `pushed` for created counterparts, `linked` for a new pairing, kept otherwise. At the end, `last_sync_at` = now; the result's
-  `syncedAt` is the same instant.
+- Keys: `project:<id>` / `task:<id>`, the id of the side the row starts from (PMSPA on import, PM4 on sync).
+- **Linked** = a link in `s.links` whose other side is in the snapshot. A link whose other side is missing counts as no link: the row is
+  `create`, `linkedId` null, with candidates. `linkedId` = the other side's id (PM4 on import, PMSPA on sync).
+- `pairAction` takes the link and the pair: `pm4Changed` = `!fingerprint(projectTuple(pm4)).equals(link.pm4Hash)` (`taskTuple` for tasks),
+  `pmspaChanged` likewise with the remote record and `pmspaHash`; then the prototype's rule.
+- Candidates exclude records that have a link in `s.links`. PMSPA task candidates come from `s.remoteTasks`, `groupId` the PMSPA project.
+- Sync warnings: the prototype's title / description length warnings, plus `clearWarnings(differences)` on `differs` rows.
+- `choiceFor`: the prototype's (a `differs` row with `linkedId` defaults to `link` with its `direction`; anything else to `create`).
+
+### Previews and DTOs (T4)
+```ts
+// dto/sync.dto.ts: the Shared PMSPA shapes as classes, copied from proposed-types.ts (SyncFieldDiffDto, SyncCandidateDto,
+// SyncPreviewItemDto, SyncPreviewDto, SyncResultItemDto, SyncResultDto) with @ApiProperty; validation as in save-pmspa-connection.dto.ts
+export class SyncChoiceDto {             // one class: kind @IsIn(["create", "link", "skip"]) with @ApiProperty({ enum })
+  key: string;                           // @IsString, ≤ 100
+  kind: "create" | "link" | "skip";
+  id?: string;                           // @ValidateIf(kind === "link") @IsString, ≤ 36
+  overwrite?: SyncDirection | null;      // @ValidateIf(kind === "link") @IsOptional @IsIn(["to-pmspa", "to-pm4"])
+}
+export class PmspaImportSelectionDto { projects: { id: string; taskIds: string[] | null }[] }   // ≤ 50 projects, 24-hex ids (@Matches)
+export class PmspaImportDto { selection: PmspaImportSelectionDto; choices: SyncChoiceDto[] }    // ≤ 500 choices
+export class PmspaSyncTargetDto { type: "project" | "task"; id: string }                        // @IsIn, @IsUUID
+export class PmspaSyncDto { target: PmspaSyncTargetDto; choices: SyncChoiceDto[] }              // ≤ 500 choices
+// pmspa-sync.service.ts (T4 part)
+async load(userId, sel: PmspaImportSelectionDto | null): Promise<SyncSnapshot>;
+//   remote.listProjects first (no connection → its 409); timeZone = the user's time_zone (as time-logs.service.ts reads the user);
+//   pmspaUserId from PmspaConnectionRepository.find; links = active(project) + active(task) (null account → []);
+//   pm4 lists from PmspaSyncRepository; remoteTasks = sel ? listTasks for each selected id found in remoteProjects : listAllTasks
+importPreview(userId, sel): Promise<SyncPreviewDto>   // { items: importRows(await load(userId, sel), sel) }
+syncPreview(userId, target): Promise<SyncPreviewDto>  // syncRows(await load(userId, null), target); null → 404 "Project not found." / "Task not found."
+// pmspa-sync.controller.ts: @Controller("integrations/pmspa"), POST import/preview and sync/preview, @HttpCode(200),
+// @ApiProblemResponses(400, 401, 404, 409, 502, 503), copying pmspa-connection.controller.ts
+```
+
+### Commits (T5)
+```ts
+// pmspa-store.ts
+async lock(userId): Promise<boolean>;     // SET pmspa:lock:<userId> 1 NX PX 300000 → true when set (D4)
+async unlock(userId): Promise<void>;      // DEL
+// pmspa-connection.repository.ts
+async setLastSyncAt(userId, at: Date): Promise<void>;
+// pmspa-sync.service.ts (T5 part)
+importRun(userId, dto: PmspaImportDto): Promise<SyncResultDto>;
+syncRun(userId, dto: PmspaSyncDto): Promise<SyncResultDto>;
+// pmspa-sync.controller.ts: POST import and sync, @HttpCode(200), same decorators
+```
+The commit, step by step (`from` = `"pmspa"` on import, `"pm4"` on sync):
+1. `store.lock(userId)`; false → `pmspaProblems.syncRunning()` (409). Everything below runs in `try … finally { store.unlock }`.
+2. `now = new Date()`. Load the snapshot and build the rows exactly as the preview does (`importRows` / `syncRows`; sync: null → 404).
+3. For each row in order: `choice = choiceFor(dto.choices, row)`. `choice.kind === "skip"` or `row.action === "skip"` → `skipped` with
+   `row.reason ?? "Left out"`. Otherwise `syncPair` (below) and push its result item. Keep a local map of the links written in this run, so a
+   child row finds the counterpart its parent row just got.
+4. `syncPair` (the prototype's, per row): `id` = the key's id; `other` = the linked id (`row.linkedId`), else for a `link` choice
+   `choice.id`, which must be one of `row.candidates[].id` (else `failed` "The chosen record can't be linked."), else none → create.
+   - **create**, from PM4: project → `remote.createProject(toPmspaProject(p))`; task → its project's PMSPA id from the links (none →
+     `failed` "Its project isn't in PMSPA (it was left out)."), `remote.createTask({ ...toPmspaTask(t), project })`. Origin `pushed`.
+   - **create**, from PMSPA: project → `projectsService.create(userId, toPm4Project(r, null))`; task → its project's PM4 id from the links
+     (none → `failed` "Its project wasn't imported."), `tasksService.create(userId, toPm4Task(r, null, pm4ProjectId, tz))`. Origin `imported`.
+   - **pair** (`other` set): `direction = choice.kind === "link" ? choice.overwrite : null`. `to-pmspa` → `updateProject` / `updateTask`
+     with `toPmspaProject` / `toPmspaTask` (+ `project` = the task's project's PMSPA id when known); `to-pm4` → `projectsService.update` /
+     `tasksService.update` with `toPm4Project` / `toPm4Task` (task: its PMSPA project's PM4 id, none → `failed` "Its project wasn't imported.").
+     Before writing to a PMSPA record that came from a `link` choice, re-read it (`getProject` / `getTask`); null → `failed` "The chosen record
+     can't be linked." (D9). Outcome: new link → `linked` (reason `OVERWRITTEN[direction]` or null); existing link with a direction → `updated`
+     with `OVERWRITTEN[direction]`; existing link, no direction → `skipped` "Link only: both kept as they are" and **no link write** (D3).
+   - After every write (and for a new link with Link only): re-read both sides (the PM4 record from `PmspaSyncRepository`, the PMSPA one with
+     `getProject` / `getTask`, or the created record), `links.save` with `syncedAt = now`, `pm4Hash` / `pmspaHash` = `fingerprint` of their
+     tuples, origin `pushed` / `imported` for a create, `linked` for a new pairing (`save` keeps an existing origin).
+   - `newTitle`: the title of the row's own record after the write when it differs from `row.title`, else null (OQ-174).
+   - `PmspaWriteError` → `failed` with its message (D10). Any other error (unreachable, rate limited, invalid credentials) propagates and
+     aborts the commit; links already saved stay.
+5. After the loop: `connections.setLastSyncAt(userId, now)`; return `{ items, syncedAt: now.toISOString() }`.
 
 ## Acceptance criteria
 Signed in as user A (zone `Europe/Zagreb`), connected to PMSPA account X through `FakePmspa` unless stated. The fake's X projects: Anthropic
@@ -194,25 +280,25 @@ the description), PM Internal (no link); task Anthropic › Meetings (linked to 
 | AC-3 | `GET /links?type=project` → A's two active links; after reconnecting as Y (confirmed switch) → `[]`; `type=foo` → `400` | `api/test/pmspa-sync.ac.e2e-spec.ts` | T2 |
 | AC-4 | `GET /links/project/{Tesla}` → `{origin, syncedAt, pmspa: {type: "project", title: "Tesla", lead, done: false}}`; the PMSPA project deleted in the fake → `pmspa: null`; PM Internal → `404` | `api/test/pmspa-sync.ac.e2e-spec.ts` | T2 |
 | AC-5 | `DELETE /links/project/{Tesla}` → `204`; both projects still exist; `GET /links?type=project` lacks it; again → `404` | `api/test/pmspa-sync.ac.e2e-spec.ts` | T2 |
-| AC-6 | `POST /import/preview {projects: [{id: Acme, taskIds: null}]}` → a `create` project row (`direction "to-pm4"`, candidates with PM Internal, `detail "Lead Jane Doe"`) and five `create` task rows with `parentKey` the project's; nothing is written | `api/test/pmspa-sync.ac.e2e-spec.ts` | T3 |
-| AC-7 | `POST /import` with that selection and no choices → `200`, six `created`; A has a PM4 project "Acme Website Relaunch" (description, text lead Jane Doe, external link) with five tasks, all linked `imported`; `lastSyncAt` = `syncedAt` | `api/test/pmspa-sync.ac.e2e-spec.ts` | T3 |
-| AC-8 | Importing Acme again → its rows are `skip` "Same in PM4 and PMSPA"; the run creates nothing | `api/test/pmspa-sync.ac.e2e-spec.ts` | T3 |
-| AC-9 | Import preview of Tesla → `differs`, `differences [{field: "Description", pm4: null, pmspa: "QA retainer."}]`, `direction "to-pm4"`; running it without choices → `updated`, PM4 Tesla's description is "QA retainer." | `api/test/pmspa-sync.ac.e2e-spec.ts` | T3 |
-| AC-10 | `POST /sync/preview {type: "task", id: Meetings}` → the Anthropic project row (`skip`) and the task row `differs` with Title ("Meetings" / "Meetings & demos"), Description and Status, `direction null`; Link only by default: `POST /sync` without choices → the task row `skipped` "Link only: both kept as they are", nothing written, the link's `synced_at` unchanged | `api/test/pmspa-sync.ac.e2e-spec.ts` | T3 |
-| AC-11 | The same with `{key, kind: "link", id: <PMSPA task>, overwrite: "to-pmspa"}` → `updated`, `newTitle null` (the row's PM4 title didn't change), PMSPA's task is titled "Meetings" with PM4's status; with `overwrite: "to-pm4"` instead → PM4's task is "Meetings & demos" and the result `newTitle "Meetings & demos"` | `api/test/pmspa-sync.ac.e2e-spec.ts` | T3 |
-| AC-12 | After AC-11, the next preview shows the task `skip` (up to date); editing the PM4 title then gives `direction "to-pmspa"` "Changed in PM4 since the last sync" | `api/test/pmspa-sync.ac.e2e-spec.ts` | T3 |
-| AC-13 | `POST /sync/preview {type: "project", id: PM Internal}` → a `create` row (`direction "to-pmspa"`) with PMSPA candidates, the closest title first; `POST /sync` with `{kind: "link", id: Acme, overwrite: null}` → `linked`, neither side changed, the link's origin `linked` | `api/test/pmspa-sync.ac.e2e-spec.ts` | T3 |
-| AC-14 | Sync of a PM4 project with two unlinked tasks, one left out with `{kind: "skip"}` → the project and one task `created` in PMSPA (the task in the new project, `done` = completed), both linked `pushed`; the other `skipped` | `api/test/pmspa-sync.ac.e2e-spec.ts` | T3 |
-| AC-15 | A PM4 project with an empty description linked to a PMSPA one with a description → the row warns "PMSPA can't clear the Description: it keeps its value."; Overwrite PMSPA leaves PMSPA's description | `api/test/pmspa-sync.ac.e2e-spec.ts` | T3 |
-| AC-16 | A PM4 task with due date 2026-10-20 synced to a new PMSPA task → PMSPA `dueDate` = epoch ms of 2026-10-20T12:00Z; a PMSPA due date of 2026-10-19T22:00Z imports as 2026-10-20 (Zagreb) | `api/test/pmspa-sync.ac.e2e-spec.ts` | T3 |
-| AC-17 | The fake rejects a task create with 500 `{error: "ERR_VALIDATION", message: "…"}` → that row `failed` "PMSPA rejected it: … (ERR_VALIDATION)", the other rows still written | `api/test/pmspa-sync.ac.e2e-spec.ts` | T3 |
-| AC-18 | Two `POST /sync` at once for A → one answers `409 pmspa-sync-running`, PMSPA has one new project; a commit naming another user's project, or a random UUID → `404` | `api/test/pmspa-sync.ac.e2e-spec.ts` | T3 |
-| AC-19 | Validation: `import/preview` with a non-hex id, 51 projects; `sync` with 501 choices, a choice `kind: "x"`, `target.type "day"` → `400` | `api/test/pmspa-sync.ac.e2e-spec.ts` | T3 |
+| AC-6 | `POST /import/preview {projects: [{id: Acme, taskIds: null}]}` → a `create` project row (`direction "to-pm4"`, candidates with PM Internal, `detail "Lead Jane Doe"`) and five `create` task rows with `parentKey` the project's; nothing is written | `api/test/pmspa-sync.ac.e2e-spec.ts` | T4 |
+| AC-7 | `POST /import` with that selection and no choices → `200`, six `created`; A has a PM4 project "Acme Website Relaunch" (description, text lead Jane Doe, external link) with five tasks, all linked `imported`; `lastSyncAt` = `syncedAt` | `api/test/pmspa-sync.ac.e2e-spec.ts` | T5 |
+| AC-8 | Importing Acme again → its rows are `skip` "Same in PM4 and PMSPA"; the run creates nothing | `api/test/pmspa-sync.ac.e2e-spec.ts` | T5 |
+| AC-9 | Import preview of Tesla → `differs`, `differences [{field: "Description", pm4: null, pmspa: "QA retainer."}]`, `direction "to-pm4"`; running it without choices → `updated`, PM4 Tesla's description is "QA retainer." | `api/test/pmspa-sync.ac.e2e-spec.ts` | T5 |
+| AC-10 | `POST /sync/preview {type: "task", id: Meetings}` → the Anthropic project row (`skip`) and the task row `differs` with Title ("Meetings" / "Meetings & demos"), Description and Status, `direction null`; Link only by default: `POST /sync` without choices → the task row `skipped` "Link only: both kept as they are", nothing written, the link's `synced_at` unchanged | `api/test/pmspa-sync.ac.e2e-spec.ts` | T5 |
+| AC-11 | The same with `{key, kind: "link", id: <PMSPA task>, overwrite: "to-pmspa"}` → `updated`, `newTitle null` (the row's PM4 title didn't change), PMSPA's task is titled "Meetings" with PM4's status; with `overwrite: "to-pm4"` instead → PM4's task is "Meetings & demos" and the result `newTitle "Meetings & demos"` | `api/test/pmspa-sync.ac.e2e-spec.ts` | T5 |
+| AC-12 | After AC-11, the next preview shows the task `skip` (up to date); editing the PM4 title then gives `direction "to-pmspa"` "Changed in PM4 since the last sync" | `api/test/pmspa-sync.ac.e2e-spec.ts` | T5 |
+| AC-13 | `POST /sync/preview {type: "project", id: PM Internal}` → a `create` row (`direction "to-pmspa"`) with PMSPA candidates, the closest title first; `POST /sync` with `{kind: "link", id: Acme, overwrite: null}` → `linked`, neither side changed, the link's origin `linked` | `api/test/pmspa-sync.ac.e2e-spec.ts` | T5 |
+| AC-14 | Sync of a PM4 project with two unlinked tasks, one left out with `{kind: "skip"}` → the project and one task `created` in PMSPA (the task in the new project, `done` = completed), both linked `pushed`; the other `skipped` | `api/test/pmspa-sync.ac.e2e-spec.ts` | T5 |
+| AC-15 | A PM4 project with an empty description linked to a PMSPA one with a description → the row warns "PMSPA can't clear the Description: it keeps its value."; Overwrite PMSPA leaves PMSPA's description | `api/test/pmspa-sync.ac.e2e-spec.ts` | T5 |
+| AC-16 | A PM4 task with due date 2026-10-20 synced to a new PMSPA task → PMSPA `dueDate` = epoch ms of 2026-10-20T12:00Z; a PMSPA due date of 2026-10-19T22:00Z imports as 2026-10-20 (Zagreb) | `api/test/pmspa-sync.ac.e2e-spec.ts` | T5 |
+| AC-17 | The fake rejects a task create with 500 `{error: "ERR_VALIDATION", message: "…"}` → that row `failed` "PMSPA rejected it: … (ERR_VALIDATION)", the other rows still written | `api/test/pmspa-sync.ac.e2e-spec.ts` | T5 |
+| AC-18 | Two `POST /sync` at once for A → one answers `409 pmspa-sync-running`, PMSPA has one new project; a commit naming another user's project, or a random UUID → `404` | `api/test/pmspa-sync.ac.e2e-spec.ts` | T5 |
+| AC-19 | Validation: `import/preview` with a non-hex id, 51 projects; `sync` with 501 choices, a choice `kind: "x"`, `target.type "day"` → `400` | `api/test/pmspa-sync.ac.e2e-spec.ts` | T5 |
 | AC-20 | `projectDiff`, `taskDiff`: the prototype's cases (cut titles over 150 compare equal to PMSPA's cut text, empty text = null, due date ignored when PM4 has none, status as the column); `fingerprint` is 8 bytes and stable; `dueDateOf`/`dueAtOf` per D7; `linkVal("ftp://x")` → null; `clearWarnings` per D11 | `api/src/integrations/pmspa/pmspa-fields.ac.spec.ts` | T1 |
-| AC-21 | `api/openapi.json` has the eight operations (API-INT-005/006/008/009/012…016) with `bearer`; `SyncChoiceDto` documents `kind` `create`/`link`/`skip` | `check` | T3 |
+| AC-21 | `api/openapi.json` has the eight operations (API-INT-005/006/008/009/012…016) with `bearer`; `SyncChoiceDto` documents `kind` `create`/`link`/`skip` | `check` | T5 |
 
 Typed stubs (created with the tests): `pmspa-fields.ts` with every export of *Fields*, each function body
-`throw new Error("not implemented (feat-int-sync-api)")` and the two records filled in. The e2e test is written against *Interfaces* and runs once T3 is done.
+`throw new Error("not implemented (feat-int-sync-api)")` and the two records filled in. The e2e test is written against *Interfaces* and runs once T5 is done (AC-6 once T4 is).
 
 ## Checks
 ```bash
@@ -227,9 +313,11 @@ const c=JSON.stringify(d.components?.schemas??{}); for (const k of ['\"create\"'
 ## Tasks
 | # | Task | App | Size | Tier | Why this tier | Depends on |
 | --- | --- | --- | --- | --- | --- | --- |
-| T1 | Field mapping and fingerprints (`pmspa-fields.ts`), the PMSPA projects/tasks client (`pmspa-remote.ts`) | api | M | haiku | Pure functions copied from the prototype's `projectDiff`/`taskDiff`; each call is one `PmspaClient.request` with the documented body | — (feat-int-conn-api done) |
+| T1 | Field mapping and fingerprints (`pmspa-fields.ts`), the PMSPA projects/tasks client (`pmspa-remote.ts`), the write mappers (`pmspa-writes.ts`) | api | M | haiku | Pure functions copied from the prototype's `projectDiff`/`taskDiff`/`*Fields`; each call is one `PmspaClient.request` with the documented body and response fields | — (feat-int-conn-api done) |
 | T2 | Link and sync repositories, API-INT-005/006/012/013/014 | api | M | haiku | Repository and controllers copy `projects/`; the queries and rules are spelled out | T1 |
-| T3 | The sync engine: import and sync preview and commit, the lock (API-INT-008/009/015/016) | api | L | opus | Ordering (parents first), writes on two systems with partial failure, a lock | T2 |
+| T3 | Preview rows (`pmspa-preview.ts`): import and sync rows over a snapshot, pure | api | M | sonnet | A large port of the prototype's preview whose mock lookups map onto the snapshot by judgment (stale links, candidates, hashes) | T1, T2 |
+| T4 | Sync DTOs, the snapshot loader, the two preview endpoints (API-INT-008, API-INT-015) | api | M | haiku | DTOs copy `proposed-types.ts` and `save-pmspa-connection.dto.ts`; controller copies `pmspa-connection.controller.ts`; `load` is spelled out | T3 |
+| T5 | The commits: lock, row-by-row writes on both sides, links and hashes, `last_sync_at` (API-INT-009, API-INT-016) | api | L | sonnet | Owner ceiling (OQ-189) instead of opus: writes on two systems with partial failure and a lock, spelled out step by step in *Commits* | T4 |
 
 ## Open questions
 None.
@@ -237,3 +325,5 @@ None.
 ## Changelog
 - 2026-10-17: Initial draft (prototype `eefe787`; OQ-157, OQ-159, OQ-164, OQ-170, OQ-172…OQ-174, OQ-176, OQ-181). Ready for review.
 - 2026-10-17: Approved by the owner.
+- 2026-10-17: Re-split for haiku/sonnet only (OQ-189): the engine (old T3, opus) becomes T3 preview rows (sonnet), T4 DTOs + previews (haiku), T5 commits (sonnet); `pmspa-writes.ts` added to T1; *Interfaces* gains the PMSPA response fields, the write mappers, the snapshot, `load` and the commit steps; `setLastSyncAt` added. Back to review.
+- 2026-10-17: Re-split approved by the owner.

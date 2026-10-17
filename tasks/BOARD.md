@@ -1,6 +1,6 @@
 # Task Board
 
-**Next free ID:** T-0069
+**Next free ID:** T-0074
 
 | ID | Title | Milestone | App | Size | Status | Depends on |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -72,5 +72,10 @@
 | [T-0066](m6-integrations/T-0066-pmspa-tables-migration-0007-pmspamodule-scaffold.md) | PMSPA tables, migration 0007, PmspaModule scaffold | M6 | api | S | done | T-0064 |
 | [T-0067](m6-integrations/T-0067-pmspatransport-the-connection-repository-pmspaclient-the.md) | PmspaTransport, the connection repository, PmspaClient, the module's providers | M6 | api | M | done | T-0065, T-0066 |
 | [T-0068](m6-integrations/T-0068-dtos-service-controller-openapi-export-api.md) | DTOs, service, controller, OpenAPI export (API-INT-001…004) | M6 | api | M | done | T-0067 |
+| [T-0069](m6-integrations/T-0069-field-mapping-and-fingerprints-pmspa-fields.md) | Field mapping and fingerprints (pmspa-fields.ts), the PMSPA projects/tasks client (pmspa-remote.ts), the write mappers (pmspa-writes.ts) | M6 | api | M | ready | — |
+| [T-0070](m6-integrations/T-0070-link-and-sync-repositories-api-int.md) | Link and sync repositories, API-INT-005/006/012/013/014 | M6 | api | M | blocked | T-0069 |
+| [T-0071](m6-integrations/T-0071-preview-rows-pmspa-preview-ts-import.md) | Preview rows (pmspa-preview.ts): import and sync rows over a snapshot, pure | M6 | api | M | blocked | T-0069, T-0070 |
+| [T-0072](m6-integrations/T-0072-sync-dtos-the-snapshot-loader-the.md) | Sync DTOs, the snapshot loader, the two preview endpoints (API-INT-008, API-INT-015) | M6 | api | M | blocked | T-0071 |
+| [T-0073](m6-integrations/T-0073-the-commits-lock-row-by-row.md) | The commits: lock, row-by-row writes on both sides, links and hashes, last_sync_at (API-INT-009, API-INT-016) | M6 | api | L | blocked | T-0072 |
 
 M0–M5 are done. M6 (Integrations) is in progress: feat-int-conn-api first, then int-sync-api, int-time-api and int-web (OQ-175).
