@@ -79,7 +79,7 @@ the `time-log` case of API-INT-014, the OpenAPI export.
 | api | `api/src/integrations/pmspa/pmspa-time-sync.service.ts`, `api/src/integrations/pmspa/pmspa-time-sync.service.spec.ts` | C/M | T3, T4, T5 | `npx nest g service integrations/pmspa/pmspa-time-sync --flat` (T3); loader T3, import commit T4, push commit T5 |
 | api | `api/src/integrations/pmspa/pmspa-sync.service.ts`, `api/src/integrations/pmspa/pmspa-sync.service.spec.ts`, `api/src/integrations/pmspa/pmspa-sync.controller.ts`, `api/src/integrations/pmspa/pmspa-sync.controller.spec.ts` | M | T3, T4, T5 | Previews T3, import dispatch T4, push commit and endpoint T5 |
 | api | `api/src/integrations/pmspa/pmspa-run.ts` | C | T4 | Hand-written: `Run`, `RunLinks`, `RowFailure`, `CANT_LINK`, `result()` moved out of `pmspa-sync.service.ts`, so the two services don't import each other |
-| api | `api/src/integrations/pmspa/pmspa-time-fields.ts` | M | T4 | `startToMinute` clamps to 1425 (OQ-194) |
+| api | `api/src/integrations/pmspa/pmspa-time-fields.ts`, `api/src/integrations/pmspa/pmspa-time-fields.spec.ts` | M, C | T4 | `startToMinute` clamps to 1425 (OQ-194); an ordinary unit test of the clamp |
 | web | `web/proto/mock/pmspa.ts` | M | review | Prototype twin of OQ-195 (main session) |
 | api | `api/src/integrations/pmspa/pmspa.module.ts` | M | T3 | Imports `TimeModule`; provides `PmspaTimeSyncService` |
 | api | `api/openapi.json` | M | T1, T3, T5 | `npm run openapi:export` |
@@ -245,8 +245,8 @@ importEventRow(run: Run, row: SyncPreviewItemDto): Promise<SyncResultItemDto>;
      `pm4Hash` = fingerprint of `pm4LogTuple` of the PM4 log re-read with `pm4Logs({dates: [], ids: [id]})` and its group mapped through the run's task links (`run.links.pmspaOf("task", …)`, else `"title:" + title`: the snapshot is stale for a task linked earlier in the run), `pmspaHash` =
      fingerprint of `pmspaLogTuple(log, event)`.
   5. Result: any failed log → `failed` with the first failed log's reason, "A log of <duration> h isn't in 0.25 h steps", "A log of
-     <duration> h isn't between 0.25 h and 24 h", "A log's text is over 1000 characters" or "A log has no text", then " (the other <plural(n − 1, "log")> were
-     imported)."; else `created` for a `create` row, else `updated`.
+     <duration> h isn't between 0.25 h and 24 h", "A log's text is over 1000 characters" or "A log has no text", then the imported count `n` (the event's logs minus the failed ones, OQ-196): " (no other logs were imported).", " (1 other log was
+     imported)." or " (<n> other logs were imported)."; else `created` for a `create` row, else `updated`.
 
 ### Push commit (T5)
 ```ts
@@ -296,7 +296,7 @@ booked; "nonprod" without a task, 0.5 h), 2026-10-13 (start 9.25: "Development" 
 | AC-1 | `GET /days?from=2026-10-12&to=2026-10-18` → three days, newest first, `startMinute` 540 / 480 / 555, events with `task {id, title, projectTitle}` or null, `booked`, logs in minutes (0.3 h → 18), `linkState "not-linked"`; `to-from` over 7 days, `from > to`, a bad date → `400` | `api/test/pmspa-time.ac.e2e-spec.ts` | T1 |
 | AC-2 | Import preview `{projects: [], dates: ["2026-10-16"]}` → the unlinked tasks Release 4.2 rollout and Homepage redesign (with their projects) as parent rows, the day row `create` with "3 logs · 3h 45m", two event rows | `api/test/pmspa-time.ac.e2e-spec.ts` | T3 |
 | AC-3 | Import `{dates: ["2026-10-14"]}` → PM4 2026-10-14 starts 08:00; "Internal" → an Unsorted log titled "Internal"; "Meetings" → a log on PM4 Tesla › Meetings, not booked; "nonprod" → an Unsorted log excluded from statistics; every log linked `imported`; `GET /days` shows the day `linked` | `api/test/pmspa-time.ac.e2e-spec.ts` | T4 |
-| AC-4 | Import 2026-10-13 → "Development" `failed` "A log of 0.3 h isn't in 0.25 h steps (the other 1 log were imported)." and the 2 h log exists | `api/test/pmspa-time.ac.e2e-spec.ts` | T4 |
+| AC-4 | Import 2026-10-13 → "Development" `failed` "A log of 0.3 h isn't in 0.25 h steps (1 other log was imported)." and the 2 h log exists | `api/test/pmspa-time.ac.e2e-spec.ts` | T4 |
 | AC-5 | Importing 2026-10-14 again → day and events `skip` "Already imported"; after the fake changes a log's title and the PM4 log's text is edited too → that event `update` with the OQ-180 warning, and the run sets the PM4 text to PMSPA's; the PM4 log title stays | `api/test/pmspa-time.ac.e2e-spec.ts` | T4 |
 | AC-6 | The fake moves the imported "Meetings" event to task Tesla › QA (linked) → import preview warns "1 PM4 log moves to “QA” (its task changed in PMSPA)."; the run moves the PM4 log to QA | `api/test/pmspa-time.ac.e2e-spec.ts` | T4 |
 | AC-7 | `{dates: ["2026-10-20"]}` → the day row `skip` "In the future: PM4 doesn't log future time."; `dates` with 8 entries or a repeat → `400` | `api/test/pmspa-time.ac.e2e-spec.ts` | T3 |
@@ -351,3 +351,4 @@ None.
 - 2026-10-17: `createEvent` sends the first log's duration only; the push renames that log after the re-read, since PMSPA titles it after the event (OQ-192, owner).
 - 2026-10-17: Push rows: a linked log whose PMSPA log isn't in the pushed day counts as changed, so D10's move runs (a date change leaves the fingerprint as it was).
 - 2026-10-17 (Opus review): the import fails a single log instead of aborting the run for an empty title (takes the event title), a 0 h or over-24 h log or text over 1000 characters, and always sends `dayStartMinute` (OQ-194, owner); empty events and days are `skip` "No logs" (OQ-195, owner); the run types move to `pmspa-run.ts`; the import's log title is trimmed; T5's deviations go into the push steps (hash group from `run.links`, the extra `getDay` for a new multi-log event, `booked` of a new single-log event after the re-read); AC-21 cross-user.
+- 2026-10-17 (Opus re-review of T4): the failure reason counts the logs actually imported, with "no other logs were" / "1 other log was" / "<n> other logs were" (OQ-196, owner); AC-4 reworded. Preview warnings for the OQ-194 failures are OQ-197.

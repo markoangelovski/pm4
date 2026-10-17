@@ -10,7 +10,7 @@ depends_on: [T-0076]
 feature_spec: specs/06-features/int-time-api.md
 spec_row: T4
 ac_files:
-  - { path: api/test/pmspa-time.ac.e2e-spec.ts, sha256: 2617d310b17d43e19fbcf9f0da5c72167c7309fc9ed73c91d6484a877464d762 }
+  - { path: api/test/pmspa-time.ac.e2e-spec.ts, sha256: 8c72474d45b16bfbc0bf7a14f1fe803bd876b7a4257e83cb78f335517c6fa594 }
 ---
 
 # T-0077: The import commit of day and event rows (API-INT-009 dates)
@@ -46,12 +46,20 @@ _Implementer: what changed, and anything the reviewer should look at._
 - pending ACs (later tasks, excluded): AC-9 to AC-14, AC-18 to AC-20
 - api lint ok, format:check ok, typecheck ok, test ok, test:e2e ok (the pending ACs are excluded from the e2e gate), build ok, openapi:export ok
 
+- Review fix (OQ-196, 2026-10-17, haiku):
+  - The failure reason counts the logs actually imported: `importedNote(n)` in `pmspa-time-sync.service.ts` (a local helper) gives "(no other logs were imported)." for 0, "(1 other log was imported)." for 1, "(<n> other logs were imported)." otherwise. The `plural` import is gone.
+  - `pmspa-time-sync.service.spec.ts`: the five existing expectations use the new wording; new tests for 2 of 3 failing ("1 other log"), 1 of 3 failing ("2 other logs"), and all failing ("no other logs").
+  - `pmspa-time-fields.spec.ts` (new, ordinary unit test): `startToMinute` clamps 23.9 and 23.75 (and 24) to 1425; rounding below the clamp is unchanged.
+  - Not edited: `api/test/pmspa-time.ac.e2e-spec.ts` (AC-4 already expects the new wording).
+  - `pm4 check T-0077` (api, 2026-10-17, coordinator re-run after formatting AC-4 and re-hashing, and adding `pmspa-time-fields.spec.ts` to the spec's Files table): ac hashes ok (1); lint, format:check, typecheck, test, test:e2e, build, openapi:export ok; scope FAIL only on the coordinator edits (`specs/06-features/int-time-api.md`, `specs/open-questions.md`, `web/proto/mock/pmspa.ts`, OQ-196).
+
 ### Attempts
 | # | Tier | Result | Summary |
 | --- | --- | --- | --- |
 | 1 | haiku | done | Import commit for AC-3 to AC-6. Lint and format fixed (spec types). `pm4 check`: only the expected scope flag fails. |
 | 2 | haiku | done | Review fix (OQ-194): per-log validation, text and title rules, `dayStartMinute` on create and update, `startToMinute` clamp to 1425, `pmspa-run.ts` extracted (no import cycle), unit tests. `pm4 check --feature`: only the expected scope flags fail. |
 | 3 | haiku | done | OQ-194 blank text: a log with no text in its title or the event's fails "A log has no text" (last check), unit test added. `pm4 check --feature`: only the expected scope flags fail. |
+| 4 | haiku | done | Review fix (OQ-196): failure reason counts the imported logs ("(no other logs were imported).", "(1 other log was imported).", "(<n> other logs were imported)."); unit tests for two and all logs failing; `startToMinute` clamp unit test in `pmspa-time-fields.spec.ts`. Coordinator reformatted AC-4 (prettier) and re-hashed; `pm4 check`: all gates ok, scope only the coordinator edits. |
 
 ## Review
 **Verdict: changes-requested** (Opus, 2026-10-17).
@@ -61,3 +69,9 @@ _Implementer: what changed, and anything the reviewer should look at._
 Tier: haiku borderline; the spec missed the error paths of direct service calls.
 
 **Fixes (2026-10-17, haiku):** all three findings fixed after OQ-194 (owner, plus a log with no text at all fails as "A log has no text"); `pmspa-run.ts` removes the cycle; `startToMinute` clamps to 1425. Coordinator verified: `pm4 check --feature` all gates ok, scope only on the spec edits. Back to review.
+
+**Re-review verdict: approve** (Opus, 2026-10-17). Findings 1, 4, 7 fixed as the amended *Import commit* and OQ-194 require; `pm4 check T-0077` PASS, unit tests 25/25. New minor findings, none blocking:
+- A: the failure message counts `event.logs.length - failedLogs` (more accurate), while the spec and `web/proto/mock/pmspa.ts` use `n − 1`. They differ when 2+ logs fail; "the other 0 logs" when all fail; "the other 1 log were" is ungrammatical (from the prototype). Owner decision, then align spec, twin and code, and add a unit test with two failed logs.
+- B: no test covers the `startToMinute` clamp to 1425 (add an ordinary unit test, not in the `.ac` file).
+- C: spec gap (T3's preview): the import preview warns only about off-step logs, not 0 h / over 24 h / over-long / missing text, which then fail at commit. Open question.
+Tier: haiku right for the fix pass; the original miss was a spec gap.

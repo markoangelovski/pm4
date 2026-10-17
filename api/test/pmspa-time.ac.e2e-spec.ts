@@ -691,8 +691,7 @@ describe("PMSPA time API (feat-int-time-api)", () => {
     const development = eventOn(fake, "2026-10-13", "Development")!;
     expect(byKey(run.body.items)[`event:${development.id}`]).toMatchObject({
       outcome: "failed",
-      reason:
-        "A log of 0.3 h isn't in 0.25 h steps (the other 1 log were imported)."
+      reason: "A log of 0.3 h isn't in 0.25 h steps (1 other log was imported)."
     });
     const day = await pm4(a).get<WorkdayBody>("/workdays/2026-10-13");
     expect(day.body.startMinute).toBe(555);

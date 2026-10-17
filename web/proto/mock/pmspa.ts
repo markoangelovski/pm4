@@ -840,7 +840,11 @@ function diff(
 function projectDiff(p: Project, r: RemoteProject) {
   return diff([
     ["Title", cut(p.title, 150), r.title],
-    ["Description", val(p.description) && cut(p.description!, 350), val(r.description)],
+    [
+      "Description",
+      val(p.description) && cut(p.description!, 350),
+      val(r.description)
+    ],
     ["Lead", val(p.projectLead?.name), val(r.pl)],
     ["External link", val(p.externalLink), val(r.kanboard)]
   ]);
@@ -849,7 +853,11 @@ function projectDiff(p: Project, r: RemoteProject) {
 function taskDiff(t: Task, r: RemoteTask) {
   return diff([
     ["Title", cut(t.title, 150), r.title],
-    ["Description", val(t.description) && cut(t.description!, 350), val(r.description)],
+    [
+      "Description",
+      val(t.description) && cut(t.description!, 350),
+      val(r.description)
+    ],
     ["Status", COLUMN[t.status], r.column],
     ["Lead", val(t.projectLead?.name), val(r.pl)],
     ["External link", val(t.externalLink), val(r.kanboard)],
@@ -867,6 +875,13 @@ function taskDiff(t: Task, r: RemoteTask) {
 
 const plural = (n: number, one: string, many = one + "s") =>
   `${n} ${n === 1 ? one : many}`;
+// OQ-196: the logs an event with a failed log still imported.
+const otherLogsImported = (n: number) =>
+  n === 0
+    ? "no other logs were imported"
+    : n === 1
+      ? "1 other log was imported"
+      : `${n} other logs were imported`;
 const eventDetail = (n: number, minutes: number) =>
   `${plural(n, "log")} · ${formatDuration(minutes)}`;
 
@@ -931,7 +946,9 @@ export function importPreview(sel: PmspaImportSelectionDto): Item[] {
         type: "task",
         title: t.title,
         detail: t.column,
-        ...(l && pm4 ? pairAction(l, taskDiff(pm4, t)) : createAction("import")),
+        ...(l && pm4
+          ? pairAction(l, taskDiff(pm4, t))
+          : createAction("import")),
         ...(parentOf ? { reason: parentOf, parent: true } : {}),
         linkedId: l?.pm4Id ?? null,
         candidates: l ? [] : pm4TaskCandidates(t)
@@ -1382,7 +1399,7 @@ export function runImport(
           ? result(
               item,
               "failed",
-              `A log of ${bad!.duration} h isn't in 0.25 h steps (the other ${plural(e.logs.length - 1, "log")} were imported).`
+              `A log of ${bad!.duration} h isn't in 0.25 h steps (${otherLogsImported(e.logs.length - failed)}).`
             )
           : result(item, item.action === "create" ? "created" : "updated")
       );

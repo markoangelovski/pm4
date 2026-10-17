@@ -305,7 +305,7 @@ describe("PmspaTimeSyncService", () => {
         expect.objectContaining({
           outcome: "failed",
           reason:
-            "A log of 0.3 h isn't in 0.25 h steps (the other 1 log were imported)."
+            "A log of 0.3 h isn't in 0.25 h steps (1 other log was imported)."
         })
       );
     });
@@ -364,7 +364,7 @@ describe("PmspaTimeSyncService", () => {
         expect.objectContaining({
           outcome: "failed",
           reason:
-            "A log of 0 h isn't between 0.25 h and 24 h (the other 1 log were imported)."
+            "A log of 0 h isn't between 0.25 h and 24 h (1 other log was imported)."
         })
       );
     });
@@ -384,7 +384,7 @@ describe("PmspaTimeSyncService", () => {
         expect.objectContaining({
           outcome: "failed",
           reason:
-            "A log of 25 h isn't between 0.25 h and 24 h (the other 1 log were imported)."
+            "A log of 25 h isn't between 0.25 h and 24 h (1 other log was imported)."
         })
       );
     });
@@ -404,7 +404,7 @@ describe("PmspaTimeSyncService", () => {
         expect.objectContaining({
           outcome: "failed",
           reason:
-            "A log's text is over 1000 characters (the other 1 log were imported)."
+            "A log's text is over 1000 characters (1 other log was imported)."
         })
       );
     });
@@ -429,7 +429,70 @@ describe("PmspaTimeSyncService", () => {
       expect(res).toEqual(
         expect.objectContaining({
           outcome: "failed",
-          reason: "A log has no text (the other 1 log were imported)."
+          reason: "A log has no text (1 other log was imported)."
+        })
+      );
+    });
+
+    it("counts the imported logs in the reason when two of three fail (OQ-196)", async () => {
+      const run = runOf([
+        event({
+          logs: [
+            { id: "l1", title: "Development", duration: 0.3 },
+            { id: "l2", title: "Zero", duration: 0 },
+            { id: "l3", title: "Standup", duration: 2 }
+          ]
+        })
+      ]);
+      const res = await service.importEventRow(run, row({ action: "create" }));
+      expect(timeLogs.create).toHaveBeenCalledTimes(1);
+      expect(res).toEqual(
+        expect.objectContaining({
+          outcome: "failed",
+          reason:
+            "A log of 0.3 h isn't in 0.25 h steps (1 other log was imported)."
+        })
+      );
+    });
+
+    it("counts the imported logs in the reason when one of three fails (OQ-196)", async () => {
+      const run = runOf([
+        event({
+          logs: [
+            { id: "l1", title: "Development", duration: 0.3 },
+            { id: "l2", title: "Standup", duration: 2 },
+            { id: "l3", title: "Review", duration: 1 }
+          ]
+        })
+      ]);
+      const res = await service.importEventRow(run, row({ action: "create" }));
+      expect(timeLogs.create).toHaveBeenCalledTimes(2);
+      expect(res).toEqual(
+        expect.objectContaining({
+          outcome: "failed",
+          reason:
+            "A log of 0.3 h isn't in 0.25 h steps (2 other logs were imported)."
+        })
+      );
+    });
+
+    it("says no other logs were imported when every log fails (OQ-196)", async () => {
+      const run = runOf([
+        event({
+          logs: [
+            { id: "l1", title: "Development", duration: 0.3 },
+            { id: "l2", title: "Zero", duration: 0 },
+            { id: "l3", title: "Long", duration: 25 }
+          ]
+        })
+      ]);
+      const res = await service.importEventRow(run, row({ action: "create" }));
+      expect(timeLogs.create).not.toHaveBeenCalled();
+      expect(res).toEqual(
+        expect.objectContaining({
+          outcome: "failed",
+          reason:
+            "A log of 0.3 h isn't in 0.25 h steps (no other logs were imported)."
         })
       );
     });

@@ -23,13 +23,19 @@ import {
   hoursToMinutes,
   isNonprod,
   isQuarterHours,
-  plural,
   pm4LogTuple,
   pmspaLogTuple,
   minuteToStart,
   startToMinute,
   type Pm4LogForPush
 } from "./pmspa-time-fields.js";
+
+/** OQ-196: how many of an event's logs were imported, for a failure reason. */
+function importedNote(n: number): string {
+  if (n === 0) return "no other logs were imported";
+  if (n === 1) return "1 other log was imported";
+  return `${n} other logs were imported`;
+}
 
 /** The time snapshot of a day import or push (feat-int-time-api): the PMSPA days and the PM4 logs they map to. */
 @Injectable()
@@ -180,7 +186,7 @@ export class PmspaTimeSyncService {
       return result(
         row,
         "failed",
-        `${firstFailure} (the other ${plural(event.logs.length - failedLogs, "log")} were imported).`
+        `${firstFailure} (${importedNote(event.logs.length - failedLogs)}).`
       );
     }
     return result(row, row.action === "create" ? "created" : "updated");
