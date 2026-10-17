@@ -44,6 +44,14 @@ export class PmspaConnectionRepository {
     return upsertRow(this.db, row);
   }
 
+  /** Sets `last_sync_at` after an import or sync. */
+  async setLastSyncAt(userId: string, at: Date): Promise<void> {
+    await this.db
+      .update(pmspaConnections)
+      .set({ lastSyncAt: at })
+      .where(eq(pmspaConnections.userId, userId));
+  }
+
   /** Sets the status and `last_checked_at = now()`. */
   async setStatus(
     userId: string,

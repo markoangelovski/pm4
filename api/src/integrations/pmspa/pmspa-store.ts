@@ -9,7 +9,8 @@ const TOKEN_TTL_SECONDS = 82800;
 const keys = {
   token: (userId: string) => `pmspa:token:${userId}`,
   account: (userId: string) => `pmspa:account:${userId}`,
-  pause: (host: string) => `pmspa:pause:${host}`
+  pause: (host: string) => `pmspa:pause:${host}`,
+  lock: (userId: string) => `pmspa:lock:${userId}`
 };
 
 /**
@@ -89,5 +90,21 @@ export class PmspaStore {
     const current = await this.client.pttl(keys.pause(host));
     if (current >= ms) return;
     await this.client.set(keys.pause(host), "1", "PX", ms);
+  }
+
+  /** Takes the user's import/sync lock for 5 minutes (D4). True when it was free. */
+  async lock(userId: string): Promise<boolean> {
+    const res = await this.client.set(
+      keys.lock(userId),
+      "1",
+      "PX",
+      300000,
+      "NX"
+    );
+    return res === "OK";
+  }
+
+  async unlock(userId: string): Promise<void> {
+    await this.client.del(keys.lock(userId));
   }
 }

@@ -213,7 +213,7 @@ export class SyncChoiceDto {             // one class: kind @IsIn(["create", "li
   id?: string;                           // @ValidateIf(kind === "link") @IsString, ≤ 36
   overwrite?: SyncDirection | null;      // @ValidateIf(kind === "link") @IsOptional @IsIn(["to-pmspa", "to-pm4"])
 }
-export class PmspaImportSelectionDto { projects: { id: string; taskIds: string[] | null }[] }   // ≤ 50 projects, 24-hex ids (@Matches)
+export class PmspaImportSelectionDto { projects: { id: string; taskIds: string[] | null }[] }   // ≤ 50 projects, ≤ 500 taskIds each (OQ-190), 24-hex ids (@Matches)
 export class PmspaImportDto { selection: PmspaImportSelectionDto; choices: SyncChoiceDto[] }    // ≤ 500 choices
 export class PmspaSyncTargetDto { type: "project" | "task"; id: string }                        // @IsIn, @IsUUID
 export class PmspaSyncDto { target: PmspaSyncTargetDto; choices: SyncChoiceDto[] }              // ≤ 500 choices

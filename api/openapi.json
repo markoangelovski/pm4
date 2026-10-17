@@ -2335,6 +2335,873 @@
           "PmspaConnection"
         ]
       }
+    },
+    "/api/v1/integrations/pmspa/projects": {
+      "get": {
+        "operationId": "PmspaBrowseController_projects",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PmspaProjectListDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid or expired credentials.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "PMSPA failed or couldn't be reached.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "PMSPA is busy.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "The connected account's projects by title, with their PM4 links (API-INT-005).",
+        "tags": [
+          "PmspaBrowse"
+        ]
+      }
+    },
+    "/api/v1/integrations/pmspa/projects/{id}/tasks": {
+      "get": {
+        "operationId": "PmspaBrowseController_tasks",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "A 24-hex PMSPA ObjectId.",
+            "schema": {
+              "pattern": "^[0-9a-f]{24}$",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PmspaTaskListDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed: one entry in errors[] per invalid field.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid or expired credentials.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "PMSPA failed or couldn't be reached.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "PMSPA is busy.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "The tasks of one of the connected account's projects, with their PM4 links (API-INT-006).",
+        "tags": [
+          "PmspaBrowse"
+        ]
+      }
+    },
+    "/api/v1/integrations/pmspa/links": {
+      "get": {
+        "operationId": "PmspaLinksController_list",
+        "parameters": [
+          {
+            "name": "type",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "project",
+                "task",
+                "time-log"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PmspaLinkListDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed: one entry in errors[] per invalid field.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid or expired credentials.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "The active links of a type (API-INT-012).",
+        "tags": [
+          "PmspaLinks"
+        ]
+      }
+    },
+    "/api/v1/integrations/pmspa/links/{type}/{id}": {
+      "delete": {
+        "operationId": "PmspaLinksController_unlink",
+        "parameters": [
+          {
+            "name": "type",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "project",
+                "task",
+                "time-log"
+              ]
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "The PM4 record's id.",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Unlinked."
+          },
+          "400": {
+            "description": "Validation failed: one entry in errors[] per invalid field.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid or expired credentials.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Remove the link; both records stay (API-INT-013).",
+        "tags": [
+          "PmspaLinks"
+        ]
+      },
+      "get": {
+        "operationId": "PmspaLinksController_detail",
+        "parameters": [
+          {
+            "name": "type",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "project",
+                "task",
+                "time-log"
+              ]
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "The PM4 record's id.",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PmspaLinkDetailDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed: one entry in errors[] per invalid field.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid or expired credentials.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "PMSPA failed or couldn't be reached.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "PMSPA is busy.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "A link with its PMSPA counterpart, read live (API-INT-014).",
+        "tags": [
+          "PmspaLinks"
+        ]
+      }
+    },
+    "/api/v1/integrations/pmspa/import/preview": {
+      "post": {
+        "operationId": "PmspaSyncController_importPreview",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PmspaImportSelectionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SyncPreviewDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed: one entry in errors[] per invalid field.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid or expired credentials.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "PMSPA failed or couldn't be reached.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "PMSPA is busy.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "The rows of an import of the selected PMSPA projects and tasks (API-INT-008).",
+        "tags": [
+          "PmspaSync"
+        ]
+      }
+    },
+    "/api/v1/integrations/pmspa/sync/preview": {
+      "post": {
+        "operationId": "PmspaSyncController_syncPreview",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PmspaSyncTargetDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SyncPreviewDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed: one entry in errors[] per invalid field.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid or expired credentials.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "PMSPA failed or couldn't be reached.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "PMSPA is busy.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "The rows of a two-way sync of a PM4 project or task (API-INT-015).",
+        "tags": [
+          "PmspaSync"
+        ]
+      }
+    },
+    "/api/v1/integrations/pmspa/import": {
+      "post": {
+        "operationId": "PmspaSyncController_importRun",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PmspaImportDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SyncResultDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed: one entry in errors[] per invalid field.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid or expired credentials.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "PMSPA failed or couldn't be reached.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "PMSPA is busy.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Imports the selected PMSPA projects and tasks (API-INT-009).",
+        "tags": [
+          "PmspaSync"
+        ]
+      }
+    },
+    "/api/v1/integrations/pmspa/sync": {
+      "post": {
+        "operationId": "PmspaSyncController_syncRun",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PmspaSyncDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SyncResultDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed: one entry in errors[] per invalid field.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid or expired credentials.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "PMSPA failed or couldn't be reached.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "PMSPA is busy.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Syncs a PM4 project or task both ways (API-INT-016).",
+        "tags": [
+          "PmspaSync"
+        ]
+      }
     }
   },
   "info": {
@@ -3626,6 +4493,636 @@
         "required": [
           "url",
           "email"
+        ]
+      },
+      "PmspaLinkOrigin": {
+        "type": "string",
+        "enum": [
+          "imported",
+          "pushed",
+          "linked"
+        ]
+      },
+      "PmspaRecordLinkDto": {
+        "type": "object",
+        "properties": {
+          "origin": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PmspaLinkOrigin"
+              }
+            ]
+          },
+          "pm4Id": {
+            "type": "string"
+          },
+          "pm4Title": {
+            "type": "string"
+          },
+          "syncedAt": {
+            "type": "string",
+            "description": "ISO 8601 UTC"
+          }
+        },
+        "required": [
+          "origin",
+          "pm4Id",
+          "pm4Title",
+          "syncedAt"
+        ]
+      },
+      "PmspaProjectDto": {
+        "type": "object",
+        "properties": {
+          "link": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PmspaRecordLinkDto"
+              }
+            ]
+          },
+          "id": {
+            "type": "string",
+            "description": "A 24-hex ObjectId."
+          },
+          "title": {
+            "type": "string"
+          },
+          "done": {
+            "type": "boolean"
+          },
+          "taskCount": {
+            "type": "number",
+            "description": "PMSPA's open + closed task count."
+          }
+        },
+        "required": [
+          "link",
+          "id",
+          "title",
+          "done",
+          "taskCount"
+        ]
+      },
+      "PmspaProjectListDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PmspaProjectDto"
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "PmspaColumn": {
+        "type": "string",
+        "enum": [
+          "Upcoming",
+          "In Progress",
+          "Completed"
+        ]
+      },
+      "PmspaTaskDto": {
+        "type": "object",
+        "properties": {
+          "column": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PmspaColumn"
+              }
+            ]
+          },
+          "link": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PmspaRecordLinkDto"
+              }
+            ]
+          },
+          "id": {
+            "type": "string"
+          },
+          "projectId": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "column",
+          "link",
+          "id",
+          "projectId",
+          "title"
+        ]
+      },
+      "PmspaTaskListDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PmspaTaskDto"
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "PmspaLinkDto": {
+        "type": "object",
+        "properties": {
+          "origin": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PmspaLinkOrigin"
+              }
+            ]
+          },
+          "pm4Id": {
+            "type": "string"
+          },
+          "syncedAt": {
+            "type": "string",
+            "description": "ISO 8601 UTC"
+          }
+        },
+        "required": [
+          "origin",
+          "pm4Id",
+          "syncedAt"
+        ]
+      },
+      "PmspaLinkListDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PmspaLinkDto"
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "PmspaLinkType": {
+        "type": "string",
+        "enum": [
+          "project",
+          "task",
+          "time-log"
+        ]
+      },
+      "PmspaRecordDetailDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PmspaLinkType"
+              }
+            ]
+          },
+          "title": {
+            "type": "string"
+          },
+          "lead": {
+            "type": "string",
+            "description": "Project: its lead's name, \"\" when none."
+          },
+          "done": {
+            "type": "boolean",
+            "description": "Project: whether it's done."
+          },
+          "projectTitle": {
+            "type": "string",
+            "description": "Task: its project's title."
+          },
+          "column": {
+            "type": "string",
+            "description": "Task: its column.",
+            "enum": [
+              "Upcoming",
+              "In Progress",
+              "Completed"
+            ]
+          }
+        },
+        "required": [
+          "type",
+          "title"
+        ]
+      },
+      "PmspaLinkDetailDto": {
+        "type": "object",
+        "properties": {
+          "origin": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PmspaLinkOrigin"
+              }
+            ]
+          },
+          "pmspa": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PmspaRecordDetailDto"
+              }
+            ]
+          },
+          "syncedAt": {
+            "type": "string",
+            "description": "ISO 8601 UTC"
+          }
+        },
+        "required": [
+          "origin",
+          "pmspa",
+          "syncedAt"
+        ]
+      },
+      "PmspaImportProjectDto": {
+        "type": "object",
+        "properties": {
+          "taskIds": {
+            "nullable": true,
+            "maxItems": 500,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{24}$"
+            }
+          },
+          "id": {
+            "type": "string",
+            "description": "A 24-hex PMSPA ObjectId.",
+            "pattern": "^[0-9a-f]{24}$"
+          }
+        },
+        "required": [
+          "taskIds",
+          "id"
+        ]
+      },
+      "PmspaImportSelectionDto": {
+        "type": "object",
+        "properties": {
+          "projects": {
+            "maxItems": 50,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PmspaImportProjectDto"
+            }
+          }
+        },
+        "required": [
+          "projects"
+        ]
+      },
+      "SyncFieldDiffDto": {
+        "type": "object",
+        "properties": {
+          "pm4": {
+            "type": "string",
+            "nullable": true,
+            "description": "Null when the side has no value."
+          },
+          "pmspa": {
+            "type": "string",
+            "nullable": true
+          },
+          "field": {
+            "type": "string",
+            "description": "E.g. \"Title\", \"Lead\", \"Due date\"."
+          }
+        },
+        "required": [
+          "pm4",
+          "pmspa",
+          "field"
+        ]
+      },
+      "SyncCandidateDto": {
+        "type": "object",
+        "properties": {
+          "groupId": {
+            "type": "string",
+            "nullable": true,
+            "description": "For a task: its project on the same side."
+          },
+          "detail": {
+            "type": "string",
+            "nullable": true,
+            "description": "What tells it apart from the row's record, e.g. \"Lead Jane Doe\"."
+          },
+          "differences": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SyncFieldDiffDto"
+            }
+          },
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "groupId",
+          "detail",
+          "differences",
+          "id",
+          "title"
+        ]
+      },
+      "SyncPreviewItemDto": {
+        "type": "object",
+        "properties": {
+          "parentKey": {
+            "type": "string",
+            "nullable": true
+          },
+          "type": {
+            "enum": [
+              "project",
+              "task",
+              "day",
+              "event"
+            ],
+            "type": "string"
+          },
+          "detail": {
+            "type": "string",
+            "nullable": true
+          },
+          "action": {
+            "enum": [
+              "create",
+              "update",
+              "skip",
+              "differs"
+            ],
+            "type": "string"
+          },
+          "direction": {
+            "nullable": true,
+            "description": "Where a project or task is written (OQ-172). Null for days, events and undecided differs rows.",
+            "enum": [
+              "to-pm4",
+              "to-pmspa"
+            ],
+            "type": "string"
+          },
+          "reason": {
+            "type": "string",
+            "nullable": true
+          },
+          "linkedId": {
+            "type": "string",
+            "nullable": true,
+            "description": "The linked counterpart's id on the other side, or null."
+          },
+          "candidates": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SyncCandidateDto"
+            }
+          },
+          "differences": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SyncFieldDiffDto"
+            }
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "key": {
+            "type": "string",
+            "description": "Stable within the preview, e.g. `project:66f1…`."
+          },
+          "title": {
+            "type": "string"
+          },
+          "parent": {
+            "type": "boolean"
+          },
+          "optional": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "parentKey",
+          "type",
+          "detail",
+          "action",
+          "direction",
+          "reason",
+          "linkedId",
+          "candidates",
+          "differences",
+          "warnings",
+          "key",
+          "title",
+          "parent",
+          "optional"
+        ]
+      },
+      "SyncPreviewDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SyncPreviewItemDto"
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "PmspaSyncTargetDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "enum": [
+              "project",
+              "task"
+            ],
+            "type": "string"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "type",
+          "id"
+        ]
+      },
+      "SyncChoiceDto": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "enum": [
+              "create",
+              "link",
+              "skip"
+            ],
+            "type": "string"
+          },
+          "overwrite": {
+            "nullable": true,
+            "description": "`link`: the side to overwrite; null = Link only.",
+            "enum": [
+              "to-pm4",
+              "to-pmspa"
+            ],
+            "type": "string"
+          },
+          "key": {
+            "type": "string",
+            "description": "The preview row's key.",
+            "maxLength": 100
+          },
+          "id": {
+            "type": "string",
+            "description": "`link`: the record to pair with (a picked candidate, or the linked counterpart).",
+            "maxLength": 36
+          }
+        },
+        "required": [
+          "kind",
+          "key"
+        ]
+      },
+      "PmspaImportDto": {
+        "type": "object",
+        "properties": {
+          "choices": {
+            "maxItems": 500,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SyncChoiceDto"
+            }
+          },
+          "selection": {
+            "$ref": "#/components/schemas/PmspaImportSelectionDto"
+          }
+        },
+        "required": [
+          "choices",
+          "selection"
+        ]
+      },
+      "SyncResultItemDto": {
+        "type": "object",
+        "properties": {
+          "parentKey": {
+            "type": "string",
+            "nullable": true
+          },
+          "type": {
+            "enum": [
+              "project",
+              "task",
+              "day",
+              "event"
+            ],
+            "type": "string"
+          },
+          "newTitle": {
+            "type": "string",
+            "nullable": true,
+            "description": "The title after an overwrite changed it (shown as \"old → new\", OQ-174)."
+          },
+          "outcome": {
+            "enum": [
+              "created",
+              "updated",
+              "linked",
+              "skipped",
+              "failed"
+            ],
+            "type": "string"
+          },
+          "reason": {
+            "type": "string",
+            "nullable": true
+          },
+          "key": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "parentKey",
+          "type",
+          "newTitle",
+          "outcome",
+          "reason",
+          "key",
+          "title"
+        ]
+      },
+      "SyncResultDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SyncResultItemDto"
+            }
+          },
+          "syncedAt": {
+            "type": "string",
+            "description": "ISO 8601 UTC"
+          }
+        },
+        "required": [
+          "items",
+          "syncedAt"
+        ]
+      },
+      "PmspaSyncDto": {
+        "type": "object",
+        "properties": {
+          "choices": {
+            "maxItems": 500,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SyncChoiceDto"
+            }
+          },
+          "target": {
+            "$ref": "#/components/schemas/PmspaSyncTargetDto"
+          }
+        },
+        "required": [
+          "choices",
+          "target"
         ]
       }
     }

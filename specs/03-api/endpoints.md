@@ -520,7 +520,7 @@ returns event ids only). `startMinute` = PMSPA `start` × 60, rounded to 15. `to
 
 ### API-INT-008: Preview an import
 `POST /integrations/pmspa/import/preview` · Auth: bearer · Implements: FR-INT-011
-**Request body:** `PmspaImportSelection` = `{ projects: { id: string(24-hex), taskIds: string(24-hex)[] | null }[] (≤ 50), dates?: string(YYYY-MM-DD)[] (≤ 7) }`
+**Request body:** `PmspaImportSelection` = `{ projects: { id: string(24-hex), taskIds: string(24-hex)[] (≤ 500) | null }[] (≤ 50), dates?: string(YYYY-MM-DD)[] (≤ 7) }`
 (`taskIds: null` = all of the project's tasks; `dates` arrives with feat-int-time-api). Writes nothing.
 **200:** `SyncPreview`
 **Errors:** 400 validation · 401 · *PMSPA errors*

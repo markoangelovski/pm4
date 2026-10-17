@@ -157,4 +157,20 @@ describe("PmspaStore", () => {
       900_000
     );
   });
+
+  it("lock sets the key NX with a 5 min expiry; unlock deletes it", async () => {
+    const { client, store } = setup();
+    client.set.mockResolvedValueOnce("OK").mockResolvedValueOnce(null);
+    await expect(store.lock(USER)).resolves.toBe(true);
+    expect(client.set).toHaveBeenCalledWith(
+      `pmspa:lock:${USER}`,
+      "1",
+      "PX",
+      300000,
+      "NX"
+    );
+    await expect(store.lock(USER)).resolves.toBe(false);
+    await store.unlock(USER);
+    expect(client.del).toHaveBeenCalledWith(`pmspa:lock:${USER}`);
+  });
 });

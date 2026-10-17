@@ -27,6 +27,14 @@ describe("PmspaConnectionRepository", () => {
     ).resolves.toBeNull();
   });
 
+  it("setLastSyncAt updates the row", async () => {
+    await expect(
+      new PmspaConnectionRepository(
+        chain([]) as unknown as DrizzleDb
+      ).setLastSyncAt("u", new Date())
+    ).resolves.toBeUndefined();
+  });
+
   it("countOtherAccountLinks sums the three link tables", async () => {
     const repo = new PmspaConnectionRepository(
       chain([{ n: 2 }]) as unknown as DrizzleDb
