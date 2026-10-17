@@ -815,8 +815,11 @@ async function cmdCheck(args) {
   report(`  scope: ${outside.length ? `FAIL (${outside.length} file(s))` : "ok"}`);
 
   if (!noGates) {
+    // AC numbers repeat across features, so a test is excluded only when its full name also
+    // carries this feature's id (the AC tests' describe names end in "(feat-…)").
+    const featId = spec && field(spec.text, "id").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     const tPattern = pendingAcs.size
-      ? [`-t`, `^(?!.*\\b(?:${[...pendingAcs].join("|")})\\b)`]
+      ? [`-t`, `^(?!(?=.*\\b${featId}\\b).*\\b(?:${[...pendingAcs].join("|")})\\b)`]
       : [];
     if (pendingAcs.size) report(`  pending ACs (later tasks, excluded): ${[...pendingAcs].join(", ")}`);
     for (const app of apps) {
