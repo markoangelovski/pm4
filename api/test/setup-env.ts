@@ -19,3 +19,5 @@ process.env.GOOGLE_CALLBACK_URL ??=
   "http://localhost:3001/api/v1/auth/google/callback";
 process.env.JWT_ACCESS_SECRET ??=
   "test-only-jwt-access-secret-0123456789abcdef";
+// PMSPA connector (feat-int-conn-api). Fixed dummy key: 32 bytes of 0x07.
+process.env.PMSPA_ENCRYPTION_KEY ??= Buffer.alloc(32, 7).toString("base64");

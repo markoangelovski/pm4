@@ -10,6 +10,7 @@ import type { Request, Response } from "express";
 import { AppConfigService } from "../../../config/app-config.service.js";
 import { ProblemDetailsDto } from "./problem-details.dto.js";
 import { FieldError } from "../../validation/flatten-validation-errors.js";
+import { ProblemException } from "./problem-exception.js";
 
 /** RFC 9457 slugs, per `specs/03-api/conventions.md#errors`. */
 const SLUG_BY_STATUS: Record<number, string> = {
@@ -50,9 +51,17 @@ export class ProblemDetailsFilter implements ExceptionFilter {
     const request = ctx.getRequest<Request>();
 
     const described = this.describe(exception);
-    const slug = SLUG_BY_STATUS[described.status] ?? "error";
+    const slug =
+      exception instanceof ProblemException
+        ? exception.slug
+        : (SLUG_BY_STATUS[described.status] ?? "error");
 
-    if (described.status >= 500) {
+    if (exception instanceof ProblemException) {
+      // An expected condition (e.g. a PMSPA outage): no stack, no error level.
+      this.logger.warn(
+        `${request.method} ${request.originalUrl ?? request.url} -> ${described.status} ${slug}`
+      );
+    } else if (described.status >= 500) {
       const cause =
         exception instanceof Error
           ? (exception.stack ?? exception.message)
@@ -67,7 +76,8 @@ export class ProblemDetailsFilter implements ExceptionFilter {
       title: described.title,
       status: described.status,
       detail: described.detail,
-      ...(described.errors ? { errors: described.errors } : {})
+      ...(described.errors ? { errors: described.errors } : {}),
+      ...(exception instanceof ProblemException ? exception.extensions : {})
     };
     response
       .status(described.status)
@@ -81,6 +91,15 @@ export class ProblemDetailsFilter implements ExceptionFilter {
     detail: string;
     errors?: FieldError[];
   } {
+    if (exception instanceof ProblemException) {
+      // Its detail is written for the user, so it is shown also for 5xx.
+      return {
+        status: exception.getStatus(),
+        title: exception.title,
+        detail: exception.message
+      };
+    }
+
     if (exception instanceof HttpException) {
       const status = exception.getStatus();
       const title = TITLE_BY_STATUS[status] ?? exception.name;

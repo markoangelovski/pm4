@@ -72,6 +72,11 @@ export class AppConfigService {
     return this.env.REFRESH_TOKEN_TTL;
   }
 
+  /** `PMSPA_ENCRYPTION_KEY` decoded: 32 bytes for AES-256-GCM. */
+  get pmspaEncryptionKey(): Buffer {
+    return Buffer.from(this.env.PMSPA_ENCRYPTION_KEY, "base64");
+  }
+
   /** `AUTH_ALLOWED_EMAILS`, lowercase; empty = open sign-up. */
   get allowedEmails(): string[] {
     return this.env.AUTH_ALLOWED_EMAILS;

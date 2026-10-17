@@ -10,6 +10,7 @@ import { UsersModule } from "./users/users.module.js";
 import { ProjectsModule } from "./projects/projects.module.js";
 import { TasksModule } from "./tasks/tasks.module.js";
 import { TimeModule } from "./time/time.module.js";
+import { PmspaModule } from "./integrations/pmspa/pmspa.module.js";
 
 @Module({
   imports: [
@@ -22,7 +23,8 @@ import { TimeModule } from "./time/time.module.js";
     UsersModule,
     ProjectsModule,
     TasksModule,
-    TimeModule
+    TimeModule,
+    PmspaModule
   ],
   providers: [ProblemDetailsFilter]
 })

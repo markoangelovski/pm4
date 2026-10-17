@@ -2098,6 +2098,243 @@
           "Reports"
         ]
       }
+    },
+    "/api/v1/integrations/pmspa": {
+      "get": {
+        "operationId": "PmspaConnectionController_get",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PmspaConnectionResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid or expired credentials.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "The stored connection; no PMSPA call (API-INT-001).",
+        "tags": [
+          "PmspaConnection"
+        ]
+      },
+      "put": {
+        "operationId": "PmspaConnectionController_save",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SavePmspaConnectionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PmspaConnectionResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed: one entry in errors[] per invalid field.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid or expired credentials.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "PMSPA is busy.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Save the settings, then check them (API-INT-002).",
+        "tags": [
+          "PmspaConnection"
+        ]
+      },
+      "delete": {
+        "operationId": "PmspaConnectionController_disconnect",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": "Disconnected."
+          },
+          "401": {
+            "description": "Missing, invalid or expired credentials.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Delete the connection and the token; the links stay (API-INT-004).",
+        "tags": [
+          "PmspaConnection"
+        ]
+      }
+    },
+    "/api/v1/integrations/pmspa/test": {
+      "post": {
+        "operationId": "PmspaConnectionController_test",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PmspaConnectionResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid or expired credentials.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "PMSPA is busy.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Check the stored credentials again (API-INT-003).",
+        "tags": [
+          "PmspaConnection"
+        ]
+      }
     }
   },
   "info": {
@@ -3267,6 +3504,128 @@
         "required": [
           "days",
           "projects"
+        ]
+      },
+      "PmspaConnectionStatus": {
+        "type": "string",
+        "enum": [
+          "not-configured",
+          "connected",
+          "invalid-credentials",
+          "unreachable"
+        ]
+      },
+      "PmspaAccountRole": {
+        "type": "string",
+        "enum": [
+          "admin",
+          "user"
+        ]
+      },
+      "PmspaAccountDto": {
+        "type": "object",
+        "properties": {
+          "avatarUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "role": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PmspaAccountRole"
+              }
+            ]
+          },
+          "id": {
+            "type": "string",
+            "description": "A 24-hex ObjectId."
+          },
+          "email": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "avatarUrl",
+          "role",
+          "id",
+          "email"
+        ]
+      },
+      "PmspaConnectionResponseDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PmspaConnectionStatus"
+              }
+            ]
+          },
+          "url": {
+            "type": "string",
+            "nullable": true
+          },
+          "email": {
+            "type": "string",
+            "nullable": true
+          },
+          "account": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PmspaAccountDto"
+              }
+            ]
+          },
+          "lastCheckedAt": {
+            "type": "string",
+            "nullable": true,
+            "description": "ISO 8601 UTC"
+          },
+          "lastSyncAt": {
+            "type": "string",
+            "nullable": true,
+            "description": "ISO 8601 UTC"
+          }
+        },
+        "required": [
+          "status",
+          "url",
+          "email",
+          "account",
+          "lastCheckedAt",
+          "lastSyncAt"
+        ]
+      },
+      "SavePmspaConnectionDto": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "description": "≤ 500 chars; `https://` and a public host.",
+            "maxLength": 500
+          },
+          "email": {
+            "type": "string",
+            "description": "≤ 254 chars.",
+            "maxLength": 254,
+            "format": "email"
+          },
+          "password": {
+            "type": "string",
+            "description": "1–200 chars. Omitted = keep the stored password.",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "confirmAccountSwitch": {
+            "type": "boolean",
+            "description": "Confirms a switch to another PMSPA account (FR-INT-002)."
+          }
+        },
+        "required": [
+          "url",
+          "email"
         ]
       }
     }
