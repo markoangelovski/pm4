@@ -1,6 +1,6 @@
 # Task Board
 
-**Next free ID:** T-0064
+**Next free ID:** T-0069
 
 | ID | Title | Milestone | App | Size | Status | Depends on |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -67,5 +67,10 @@
 | [T-0061](m4-time-logs/T-0061-delete-day-api-wd-004-the.md) | Delete day (API-WD-004), the time read model and Problem bodies | M4 | api | M | done | T-0060 |
 | [T-0062](m4-time-logs/T-0062-promote-the-prototype-the-marker-delete.md) | Promote the prototype: the marker, delete dialogs, relink, Delete day; Settings-only sidebar footer | M4 | web | M | done | T-0061 |
 | [T-0063](m4-time-logs/T-0063-drop-deleted-at-migration-0006-after.md) | Drop deleted_at (migration 0006), after the release with T1–T3 is live (D2) | M4 | api | S | done | T-0062 |
+| [T-0064](m6-integrations/T-0064-problemexception-and-the-filter-502-503.md) | ProblemException and the filter, 502/503 in @ApiProblemResponses, pmspaProblems, PMSPA_ENCRYPTION_KEY | M6 | api | S | ready | — |
+| [T-0065](m6-integrations/T-0065-pmspacrypto-url-policy-host-guard-pmspastore.md) | PmspaCrypto, URL policy, host guard, PmspaStore (AC-15, AC-16) | M6 | api | M | blocked | T-0064 |
+| [T-0066](m6-integrations/T-0066-pmspa-tables-migration-0007-pmspamodule-scaffold.md) | PMSPA tables, migration 0007, PmspaModule scaffold | M6 | api | S | blocked | T-0064 |
+| [T-0067](m6-integrations/T-0067-pmspatransport-the-connection-repository-pmspaclient-the.md) | PmspaTransport, the connection repository, PmspaClient, the module's providers | M6 | api | M | blocked | T-0065, T-0066 |
+| [T-0068](m6-integrations/T-0068-dtos-service-controller-openapi-export-api.md) | DTOs, service, controller, OpenAPI export (API-INT-001…004) | M6 | api | M | blocked | T-0067 |
 
-M0–M5 are done. M6 (Integrations) has no tasks yet; its tasks are created with the `write-task` skill once its feature specs are approved.
+M0–M5 are done. M6 (Integrations) is in progress: feat-int-conn-api first, then int-sync-api, int-time-api and int-web (OQ-175).
