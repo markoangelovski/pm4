@@ -46,6 +46,7 @@ import { STATUS_LABEL, formatSyncedAt } from "../sync";
 import { ColdStartHint } from "./cold-start-hint";
 import { ConnectionStatusBadge } from "./connection-status-badge";
 import { PmspaAccount } from "./pmspa-account";
+import { PmspaRateLimit } from "./pmspa-rate-limit";
 import { PmspaProjectsTab, type ProjectSelection } from "./pmspa-projects-tab";
 import { PmspaTimeTab } from "./pmspa-time-tab";
 import { SyncPreviewDialog } from "./sync-preview-dialog";
@@ -234,14 +235,20 @@ function Browser({ connection }: { connection: PmspaConnection }) {
           connection={connection}
           className="rounded-md!"
           actions={
-            <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1 text-xs text-muted-foreground">
-              <span>
-                Last sync{" "}
-                {connection.lastSyncAt && me
-                  ? formatSyncedAt(connection.lastSyncAt, me.timeZone)
-                  : "never"}
+            <div className="flex flex-col items-end gap-1 text-xs text-muted-foreground">
+              <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1">
+                <span>
+                  Last sync{" "}
+                  {connection.lastSyncAt && me
+                    ? formatSyncedAt(connection.lastSyncAt, me.timeZone)
+                    : "never"}
+                </span>
+                <ConnectionStatusBadge status={connection.status} />
+              </div>
+              <span className="inline-flex flex-wrap items-center justify-end gap-x-2">
+                PMSPA requests
+                <PmspaRateLimit connection={connection} tz={me?.timeZone} />
               </span>
-              <ConnectionStatusBadge status={connection.status} />
             </div>
           }
         />

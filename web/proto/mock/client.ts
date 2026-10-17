@@ -5,6 +5,10 @@ import createClient from "openapi-fetch";
 import type { components, paths } from "@/lib/api/schema";
 import type { TimeLog } from "@/proto/features/time/types";
 import type {
+  PmspaChangedPaths,
+  PmspaPaths
+} from "@/proto/features/integrations/proposed-types";
+import type {
   PmspaImportDto,
   PmspaImportSelectionDto,
   PmspaLinkType,
@@ -489,20 +493,29 @@ function integrations(
   if (!pmspa.isConnected()) return notConnected();
   if (sub === "projects") {
     if (!a) return json({ items: pmspa.listProjects() });
-    const tasks = pmspa.listTasks(a);
-    return tasks ? json({ items: tasks }) : notFound();
+    return json({ items: pmspa.listTasks(a) });
   }
+  if (sub === "tasks") return json({ items: pmspa.listAllTasks() });
+  if (sub === "days" && a === "details")
+    return json({ items: pmspa.listDayDetails(q.getAll("dates")) });
   if (sub === "days")
     return json({
       items: pmspa.listDays(q.get("from") ?? "", q.get("to") ?? "")
     });
-  if (sub === "import" && a === "preview")
+  if (sub === "import" && a === "preview") {
+    const selection = body as unknown as PmspaImportSelectionDto;
     return json({
-      items: pmspa.importPreview(body as unknown as PmspaImportSelectionDto)
+      items: pmspa.importPreview(selection),
+      days: pmspa.listDayDetails(selection.dates ?? [])
     });
+  }
   if (sub === "import") {
     const input = body as unknown as PmspaImportDto;
-    return json(pmspa.runImport(input.selection, input.choices));
+    const out = pmspa.runImport(input.selection, input.choices);
+    return json({
+      ...out,
+      days: pmspa.listDayDetails(input.selection.dates ?? [])
+    });
   }
   if (sub === "sync" && a === "preview") {
     const items = pmspa.pushPreview(body as unknown as PmspaSyncTargetDto);
@@ -587,6 +600,19 @@ function reachesPmspa(method: string, path: string): boolean {
   return true;
 }
 
+/** Roughly how many PMSPA requests a call makes (list pages, a read per day, a write per record). */
+function pmspaCost(method: string, url: URL): number {
+  const path = url.pathname;
+  if (path.endsWith("/integrations/pmspa") || path.endsWith("/test")) return 2;
+  if (path.endsWith("/days")) return 1;
+  if (path.endsWith("/days/details"))
+    return pmspa.dayDetailsCost(url.searchParams.getAll("dates"));
+  if (path.endsWith("/pmspa/tasks"))
+    return Math.max(1, Math.ceil(pmspa.listAllTasks().length / 50));
+  if (method === "POST") return path.endsWith("/preview") ? 4 : 6;
+  return 1;
+}
+
 async function mockFetch(request: Request): Promise<Response> {
   const url = new URL(request.url);
   const text =
@@ -598,11 +624,35 @@ async function mockFetch(request: Request): Promise<Response> {
     ? pmspa.wakeDelay()
     : 0;
   await new Promise((r) => setTimeout(r, MOCK_LATENCY_MS + wake));
+  if (
+    reachesPmspa(request.method, url.pathname) &&
+    (pmspa.isConnected() || request.method === "PUT")
+  ) {
+    const retryAfterSeconds = pmspa.spendRequests(
+      pmspaCost(request.method, url)
+    );
+    if (retryAfterSeconds > 0)
+      return new Response(
+        JSON.stringify({
+          type: "https://pm4.angelovski.top/errors/pmspa-rate-limited",
+          title: "PMSPA is busy",
+          status: 503,
+          detail: "PMSPA is busy. Try again later.",
+          retryAfterSeconds
+        }),
+        {
+          status: 503,
+          headers: { "Content-Type": "application/problem+json" }
+        }
+      );
+  }
   return handle(request.method, url.pathname, url.searchParams, body);
 }
 
 /** Same surface as `apiClient` in `lib/api/client`; the base URL is never requested. */
-export const apiClient = createClient<paths>({
+export const apiClient = createClient<
+  Omit<paths, PmspaChangedPaths> & PmspaPaths
+>({
   baseUrl: "http://proto.localhost",
   fetch: mockFetch
 });

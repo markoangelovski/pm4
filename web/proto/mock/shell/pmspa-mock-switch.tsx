@@ -3,13 +3,14 @@
 import { useQueryClient } from "@tanstack/react-query";
 import type { PmspaConnectionStatus } from "@/proto/features/integrations/types";
 import { STATUS_LABEL } from "@/proto/features/integrations/sync";
-import { forceStatus, sleepPmspa } from "../pmspa";
+import { forceRateLimit, forceStatus, sleepPmspa } from "../pmspa";
 
 const STATUSES = Object.keys(STATUS_LABEL) as PmspaConnectionStatus[];
 
 /**
  * Prototype only: sets what the mock PMSPA connection is, to try every status without typing credentials.
  * **Cold start** makes the next call that reaches PMSPA wait ~9 s, like PMSPA's Azure F1 instance waking up.
+ * The **Requests** options set PMSPA's rate-limit window (100 requests per 15 minutes).
  * Logins: mock.user@pmspa.example (the links' account) or other.user@pmspa.example, any password except
  * "wrong"; a URL containing "down" is unreachable.
  */
@@ -29,7 +30,10 @@ export function PmspaMockSwitch() {
           e.target.value = "";
           if (!value) return;
           if (value === "cold-start") return sleepPmspa();
-          forceStatus(value as PmspaConnectionStatus);
+          if (value.startsWith("requests:")) {
+            const used = value.slice("requests:".length);
+            forceRateLimit(used === "reset" ? null : Number(used));
+          } else forceStatus(value as PmspaConnectionStatus);
           void queryClient.invalidateQueries({ queryKey: ["integrations"] });
         }}
       >
@@ -40,6 +44,10 @@ export function PmspaMockSwitch() {
           </option>
         ))}
         <option value="cold-start">Cold start (next call ~9 s)</option>
+        <option value="requests:12">Requests: 12 of 100 used</option>
+        <option value="requests:88">Requests: 88 of 100 used</option>
+        <option value="requests:100">Requests: limit reached</option>
+        <option value="requests:reset">Requests: window reset</option>
       </select>
     </label>
   );

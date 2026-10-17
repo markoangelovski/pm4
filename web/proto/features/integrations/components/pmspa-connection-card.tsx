@@ -54,6 +54,7 @@ import { formatSyncedAt, pmspaProblemText } from "../sync";
 import { ColdStartHint } from "./cold-start-hint";
 import { ConnectionStatusBadge } from "./connection-status-badge";
 import { PmspaAccount } from "./pmspa-account";
+import { PmspaRateLimit } from "./pmspa-rate-limit";
 
 /** After a save or a test: one toast per status (FR-INT-004). */
 function toastStatus(connection: PmspaConnection, saved: boolean) {
@@ -153,6 +154,10 @@ function ConnectionStatus({ connection }: { connection: PmspaConnection }) {
         <dd>{when(connection.lastCheckedAt)}</dd>
         <dt>Last sync</dt>
         <dd>{when(connection.lastSyncAt)}</dd>
+        <dt>PMSPA requests</dt>
+        <dd>
+          <PmspaRateLimit connection={connection} tz={tz} />
+        </dd>
       </dl>
     </div>
   );

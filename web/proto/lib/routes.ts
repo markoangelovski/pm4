@@ -1,6 +1,6 @@
 /**
  * Twin of `lib/routes.ts` for the UI prototype (specs/04-web/prototype.md): same names, app screens under
- * `/proto/app`. Screens without a prototype twin yet (User profile) point at the real app.
+ * `/proto/app`.
  * Never promoted: promoted components import `routes` from `@/lib/routes` unchanged.
  */
 export const routes = {
@@ -19,6 +19,6 @@ export const routes = {
     connectors: {
       pmspa: "/proto/app/connectors/pmspa"
     },
-    userProfile: "/app/user-profile"
+    userProfile: "/proto/app/user-profile"
   }
 } as const;

@@ -2,6 +2,7 @@
 
 import { Fragment, useState } from "react";
 import Link from "next/link";
+import { toast } from "sonner";
 import {
   ChevronRight,
   FolderKanban,
@@ -45,7 +46,7 @@ import {
 import { useMe } from "@/proto/features/users/api";
 import { routes } from "@/proto/lib/routes";
 import { cn } from "@/lib/utils";
-import { usePmspaProjects, usePmspaTasks } from "../api";
+import { useLoadAllPmspaTasks, usePmspaProjects, usePmspaTasks } from "../api";
 import type {
   PmspaProjectDto,
   PmspaRecordLinkDto,
@@ -89,8 +90,17 @@ export function PmspaProjectsTab({
   const expandable = projects.filter((p) => p.taskCount > 0);
   const allOpen =
     expandable.length > 0 && expandable.every((p) => open.has(p.id));
-  const setAllOpen = (expand: boolean) =>
-    setOpen(expand ? new Set(expandable.map((p) => p.id)) : new Set());
+  const loadAll = useLoadAllPmspaTasks();
+  /** **Expand all** reads every task once (OQ-201 (3)); the rows open when it's in, and stay closed if it fails. */
+  const setAllOpen = (expand: boolean) => {
+    if (!expand) return setOpen(new Set());
+    const ids = expandable.map((p) => p.id);
+    loadAll.mutate(ids, {
+      onSuccess: () => setOpen(new Set(ids)),
+      onError: (error) =>
+        toast.error(pmspaProblemText(error) ?? "Couldn't read the tasks.")
+    });
+  };
 
   const toggleOpen = (id: string) =>
     setOpen((o) => {
@@ -281,7 +291,9 @@ export function PmspaProjectsTab({
           <ExpandAllButton
             size="sm"
             expanded={allOpen}
-            disabled={query.isPending || expandable.length === 0}
+            disabled={
+              query.isPending || loadAll.isPending || expandable.length === 0
+            }
             onExpandedChange={setAllOpen}
           />
         </div>

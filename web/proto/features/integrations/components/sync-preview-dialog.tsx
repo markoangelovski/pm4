@@ -51,6 +51,7 @@ import type {
   SyncResultDto,
   SyncResultItemDto
 } from "../types";
+import type { PmspaPreviewItemDto } from "../proposed-types";
 
 /** `sync`: a project or task, both ways (OQ-172); `push`: a day's logs to PMSPA; `import`: the connector page. */
 export type SyncMode = "import" | "push" | "sync";
@@ -230,7 +231,7 @@ export function SyncPreviewDialog({
   mode: SyncMode;
   title: string;
   description: React.ReactNode;
-  items: SyncPreviewItemDto[] | undefined;
+  items: PmspaPreviewItemDto[] | undefined;
   isPending: boolean;
   isError: boolean;
   error: unknown;
@@ -273,7 +274,7 @@ function PreviewBody({
   mode: SyncMode;
   title: string;
   description: React.ReactNode;
-  items: SyncPreviewItemDto[] | undefined;
+  items: PmspaPreviewItemDto[] | undefined;
   isPending: boolean;
   isError: boolean;
   error: unknown;
@@ -433,7 +434,7 @@ function PreviewRow({
   onChoice
 }: {
   mode: SyncMode;
-  item: SyncPreviewItemDto;
+  item: PmspaPreviewItemDto;
   depth: number;
   parent: SyncPreviewItemDto | undefined;
   choices: Choices;
@@ -476,9 +477,27 @@ function PreviewRow({
               </Badge>
             ) : null}
           </p>
-          {item.detail || item.reason ? (
-            <p className="text-xs text-muted-foreground">
-              {[item.detail, item.reason].filter(Boolean).join(" · ")}
+          {item.taskPath || item.detail || item.reason ? (
+            <p className="flex flex-wrap items-center gap-x-1.5 text-xs text-muted-foreground">
+              {item.taskPath ? (
+                <>
+                  <span className="flex items-center gap-1">
+                    <FolderKanban aria-hidden className="size-3.5 shrink-0" />
+                    {item.taskPath.projectTitle}
+                  </span>
+                  <span aria-hidden>›</span>
+                  <span className="flex items-center gap-1">
+                    <ListTodo aria-hidden className="size-3.5 shrink-0" />
+                    {item.taskPath.taskTitle}
+                  </span>
+                  {item.detail || item.reason ? (
+                    <span aria-hidden>·</span>
+                  ) : null}
+                </>
+              ) : null}
+              <span>
+                {[item.detail, item.reason].filter(Boolean).join(" · ")}
+              </span>
             </p>
           ) : null}
         </div>

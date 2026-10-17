@@ -25,10 +25,15 @@ import type {
   SyncChoiceDto,
   SyncDirection,
   SyncFieldDiffDto,
-  SyncPreviewItemDto,
   SyncResultDto,
   SyncResultItemDto
 } from "@/proto/features/integrations/types";
+import type {
+  PmspaConnectionWithRateLimitDto,
+  PmspaDaySummaryDto,
+  PmspaPreviewItemDto,
+  PmspaRateLimitDto
+} from "@/proto/features/integrations/proposed-types";
 import type { TimeLog } from "@/proto/features/time/types";
 import { MOCK_TZ } from "./seed";
 import { getMockState, mock, nextId } from "./store";
@@ -338,7 +343,7 @@ let lastSyncAt: string | null = at(ago(1), "22:50");
 
 // ---------- connection (API-INT-001…004) ----------
 
-export function connectionDto(): PmspaConnectionDto {
+export function connectionDto(): PmspaConnectionWithRateLimitDto {
   if (!connection)
     return {
       status: "not-configured",
@@ -346,7 +351,8 @@ export function connectionDto(): PmspaConnectionDto {
       email: null,
       account: null,
       lastCheckedAt: null,
-      lastSyncAt: null
+      lastSyncAt: null,
+      rateLimit: null
     };
   const account = ACCOUNTS.find((a) => a.id === connection!.accountId);
   return {
@@ -355,7 +361,8 @@ export function connectionDto(): PmspaConnectionDto {
     email: connection.email,
     account: account ?? null,
     lastCheckedAt: connection.lastCheckedAt,
-    lastSyncAt
+    lastSyncAt,
+    rateLimit: rateLimitDto()
   };
 }
 
@@ -479,6 +486,55 @@ export function wakeDelay(): number {
   if (!asleep) return 0;
   asleep = false;
   return COLD_START_MS;
+}
+
+// ---------- rate limit (FR-INT-014) ----------
+
+/**
+ * PMSPA allows 100 requests per 15-minute window per client IP and reports the count in `X-RateLimit-*` headers on
+ * every answer. The API keeps the last answer's numbers per host until the window resets (proposed). Seeded mid-window.
+ */
+const RATE_LIMIT = 100;
+const WINDOW_MS = 15 * 60_000;
+let quota: { used: number; resetAt: number; observedAt: number } | null = {
+  used: 37,
+  resetAt: Date.now() + 9 * 60_000,
+  observedAt: Date.now() - 2 * 60_000
+};
+
+/** Null once the window has reset: PM4 hasn't called PMSPA since. */
+function rateLimitDto(): PmspaRateLimitDto | null {
+  if (!quota || Date.now() >= quota.resetAt) return null;
+  return {
+    limit: RATE_LIMIT,
+    remaining: Math.max(0, RATE_LIMIT - quota.used),
+    resetAt: new Date(quota.resetAt).toISOString(),
+    observedAt: new Date(quota.observedAt).toISOString()
+  };
+}
+
+/**
+ * Spends `n` PMSPA requests (one PM4 call can make several: list pages, one read per day). Returns 0, or the
+ * seconds until the window resets when PMSPA would answer 429.
+ */
+export function spendRequests(n: number): number {
+  const now = Date.now();
+  if (!quota || now >= quota.resetAt)
+    quota = { used: 0, resetAt: now + WINDOW_MS, observedAt: now };
+  quota.observedAt = now;
+  if (quota.used >= RATE_LIMIT)
+    return Math.max(1, Math.ceil((quota.resetAt - now) / 1000));
+  quota.used = Math.min(RATE_LIMIT, quota.used + n);
+  return 0;
+}
+
+/** The prototype shell's switch: `used` requests in a window that resets in `resetInMinutes`, or null for a reset window. */
+export function forceRateLimit(used: number | null, resetInMinutes = 6) {
+  const now = Date.now();
+  quota =
+    used === null
+      ? null
+      : { used, resetAt: now + resetInMinutes * 60_000, observedAt: now };
 }
 
 // ---------- links (FR-INT-010) ----------
@@ -626,76 +682,120 @@ export function listProjects(): PmspaProjectDto[] {
   }));
 }
 
-export function listTasks(projectId: string): PmspaTaskDto[] | null {
-  if (!mine().some((p) => p.id === projectId)) return null;
-  return remote.tasks
-    .filter((t) => t.projectId === projectId)
-    .map((t) => ({
-      id: t.id,
-      projectId: t.projectId,
-      title: t.title,
-      column: t.column,
-      link: recordLink("task", t.id)
-    }));
+const taskDto = (t: (typeof remote.tasks)[number]): PmspaTaskDto => ({
+  id: t.id,
+  projectId: t.projectId,
+  title: t.title,
+  column: t.column,
+  link: recordLink("task", t.id)
+});
+
+/** OQ-201 (1): PMSPA's `tasks?project=` is owner-scoped, so another account's project has no tasks. */
+export function listTasks(projectId: string): PmspaTaskDto[] {
+  if (!mine().some((p) => p.id === projectId)) return [];
+  return remote.tasks.filter((t) => t.projectId === projectId).map(taskDto);
 }
 
-/** Where an event sits in PMSPA, shown on its preview row: "<project> › <task>". */
-const taskPath = (t: { title: string; projectId: string }) =>
-  `${remote.projects.find((p) => p.id === t.projectId)?.title ?? "?"} › ${t.title}`;
+/** Proposed API-INT-017: every task of the account's projects (OQ-201 (3)). */
+export function listAllTasks(): PmspaTaskDto[] {
+  const projects = new Set(mine().map((p) => p.id));
+  return remote.tasks.filter((t) => projects.has(t.projectId)).map(taskDto);
+}
+
+/** Where an event sits in PMSPA, shown on its preview row with the project and task icons. */
+const taskPath = (t: { title: string; projectId: string }) => ({
+  projectTitle: remote.projects.find((p) => p.id === t.projectId)?.title ?? "?",
+  taskTitle: t.title
+});
 const taskOf = (id: string | null) =>
   remote.tasks.find((t) => t.id === id) ?? null;
 const hoursToMinutes = (h: number) => Math.round(h * 60);
 
-export function listDays(from: string, to: string): PmspaDayDto[] {
+/** Proposed API-INT-007: the range lookup's answer, newest first (one PMSPA call). */
+export function listDays(from: string, to: string): PmspaDaySummaryDto[] {
   if (!connection?.accountId) return [];
-  const dates = [...new Set(remote.events.map((e) => e.date))]
+  return [...new Set(remote.events.map((e) => e.date))]
     .filter((d) => d >= from && d <= to)
     .sort()
-    .reverse();
-  return dates.map((date) => {
-    const events = remote.events.filter((e) => e.date === date);
-    const logs = events.flatMap((e) => e.logs);
-    const linked = logs.filter((l) => byPmspa("time-log", l.id)).length;
-    return {
+    .reverse()
+    .map((date) => ({
       date,
       startMinute: remote.starts[date] ?? null,
-      totalMinutes: logs.reduce((t, l) => t + hoursToMinutes(l.duration), 0),
-      linkState:
-        linked === 0
-          ? "not-linked"
-          : linked === logs.length
-            ? "linked"
-            : "partly-linked",
-      events: events.map((e) => {
-        const task = taskOf(e.taskId);
-        return {
-          id: e.id,
-          title: e.title,
-          task: task
-            ? {
-                id: task.id,
-                title: task.title,
-                projectTitle:
-                  remote.projects.find((p) => p.id === task.projectId)?.title ??
-                  ""
-              }
-            : null,
-          booked: e.booked,
-          logs: e.logs.map((l) => ({
-            id: l.id,
-            title: l.title,
-            durationMinutes: hoursToMinutes(l.duration),
-            linked: Boolean(byPmspa("time-log", l.id))
-          }))
-        };
-      })
-    };
-  });
+      eventCount: remote.events.filter((e) => e.date === date).length
+    }));
+}
+
+/** PMSPA calls API-INT-018 makes: one per day, then one per distinct task and per distinct project. */
+export function dayDetailsCost(dates: string[]): number {
+  const events = remote.events.filter((e) => dates.includes(e.date));
+  const tasks = new Set(events.flatMap((e) => (e.taskId ? [e.taskId] : [])));
+  const projects = new Set(
+    [...tasks].flatMap((id) => {
+      const t = taskOf(id);
+      return t ? [t.projectId] : [];
+    })
+  );
+  return Math.max(1, dates.length + tasks.size + projects.size);
+}
+
+/** Proposed API-INT-018: the given days with their events, newest first; a date without events is left out. */
+export function listDayDetails(dates: string[]): PmspaDayDto[] {
+  if (!connection?.accountId) return [];
+  const found = new Set(remote.events.map((e) => e.date));
+  return [...new Set(dates)]
+    .filter((d) => found.has(d))
+    .sort()
+    .reverse()
+    .map((date) => {
+      const events = remote.events.filter((e) => e.date === date);
+      const logs = events.flatMap((e) => e.logs);
+      const linked = logs.filter((l) => byPmspa("time-log", l.id)).length;
+      return {
+        date,
+        startMinute: remote.starts[date] ?? null,
+        totalMinutes: logs.reduce((t, l) => t + hoursToMinutes(l.duration), 0),
+        linkState:
+          linked === 0
+            ? "not-linked"
+            : linked === logs.length
+              ? "linked"
+              : "partly-linked",
+        events: events.map((e) => {
+          const task = taskOf(e.taskId);
+          return {
+            id: e.id,
+            title: e.title,
+            task: task
+              ? {
+                  id: task.id,
+                  title: task.title,
+                  projectTitle:
+                    remote.projects.find((p) => p.id === task.projectId)
+                      ?.title ?? ""
+                }
+              : null,
+            booked: e.booked,
+            logs: e.logs.map((l) => ({
+              id: l.id,
+              title: l.title,
+              durationMinutes: hoursToMinutes(l.duration),
+              linked: Boolean(byPmspa("time-log", l.id))
+            }))
+          };
+        })
+      };
+    });
 }
 
 // ---------- shared preview helpers ----------
 
-type Item = SyncPreviewItemDto;
+/** "a", "a and b", "a, b and c". */
+const listJoin = (parts: string[]) =>
+  parts.length < 2
+    ? (parts[0] ?? "")
+    : `${parts.slice(0, -1).join(", ")} and ${parts[parts.length - 1]}`;
+
+type Item = PmspaPreviewItemDto;
 
 const cut = (s: string, max: number) =>
   s.length > max ? s.slice(0, max - 1) + "…" : s;
@@ -970,19 +1070,35 @@ export function importPreview(sel: PmspaImportSelectionDto): Item[] {
     }
   }
 
-  for (const date of [...(sel.dates ?? [])].sort()) {
+  const dates = [...(sel.dates ?? [])].sort();
+  // Parents first (design principle 5): every project and task above every day, each unlinked event task
+  // saying which days it comes from.
+  const parentTasks = new Map<
+    string,
+    { task: RemoteTask; events: number; dates: string[] }
+  >();
+  for (const date of dates)
+    for (const e of remote.events.filter((x) => x.date === date)) {
+      const t = taskOf(e.taskId);
+      if (!t || byPmspa("task", t.id)) continue;
+      const entry = parentTasks.get(t.id) ?? { task: t, events: 0, dates: [] };
+      entry.events++;
+      if (!entry.dates.includes(date)) entry.dates.push(date);
+      parentTasks.set(t.id, entry);
+    }
+  for (const { task, events, dates: on } of parentTasks.values())
+    addTask(
+      task,
+      `Parent of ${events === 1 ? "an imported event" : "imported events"} from ${listJoin(on.map(formatWorkDate))}`
+    );
+
+  for (const date of dates) {
     const events = remote.events.filter((e) => e.date === date);
     const dayKey = `day:${date}`;
     const logs = events.flatMap((e) => e.logs);
     const linked = logs
       .map((l) => byPmspa("time-log", l.id))
       .filter((l): l is Link => Boolean(l));
-    // Parents first (design principle 5): an event's unlinked task comes with it.
-    for (const e of events) {
-      const t = taskOf(e.taskId);
-      if (t && !byPmspa("task", t.id))
-        addTask(t, "Parent of an imported event");
-    }
     items.push(
       row({
         key: dayKey,
@@ -1039,7 +1155,8 @@ export function importPreview(sel: PmspaImportSelectionDto): Item[] {
           parentKey: dayKey,
           type: "event",
           title: e.title,
-          detail: `${t ? taskPath(t) : e.title.trim().toLowerCase() === NONPROD ? "No task → Unsorted, excluded from statistics" : "No task → Unsorted"} · ${eventDetail(
+          ...(t ? { taskPath: taskPath(t) } : {}),
+          detail: `${t ? "" : `${e.title.trim().toLowerCase() === NONPROD ? "No task → Unsorted, excluded from statistics" : "No task → Unsorted"} · `}${eventDetail(
             e.logs.length,
             e.logs.reduce((s, l) => s + hoursToMinutes(l.duration), 0)
           )}`,
@@ -1472,16 +1589,29 @@ function groupDay(date: string): Group[] {
   return [...groups.values()];
 }
 
-/** The PMSPA task a group's event goes under: the linked one's names, or the PM4 names it's created with. */
-function pushedTaskPath(g: Group): string {
-  if (g.title === NONPROD && g.logs.some((l) => l.excludeFromStats))
-    return "No task · Excluded from statistics";
-  if (!g.task) return "No task";
+/**
+ * The PMSPA task a group's event goes under: the linked one's names, or the PM4 names it's created with. Null
+ * without a task; the row's `detail` then says so (`pushedNoTask`).
+ */
+function pushedTaskPath(
+  g: Group
+): { projectTitle: string; taskTitle: string } | null {
+  if (
+    !g.task ||
+    (g.title === NONPROD && g.logs.some((l) => l.excludeFromStats))
+  )
+    return null;
   const linked = taskOf(byPm4("task", g.task.id)?.pmspaId ?? null);
   return linked
     ? taskPath(linked)
-    : `${g.project?.title ?? "?"} › ${g.task.title}`;
+    : { projectTitle: g.project?.title ?? "?", taskTitle: g.task.title };
 }
+
+/** A group's event without a PMSPA task. */
+const pushedNoTask = (g: Group) =>
+  g.title === NONPROD && g.logs.some((l) => l.excludeFromStats)
+    ? "No task · Excluded from statistics"
+    : "No task";
 
 export function pushPreview(
   target: PmspaSyncTargetDto | PmspaPushTargetDto
@@ -1639,7 +1769,8 @@ export function pushPreview(
         parentKey: dayKey,
         type: "event",
         title: g.title,
-        detail: `${pushedTaskPath(g)} · ${eventDetail(
+        ...(pushedTaskPath(g) ? { taskPath: pushedTaskPath(g)! } : {}),
+        detail: `${pushedTaskPath(g) ? "" : `${pushedNoTask(g)} · `}${eventDetail(
           g.logs.length,
           g.logs.reduce((x, l) => x + l.durationMinutes, 0)
         )}`,

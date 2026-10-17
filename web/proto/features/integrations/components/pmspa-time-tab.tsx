@@ -3,6 +3,7 @@
 import { Fragment, useState } from "react";
 import { addDays, format, parseISO, startOfWeek } from "date-fns";
 import { parseAsString, useQueryState } from "nuqs";
+import { toast } from "sonner";
 import {
   CalendarCheck,
   CalendarIcon,
@@ -54,10 +55,11 @@ import { useMe } from "@/proto/features/users/api";
 import { formatDuration, today } from "@/lib/time";
 import { formatClock } from "@/lib/time/clock";
 import { cn } from "@/lib/utils";
-import { usePmspaDays } from "../api";
+import { useLoadPmspaDays, usePmspaDay, usePmspaDays } from "../api";
 import { pmspaProblemText } from "../sync";
 import { ExpandAllButton } from "./expand-all-button";
-import type { PmspaDayDto, PmspaDayLinkState, PmspaEventDto } from "../types";
+import type { PmspaDaySummaryDto } from "../proposed-types";
+import type { PmspaDayLinkState, PmspaEventDto } from "../types";
 
 const DATE = "yyyy-MM-dd";
 const monday = (date: string) =>
@@ -77,7 +79,10 @@ function weekLabel(from: string, to: string): string {
   return `${format(a, sameMonth ? "d" : "d MMM")} – ${format(b, "d MMM yyyy")}`;
 }
 
-/** FR-INT-011: PMSPA days of a week with their events; a day imports with all its events. */
+/**
+ * FR-INT-011: PMSPA days of a week from one range read; a day's events are read when it opens (FR-INT-015).
+ * A day imports with all its events, opened or not.
+ */
 export function PmspaTimeTab({
   selection,
   onSelectionChange
@@ -99,6 +104,17 @@ export function PmspaTimeTab({
   const days = query.data ?? [];
 
   const allOpen = days.length > 0 && days.every((d) => open.has(d.date));
+  const loadDays = useLoadPmspaDays();
+  /** **Expand all** reads the week's unread days at once; the rows open when they're in, and stay closed if it fails. */
+  const setAllOpen = (expand: boolean) => {
+    if (!expand) return setOpen(new Set());
+    const dates = days.map((d) => d.date);
+    loadDays.mutate(dates, {
+      onSuccess: () => setOpen(new Set(dates)),
+      onError: (error) =>
+        toast.error(pmspaProblemText(error) ?? "Couldn't read the days.")
+    });
+  };
 
   const toggle = (set: Set<string>, value: string) => {
     const next = new Set(set);
@@ -285,10 +301,10 @@ export function PmspaTimeTab({
           </Button>
           <ExpandAllButton
             expanded={allOpen}
-            disabled={query.isPending || days.length === 0}
-            onExpandedChange={(expand) =>
-              setOpen(expand ? new Set(days.map((d) => d.date)) : new Set())
+            disabled={
+              query.isPending || loadDays.isPending || days.length === 0
             }
+            onExpandedChange={setAllOpen}
           />
         </div>
       </div>
@@ -304,13 +320,26 @@ function DayRows({
   selected,
   onToggle
 }: {
-  day: PmspaDayDto;
+  day: PmspaDaySummaryDto;
   open: boolean;
   onToggleOpen: () => void;
   selected: boolean;
   onToggle: () => void;
 }) {
-  const state = LINK_STATE[day.linkState];
+  const detail = usePmspaDay(day.date, open);
+  /** Logged and In PM4 show once the day's events are read, while they're fresh (an import or push makes them stale). */
+  const known = detail.data && (open || !detail.isStale) ? detail.data : null;
+  const eventCount = known ? known.events.length : day.eventCount;
+  const state = known ? LINK_STATE[known.linkState] : null;
+  const unknown = (
+    <span
+      className="text-muted-foreground"
+      title="Open the day to see it"
+      aria-label="Not read yet"
+    >
+      —
+    </span>
+  );
   return (
     <Fragment>
       <TableRow
@@ -339,7 +368,7 @@ function DayRows({
               {format(parseISO(day.date), "EEE, d MMM yyyy")}
             </span>
             <span className="text-xs text-muted-foreground">
-              {day.events.length} {day.events.length === 1 ? "event" : "events"}
+              {eventCount} {eventCount === 1 ? "event" : "events"}
             </span>
           </div>
         </TableCell>
@@ -347,27 +376,55 @@ function DayRows({
           {day.startMinute === null ? "—" : formatClock(day.startMinute)}
         </TableCell>
         <TableCell className="text-right tabular-nums">
-          {formatDuration(day.totalMinutes)}
+          {known ? formatDuration(known.totalMinutes) : unknown}
         </TableCell>
         <TableCell className="pr-4">
-          <Badge variant="outline" className="gap-1.5 font-normal">
-            <span
-              aria-hidden
-              className={cn("size-2 rounded-full", state.dot)}
-            />
-            {state.label}
-          </Badge>
+          {state ? (
+            <Badge variant="outline" className="gap-1.5 font-normal">
+              <span
+                aria-hidden
+                className={cn("size-2 rounded-full", state.dot)}
+              />
+              {state.label}
+            </Badge>
+          ) : (
+            unknown
+          )}
         </TableCell>
       </TableRow>
       {open ? (
         <TableRow className="bg-muted/30 hover:bg-muted/30">
           <TableCell />
           <TableCell colSpan={4} className="py-3 pr-4 whitespace-normal">
-            <ItemGroup className="gap-2">
-              {day.events.map((e) => (
-                <EventItem key={e.id} event={e} />
-              ))}
-            </ItemGroup>
+            {detail.isPending ? (
+              <ItemGroup className="gap-2">
+                {Array.from({ length: Math.min(day.eventCount, 3) }, (_, i) => (
+                  <Skeleton key={i} className="h-16 w-full rounded-md" />
+                ))}
+              </ItemGroup>
+            ) : detail.isError ? (
+              <p className="text-sm text-muted-foreground">
+                {pmspaProblemText(detail.error) ??
+                  "Couldn't read this day's events."}{" "}
+                <Button
+                  variant="link"
+                  className="h-auto cursor-pointer p-0"
+                  onClick={() => void detail.refetch()}
+                >
+                  Retry
+                </Button>
+              </p>
+            ) : !detail.data || detail.data.events.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                PMSPA has no events on this day anymore.
+              </p>
+            ) : (
+              <ItemGroup className="gap-2">
+                {detail.data.events.map((e) => (
+                  <EventItem key={e.id} event={e} />
+                ))}
+              </ItemGroup>
+            )}
           </TableCell>
         </TableRow>
       ) : null}

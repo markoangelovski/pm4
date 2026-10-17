@@ -1,4 +1,5 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import {
   Item,
   ItemActions,
@@ -47,11 +48,11 @@ export function PmspaAccount({
       <ItemContent className="min-w-0">
         <ItemTitle className="max-w-full">
           <span className="truncate">{account.email}</span>
+          <Badge variant="secondary" className="shrink-0 font-normal">
+            {account.role === "admin" ? "Admin" : "User"}
+          </Badge>
         </ItemTitle>
-        <ItemDescription>
-          Signed in to {host ?? "PMSPA"} as{" "}
-          {account.role === "admin" ? "an admin" : "a user"}
-        </ItemDescription>
+        <ItemDescription>Signed in to {host ?? "PMSPA"}</ItemDescription>
       </ItemContent>
       {actions ? <ItemActions>{actions}</ItemActions> : null}
     </Item>
