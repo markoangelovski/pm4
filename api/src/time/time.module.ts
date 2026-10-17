@@ -15,6 +15,7 @@ import { ReportsService } from "./reports.service.js";
 
 @Module({
   imports: [DatabaseModule, UsersModule, ProjectsModule, TasksModule],
+  exports: [TimeLogsService, WorkdaysService],
   controllers: [
     WorkdaysController,
     TimeLogsController,

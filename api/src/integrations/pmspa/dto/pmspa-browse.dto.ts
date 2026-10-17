@@ -1,5 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { Matches } from "class-validator";
+import { IsISO8601, Matches } from "class-validator";
 import type { PmspaColumn } from "../pmspa-fields.js";
 import type { PmspaLinkOrigin } from "../pmspa-links.repository.js";
 
@@ -58,4 +58,63 @@ export class PmspaProjectParamsDto {
   /** A 24-hex PMSPA ObjectId. */
   @Matches(/^[0-9a-f]{24}$/, { message: "Must be a 24-character hex id." })
   id: string;
+}
+
+/** `GET /integrations/pmspa/days` query (API-INT-007): one week at most, `from` ≤ `to`. */
+export class PmspaDaysQueryDto {
+  @ApiProperty({ type: String, format: "date" })
+  @Matches(/^\d{4}-\d{2}-\d{2}$/, { message: "Must be a YYYY-MM-DD date." })
+  @IsISO8601({ strict: true })
+  from: string;
+
+  @ApiProperty({ type: String, format: "date" })
+  @Matches(/^\d{4}-\d{2}-\d{2}$/, { message: "Must be a YYYY-MM-DD date." })
+  @IsISO8601({ strict: true })
+  to: string;
+}
+
+/** `PmspaLog` (API-INT-007): a log in minutes, linked when a PM4 time log points at it. */
+export class PmspaLogDto {
+  id: string;
+  title: string;
+  durationMinutes: number;
+  linked: boolean;
+}
+
+/** The task of a `PmspaEvent`, with its project's title. */
+export class PmspaEventTaskDto {
+  id: string;
+  title: string;
+  projectTitle: string;
+}
+
+/** `PmspaEvent` (API-INT-007). */
+export class PmspaEventDto {
+  id: string;
+  title: string;
+  @ApiProperty({ type: PmspaEventTaskDto, nullable: true })
+  task: PmspaEventTaskDto | null;
+  booked: boolean;
+  @ApiProperty({ type: [PmspaLogDto] })
+  logs: PmspaLogDto[];
+}
+
+/** `PmspaDay` (API-INT-007). */
+export class PmspaDayDto {
+  /** `YYYY-MM-DD` */
+  @ApiProperty({ type: String, format: "date" })
+  date: string;
+  @ApiProperty({ type: Number, nullable: true })
+  startMinute: number | null;
+  totalMinutes: number;
+  @ApiProperty({ enum: ["linked", "partly-linked", "not-linked"] })
+  linkState: "linked" | "partly-linked" | "not-linked";
+  @ApiProperty({ type: [PmspaEventDto] })
+  events: PmspaEventDto[];
+}
+
+/** `{ items: PmspaDay[] }`. */
+export class PmspaDayListDto {
+  @ApiProperty({ type: [PmspaDayDto] })
+  items: PmspaDayDto[];
 }

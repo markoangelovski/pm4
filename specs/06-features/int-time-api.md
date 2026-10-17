@@ -6,7 +6,7 @@ owner: Marko Angelovski
 last_updated: 2026-10-17
 milestone: M6
 requirements: [FR-INT-007, FR-INT-010, FR-INT-011, FR-INT-012, API-INT-007, API-INT-008, API-INT-009, API-INT-010, API-INT-011, API-INT-014]
-related: [req-integrations, api-endpoints, api-data-model, feat-int-conn-api, feat-int-sync-api, feat-int-web, OQ-158, OQ-162, OQ-167, OQ-168, OQ-169, OQ-176, OQ-179, OQ-180, OQ-189, OQ-191, OQ-192]
+related: [req-integrations, api-endpoints, api-data-model, feat-int-conn-api, feat-int-sync-api, feat-int-web, OQ-158, OQ-162, OQ-167, OQ-168, OQ-169, OQ-176, OQ-179, OQ-180, OQ-189, OQ-191, OQ-192, OQ-193, OQ-194, OQ-195]
 prototype: eefe787
 ---
 
@@ -69,15 +69,18 @@ the `time-log` case of API-INT-014, the OpenAPI export.
 | api | `api/src/integrations/pmspa/pmspa-time-fields.ts` | C/M | tests, T1 | Typed stubs in the test step, implemented in T1 |
 | api | `api/src/integrations/pmspa/pmspa-remote.ts`, `api/src/integrations/pmspa/pmspa-remote.spec.ts` | M | tests, T1 | `RemoteLog`, `RemoteEvent`, `RemoteDay` in the test step; the days client in T1 |
 | api | `api/src/integrations/pmspa/pmspa-fields.ts` | M | T1 | Widen `fingerprint`'s tuple type |
-| api | `api/src/integrations/pmspa/pmspa-browse.controller.ts`, `api/src/integrations/pmspa/pmspa-browse.controller.spec.ts`, `api/src/integrations/pmspa/pmspa-links.service.ts`, `api/src/integrations/pmspa/pmspa-links.service.spec.ts`, `api/src/integrations/pmspa/dto/pmspa-browse.dto.ts` | M | T1 | API-INT-007, the `time-log` detail, `PmspaDayDto` and friends |
+| api | `api/src/integrations/pmspa/pmspa-browse.controller.ts`, `api/src/integrations/pmspa/pmspa-browse.controller.spec.ts`, `api/src/integrations/pmspa/pmspa-links.service.ts`, `api/src/integrations/pmspa/pmspa-links.service.spec.ts`, `api/src/integrations/pmspa/dto/pmspa-browse.dto.ts`, `api/src/integrations/pmspa/dto/pmspa-links.dto.ts` | M | T1 | API-INT-007, the `time-log` detail (`eventTitle` on `PmspaRecordDetailDto`), `PmspaDayDto` and friends |
 | api | `api/src/integrations/pmspa/pmspa-time-preview.ts`, `api/src/integrations/pmspa/pmspa-time-preview.spec.ts` | C | T2 | Hand-written (pure, no schematic) |
 | api | `api/src/integrations/pmspa/pmspa-preview.ts`, `api/src/integrations/pmspa/pmspa-preview.spec.ts` | M | T2 | Export the row builders |
 | api | `api/src/time/time.module.ts` | M | T3 | Export `TimeLogsService`, `WorkdaysService` |
 | api | `api/src/integrations/pmspa/dto/sync.dto.ts` | M | T3 | `dates`, push DTOs |
-| api | `api/src/integrations/pmspa/pmspa-sync.repository.ts`, `api/src/integrations/pmspa/pmspa-sync.repository.spec.ts` | M | T3 | `pm4Logs`, `pm4Starts` |
+| api | `api/src/integrations/pmspa/pmspa-sync.repository.ts`, `api/src/integrations/pmspa/pmspa-sync.repository.spec.ts` | M | T1, T3 | `pm4LogWorkDate` (T1); `pm4Logs`, `pm4Starts` (T3) |
 | api | `api/src/integrations/pmspa/pmspa-links.repository.ts`, `api/src/integrations/pmspa/pmspa-links.repository.spec.ts` | M | T3 | `logLinks` |
 | api | `api/src/integrations/pmspa/pmspa-time-sync.service.ts`, `api/src/integrations/pmspa/pmspa-time-sync.service.spec.ts` | C/M | T3, T4, T5 | `npx nest g service integrations/pmspa/pmspa-time-sync --flat` (T3); loader T3, import commit T4, push commit T5 |
 | api | `api/src/integrations/pmspa/pmspa-sync.service.ts`, `api/src/integrations/pmspa/pmspa-sync.service.spec.ts`, `api/src/integrations/pmspa/pmspa-sync.controller.ts`, `api/src/integrations/pmspa/pmspa-sync.controller.spec.ts` | M | T3, T4, T5 | Previews T3, import dispatch T4, push commit and endpoint T5 |
+| api | `api/src/integrations/pmspa/pmspa-run.ts` | C | T4 | Hand-written: `Run`, `RunLinks`, `RowFailure`, `CANT_LINK`, `result()` moved out of `pmspa-sync.service.ts`, so the two services don't import each other |
+| api | `api/src/integrations/pmspa/pmspa-time-fields.ts` | M | T4 | `startToMinute` clamps to 1425 (OQ-194) |
+| web | `web/proto/mock/pmspa.ts` | M | review | Prototype twin of OQ-195 (main session) |
 | api | `api/src/integrations/pmspa/pmspa.module.ts` | M | T3 | Imports `TimeModule`; provides `PmspaTimeSyncService` |
 | api | `api/openapi.json` | M | T1, T3, T5 | `npm run openapi:export` |
 
@@ -123,7 +126,7 @@ deleteLog(userId, logId): Promise<void>;           // 404 → resolves (already 
 ```
 API-INT-007 (`pmspa-browse.controller.ts`): `from`, `to` `YYYY-MM-DD`, `from ≤ to`, at most 7 days → else 400; `listDays`, mapped per endpoints.md
 (`linkState` from `byPmspa` of each log, `task {id, title, projectTitle}` from `listAllTasks` / `listProjects` of the same request).
-API-INT-014 `time-log`: the active log link → `getDay(<PM4 log's work date>)` → the event holding `pmspa_id` → `{type: "time-log", title: log.title, eventTitle}`, else `pmspa: null`.
+API-INT-014 `time-log`: the active log link → `getDay(pm4LogWorkDate(userId, pm4Id))` (`PmspaSyncRepository`, injected into `PmspaLinksService`; OQ-193) → the event holding `pmspa_id` → `{type: "time-log", title: log.title, eventTitle}`, else `pmspa: null`.
 
 ### Time snapshot (T2, T3, T4, T5)
 ```ts
@@ -166,9 +169,9 @@ Definitions used below: `links` = `usableLogLinks(s, mode)` indexed by `pm4Id` a
 2. `day` = the remote day of the date (none → no events). For each event whose `taskId` is a task of `s.remoteTasks` without a usable task
    link: `b.addTask(task, "Parent of an imported event")`.
 3. The day row (`key "day:<date>"`, `title` `formatWorkDate(date)`, `detail` the prototype's `eventDetail` over all its logs): D7 over all its logs (*linked* =
-   in `links`, *changed* = PMSPA changed); `reason` "Already imported" when all are linked and none changed.
+   in `links`, *changed* = PMSPA changed); `reason` "Already imported" when all are linked and none changed. A day without logs → `skip` "No logs" (OQ-195).
 4. One row per event, `key "event:<event id>"`, `parentKey "day:<date>"`, `title` the event title, `detail` and action as the prototype
-   (`importPreview`), warnings in this order: off-step logs, moved PM4 logs (a linked PM4 log whose `task.id` isn't the event task's usable PM4
+   (`importPreview`); an event without logs → `skip` "No logs" (OQ-195, D10 leaves empty events on the old day); warnings in this order: off-step logs, moved PM4 logs (a linked PM4 log whose `task.id` isn't the event task's usable PM4
    counterpart, when it has one), OQ-180 ("N log(s) also changed in PM4 since the last sync: PM4's version is overwritten." for linked logs
    with PMSPA changed and PM4 changed), "Booked in PMSPA: imported logs aren't booked." when `booked`.
 
@@ -195,6 +198,7 @@ export class PmspaPushTargetDto { @IsIn(["day"]) type: "day"; @Matches(/^\d{4}-\
 export class PmspaPushDto { @IsDefined() @ValidateNested() @Type(() => PmspaPushTargetDto) target: PmspaPushTargetDto;
   choices: SyncChoiceDto[] /* ≤ 500, as PmspaSyncDto */ }
 // pmspa-sync.repository.ts (copy TimeRepository.listDay's select; every query scoped by userId)
+pm4LogWorkDate(userId, id: string): Promise<string | null>;                   // T1: the log's work_date, null when not the caller's
 pm4Logs(userId, q: { dates: string[]; ids: string[] }): Promise<Pm4DayLog[]>;  // work_date in dates OR id in ids, order by id;
   // booked = booking_date not null; task = taskId ? {id, title: taskTitle, deleted: false} : deletedTaskTitle ? {id: null, title, deleted: true} : null; project likewise
 pm4Starts(userId, dates: string[]): Promise<Record<string, number | null>>;     // workdays.start_minute, null when none
@@ -204,7 +208,7 @@ logLinks(userId, pmspaUserId, q: { pm4Ids: string[]; pmspaIds: string[] }): Prom
 loadTime(userId: string, base: SyncSnapshot, dates: string[]): Promise<TimeSnapshot>;
 // pmspa-sync.service.ts
 pushPreview(userId, target: PmspaPushTargetDto): Promise<SyncPreviewDto>;
-// export RunLinks, RowFailure, Run and result() for the time service (no behavior change)
+// RunLinks, RowFailure, Run, CANT_LINK and result() live in pmspa-run.ts, imported by both services (no behavior change)
 ```
 - **`loadTime`:** `today` = `today(<user zone>)` as `time-logs.service.ts` computes it; `remoteDays` = `getDay` of each date ≤ today
   (null → none); `logLinks` first by the PMSPA ids of those days' logs; then `pm4Logs({dates, ids: <pm4Ids of those links>})`; then the links
@@ -230,16 +234,19 @@ importEventRow(run: Run, row: SyncPreviewItemDto): Promise<SyncResultItemDto>;
 - **Event row** (`event` = the remote event of the key; none → `failed` "The chosen record can't be linked."):
   1. `task` = the event's `taskId` → its PM4 task through the run's task links (`run.links.pm4Of("task", taskId)`), else none;
      `nonprod` = `isNonprod(event.title)`.
-  2. For each log in order: not `isQuarterHours(duration)` → count it as failed and continue. Fields: `workDate` date, `durationMinutes`
-     `hoursToMinutes(duration)`, `text` log title, `excludeFromStats` nonprod, `taskId` task (or null), `projectId` that task's project (or null).
+  2. For each log in order: not `isQuarterHours(duration)`, or `duration` not in 0.25…24, or its trimmed title over 1000 characters, or no text at all (title and event title both blank) →
+     count it as failed and continue (OQ-194). Fields: `workDate` date, `durationMinutes` `hoursToMinutes(duration)`, `text` the log title
+     trimmed, or `cut(<event title trimmed>, 1000)` when empty (OQ-194), `dayStartMinute` `startToMinute(day.start) ?? 0` (so a create never
+     depends on the day row having run; `startToMinute` clamps to 1425), `excludeFromStats` nonprod, `taskId` task (or null), `projectId` that task's project (or null).
   3. Linked (`logLinks` has the PMSPA log id): `timeLogs.update(userId, pm4Id, fields)`, except: `title` is never sent (OQ-169); when nonprod
      and the PM4 log is already excluded from statistics, `taskId` / `projectId` aren't sent (OQ-168). Not linked: `timeLogs.create(userId,
-     {...fields, title: cut(event.title, 100)})`. Never a booking.
+     {...fields, title: cut(event.title.trim(), 100) || null})` (as the DTO's `TrimToNull`). Never a booking.
   4. After each write: `links.save` type `time-log`, `pm4Id` the PM4 log, `pmspaId` the log id, origin `imported`, `syncedAt` run.now,
-     `pm4Hash` = fingerprint of `pm4LogTuple` of the PM4 log re-read with `pm4Logs({dates: [], ids: [id]})` and its mapped group, `pmspaHash` =
+     `pm4Hash` = fingerprint of `pm4LogTuple` of the PM4 log re-read with `pm4Logs({dates: [], ids: [id]})` and its group mapped through the run's task links (`run.links.pmspaOf("task", …)`, else `"title:" + title`: the snapshot is stale for a task linked earlier in the run), `pmspaHash` =
      fingerprint of `pmspaLogTuple(log, event)`.
-  5. Result: any failed log → `failed` "A log of <duration> h isn't in 0.25 h steps (the other <plural(n − 1, "log")> were imported)." (the
-     first off-step log's duration); else `created` for a `create` row, else `updated`.
+  5. Result: any failed log → `failed` with the first failed log's reason, "A log of <duration> h isn't in 0.25 h steps", "A log of
+     <duration> h isn't between 0.25 h and 24 h", "A log's text is over 1000 characters" or "A log has no text", then " (the other <plural(n − 1, "log")> were
+     imported)."; else `created` for a `create` row, else `updated`.
 
 ### Push commit (T5)
 ```ts
@@ -262,15 +269,17 @@ seeded from `usableLogLinks(snapshot, "push")` (D11) and `day` = the snapshot's 
   3. Moves out (D2, D10): for each log of `g` with a link whose PMSPA log isn't in the target event: when the PMSPA log is in another event of
      `day`, `deleteLog` it and remember that event; when it isn't in `day`, `deleteLog` it (404 resolves). Those logs count as unlinked below.
   4. No target event: `createEvent({day: date, start: minuteToStart(snapshot.pm4Starts[date] ?? 0), title: g.title, task: taskId, duration:
-     <the first log's minutes> / 60})`, then `createLog` for each other log, in order. Target event: per log, linked here and PM4 changed → `updateLog(id,
+     <the first log's minutes> / 60})`; `createEvent` returns no id, so when the group has more logs, `getDay(date)` once to find the new
+     event (as step 2), then `createLog` for each other log, in order. Target event: per log, linked here and PM4 changed → `updateLog(id,
      {title: cut(text, 350), duration: minutes / 60})`; linked here and unchanged → nothing; unlinked → `createLog`.
-  5. `booked` = every log of `g` is booked; target event's `booked` differs (or a new event and `booked`) → `updateEvent(eventId, {booked})`.
+  5. `booked` = every log of `g` is booked; target event's `booked` differs → `updateEvent(eventId, {booked})`. A new event whose id isn't
+     known yet (a single log) gets that `updateEvent` right after the re-read in step 6; the end state is the same.
   6. Re-read `day = getDay(date)` once (D3). The event = as in step 2 over the new `day`. The new PMSPA logs are the last `<count of
      createEvent's first + createLog calls>` entries of its `logs[]`, in the order they were sent; pair them with the PM4 logs in that order.
      When the event was created in step 4 and its first log's title ≠ `cut(text, 350)` of its PM4 log: `updateLog(id, {title: cut(text, 350),
      duration: minutes / 60})`, and that log counts with that title below (D4).
   7. For each log of `g` written in steps 4–5 (created, updated, or booked change): `links.save` type `time-log`, origin `pushed`, `syncedAt`
-     run.now, `pm4Hash` = fingerprint of `pm4LogTuple(l, mappedGroup(g, snapshot))`, `pmspaHash` = fingerprint of `pmspaLogTuple(<its PMSPA
+     run.now, `pm4Hash` = fingerprint of `pm4LogTuple(l, <g's group mapped through run.links>)` (`run.links.pmspaOf("task", g.taskId)`, else `"title:" + g.title`; the snapshot's `mappedGroup` is stale for a task linked earlier in the run), `pmspaHash` = fingerprint of `pmspaLogTuple(<its PMSPA
      log>, <the event>)` from the re-read day.
   8. Each event remembered in step 3 that has no logs in the re-read `day` → `deleteEvent(day.id, eventId)`.
   9. Result `created` for a `create` row, else `updated`.
@@ -303,6 +312,7 @@ booked; "nonprod" without a task, 0.5 h), 2026-10-13 (start 9.25: "Development" 
 | AC-17 | `groupDay`, `eventTitle`, `isNonprod`, `startToMinute`, the tuples: the prototype's cases (" · Time" under 3 characters, cut over 150, nonprod whatever the task, deleted task notes, " NonProd " is nonprod) | `api/src/integrations/pmspa/pmspa-time-fields.ac.spec.ts` | T1 |
 | AC-18 | `api/openapi.json` has `GET /days`, `POST /push/preview` and `POST /push` with `bearer`; `PmspaImportSelectionDto` has `dates` | `check` | T5 |
 | AC-19 | Push while an import holds the lock → `409 pmspa-sync-running`; `POST /push` without `target` → `400` | `api/test/pmspa-time.ac.e2e-spec.ts` | T5 |
+| AC-21 | User B (no PMSPA links, own connection to X): `GET /links/time-log/{A's pushed log}` → `404`; B's push preview of 2026-10-16 → `{items: []}` (A's logs aren't B's) | `api/test/pmspa-time.ac.e2e-spec.ts` | T3 |
 | AC-20 | A pushed log moved to 2026-10-16 in PM4, then 2026-10-16 pushed → its event row warns "1 log moves here in PMSPA from another day; an event left empty there stays."; the old PMSPA log is gone, the log is in 2026-10-16's event and linked to it; the old event (now empty) stays | `api/test/pmspa-time.ac.e2e-spec.ts` | T5 |
 
 Typed stubs (created with the tests): `pmspa-time-fields.ts` with every export of *Time fields*, each function body
@@ -337,5 +347,7 @@ None.
   links, from feat-int-sync-api's review F2), `@IsDefined` on the push target; AC-16 split (AC-19), AC-20 added. Back to review.
 - 2026-10-17: T1 widens `fingerprint`'s tuple type to take the time tuples' numbers and booleans. Approved by the owner.
 - 2026-10-17: T4 (import commit) haiku instead of sonnet: every step is spelled out (owner).
+- 2026-10-17: the `time-log` link detail reads the PM4 log's work date with `PmspaSyncRepository.pm4LogWorkDate` (T1), since no T1 file could (OQ-193, owner).
 - 2026-10-17: `createEvent` sends the first log's duration only; the push renames that log after the re-read, since PMSPA titles it after the event (OQ-192, owner).
 - 2026-10-17: Push rows: a linked log whose PMSPA log isn't in the pushed day counts as changed, so D10's move runs (a date change leaves the fingerprint as it was).
+- 2026-10-17 (Opus review): the import fails a single log instead of aborting the run for an empty title (takes the event title), a 0 h or over-24 h log or text over 1000 characters, and always sends `dayStartMinute` (OQ-194, owner); empty events and days are `skip` "No logs" (OQ-195, owner); the run types move to `pmspa-run.ts`; the import's log title is trimmed; T5's deviations go into the push steps (hash group from `run.links`, the extra `getDay` for a new multi-log event, `booked` of a new single-log event after the re-read); AC-21 cross-user.

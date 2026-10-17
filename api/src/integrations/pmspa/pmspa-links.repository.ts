@@ -1,5 +1,5 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { and, eq, ne } from "drizzle-orm";
+import { and, eq, inArray, ne, or } from "drizzle-orm";
 import { DRIZZLE, type DrizzleDb } from "../../database/drizzle.js";
 import {
   pmspaLinkOrigin,
@@ -61,6 +61,41 @@ export class PmspaLinksRepository {
       .from(table)
       .where(and(eq(table.userId, userId), eq(table.pmspaUserId, pmspaUserId)));
     return rows.map((row) => ({ ...row, type }));
+  }
+
+  /**
+   * The user's time-log links of `pmspaUserId` whose PM4 log is one of `pm4Ids` or whose PMSPA log is one of
+   * `pmspaIds` (API-INT-008, API-INT-010). No ids, no links.
+   */
+  async logLinks(
+    userId: string,
+    pmspaUserId: string,
+    q: { pm4Ids: string[]; pmspaIds: string[] }
+  ): Promise<LinkRow[]> {
+    const match = [
+      ...(q.pm4Ids.length ? [inArray(pmspaLogLinks.timeLogId, q.pm4Ids)] : []),
+      ...(q.pmspaIds.length ? [inArray(pmspaLogLinks.pmspaId, q.pmspaIds)] : [])
+    ];
+    if (match.length === 0) return [];
+    const rows = await this.db
+      .select({
+        pm4Id: pmspaLogLinks.timeLogId,
+        pmspaId: pmspaLogLinks.pmspaId,
+        pmspaUserId: pmspaLogLinks.pmspaUserId,
+        origin: pmspaLogLinks.origin,
+        syncedAt: pmspaLogLinks.syncedAt,
+        pm4Hash: pmspaLogLinks.pm4Hash,
+        pmspaHash: pmspaLogLinks.pmspaHash
+      })
+      .from(pmspaLogLinks)
+      .where(
+        and(
+          eq(pmspaLogLinks.userId, userId),
+          eq(pmspaLogLinks.pmspaUserId, pmspaUserId),
+          or(...match)
+        )
+      );
+    return rows.map((row) => ({ ...row, type: "time-log" as const }));
   }
 
   /** The link of the PM4 record `pm4Id`, of any PMSPA account. */

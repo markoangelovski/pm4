@@ -2,9 +2,11 @@ import { ApiProperty } from "@nestjs/swagger";
 import { Type } from "class-transformer";
 import {
   ArrayMaxSize,
+  ArrayUnique,
   IsArray,
   IsDefined,
   IsIn,
+  IsISO8601,
   IsOptional,
   IsString,
   IsUUID,
@@ -154,7 +156,7 @@ export class PmspaImportProjectDto {
   taskIds: string[] | null;
 }
 
-/** `PmspaImportSelection` (API-INT-008, API-INT-009). `dates` arrives with feat-int-time-api. */
+/** `PmspaImportSelection` (API-INT-008, API-INT-009): the projects and tasks, and the days to import (time). */
 export class PmspaImportSelectionDto {
   @ApiProperty({ type: [PmspaImportProjectDto] })
   @IsArray()
@@ -162,6 +164,16 @@ export class PmspaImportSelectionDto {
   @ValidateNested({ each: true })
   @Type(() => PmspaImportProjectDto)
   projects: PmspaImportProjectDto[];
+
+  /** The days to import, `YYYY-MM-DD`, each once (feat-int-time-api). */
+  @ApiProperty({ type: [String], required: false })
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(7)
+  @ArrayUnique()
+  @Matches(/^\d{4}-\d{2}-\d{2}$/, { each: true })
+  @IsISO8601({ strict: true }, { each: true })
+  dates?: string[];
 }
 
 /** `POST /integrations/pmspa/import` body (API-INT-009). */
@@ -195,6 +207,33 @@ export class PmspaSyncDto {
   @ValidateNested()
   @Type(() => PmspaSyncTargetDto)
   target: PmspaSyncTargetDto;
+
+  @ApiProperty({ type: [SyncChoiceDto] })
+  @IsArray()
+  @ArrayMaxSize(500)
+  @ValidateNested({ each: true })
+  @Type(() => SyncChoiceDto)
+  choices: SyncChoiceDto[];
+}
+
+/** The PM4 record a push preview or push reads: a PM4 day (API-INT-010, API-INT-011). */
+export class PmspaPushTargetDto {
+  @ApiProperty({ enum: ["day"] })
+  @IsIn(["day"])
+  type: "day";
+
+  /** The PM4 day, `YYYY-MM-DD` in the user's calendar. */
+  @Matches(/^\d{4}-\d{2}-\d{2}$/)
+  @IsISO8601({ strict: true })
+  id: string;
+}
+
+/** `POST /integrations/pmspa/push` body (API-INT-011). */
+export class PmspaPushDto {
+  @IsDefined()
+  @ValidateNested()
+  @Type(() => PmspaPushTargetDto)
+  target: PmspaPushTargetDto;
 
   @ApiProperty({ type: [SyncChoiceDto] })
   @IsArray()

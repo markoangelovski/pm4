@@ -39,6 +39,8 @@ export class PmspaRecordDetailDto {
   projectTitle?: string;
   /** Task: its column. */
   column?: PmspaColumn;
+  /** Time log: its PMSPA event's title. */
+  eventTitle?: string;
 }
 
 /** `PmspaLinkDetail` (API-INT-014). `pmspa: null` = gone in PMSPA. */

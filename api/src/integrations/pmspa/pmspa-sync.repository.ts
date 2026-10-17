@@ -1,9 +1,16 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { and, asc, eq, inArray, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, or, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { DRIZZLE, type DrizzleDb } from "../../database/drizzle.js";
-import { projects, tasks, users } from "../../database/schema/index.js";
+import {
+  projects,
+  tasks,
+  timeLogs,
+  users,
+  workdays
+} from "../../database/schema/index.js";
 import type { Pm4Project, Pm4Task } from "./pmspa-fields.js";
+import type { Pm4DayLog } from "./pmspa-time-preview.js";
 
 const lead = alias(users, "lead");
 
@@ -51,6 +58,94 @@ export class PmspaSyncRepository {
       .where(and(eq(projects.userId, userId), eq(projects.id, id)))
       .limit(1);
     return row ?? null;
+  }
+
+  /** The work date of the caller's PM4 time log, or null when it isn't theirs (API-INT-014). */
+  async pm4LogWorkDate(userId: string, id: string): Promise<string | null> {
+    const [row] = await this.db
+      .select({ workDate: timeLogs.workDate })
+      .from(timeLogs)
+      .where(and(eq(timeLogs.userId, userId), eq(timeLogs.id, id)))
+      .limit(1);
+    return row?.workDate ?? null;
+  }
+
+  /**
+   * The caller's PM4 logs worked on one of `dates` or with one of `ids`, in entry order (API-INT-010, API-INT-008).
+   * Read like `TimeRepository.listDay`, with the booked flag and the task and project as the push reads them.
+   */
+  async pm4Logs(
+    userId: string,
+    q: { dates: string[]; ids: string[] }
+  ): Promise<Pm4DayLog[]> {
+    const match = [
+      ...(q.dates.length ? [inArray(timeLogs.workDate, q.dates)] : []),
+      ...(q.ids.length ? [inArray(timeLogs.id, q.ids)] : [])
+    ];
+    if (match.length === 0) return [];
+    const rows = await this.db
+      .select({
+        id: timeLogs.id,
+        workDate: timeLogs.workDate,
+        bookingDate: timeLogs.bookingDate,
+        durationMinutes: timeLogs.durationMinutes,
+        excludeFromStats: timeLogs.excludeFromStats,
+        text: timeLogs.text,
+        title: timeLogs.title,
+        taskId: timeLogs.taskId,
+        projectId: timeLogs.projectId,
+        deletedTaskTitle: timeLogs.deletedTaskTitle,
+        deletedProjectTitle: timeLogs.deletedProjectTitle,
+        taskTitle: tasks.title,
+        projectTitle: projects.title
+      })
+      .from(timeLogs)
+      .leftJoin(tasks, eq(timeLogs.taskId, tasks.id))
+      .leftJoin(projects, eq(timeLogs.projectId, projects.id))
+      .where(and(eq(timeLogs.userId, userId), or(...match)))
+      .orderBy(asc(timeLogs.id));
+    return rows.map((row) => ({
+      id: row.id,
+      workDate: row.workDate,
+      text: row.text,
+      title: row.title,
+      durationMinutes: row.durationMinutes,
+      excludeFromStats: row.excludeFromStats,
+      booked: row.bookingDate !== null,
+      task:
+        row.taskId !== null && row.taskTitle !== null
+          ? { id: row.taskId, title: row.taskTitle, deleted: false }
+          : row.deletedTaskTitle !== null
+            ? { id: null, title: row.deletedTaskTitle, deleted: true }
+            : null,
+      project:
+        row.projectId !== null && row.projectTitle !== null
+          ? { id: row.projectId, title: row.projectTitle, deleted: false }
+          : row.deletedProjectTitle !== null
+            ? { id: null, title: row.deletedProjectTitle, deleted: true }
+            : null
+    }));
+  }
+
+  /** The PM4 workday start (minute) of each of `dates`, `null` when the day has none (API-INT-010). */
+  async pm4Starts(
+    userId: string,
+    dates: string[]
+  ): Promise<Record<string, number | null>> {
+    const starts: Record<string, number | null> = {};
+    for (const date of dates) starts[date] = null;
+    if (dates.length === 0) return starts;
+    const rows = await this.db
+      .select({
+        workDate: workdays.workDate,
+        startMinute: workdays.startMinute
+      })
+      .from(workdays)
+      .where(
+        and(eq(workdays.userId, userId), inArray(workdays.workDate, dates))
+      );
+    for (const row of rows) starts[row.workDate] = row.startMinute;
+    return starts;
   }
 
   /** The caller's tasks, all projects or the ones of `projectId`, by title. */

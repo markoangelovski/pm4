@@ -121,6 +121,36 @@ const taskFields = (f: PmspaTaskWrite) => ({
   dueDate: f.dueAt
 });
 
+/** A PMSPA log as `days` returns it: hours. */
+function toLog(raw: Json): RemoteLog {
+  return {
+    id: String(raw._id),
+    title: text(raw.title) ?? "",
+    duration: Number(raw.duration ?? 0)
+  };
+}
+
+/** A PMSPA day with its events populated (the one-day form). */
+function toDay(raw: Json): RemoteDay {
+  const id = String(raw._id);
+  const date = text(raw.day) ?? "";
+  const events = Array.isArray(raw.events) ? raw.events.filter(isRecord) : [];
+  return {
+    id,
+    date,
+    start: typeof raw.start === "number" ? raw.start : null,
+    events: events.map((e): RemoteEvent => ({
+      id: String(e._id),
+      dayId: id,
+      date,
+      title: text(e.title) ?? "",
+      taskId: text(e.task),
+      booked: e.booked === true,
+      logs: (Array.isArray(e.logs) ? e.logs.filter(isRecord) : []).map(toLog)
+    }))
+  };
+}
+
 @Injectable()
 export class PmspaRemote {
   constructor(private readonly client: PmspaClient) {}
@@ -170,9 +200,9 @@ export class PmspaRemote {
   /** A write: any non-2xx → PmspaWriteError (PMSPA answers 201 to some updates). */
   private async write(
     userId: string,
-    method: "POST" | "PATCH",
+    method: "POST" | "PATCH" | "DELETE",
     path: string,
-    body: unknown
+    body?: unknown
   ): Promise<Json> {
     const res = await this.client.request(userId, { method, path, body });
     if (res.status < 200 || res.status > 299) throw rejection(res);
@@ -282,5 +312,128 @@ export class PmspaRemote {
       `/v1/tasks/${encodeURIComponent(id)}`,
       body
     );
+  }
+
+  /** GET /v1/days?start=&end= (the range form: event ids only), then one day per id. 404 → []. D9. */
+  async listDays(
+    userId: string,
+    from: string,
+    to: string
+  ): Promise<RemoteDay[]> {
+    const body = await this.read(userId, "/v1/days/event.find", {
+      start: from,
+      end: to
+    });
+    const found = Array.isArray(body?.days) ? body.days.filter(isRecord) : [];
+    const days: RemoteDay[] = [];
+    for (const d of found) {
+      const day = await this.dayById(userId, String(d._id));
+      if (day) days.push(day);
+    }
+    return days;
+  }
+
+  /** The one-day form: `?start=<date>` with its events populated. 404 → null. */
+  async getDay(userId: string, date: string): Promise<RemoteDay | null> {
+    const body = await this.read(userId, "/v1/days/event.find", {
+      start: date
+    });
+    return isRecord(body?.days) ? toDay(body.days) : null;
+  }
+
+  /** The one-day form by the day's PMSPA id (`?id=`). 404 → null. */
+  private async dayById(userId: string, id: string): Promise<RemoteDay | null> {
+    const body = await this.read(userId, "/v1/days/event.find", { id });
+    return isRecord(body?.days) ? toDay(body.days) : null;
+  }
+
+  /** POST /v1/days/event.create: the event with its first log (titled after the event, D4). */
+  async createEvent(
+    userId: string,
+    e: {
+      day: string;
+      start: number;
+      title: string;
+      task: string | null;
+      duration: number;
+    }
+  ): Promise<void> {
+    await this.write(userId, "POST", "/v1/days/event.create", {
+      day: e.day,
+      start: e.start,
+      title: e.title,
+      duration: e.duration,
+      ...(e.task === null ? {} : { task: e.task })
+    });
+  }
+
+  /** PATCH /v1/days/event.update/{id} with the given fields as `{propName, propValue}`. */
+  async updateEvent(
+    userId: string,
+    eventId: string,
+    f: { booked?: boolean; title?: string }
+  ): Promise<void> {
+    const body = Object.entries(f)
+      .filter(([, value]) => value !== undefined)
+      .map(([propName, propValue]) => ({ propName, propValue }));
+    await this.write(
+      userId,
+      "PATCH",
+      `/v1/days/event.update/${encodeURIComponent(eventId)}`,
+      body
+    );
+  }
+
+  /** DELETE /v1/days/event.delete/{dayId}/{eventId}. */
+  async deleteEvent(
+    userId: string,
+    dayId: string,
+    eventId: string
+  ): Promise<void> {
+    await this.write(
+      userId,
+      "DELETE",
+      `/v1/days/event.delete/${encodeURIComponent(dayId)}/${encodeURIComponent(eventId)}`
+    );
+  }
+
+  /** POST /v1/days/log.create: one more log of an event. */
+  async createLog(
+    userId: string,
+    eventId: string,
+    l: { title: string; duration: number }
+  ): Promise<void> {
+    await this.write(userId, "POST", "/v1/days/log.create", {
+      event: eventId,
+      title: l.title,
+      duration: l.duration
+    });
+  }
+
+  /** PATCH /v1/days/log.update/{id}: the title and the duration (hours). */
+  async updateLog(
+    userId: string,
+    logId: string,
+    l: { title: string; duration: number }
+  ): Promise<void> {
+    await this.write(
+      userId,
+      "PATCH",
+      `/v1/days/log.update/${encodeURIComponent(logId)}`,
+      [
+        { propName: "title", propValue: l.title },
+        { propName: "duration", propValue: l.duration }
+      ]
+    );
+  }
+
+  /** DELETE /v1/days/log.delete/{id}. 404 → resolves: the log is already gone (D10). */
+  async deleteLog(userId: string, logId: string): Promise<void> {
+    const res = await this.client.request(userId, {
+      method: "DELETE",
+      path: `/v1/days/log.delete/${encodeURIComponent(logId)}`
+    });
+    if (res.status === 404) return;
+    if (res.status < 200 || res.status > 299) throw rejection(res);
   }
 }

@@ -1131,4 +1131,25 @@ describe("PMSPA time API (feat-int-time-api)", () => {
     );
     expect(eventOn(fake, TODAY, "PM Internal", null)?.logs).toEqual([]);
   });
+
+  it("AC-21 API-INT-010 API-INT-014 FR-INT-010: another user's time-log link is 404, and their push preview doesn't see the first user's logs", async () => {
+    const { a, anthropic, meetings } = await setup();
+    const { a: b } = await setup();
+    const log = await addLog(a, {
+      durationMinutes: 60,
+      text: "Sprint planning",
+      projectId: anthropic.id,
+      taskId: meetings.id
+    });
+    fake.addDay(X, TODAY, 8, [
+      { title: "Anthropic", task: T_MEETINGS, logs: [["Sprint planning", 1]] }
+    ]);
+    const pmspaLog = eventOn(fake, TODAY, "Anthropic")!.logs[0];
+    await insertLink("time-log", a.id, log.id, pmspaLog.id, "pushed");
+
+    expect((await as(b).get(`/links/time-log/${log.id}`)).status).toBe(404);
+    const preview = await pushPreview(b, TODAY);
+    expect(preview.status).toBe(200);
+    expect(preview.body).toEqual({ items: [] });
+  });
 });

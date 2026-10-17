@@ -8,6 +8,8 @@ import {
 import {
   PmspaImportDto,
   PmspaImportSelectionDto,
+  PmspaPushDto,
+  PmspaPushTargetDto,
   PmspaSyncDto,
   PmspaSyncTargetDto,
   SyncPreviewDto,
@@ -30,6 +32,17 @@ export class PmspaSyncController {
     @Body() dto: PmspaImportSelectionDto
   ): Promise<SyncPreviewDto> {
     return this.service.importPreview(user.id, dto);
+  }
+
+  /** The rows of a push of one PM4 day to PMSPA (API-INT-010). */
+  @Post("push/preview")
+  @HttpCode(HttpStatus.OK)
+  @ApiProblemResponses(400, 401, 404, 409, 502, 503)
+  pushPreview(
+    @CurrentUser() user: AuthUser,
+    @Body() dto: PmspaPushTargetDto
+  ): Promise<SyncPreviewDto> {
+    return this.service.pushPreview(user.id, dto);
   }
 
   /** The rows of a two-way sync of a PM4 project or task (API-INT-015). */
@@ -63,5 +76,16 @@ export class PmspaSyncController {
     @Body() dto: PmspaSyncDto
   ): Promise<SyncResultDto> {
     return this.service.syncRun(user.id, dto);
+  }
+
+  /** Pushes one PM4 day to PMSPA as events (API-INT-011). */
+  @Post("push")
+  @HttpCode(HttpStatus.OK)
+  @ApiProblemResponses(400, 401, 404, 409, 502, 503)
+  pushRun(
+    @CurrentUser() user: AuthUser,
+    @Body() dto: PmspaPushDto
+  ): Promise<SyncResultDto> {
+    return this.service.pushRun(user.id, dto);
   }
 }

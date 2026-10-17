@@ -8,6 +8,7 @@ import { pmspaProblems } from "./pmspa-problems.js";
 import { PmspaRemote } from "./pmspa-remote.js";
 import { PmspaSyncRepository } from "./pmspa-sync.repository.js";
 import { PmspaSyncService } from "./pmspa-sync.service.js";
+import { PmspaTimeSyncService } from "./pmspa-time-sync.service.js";
 import { PmspaStore } from "./pmspa-store.js";
 import { ProjectsService } from "../../projects/projects.service.js";
 import { TasksService } from "../../tasks/tasks.service.js";
@@ -52,7 +53,8 @@ describe("PmspaSyncService", () => {
         { provide: UsersRepository, useValue: users },
         { provide: PmspaStore, useValue: store },
         { provide: ProjectsService, useValue: projectsService },
-        { provide: TasksService, useValue: tasksService }
+        { provide: TasksService, useValue: tasksService },
+        { provide: PmspaTimeSyncService, useValue: { loadTime: vi.fn() } }
       ]
     }).compile();
     service = module.get(PmspaSyncService);

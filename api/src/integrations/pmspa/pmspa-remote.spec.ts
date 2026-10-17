@@ -235,3 +235,83 @@ describe("PmspaRemote (feat-int-sync-api)", () => {
     ).rejects.toThrow("PMSPA rejected it: HTTP 422");
   });
 });
+
+describe("PmspaRemote days writes (feat-int-time-api)", () => {
+  it("createEvent posts the event without a task key when it has none", async () => {
+    const { remote, sent } = setup(reply(200, {}), reply(200, {}));
+    await remote.createEvent(USER, {
+      day: "2026-10-14",
+      start: 8,
+      title: "nonprod",
+      task: null,
+      duration: 0.5
+    });
+    await remote.createEvent(USER, {
+      day: "2026-10-14",
+      start: 8,
+      title: "Dev",
+      task: "t1",
+      duration: 1
+    });
+    expect(sent(0)).toMatchObject({
+      method: "POST",
+      path: "/v1/days/event.create",
+      body: { day: "2026-10-14", start: 8, title: "nonprod", duration: 0.5 }
+    });
+    expect(sent(0).body).not.toHaveProperty("task");
+    expect(sent(1).body).toMatchObject({ task: "t1" });
+  });
+
+  it("updateEvent patches propName/propValue pairs", async () => {
+    const { remote, sent } = setup(reply(200, {}));
+    await remote.updateEvent(USER, "e1", { booked: true });
+    expect(sent(0)).toMatchObject({
+      method: "PATCH",
+      path: "/v1/days/event.update/e1",
+      body: [{ propName: "booked", propValue: true }]
+    });
+  });
+
+  it("deleteEvent, createLog and updateLog hit their paths", async () => {
+    const { remote, sent } = setup(
+      reply(200, {}),
+      reply(200, {}),
+      reply(200, {})
+    );
+    await remote.deleteEvent(USER, "d1", "e1");
+    await remote.createLog(USER, "e1", { title: "T", duration: 1 });
+    await remote.updateLog(USER, "l1", { title: "T", duration: 2 });
+    expect(sent(0)).toMatchObject({
+      method: "DELETE",
+      path: "/v1/days/event.delete/d1/e1"
+    });
+    expect(sent(1)).toMatchObject({
+      method: "POST",
+      path: "/v1/days/log.create",
+      body: { event: "e1", title: "T", duration: 1 }
+    });
+    expect(sent(2)).toMatchObject({
+      method: "PATCH",
+      path: "/v1/days/log.update/l1",
+      body: [
+        { propName: "title", propValue: "T" },
+        { propName: "duration", propValue: 2 }
+      ]
+    });
+  });
+
+  it("deleteLog resolves on 404 and rejects on another failure", async () => {
+    const { remote, sent } = setup(
+      reply(404, {}),
+      reply(204),
+      reply(500, { message: "boom" })
+    );
+    await expect(remote.deleteLog(USER, "l1")).resolves.toBeUndefined();
+    await expect(remote.deleteLog(USER, "l2")).resolves.toBeUndefined();
+    await expect(remote.deleteLog(USER, "l3")).rejects.toBeDefined();
+    expect(sent(0)).toMatchObject({
+      method: "DELETE",
+      path: "/v1/days/log.delete/l1"
+    });
+  });
+});

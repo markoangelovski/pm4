@@ -206,7 +206,9 @@ export function taskTuple(
 }
 
 /** The first 8 bytes of SHA-256 over `JSON.stringify(tuple)` (D1). */
-export function fingerprint(tuple: (string | null)[]): Buffer {
+export function fingerprint(
+  tuple: (string | number | boolean | null)[]
+): Buffer {
   return createHash("sha256")
     .update(JSON.stringify(tuple))
     .digest()

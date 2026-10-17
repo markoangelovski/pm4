@@ -976,15 +976,20 @@ export function importPreview(sel: PmspaImportSelectionDto): Item[] {
           logs.reduce((s, l) => s + hoursToMinutes(l.duration), 0)
         ),
         action:
-          linked.length === 0
-            ? "create"
-            : linked.some((l) => l.pmspaChanged)
-              ? "update"
-              : "skip",
+          logs.length === 0
+            ? "skip"
+            : linked.length === 0
+              ? "create"
+              : linked.some((l) => l.pmspaChanged)
+                ? "update"
+                : "skip",
         reason:
-          linked.length === logs.length && !linked.some((l) => l.pmspaChanged)
-            ? "Already imported"
-            : null
+          logs.length === 0
+            ? "No logs"
+            : linked.length === logs.length &&
+                !linked.some((l) => l.pmspaChanged)
+              ? "Already imported"
+              : null
       })
     );
     for (const e of events) {
@@ -1021,17 +1026,22 @@ export function importPreview(sel: PmspaImportSelectionDto): Item[] {
             e.logs.length,
             e.logs.reduce((s, l) => s + hoursToMinutes(l.duration), 0)
           )}`,
-          action: eLinks.every(Boolean)
-            ? eLinks.some((l) => l!.pmspaChanged)
-              ? "update"
-              : "skip"
-            : eLinks.some(Boolean)
-              ? "update"
-              : "create",
+          action:
+            eLinks.length === 0
+              ? "skip"
+              : eLinks.every(Boolean)
+                ? eLinks.some((l) => l!.pmspaChanged)
+                  ? "update"
+                  : "skip"
+                : eLinks.some(Boolean)
+                  ? "update"
+                  : "create",
           reason:
-            eLinks.every(Boolean) && !eLinks.some((l) => l!.pmspaChanged)
-              ? "Already imported"
-              : null,
+            eLinks.length === 0
+              ? "No logs"
+              : eLinks.every(Boolean) && !eLinks.some((l) => l!.pmspaChanged)
+                ? "Already imported"
+                : null,
           warnings: [
             ...warnings,
             ...(e.booked

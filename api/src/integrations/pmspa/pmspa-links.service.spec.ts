@@ -4,6 +4,7 @@ import { PmspaConnectionRepository } from "./pmspa-connection.repository.js";
 import { PmspaLinksRepository } from "./pmspa-links.repository.js";
 import { PmspaLinksService } from "./pmspa-links.service.js";
 import { PmspaRemote } from "./pmspa-remote.js";
+import { PmspaSyncRepository } from "./pmspa-sync.repository.js";
 
 const PMSPA_USER = "a".repeat(24);
 const SYNCED = new Date("2026-10-01T00:00:00.000Z");
@@ -18,11 +19,13 @@ describe("PmspaLinksService", () => {
   const connections = { find: vi.fn() };
   const remote = {
     getProject: vi.fn(),
-    getTask: vi.fn()
+    getTask: vi.fn(),
+    getDay: vi.fn()
   };
+  const sync = { pm4LogWorkDate: vi.fn() };
 
   beforeEach(async () => {
-    [links, connections, remote].forEach((o) =>
+    [links, connections, remote, sync].forEach((o) =>
       Object.values(o).forEach((fn) => fn.mockReset())
     );
     const module: TestingModule = await Test.createTestingModule({
@@ -30,7 +33,8 @@ describe("PmspaLinksService", () => {
         PmspaLinksService,
         { provide: PmspaLinksRepository, useValue: links },
         { provide: PmspaConnectionRepository, useValue: connections },
-        { provide: PmspaRemote, useValue: remote }
+        { provide: PmspaRemote, useValue: remote },
+        { provide: PmspaSyncRepository, useValue: sync }
       ]
     }).compile();
     service = module.get(PmspaLinksService);
@@ -59,11 +63,86 @@ describe("PmspaLinksService", () => {
     );
   });
 
-  it("detail: time-log links have no detail yet → 404", async () => {
-    await expect(service.detail("u", "time-log", "l1")).rejects.toBeInstanceOf(
-      NotFoundException
-    );
-    expect(links.byPm4).not.toHaveBeenCalled();
+  describe("detail: a time log", () => {
+    const PMSPA_LOG = "d".repeat(24);
+    const logLink = {
+      pm4Id: "l1",
+      pmspaId: PMSPA_LOG,
+      pmspaUserId: PMSPA_USER,
+      origin: "pushed",
+      syncedAt: SYNCED
+    };
+    const day = {
+      id: "e".repeat(24),
+      date: "2026-10-16",
+      start: 9,
+      events: [
+        {
+          id: "f".repeat(24),
+          dayId: "e".repeat(24),
+          date: "2026-10-16",
+          title: "Other",
+          taskId: null,
+          booked: false,
+          logs: [{ id: "0".repeat(24), title: "Lunch", duration: 1 }]
+        },
+        {
+          id: "1".repeat(24),
+          dayId: "e".repeat(24),
+          date: "2026-10-16",
+          title: "Anthropic",
+          taskId: null,
+          booked: false,
+          logs: [{ id: PMSPA_LOG, title: "Sprint planning", duration: 1 }]
+        }
+      ]
+    };
+
+    it("reads the log's event on its work date", async () => {
+      connections.find.mockResolvedValue({ pmspaUserId: PMSPA_USER });
+      links.byPm4.mockResolvedValue(logLink);
+      sync.pm4LogWorkDate.mockResolvedValue("2026-10-16");
+      remote.getDay.mockResolvedValue(day);
+
+      expect(await service.detail("u", "time-log", "l1")).toEqual({
+        origin: "pushed",
+        syncedAt: SYNCED.toISOString(),
+        pmspa: {
+          type: "time-log",
+          title: "Sprint planning",
+          eventTitle: "Anthropic"
+        }
+      });
+      expect(sync.pm4LogWorkDate).toHaveBeenCalledWith("u", "l1");
+      expect(remote.getDay).toHaveBeenCalledWith("u", "2026-10-16");
+    });
+
+    it("gone from its day in PMSPA → pmspa null", async () => {
+      connections.find.mockResolvedValue({ pmspaUserId: PMSPA_USER });
+      links.byPm4.mockResolvedValue(logLink);
+      sync.pm4LogWorkDate.mockResolvedValue("2026-10-16");
+      remote.getDay.mockResolvedValue({ ...day, events: [day.events[0]] });
+
+      expect((await service.detail("u", "time-log", "l1")).pmspa).toBeNull();
+    });
+
+    it("no PMSPA day on the work date → pmspa null", async () => {
+      connections.find.mockResolvedValue({ pmspaUserId: PMSPA_USER });
+      links.byPm4.mockResolvedValue(logLink);
+      sync.pm4LogWorkDate.mockResolvedValue("2026-10-16");
+      remote.getDay.mockResolvedValue(null);
+
+      expect((await service.detail("u", "time-log", "l1")).pmspa).toBeNull();
+    });
+
+    it("a log that isn't the caller's → no PMSPA read, pmspa null", async () => {
+      connections.find.mockResolvedValue({ pmspaUserId: PMSPA_USER });
+      links.byPm4.mockResolvedValue(logLink);
+      sync.pm4LogWorkDate.mockResolvedValue(null);
+
+      expect((await service.detail("u", "time-log", "l1")).pmspa).toBeNull();
+      expect(remote.getDay).not.toHaveBeenCalled();
+    });
   });
 
   it("detail: a project gone in PMSPA → pmspa null", async () => {

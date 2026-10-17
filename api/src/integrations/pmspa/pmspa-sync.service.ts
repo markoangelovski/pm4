@@ -1,13 +1,17 @@
 import {
+  BadRequestException,
   Injectable,
   NotFoundException,
   UnauthorizedException
 } from "@nestjs/common";
 import { ProjectsService } from "../../projects/projects.service.js";
 import { TasksService } from "../../tasks/tasks.service.js";
+import { todayIn } from "../../time/time-logs.service.js";
 import type {
   PmspaImportDto,
   PmspaImportSelectionDto,
+  PmspaPushDto,
+  PmspaPushTargetDto,
   PmspaSyncDto,
   PmspaSyncTargetDto,
   SyncChoiceDto,
@@ -34,7 +38,6 @@ import {
   choiceFor,
   importRows,
   syncRows,
-  usableLinks,
   type SyncDirection,
   type SyncSnapshot
 } from "./pmspa-preview.js";
@@ -47,7 +50,22 @@ import {
   toPmspaTask
 } from "./pmspa-writes.js";
 import { PmspaSyncRepository } from "./pmspa-sync.repository.js";
+import { PmspaTimeSyncService } from "./pmspa-time-sync.service.js";
+import {
+  importTimeRows,
+  pushDayRows,
+  usableLogLinks,
+  type TimeSnapshot
+} from "./pmspa-time-preview.js";
 import { UsersRepository } from "../../users/users.repository.js";
+import {
+  CANT_LINK,
+  result,
+  RowFailure,
+  RunLinks,
+  type PairType,
+  type Run
+} from "./pmspa-run.js";
 
 const OVERWRITTEN: Record<SyncDirection, string> = {
   "to-pmspa": "PMSPA overwritten with PM4's version",
@@ -55,42 +73,6 @@ const OVERWRITTEN: Record<SyncDirection, string> = {
 };
 const NO_PMSPA_PROJECT = "Its project isn't in PMSPA (it was left out).";
 const NO_PM4_PROJECT = "Its project wasn't imported.";
-const CANT_LINK = "The chosen record can't be linked.";
-
-type PairType = "project" | "task";
-
-/** A failure of one row: reported in the result, the run goes on. */
-class RowFailure extends Error {}
-
-/** The links of a run: the snapshot's, plus the ones written so far. */
-class RunLinks {
-  private readonly byPm4 = new Map<string, string>();
-  private readonly byPmspa = new Map<string, string>();
-  constructor(snapshot: SyncSnapshot) {
-    for (const l of usableLinks(snapshot))
-      this.set(l.type as PairType, l.pm4Id, l.pmspaId);
-  }
-  set(type: PairType, pm4Id: string, pmspaId: string) {
-    this.byPm4.set(`${type}:${pm4Id}`, pmspaId);
-    this.byPmspa.set(`${type}:${pmspaId}`, pm4Id);
-  }
-  pmspaOf(type: PairType, pm4Id: string): string | undefined {
-    return this.byPm4.get(`${type}:${pm4Id}`);
-  }
-  pm4Of(type: PairType, pmspaId: string): string | undefined {
-    return this.byPmspa.get(`${type}:${pmspaId}`);
-  }
-}
-
-interface Run {
-  userId: string;
-  now: Date;
-  from: "pm4" | "pmspa";
-  snapshot: SyncSnapshot;
-  pmspaUserId: string;
-  links: RunLinks;
-}
-
 /** The import and sync, previews and commits (feat-int-sync-api API-INT-008/009, API-INT-015/016). */
 @Injectable()
 export class PmspaSyncService {
@@ -102,12 +84,14 @@ export class PmspaSyncService {
     private readonly users: UsersRepository,
     private readonly store: PmspaStore,
     private readonly projectsService: ProjectsService,
-    private readonly tasksService: TasksService
+    private readonly tasksService: TasksService,
+    private readonly timeSync: PmspaTimeSyncService
   ) {}
 
   /**
    * The snapshot a preview is computed from: PMSPA's projects and tasks (only the selected projects' tasks when
    * `sel` is given), the caller's PM4 projects and tasks, and the active links of the connected account.
+   * With `sel.dates`, the time data of those days too (a `TimeSnapshot`).
    */
   async load(
     userId: string,
@@ -133,8 +117,9 @@ export class PmspaSyncService {
     const pm4Projects = await this.sync.pm4Projects(userId);
     const pm4Tasks = await this.sync.pm4Tasks(userId);
 
+    // An event's task may be outside the selected projects, so a time import reads all of PMSPA's tasks.
     let remoteTasks: RemoteTask[];
-    if (sel) {
+    if (sel && !sel.dates?.length) {
       const selected = new Set(
         sel.projects
           .map((p) => p.id)
@@ -149,7 +134,7 @@ export class PmspaSyncService {
       remoteTasks = await this.remote.listAllTasks(userId);
     }
 
-    return {
+    const base: SyncSnapshot = {
       timeZone: user.timeZone,
       pm4Projects,
       pm4Tasks,
@@ -157,14 +142,49 @@ export class PmspaSyncService {
       remoteTasks,
       links
     };
+    if (sel?.dates?.length)
+      return this.timeSync.loadTime(userId, base, sel.dates);
+    return base;
   }
 
-  /** API-INT-008: the rows of an import of the selected PMSPA projects and tasks. */
+  /** API-INT-008: the rows of an import of the selected PMSPA projects and tasks, and of the selected days. */
   async importPreview(
     userId: string,
     sel: PmspaImportSelectionDto
   ): Promise<SyncPreviewDto> {
-    return { items: importRows(await this.load(userId, sel), sel) };
+    const snapshot = await this.load(userId, sel);
+    if (sel.dates?.length) {
+      // `load` returns a TimeSnapshot when the selection has dates.
+      return { items: importTimeRows(snapshot as TimeSnapshot, sel) };
+    }
+    return { items: importRows(snapshot, sel) };
+  }
+
+  /** API-INT-010: the rows of a push of one PM4 day to PMSPA. 400 for a future date. */
+  async pushPreview(
+    userId: string,
+    target: PmspaPushTargetDto
+  ): Promise<SyncPreviewDto> {
+    const base = await this.load(userId, null);
+    if (target.id > todayIn(base.timeZone)) {
+      throw new BadRequestException({
+        errors: [{ field: "id", message: "The date is in the future." }]
+      });
+    }
+    const snapshot = await this.timeSync.loadTime(userId, base, [target.id]);
+    return { items: pushDayRows(snapshot, target.id) };
+  }
+
+  /** API-INT-011: pushes one PM4 day to PMSPA, row by row. 400 for a future date. */
+  pushRun(userId: string, dto: PmspaPushDto): Promise<SyncResultDto> {
+    return this.commit(
+      userId,
+      "pm4",
+      dto.choices,
+      (snapshot) => pushDayRows(snapshot as TimeSnapshot, dto.target.id),
+      null,
+      dto.target.id
+    );
   }
 
   /** API-INT-015: the rows of a sync of a PM4 project or task. 404 when the record isn't the caller's. */
@@ -187,7 +207,10 @@ export class PmspaSyncService {
       userId,
       "pmspa",
       dto.choices,
-      (snapshot) => importRows(snapshot, dto.selection),
+      (snapshot) =>
+        dto.selection.dates?.length
+          ? importTimeRows(snapshot as TimeSnapshot, dto.selection)
+          : importRows(snapshot, dto.selection),
       dto.selection
     );
   }
@@ -218,12 +241,24 @@ export class PmspaSyncService {
     from: "pm4" | "pmspa",
     choices: SyncChoiceDto[],
     rowsOf: (snapshot: SyncSnapshot) => SyncPreviewItemDto[],
-    sel: PmspaImportSelectionDto | null
+    sel: PmspaImportSelectionDto | null,
+    pushDate: string | null = null
   ): Promise<SyncResultDto> {
     if (!(await this.store.lock(userId))) throw pmspaProblems.syncRunning();
     try {
       const now = new Date();
-      const snapshot = await this.load(userId, sel);
+      let snapshot: SyncSnapshot;
+      if (pushDate) {
+        const base = await this.load(userId, null);
+        if (pushDate > todayIn(base.timeZone)) {
+          throw new BadRequestException({
+            errors: [{ field: "id", message: "The date is in the future." }]
+          });
+        }
+        snapshot = await this.timeSync.loadTime(userId, base, [pushDate]);
+      } else {
+        snapshot = await this.load(userId, sel);
+      }
       const rows = rowsOf(snapshot);
       const pmspaUserId = (await this.connections.find(userId))?.pmspaUserId;
       if (!pmspaUserId) throw pmspaProblems.notConnected();
@@ -233,7 +268,20 @@ export class PmspaSyncService {
         from,
         snapshot,
         pmspaUserId,
-        links: new RunLinks(snapshot)
+        links: new RunLinks(snapshot),
+        logLinks: new Map(
+          pushDate
+            ? usableLogLinks(snapshot as TimeSnapshot, "push").map((l) => [
+                l.pm4Id,
+                l
+              ])
+            : sel?.dates?.length
+              ? usableLogLinks(snapshot as TimeSnapshot, "import").map((l) => [
+                  l.pmspaId,
+                  l
+                ])
+              : []
+        )
       };
       const items: SyncResultItemDto[] = [];
       for (const row of rows) {
@@ -243,7 +291,7 @@ export class PmspaSyncService {
           continue;
         }
         try {
-          items.push(await this.syncPair(run, row, choice));
+          items.push(await this.applyRow(run, row, choice));
         } catch (e) {
           if (e instanceof RowFailure || e instanceof PmspaWriteError) {
             items.push(result(row, "failed", e.message));
@@ -257,6 +305,30 @@ export class PmspaSyncService {
     } finally {
       await this.store.unlock(userId);
     }
+  }
+
+  /** One row: a day or event row of a time import, else a project or task pair. */
+  private applyRow(
+    run: Run,
+    row: SyncPreviewItemDto,
+    choice: SyncChoiceDto
+  ): Promise<SyncResultItemDto> {
+    const push = run.from === "pm4";
+    if (row.type === "day") {
+      return push
+        ? this.timeSync.pushDayRow(run, row)
+        : this.timeSync.importDayRow(run, row);
+    }
+    if (row.type === "event") {
+      return push
+        ? this.timeSync.pushEventRow(
+            run,
+            row,
+            (row.parentKey ?? "").slice("day:".length)
+          )
+        : this.timeSync.importEventRow(run, row);
+    }
+    return this.syncPair(run, row, choice);
   }
 
   /** One project or task row (the prototype's `syncPair`). */
@@ -447,20 +519,4 @@ export class PmspaSyncService {
     });
     run.links.set(type, pm4Id, pmspaId);
   }
-}
-
-function result(
-  row: SyncPreviewItemDto,
-  outcome: SyncResultItemDto["outcome"],
-  reason: string | null = null
-): SyncResultItemDto {
-  return {
-    key: row.key,
-    parentKey: row.parentKey,
-    type: row.type,
-    title: row.title,
-    newTitle: null,
-    outcome,
-    reason
-  };
 }

@@ -39,7 +39,7 @@ export interface SyncSnapshot {
 type Item = SyncPreviewItemDto;
 type Mode = "import" | "sync";
 
-function row(
+export function row(
   partial: Partial<Item> & Pick<Item, "key" | "type" | "title" | "action">
 ): Item {
   return {
@@ -199,11 +199,12 @@ const pmspaCandidates = {
     )
 };
 
-/** The rows of an import preview: the selected PMSPA projects and tasks, with the parents they need. */
-export function importRows(
-  s: SyncSnapshot,
-  sel: PmspaImportSelectionDto
-): SyncPreviewItemDto[] {
+/** The row builders of an import preview: `addProject` / `addTask` add a row once, with the parents it needs. */
+export function importBuilder(s: SyncSnapshot): {
+  items: SyncPreviewItemDto[];
+  addProject(p: RemoteProject, parentOf?: string): string;
+  addTask(t: RemoteTask, parentOf?: string): string | null;
+} {
   const links = indexLinks(s);
   const linkedPm4 = {
     project: new Set(links.project.byPm4.keys()),
@@ -256,7 +257,7 @@ export function importRows(
     return key;
   };
 
-  const addTask = (t: RemoteTask): string | null => {
+  const addTask = (t: RemoteTask, parentOf?: string): string | null => {
     const key = `task:${t.id}`;
     if (keys.has(key)) return key;
     const project = s.remoteProjects.find((p) => p.id === t.projectId);
@@ -287,6 +288,7 @@ export function importRows(
               taskDiff(pair.pm4, t, s.timeZone)
             )
           : createAction("import")),
+        ...(parentOf ? { reason: parentOf, parent: true } : {}),
         linkedId: pair?.pm4.id ?? null,
         candidates: pair ? [] : pm4Candidates.task(s, t, linkedPm4.task)
       })
@@ -294,26 +296,45 @@ export function importRows(
     return key;
   };
 
+  return { items, addProject, addTask };
+}
+
+/** The selected PMSPA projects and tasks as rows of the builder. */
+export function selectProjects(
+  b: ReturnType<typeof importBuilder>,
+  s: SyncSnapshot,
+  sel: PmspaImportSelectionDto
+): void {
   for (const sp of sel.projects) {
     const p = s.remoteProjects.find((x) => x.id === sp.id);
     if (!p) continue;
-    addProject(p);
+    b.addProject(p);
     const ids =
       sp.taskIds ??
       s.remoteTasks.filter((t) => t.projectId === p.id).map((t) => t.id);
     for (const id of ids) {
       const t = s.remoteTasks.find((x) => x.id === id);
-      if (t) addTask(t);
+      if (t) b.addTask(t);
     }
   }
-  return items;
 }
 
-/** The rows of a sync preview of a PM4 project (with its tasks) or task (with its project). Null: not in the snapshot. */
-export function syncRows(
+/** The rows of an import preview: the selected PMSPA projects and tasks, with the parents they need. */
+export function importRows(
   s: SyncSnapshot,
-  target: PmspaSyncTargetDto
-): SyncPreviewItemDto[] | null {
+  sel: PmspaImportSelectionDto
+): SyncPreviewItemDto[] {
+  const b = importBuilder(s);
+  selectProjects(b, s, sel);
+  return b.items;
+}
+
+/** The row builders of a sync preview: `projectRow` / `taskRow` add a row once, with the parents it needs. */
+export function syncBuilder(s: SyncSnapshot): {
+  items: SyncPreviewItemDto[];
+  projectRow(p: Pm4Project, parentOf?: string): string;
+  taskRow(t: Pm4Task, opts: { optional?: boolean; parentOf?: string }): string;
+} {
   const links = indexLinks(s);
   const linkedPmspa = {
     project: new Set(links.project.byPmspa.keys()),
@@ -358,7 +379,10 @@ export function syncRows(
     return key;
   };
 
-  const taskRow = (t: Pm4Task, optional: boolean): string => {
+  const taskRow = (
+    t: Pm4Task,
+    opts: { optional?: boolean; parentOf?: string }
+  ): string => {
     const key = `task:${t.id}`;
     if (keys.has(key)) return key;
     const project = s.pm4Projects.find((p) => p.id === t.projectId);
@@ -395,7 +419,10 @@ export function syncRows(
         title: t.title,
         detail: COLUMN[t.status],
         ...base,
-        optional,
+        ...(opts.parentOf && !pair
+          ? { reason: opts.parentOf, parent: true }
+          : {}),
+        optional: Boolean(opts.optional),
         linkedId: pair?.remote.id ?? null,
         candidates: pair ? [] : pmspaCandidates.task(s, t, linkedPmspa.task),
         warnings: [
@@ -407,18 +434,27 @@ export function syncRows(
     return key;
   };
 
+  return { items, projectRow, taskRow };
+}
+
+/** The rows of a sync preview of a PM4 project (with its tasks) or task (with its project). Null: not in the snapshot. */
+export function syncRows(
+  s: SyncSnapshot,
+  target: PmspaSyncTargetDto
+): SyncPreviewItemDto[] | null {
+  const b = syncBuilder(s);
   if (target.type === "project") {
     const p = s.pm4Projects.find((x) => x.id === target.id);
     if (!p) return null;
-    projectRow(p);
+    b.projectRow(p);
     for (const t of s.pm4Tasks.filter((x) => x.projectId === p.id))
-      taskRow(t, true);
-    return items;
+      b.taskRow(t, { optional: true });
+    return b.items;
   }
   const t = s.pm4Tasks.find((x) => x.id === target.id);
   if (!t) return null;
-  taskRow(t, false);
-  return items;
+  b.taskRow(t, {});
+  return b.items;
 }
 
 /** The user's choice for a row; a `differs` row with a linked counterpart defaults to its suggested direction, anything else to `create`. */
