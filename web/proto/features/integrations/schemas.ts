@@ -1,8 +1,5 @@
 import { z } from "zod";
-import type {
-  PmspaConnectionDto,
-  SavePmspaConnectionDto
-} from "./proposed-types";
+import type { PmspaConnectionDto, SavePmspaConnectionDto } from "./types";
 
 /**
  * FR-INT-002's URL rule as far as the browser can tell: `https://`, or a local `http://` test instance

@@ -12,6 +12,9 @@ export const routes = {
     tasks: "/app/tasks",
     task: "/app/task",
     settings: "/app/settings",
+    connectors: {
+      pmspa: "/app/connectors/pmspa"
+    },
     userProfile: "/app/user-profile"
   }
 } as const;

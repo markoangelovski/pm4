@@ -55,12 +55,9 @@ import { formatDuration, today } from "@/lib/time";
 import { formatClock } from "@/lib/time/clock";
 import { cn } from "@/lib/utils";
 import { usePmspaDays } from "../api";
+import { pmspaProblemText } from "../sync";
 import { ExpandAllButton } from "./expand-all-button";
-import type {
-  PmspaDayDto,
-  PmspaDayLinkState,
-  PmspaEventDto
-} from "../proposed-types";
+import type { PmspaDayDto, PmspaDayLinkState, PmspaEventDto } from "../types";
 
 const DATE = "yyyy-MM-dd";
 const monday = (date: string) =>
@@ -121,7 +118,9 @@ export function PmspaTimeTab({
       <Empty>
         <EmptyHeader>
           <EmptyTitle>Couldn&apos;t read your PMSPA days.</EmptyTitle>
-          <EmptyDescription>PMSPA may be unreachable.</EmptyDescription>
+          <EmptyDescription>
+            {pmspaProblemText(query.error) ?? "PMSPA may be unreachable."}
+          </EmptyDescription>
         </EmptyHeader>
         <EmptyContent>
           <Button

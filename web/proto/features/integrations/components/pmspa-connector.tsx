@@ -41,7 +41,7 @@ import {
   usePmspaConnection,
   type PmspaConnection
 } from "../api";
-import type { PmspaImportSelectionDto } from "../proposed-types";
+import type { PmspaImportSelectionDto } from "../types";
 import { STATUS_LABEL, formatSyncedAt } from "../sync";
 import { ColdStartHint } from "./cold-start-hint";
 import { ConnectionStatusBadge } from "./connection-status-badge";
@@ -316,6 +316,7 @@ function Browser({ connection }: { connection: PmspaConnection }) {
         items={preview.data?.items}
         isPending={preview.isPending}
         isError={preview.isError}
+        error={preview.error}
         onRetry={() => preview.mutate(selection)}
         onRun={async (choices) => {
           const result = await runImport.mutateAsync({ selection, choices });

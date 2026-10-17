@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { TZDate } from "@date-fns/tz";
 import { format } from "date-fns";
-import type { PmspaConnectionStatus, PmspaLinkOrigin } from "./proposed-types";
+import { isApiError } from "@/lib/api/problem";
+import type { PmspaConnectionStatus, PmspaLinkOrigin } from "./types";
 
 /** FR-INT-010: "15 October 2026 at 22:50" in `tz`. */
 export function formatSyncedAt(iso: string, tz: string): string {
@@ -27,6 +28,29 @@ export function syncedLine(
   tz: string
 ): string {
   return `${ORIGIN_LABEL[origin]} on ${formatSyncedAt(iso, tz)}`;
+}
+
+/**
+ * OQ-182: a line for a PMSPA problem, or null to keep the screen's own line. A rate limit without
+ * `retryAfterSeconds` counts as 15 minutes.
+ */
+export function pmspaProblemText(error: unknown): string | null {
+  if (isApiError(error, 503, "pmspa-rate-limited")) {
+    const seconds = error.problem?.retryAfterSeconds;
+    const retry = typeof seconds === "number" ? seconds : 900;
+    const minutes = Math.max(1, Math.ceil(retry / 60));
+    return `PMSPA is busy. Try again in ${minutes} ${minutes === 1 ? "minute" : "minutes"}.`;
+  }
+  if (isApiError(error, 409, "pmspa-sync-running")) {
+    return "Another import, sync or push is still running.";
+  }
+  if (isApiError(error, 409, "pmspa-invalid-credentials")) {
+    return "PMSPA rejected the saved email or password.";
+  }
+  if (isApiError(error, 502, "pmspa-unreachable")) {
+    return "PMSPA couldn't be reached.";
+  }
+  return null;
 }
 
 /** FR-INT-004 status labels. */

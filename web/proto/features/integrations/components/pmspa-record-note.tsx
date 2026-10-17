@@ -3,8 +3,8 @@
 import { PopoverDescription } from "@/components/ui/popover";
 import { Skeleton } from "@/components/ui/skeleton";
 import { usePmspaConnection, usePmspaLinkDetail } from "../api";
-import type { PmspaLinkType, PmspaRecordDetail } from "../proposed-types";
-import { STATUS_LABEL } from "../sync";
+import type { PmspaLinkType, PmspaRecordDetail } from "../types";
+import { STATUS_LABEL, pmspaProblemText } from "../sync";
 import { ColdStartHint } from "./cold-start-hint";
 
 const NOUN: Record<PmspaLinkType, string> = {
@@ -37,14 +37,14 @@ function Detail({ record }: { record: PmspaRecordDetail }) {
       return (
         <>
           PMSPA task: <Quoted>{record.title}</Quoted> in the project{" "}
-          <Quoted>{record.projectTitle}</Quoted>, {record.column}
+          <Quoted>{record.projectTitle ?? ""}</Quoted>, {record.column}
         </>
       );
     case "time-log":
       return (
         <>
           PMSPA log: <Quoted>{record.title}</Quoted> in the event{" "}
-          <Quoted>{record.eventTitle}</Quoted>
+          <Quoted>{record.eventTitle ?? ""}</Quoted>
         </>
       );
   }
@@ -72,7 +72,9 @@ export function PmspaRecordNote({
   } else if (detail.isPending) {
     body = null;
   } else if (detail.isError) {
-    body = `Couldn't read the PMSPA ${NOUN[type]} right now.`;
+    body =
+      pmspaProblemText(detail.error) ??
+      `Couldn't read the PMSPA ${NOUN[type]} right now.`;
   } else if (!detail.data.pmspa) {
     body = `The PMSPA ${NOUN[type]} no longer exists.`;
   } else {

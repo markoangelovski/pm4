@@ -1,7 +1,7 @@
 "use client";
 
 import { useQueryClient } from "@tanstack/react-query";
-import type { PmspaConnectionStatus } from "@/proto/features/integrations/proposed-types";
+import type { PmspaConnectionStatus } from "@/proto/features/integrations/types";
 import { STATUS_LABEL } from "@/proto/features/integrations/sync";
 import { forceStatus, sleepPmspa } from "../pmspa";
 

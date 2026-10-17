@@ -4,6 +4,7 @@ import {
   CalendarCheck,
   FolderKanban,
   ListTodo,
+  Globe,
   Settings,
   type LucideIcon
 } from "lucide-react";
@@ -70,6 +71,19 @@ const SidebarContent: MenuItem[] = [
 ];
 
 export default SidebarContent;
+
+/** FR-INT-006: below Time once a PMSPA connection is saved (see `ConnectorsNav`). */
+export const connectorItems: MenuItem = {
+  heading: "Connectors",
+  items: [
+    {
+      id: "pmspa",
+      name: "PMSPA",
+      icon: Globe,
+      url: routes.app.connectors.pmspa
+    }
+  ]
+};
 
 /** The fixed sidebar footer (OQ-054): no heading. */
 export const footerItems: MenuItem[] = [

@@ -12,6 +12,7 @@ import { VersionBadge } from "@/features/system/components/version-badge";
 import FullLogo from "../../shared/logo/full-logo";
 import sidebaritems, { footerItems } from "./sidebaritems";
 import NavCollapse from "./nav-collapse";
+import { ConnectorsNav } from "./connectors-nav";
 import { Skeleton } from "@/components/ui/skeleton";
 
 function NavSkeleton() {
@@ -57,6 +58,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               {/* usePathname suspends under Cache Components when dynamic params are unknown */}
               <Suspense fallback={<NavSkeleton />}>
                 <NavCollapse menu={sidebaritems} className="text-sm" />
+                <ConnectorsNav />
               </Suspense>
             </div>
           </SidebarGroup>

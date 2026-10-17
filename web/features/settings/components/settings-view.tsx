@@ -1,8 +1,9 @@
 "use client";
 
 import { parseAsStringLiteral, useQueryState } from "nuqs";
-import { UserRound, type LucideIcon } from "lucide-react";
+import { Blocks, UserRound, type LucideIcon } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { IntegrationsSettings } from "@/features/integrations/components/integrations-settings";
 import { UserSettings } from "./user-settings";
 
 /** One entry per settings section. Add a section here and it gets its own tab. */
@@ -12,6 +13,12 @@ const SECTIONS = [
     label: "User settings",
     icon: UserRound,
     content: <UserSettings />
+  },
+  {
+    id: "integrations",
+    label: "Integrations",
+    icon: Blocks,
+    content: <IntegrationsSettings />
   }
 ] satisfies {
   id: string;
