@@ -1,6 +1,6 @@
 # Task Board
 
-**Next free ID:** T-0079
+**Next free ID:** T-0081
 
 | ID | Title | Milestone | App | Size | Status | Depends on |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -82,5 +82,7 @@
 | [T-0076](m6-integrations/T-0076-time-dtos-the-time-snapshot-loader.md) | Time DTOs, the time snapshot loader, the import preview with dates, the push preview (API-INT-008 dates, API-INT-010) | M6 | api | M | done | T-0075 |
 | [T-0077](m6-integrations/T-0077-the-import-commit-of-day-and.md) | The import commit of day and event rows (API-INT-009 dates) | M6 | api | M | done | T-0076 |
 | [T-0078](m6-integrations/T-0078-the-push-commit-event-writes-moves.md) | The push commit: event writes, moves, D3 linking, empty-event deletes, the push endpoint (API-INT-011) | M6 | api | L | done | T-0077 |
+| [T-0079](m6-integrations/T-0079-types-switch-d1-features-integrations-api.md) | Types switch (D1), features/integrations/api.ts, sync.ts with pmspaProblemText, the Settings → Integrations tab, routes and the Connectors sidebar section | M6 | web | M | ready | — |
+| [T-0080](m6-integrations/T-0080-the-connector-page-and-route-the.md) | The connector page and route, the dialog, Sync / Push buttons, sync flags, the error lines, and the project/task/day twins | M6 | web | M | blocked | T-0079 |
 
 M0–M5 are done. M6 (Integrations) is in progress: feat-int-conn-api first, then int-sync-api, int-time-api and int-web (OQ-175).

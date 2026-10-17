@@ -21,7 +21,7 @@ task details, **Push to PMSPA** on the day view, and the sync flags (SCR-062), w
 ## Decisions
 | # | Decision | Source |
 | --- | --- | --- |
-| D1 | The prototype's `proposed-types.ts` becomes `types.ts` (aliases of `@/lib/api/schema` with the same names) in the prototype and in production; every import of it switches; the mock client drops `PmspaPaths`; `proposed-types.ts` is deleted. | prototype.md (*Mock data layer*), as feat-hard-delete |
+| D1 | The prototype's `proposed-types.ts` becomes `types.ts` (aliases of `@/lib/api/schema` with the same names) in the prototype and in production; every import of it switches; the mock client drops `PmspaPaths`; `proposed-types.ts` is deleted. Where a generated schema is looser than the prototype's type (optional fields, no union), `types.ts` stays an alias and the five places that don't compile get `?? null` / `?? ""` / `?? []` (*Interfaces*). | prototype.md (*Mock data layer*), as feat-hard-delete |
 | D2 | Promotion = the twin copy (no `P` rows: several prototype files change first, D1 and D3): `sed -e 's#@/proto/mock/client#@/lib/api/client#' -e 's#@/proto/#@/#g' proto/features/x > features/x`, then Prettier. Existing production files are replaced the same way. | As feat-hard-delete D5 |
 | D3 | `pmspaProblemText(error)` in `sync.ts` maps the PMSPA problems to OQ-182's lines; each generic error line of the prototype uses it first. Changed in the prototype and production together. | OQ-182 (owner) |
 | D4 | The Connectors section is a client component in the sidebar (`connectors-nav.tsx`), shown while `usePmspaConnection` says a connection is saved; the main menu stays static. | Agent: the prototype sidebar does this in `mock/shell` (never promoted) |
@@ -33,7 +33,7 @@ task details, **Push to PMSPA** on the day view, and the sync flags (SCR-062), w
 **Before the tests are written:** feat-int-conn-api, feat-int-sync-api and feat-int-time-api are done (`api/openapi.json` has API-INT-001…016).
 
 **Non-goals** (implementers must not touch these):
-- `api/`. Markup, copy or layout of the promoted files beyond D1 and D3. The prototype's `mock/` other than D1's type imports.
+- `api/`. Markup, copy or layout of the promoted files beyond D1 and D3. The prototype's `mock/` other than D1's type imports and D1's `dates` fix.
 - The CSP (not implemented yet; security.md lists `images.unsplash.com` for when it is).
 - `*.ac.test.ts(x)` files written in the test step.
 
@@ -60,7 +60,7 @@ task details, **Push to PMSPA** on the day view, and the sync flags (SCR-062), w
 | web | `web/proto/features/integrations/types.ts`, `web/features/integrations/types.ts` | C | T1 | D1; production = the twin (D2) |
 | web | `web/proto/features/integrations/proposed-types.ts` | D | T1 | `rm` (D1) |
 | web | `web/proto/features/integrations/api.ts`, `web/proto/features/integrations/schemas.ts`, `web/proto/features/integrations/sync.ts` | M | T1 | D1 imports; `sync.ts` also D3 |
-| web | `web/proto/mock/client.ts`, `web/proto/mock/pmspa.ts`, `web/proto/mock/shell/pmspa-mock-switch.tsx` | M | T1 | D1 imports, `createClient<paths>` |
+| web | `web/proto/mock/client.ts`, `web/proto/mock/pmspa.ts`, `web/proto/mock/shell/pmspa-mock-switch.tsx` | M | T1 | D1 imports, `createClient<paths>`, the `dates` fix in `pmspa.ts` |
 | web | `web/features/integrations/api.ts`, `web/features/integrations/schemas.ts`, `web/features/integrations/sync.ts` | C | T1 | The twins (D2) |
 | web | `web/proto/features/integrations/components/pmspa-connection-card.tsx` | M | T1 | D1 imports; D3 |
 | web | `web/proto/features/integrations/components/connection-status-badge.tsx` | M | T1 | D1 imports |
@@ -69,7 +69,7 @@ task details, **Push to PMSPA** on the day view, and the sync flags (SCR-062), w
 | web | `web/lib/routes.ts` | M | T1 | `connectors: { pmspa: "/app/connectors/pmspa" }` under `app` |
 | web | `web/app/(dashboard-layout)/layout/vertical/sidebar/sidebaritems.ts`, `web/app/(dashboard-layout)/layout/vertical/sidebar/app-sidebar.tsx` | M | T1 | D4 |
 | web | `web/app/(dashboard-layout)/layout/vertical/sidebar/connectors-nav.tsx` | C | T1 | D4 |
-| web | `web/proto/features/integrations/components/pmspa-connector.tsx`, `web/proto/features/integrations/components/pmspa-projects-tab.tsx`, `web/proto/features/integrations/components/pmspa-time-tab.tsx`, `web/proto/features/integrations/components/sync-preview-dialog.tsx`, `web/proto/features/integrations/components/push-button.tsx`, `web/proto/features/integrations/components/sync-flag.tsx`, `web/proto/features/integrations/components/pmspa-record-note.tsx` | M | T2 | D1 imports; D3 |
+| web | `web/proto/features/integrations/components/pmspa-connector.tsx`, `web/proto/features/integrations/components/pmspa-projects-tab.tsx`, `web/proto/features/integrations/components/pmspa-time-tab.tsx`, `web/proto/features/integrations/components/sync-preview-dialog.tsx`, `web/proto/features/integrations/components/push-button.tsx`, `web/proto/features/integrations/components/sync-flag.tsx`, `web/proto/features/integrations/components/pmspa-record-note.tsx` | M | T1, T2 | T1: D1 imports and type fixes; T2: D3 |
 | web | `web/features/integrations/components/pmspa-connector.tsx`, `web/features/integrations/components/pmspa-projects-tab.tsx`, `web/features/integrations/components/pmspa-time-tab.tsx`, `web/features/integrations/components/expand-all-button.tsx`, `web/features/integrations/components/sync-preview-dialog.tsx`, `web/features/integrations/components/push-button.tsx`, `web/features/integrations/components/sync-flag.tsx`, `web/features/integrations/components/pmspa-record-note.tsx` | C | T2 | The twins (D2), after the change |
 | web | `web/app/(dashboard-layout)/app/connectors/pmspa/page.tsx` | C | T2 | From `app/proto/app/connectors/pmspa/page.dev.tsx`, importing `@/features/…` |
 | web | `web/features/projects/components/project-detail.tsx`, `web/features/projects/components/projects-list.tsx`, `web/features/tasks/components/task-detail.tsx`, `web/features/tasks/components/tasks-list.tsx`, `web/features/time/components/day-view.tsx`, `web/features/time/components/log-row.tsx` | M | T2 | Replaced by the twin (D2) |
@@ -77,13 +77,40 @@ task details, **Push to PMSPA** on the day view, and the sync flags (SCR-062), w
 ## Interfaces
 
 ### Types and hooks (T1)
-- `npm run api:types`. `web/proto/features/integrations/types.ts`: one `export type <Name> = components["schemas"]["<Name>Dto">]` (or the enum
-  schema) for every type `proposed-types.ts` exports except `PmspaPaths`, with the same names, e.g. `export type PmspaConnectionDto =
-  components["schemas"]["PmspaConnectionResponseDto"]`. Where a schema name differs from the prototype's, alias it; where the prototype's
-  type is a union the schema can't name (`PmspaRecordDetail`, `SyncChoiceDto`), use the schema's `oneOf` type as generated. Then replace
-  `"./proposed-types"` / `"../proposed-types"` / `"@/proto/features/integrations/proposed-types"` with `types` everywhere under `web/proto`,
-  `createClient<paths & PmspaPaths>` → `createClient<paths>` in `mock/client.ts`, and `rm proposed-types.ts`. Typecheck must pass
-  before promoting.
+- `npm run api:types` (already run in the test step: `schema.d.ts` has the PMSPA schemas). Then
+  `web/proto/features/integrations/types.ts` (header: `import type { components } from "@/lib/api/schema";` and
+  `type S = components["schemas"];`) exports these 35 names, one line each, and nothing else:
+
+  | Name(s) | `export type <Name> =` |
+  | --- | --- |
+  | `PmspaConnectionStatus`, `PmspaAccountDto`, `SavePmspaConnectionDto`, `PmspaLinkType`, `PmspaLinkOrigin`, `PmspaLinkDto`, `PmspaRecordLinkDto`, `PmspaLinkDetailDto`, `PmspaProjectDto`, `PmspaColumn`, `PmspaTaskDto`, `PmspaLogDto`, `PmspaEventDto`, `PmspaDayDto`, `PmspaImportSelectionDto`, `PmspaSyncTargetDto`, `PmspaPushTargetDto`, `SyncFieldDiffDto`, `SyncCandidateDto`, `SyncPreviewItemDto`, `SyncPreviewDto`, `SyncChoiceDto`, `PmspaImportDto`, `PmspaSyncDto`, `PmspaPushDto`, `SyncResultItemDto`, `SyncResultDto` | `S["<Name>"]` (same name) |
+  | `PmspaConnectionDto` | `S["PmspaConnectionResponseDto"]` |
+  | `PmspaRecordDetail` | `S["PmspaRecordDetailDto"]` |
+  | `PmspaDayLinkState` | `S["PmspaDayDto"]["linkState"]` |
+  | `SyncRecordType` | `S["SyncPreviewItemDto"]["type"]` |
+  | `SyncAction` | `S["SyncPreviewItemDto"]["action"]` |
+  | `SyncDirection` | `NonNullable<S["SyncPreviewItemDto"]["direction"]>` |
+  | `SyncOutcome` | `S["SyncResultItemDto"]["outcome"]` |
+  | `PmspaAccountSwitchProblem` | copied unchanged from `proposed-types.ts` (the schema has no type for a problem extension) |
+
+  `PmspaPaths` is not exported. Then replace `"./proposed-types"` / `"../proposed-types"` /
+  `"@/proto/features/integrations/proposed-types"` with `"./types"` / `"../types"` / `"@/proto/features/integrations/types"` in the 15
+  files under `web/proto` that import it (`grep -rln proposed-types web/proto`); in `mock/client.ts` drop the `PmspaPaths` import and
+  `createClient<paths & PmspaPaths>` → `createClient<paths>`; `rm proposed-types.ts`.
+- The generated `SyncChoiceDto` and `PmspaRecordDetailDto` are flat objects with optional fields (not unions), and
+  `PmspaImportSelectionDto.dates` is optional, so exactly these five places stop compiling. Fix each as shown and change nothing else:
+
+  | File (under `web/proto/`) | Code | Becomes |
+  | --- | --- | --- |
+  | `features/integrations/components/sync-preview-dialog.tsx` (`PreviewRow`, the `PairCompare` of a row that differs) | `overwrite={choice?.kind === "link" ? choice.overwrite : null}` | `overwrite={choice?.kind === "link" ? (choice.overwrite ?? null) : null}` |
+  | same file (`LinkChoice`) | `overwrite={choice.overwrite}` | `overwrite={choice.overwrite ?? null}` |
+  | `features/integrations/components/pmspa-record-note.tsx` (case `"task"`) | `<Quoted>{record.projectTitle}</Quoted>` | `<Quoted>{record.projectTitle ?? ""}</Quoted>` |
+  | same file (case `"time-log"`) | `<Quoted>{record.eventTitle}</Quoted>` | `<Quoted>{record.eventTitle ?? ""}</Quoted>` |
+  | `mock/pmspa.ts` | `[...sel.dates]` | `[...(sel.dates ?? [])]` |
+
+  `npm run typecheck` must then pass (a stale `.next/types` entry for the removed trash page clears with `npm run build`) before
+  promoting. The test step left typed stubs at `features/integrations/api.ts`, `sync.ts` and `components/sync-preview-dialog.tsx`
+  and at `connectors-nav.tsx`: the twin copy (D2) and the D4 component replace them whole.
 - `features/integrations/api.ts` = the twin of the prototype's. Hook names, keys and invalidations stay exactly as the prototype has them.
 
 ### Error lines (T1, T2)
@@ -152,3 +179,4 @@ None.
 ## Changelog
 - 2026-10-17: Initial draft (prototype `eefe787`; OQ-140, OQ-175, OQ-182). Ready for review.
 - 2026-10-17: Approved by the owner.
+- 2026-10-17: Test step: D1 spelled out (the type table, the five fixes the looser generated schemas need, checked by a trial switch); the prototype components row is T1, T2 (T1 switches their imports); `api:types` and the stubs land with the tests. Approved by the owner.
