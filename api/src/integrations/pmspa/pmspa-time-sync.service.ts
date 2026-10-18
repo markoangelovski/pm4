@@ -17,7 +17,7 @@ import {
 } from "./pmspa-remote.js";
 import { PmspaSyncRepository } from "./pmspa-sync.repository.js";
 import { CANT_LINK, result, RowFailure, type Run } from "./pmspa-run.js";
-import type { TimeSnapshot } from "./pmspa-time-preview.js";
+import { mappedGroup, type TimeSnapshot } from "./pmspa-time-preview.js";
 import {
   groupDay,
   hoursToMinutes,
@@ -27,7 +27,8 @@ import {
   pmspaLogTuple,
   minuteToStart,
   startToMinute,
-  type Pm4LogForPush
+  type Pm4LogForPush,
+  type PushGroup
 } from "./pmspa-time-fields.js";
 
 /** OQ-196: how many of an event's logs were imported, for a failure reason. */
@@ -49,6 +50,22 @@ export class PmspaTimeSyncService {
     private readonly workdays: WorkdaysService
   ) {}
 
+  /** The PMSPA days of `dates` not after the user's today, one `getDay` at a time; missing days are left out. */
+  async readDays(
+    userId: string,
+    timeZone: string,
+    dates: string[]
+  ): Promise<RemoteDay[]> {
+    const today = todayIn(timeZone);
+    const out: RemoteDay[] = [];
+    for (const date of dates) {
+      if (date > today) continue;
+      const day = await this.remote.getDay(userId, date);
+      if (day) out.push(day);
+    }
+    return out;
+  }
+
   /**
    * `base` plus the time data of `dates`: the PMSPA days of the dates not in the future, the PM4 logs of the dates
    * and of their linked logs, the time-log links, and the PM4 workday starts.
@@ -56,15 +73,10 @@ export class PmspaTimeSyncService {
   async loadTime(
     userId: string,
     base: SyncSnapshot,
-    dates: string[]
+    dates: string[],
+    remoteDays: RemoteDay[]
   ): Promise<TimeSnapshot> {
     const today = todayIn(base.timeZone);
-    const remoteDays: RemoteDay[] = [];
-    for (const date of dates) {
-      if (date > today) continue;
-      const day = await this.remote.getDay(userId, date);
-      if (day) remoteDays.push(day);
-    }
     const remoteLogIds = remoteDays.flatMap((d) =>
       d.events.flatMap((e) => e.logs.map((l) => l.id))
     );
@@ -220,7 +232,7 @@ export class PmspaTimeSyncService {
         throw new RowFailure("Its task isn't in PMSPA (it was left out).");
       taskId = t;
     }
-    const group = taskId ?? `title:${g.title}`;
+    const group = hashGroup(run, g);
     const find = (d: RemoteDay | null | undefined) =>
       d?.events.find(
         (e) => e.taskId === taskId && (taskId !== null || e.title === g.title)
@@ -374,11 +386,7 @@ export class PmspaTimeSyncService {
       ids: [pm4Id]
     });
     if (!pm4) throw new RowFailure(CANT_LINK);
-    const group = groupDay([pm4])[0];
-    const pmspaTask =
-      group.taskId === null
-        ? undefined
-        : run.links.pmspaOf("task", group.taskId);
+    const group = hashGroup(run, groupDay([pm4])[0]);
     const link: LinkRow = {
       type: "time-log",
       pm4Id,
@@ -386,14 +394,22 @@ export class PmspaTimeSyncService {
       pmspaUserId: run.pmspaUserId,
       origin: "imported",
       syncedAt: run.now,
-      pm4Hash: fingerprint(
-        pm4LogTuple(pm4, pmspaTask ?? `title:${group.title}`)
-      ),
+      pm4Hash: fingerprint(pm4LogTuple(pm4, group)),
       pmspaHash: fingerprint(pmspaLogTuple(log, event))
     };
     await this.links.save(run.userId, link);
     run.logLinks.set(log.id, link);
   }
+}
+
+/**
+ * The task key of a time-log hash: `mappedGroup`'s rule (all the snapshot's task links, else the title), plus the
+ * task links created earlier in this run, which the next preview will find saved. Previews compare with this rule.
+ */
+function hashGroup(run: Run, g: PushGroup): string {
+  const made =
+    g.taskId === null ? undefined : run.links.pmspaOf("task", g.taskId);
+  return made ?? mappedGroup(g, run.snapshot as TimeSnapshot);
 }
 
 /**

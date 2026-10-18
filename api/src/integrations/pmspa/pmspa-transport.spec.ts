@@ -1,3 +1,4 @@
+import { Logger } from "@nestjs/common";
 import { describe, expect, it, vi } from "vitest";
 import type { PmspaHostGuard } from "./pmspa-host-guard.js";
 import type { PmspaStore } from "./pmspa-store.js";
@@ -9,7 +10,9 @@ function setup(
 ) {
   const store = {
     pausedFor: vi.fn().mockResolvedValue(opts.paused ?? 0),
-    pause: vi.fn().mockResolvedValue(undefined)
+    pause: vi.fn().mockResolvedValue(undefined),
+    getRateLimit: vi.fn().mockResolvedValue(null),
+    setRateLimit: vi.fn().mockResolvedValue(undefined)
   };
   const guard = { check: vi.fn().mockResolvedValue(opts.guard ?? "ok") };
   const fetchFn = vi.fn(fetchImpl);
@@ -88,5 +91,70 @@ describe("PmspaTransport", () => {
       b.transport.send({ method: "GET", baseUrl: base, path: "/v1/x" })
     ).rejects.toMatchObject({ status: 503 });
     expect(b.store.pause).toHaveBeenCalledWith("pmspa.test", 900);
+  });
+
+  describe("observe (feat-int-budget)", () => {
+    const req = { method: "GET", baseUrl: base, path: "/v1/x" } as const;
+    const headers = (h: Record<string, string>, status = 200) =>
+      Promise.resolve(new Response("{}", { status, headers: h }));
+
+    it("keeps the X-RateLimit-* of an answer", async () => {
+      const reset = String(Math.floor(Date.now() / 1000) + 60);
+      const { transport, store } = setup(() =>
+        headers({
+          "X-RateLimit-Limit": "100",
+          "X-RateLimit-Remaining": "40",
+          "X-RateLimit-Reset": reset
+        })
+      );
+      await transport.send(req);
+      expect(store.setRateLimit).toHaveBeenCalledWith(
+        "pmspa.test",
+        expect.objectContaining({ limit: 100, remaining: 40 })
+      );
+    });
+
+    it("a 429 stores remaining 0 with the stored limit, and still pauses and throws", async () => {
+      const { transport, store } = setup(() =>
+        headers({ "Retry-After": "30" }, 429)
+      );
+      store.getRateLimit.mockResolvedValue({ limit: 100 });
+      await expect(transport.send(req)).rejects.toMatchObject({ status: 503 });
+      expect(store.setRateLimit).toHaveBeenCalledWith(
+        "pmspa.test",
+        expect.objectContaining({ limit: 100, remaining: 0 })
+      );
+      expect(store.pause).toHaveBeenCalledWith("pmspa.test", 30);
+    });
+
+    it("a 429 pauses the host before it stores the answer", async () => {
+      const { transport, store } = setup(() =>
+        headers({ "X-RateLimit-Limit": "100", "Retry-After": "900" }, 429)
+      );
+      await expect(transport.send(req)).rejects.toMatchObject({ status: 503 });
+      expect(store.pause.mock.invocationCallOrder[0]).toBeLessThan(
+        store.setRateLimit.mock.invocationCallOrder[0]
+      );
+    });
+
+    it("a Redis failure only logs a warning and the response goes through", async () => {
+      const reset = String(Math.floor(Date.now() / 1000) + 60);
+      const { transport, store } = setup(() =>
+        headers({
+          "X-RateLimit-Limit": "100",
+          "X-RateLimit-Remaining": "40",
+          "X-RateLimit-Reset": reset
+        })
+      );
+      store.setRateLimit.mockRejectedValue(new Error("redis down"));
+      const warn = vi
+        .spyOn(Logger.prototype, "warn")
+        .mockImplementation(() => undefined);
+      await expect(transport.send(req)).resolves.toMatchObject({
+        status: 200
+      });
+      expect(warn).toHaveBeenCalledTimes(1);
+      warn.mockRestore();
+    });
   });
 });

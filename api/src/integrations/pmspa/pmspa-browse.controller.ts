@@ -2,7 +2,6 @@ import {
   BadRequestException,
   Controller,
   Get,
-  NotFoundException,
   Param,
   Query
 } from "@nestjs/common";
@@ -30,7 +29,10 @@ import {
   type LinkRow,
   type PmspaLinkType
 } from "./pmspa-links.repository.js";
+import { dayItems } from "./pmspa-day-items.js";
+import type { RemoteTask } from "./pmspa-fields.js";
 import { PmspaRemote } from "./pmspa-remote.js";
+import { startToMinute } from "./pmspa-time-fields.js";
 import { PmspaSyncRepository } from "./pmspa-sync.repository.js";
 
 /** `/api/v1/integrations/pmspa/projects` (API-INT-005, API-INT-006): the connected account's PMSPA records, read live. */
@@ -72,14 +74,19 @@ export class PmspaBrowseController {
     @CurrentUser() user: AuthUser,
     @Param() params: PmspaProjectParamsDto
   ): Promise<PmspaTaskListDto> {
-    const projects = await this.remote.listProjects(user.id);
-    if (!projects.some((p) => p.id === params.id)) {
-      throw new NotFoundException("PMSPA project not found.");
-    }
-    const remote = await this.remote.listTasks(user.id, params.id);
-    const linked = await this.activeLinks(user.id, "task");
-    const titles = await this.sync.titles(
+    return this.taskItems(
       user.id,
+      await this.remote.listTasks(user.id, params.id)
+    );
+  }
+
+  private async taskItems(
+    userId: string,
+    remote: RemoteTask[]
+  ): Promise<PmspaTaskListDto> {
+    const linked = await this.activeLinks(userId, "task");
+    const titles = await this.sync.titles(
+      userId,
       "task",
       [...linked.values()].map((row) => row.pm4Id)
     );
@@ -96,33 +103,51 @@ export class PmspaBrowseController {
   /** Every task of the connected account, with their PM4 links (API-INT-017). */
   @Get("tasks")
   @ApiProblemResponses(401, 409, 502, 503)
-  allTasks(@CurrentUser() user: AuthUser): Promise<PmspaTaskListDto> {
-    void user;
-    throw new Error("not implemented (feat-int-budget)");
+  async allTasks(@CurrentUser() user: AuthUser): Promise<PmspaTaskListDto> {
+    return this.taskItems(user.id, await this.remote.listAllTasks(user.id));
   }
 
   /** The connected account's days in a week, newest first, from one PMSPA call: no events (API-INT-007). */
   @Get("days")
   @ApiProblemResponses(400, 401, 409, 502, 503)
-  days(
+  async days(
     @CurrentUser() user: AuthUser,
     @Query() query: PmspaDaysQueryDto
   ): Promise<PmspaDaySummaryListDto> {
     assertWeek(query.from, query.to);
-    void user;
-    throw new Error("not implemented (feat-int-budget)");
+    const found = await this.remote.listDaySummaries(
+      user.id,
+      query.from,
+      query.to
+    );
+    const items = found
+      .map((d) => ({
+        date: d.date,
+        startMinute: startToMinute(d.start),
+        eventCount: d.eventCount
+      }))
+      .sort((a, b) => b.date.localeCompare(a.date));
+    return { items };
   }
 
   /** The given days, newest first, with their events and logs (API-INT-018). */
   @Get("days/details")
   @ApiProblemResponses(400, 401, 409, 502, 503)
-  dayDetails(
+  async dayDetails(
     @CurrentUser() user: AuthUser,
     @Query() query: PmspaDayDetailsQueryDto
   ): Promise<PmspaDayListDto> {
-    void user;
-    void query;
-    throw new Error("not implemented (feat-int-budget)");
+    const days = await this.remote.getDays(user.id, query.dates);
+    const taskIds = days.flatMap((d) =>
+      d.events.flatMap((e) => (e.taskId ? [e.taskId] : []))
+    );
+    const tasks = await this.remote.getTasks(user.id, taskIds);
+    const projects = await this.remote.getProjects(
+      user.id,
+      tasks.map((t) => t.projectId)
+    );
+    const linked = await this.activeLinks(user.id, "time-log");
+    return { items: dayItems(days, tasks, projects, new Set(linked.keys())) };
   }
 
   /** The active links of `type` keyed by their PMSPA id; none without a connected account. */

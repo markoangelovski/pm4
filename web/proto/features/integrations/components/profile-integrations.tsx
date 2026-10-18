@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Globe } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { routes } from "@/proto/lib/routes";
@@ -44,14 +44,16 @@ function PmspaIntegration() {
         <span className="text-sm text-muted-foreground">
           No PMSPA account connected.
         </span>
-        <Button
-          variant="outline"
-          size="sm"
-          className="cursor-pointer"
-          render={<Link href={SETTINGS} />}
+        <Link
+          href={SETTINGS}
+          className={buttonVariants({
+            variant: "outline",
+            size: "sm",
+            className: "cursor-pointer"
+          })}
         >
           Connect in Settings
-        </Button>
+        </Link>
       </div>
     );
   }

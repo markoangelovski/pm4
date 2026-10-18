@@ -20,6 +20,7 @@ export type PmspaTaskDto = S["PmspaTaskDto"];
 export type PmspaLogDto = S["PmspaLogDto"];
 export type PmspaEventDto = S["PmspaEventDto"];
 export type PmspaDayDto = S["PmspaDayDto"];
+export type PmspaDaySummaryDto = S["PmspaDaySummaryDto"];
 export type PmspaDayLinkState = S["PmspaDayDto"]["linkState"];
 export type PmspaImportSelectionDto = S["PmspaImportSelectionDto"];
 export type PmspaSyncTargetDto = S["PmspaSyncTargetDto"];
@@ -38,6 +39,9 @@ export type PmspaPushDto = S["PmspaPushDto"];
 export type SyncOutcome = S["SyncResultItemDto"]["outcome"];
 export type SyncResultItemDto = S["SyncResultItemDto"];
 export type SyncResultDto = S["SyncResultDto"];
+export type PmspaRateLimitDto = S["PmspaRateLimitDto"];
+export type PmspaCandidatesInputDto = S["PmspaCandidatesInputDto"];
+export type PmspaCandidatesDto = S["PmspaCandidatesDto"];
 
 /** The 409 problem's extension when the credentials log in as another PMSPA account and links exist (OQ-161). */
 export interface PmspaAccountSwitchProblem {

@@ -19,8 +19,11 @@ describe("PmspaSyncService", () => {
   let service: PmspaSyncService;
   const remote = {
     listProjects: vi.fn(),
-    listTasks: vi.fn(),
+    listTasksOf: vi.fn(),
     listAllTasks: vi.fn(),
+    listTasks: vi.fn(),
+    getTasks: vi.fn(),
+    getProjects: vi.fn(),
     getProject: vi.fn(),
     getTask: vi.fn(),
     createProject: vi.fn(),
@@ -66,34 +69,33 @@ describe("PmspaSyncService", () => {
     sync.pm4Tasks.mockResolvedValue([]);
     remote.listProjects.mockResolvedValue([]);
     remote.listAllTasks.mockResolvedValue([]);
+    remote.listTasksOf.mockResolvedValue([]);
+    remote.listTasks.mockResolvedValue([]);
+    remote.getTasks.mockResolvedValue([]);
+    remote.getProjects.mockResolvedValue([]);
   });
 
   it("load: lists the tasks of every selected project found in PMSPA, not the others", async () => {
     const p1 = "b".repeat(24);
     const p2 = "c".repeat(24);
     remote.listProjects.mockResolvedValue([{ id: p1 }]);
-    remote.listTasks.mockResolvedValue([{ id: "t1" }]);
+    remote.listTasksOf.mockResolvedValue([{ id: "t1" }]);
     const snapshot = await service.load("u", {
       projects: [
         { id: p1, taskIds: null },
         { id: p2, taskIds: null }
       ]
     });
-    expect(remote.listTasks).toHaveBeenCalledTimes(1);
-    expect(remote.listTasks).toHaveBeenCalledWith("u", p1);
+
+    expect(remote.listTasksOf).toHaveBeenCalledWith("u", new Set([p1]));
     expect(remote.listAllTasks).not.toHaveBeenCalled();
     expect(snapshot.remoteTasks).toEqual([{ id: "t1" }]);
     expect(snapshot.timeZone).toBe("Europe/Zagreb");
   });
 
-  it("load: without a selection lists every PMSPA task", async () => {
-    await service.load("u", null);
-    expect(remote.listAllTasks).toHaveBeenCalledWith("u");
-  });
-
   it("load: no connection → no links, and PMSPA is asked first", async () => {
     connections.find.mockResolvedValue(null);
-    const snapshot = await service.load("u", null);
+    const snapshot = await service.load("u", { projects: [] });
     expect(snapshot.links).toEqual([]);
     expect(links.active).not.toHaveBeenCalled();
     expect(remote.listProjects).toHaveBeenCalledWith("u");
@@ -101,7 +103,9 @@ describe("PmspaSyncService", () => {
 
   it("load: a missing connection surfaces PMSPA's error from listProjects", async () => {
     remote.listProjects.mockRejectedValue(new Error("not connected"));
-    await expect(service.load("u", null)).rejects.toThrow("not connected");
+    await expect(service.load("u", { projects: [] })).rejects.toThrow(
+      "not connected"
+    );
     expect(sync.pm4Projects).not.toHaveBeenCalled();
   });
 
@@ -210,7 +214,7 @@ describe("PmspaSyncService", () => {
 
     it("an imported task whose project was left out fails: its project wasn't imported", async () => {
       remote.listProjects.mockResolvedValue([remP(R1, "A")]);
-      remote.listTasks.mockResolvedValue([
+      remote.listTasksOf.mockResolvedValue([
         {
           id: R2,
           projectId: R1,

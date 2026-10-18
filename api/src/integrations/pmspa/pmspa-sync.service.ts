@@ -27,11 +27,18 @@ import {
   PmspaLinksRepository,
   type LinkRow
 } from "./pmspa-links.repository.js";
-import { PmspaRemote, PmspaWriteError } from "./pmspa-remote.js";
+import {
+  PmspaRemote,
+  PmspaWriteError,
+  type RemoteDay
+} from "./pmspa-remote.js";
+import { dayItems } from "./pmspa-day-items.js";
+import type { PmspaDayDto } from "./dto/pmspa-browse.dto.js";
 import {
   fingerprint,
   projectTuple,
   taskTuple,
+  type Pm4Project,
   type Pm4Task,
   type RemoteProject,
   type RemoteTask
@@ -39,6 +46,7 @@ import {
 import {
   choiceFor,
   importRows,
+  pmspaCandidateList,
   syncRows,
   type SyncDirection,
   type SyncSnapshot
@@ -53,6 +61,7 @@ import {
 } from "./pmspa-writes.js";
 import { PmspaSyncRepository } from "./pmspa-sync.repository.js";
 import { PmspaTimeSyncService } from "./pmspa-time-sync.service.js";
+import { groupDay } from "./pmspa-time-fields.js";
 import {
   importTimeRows,
   pushDayRows,
@@ -91,19 +100,60 @@ export class PmspaSyncService {
   ) {}
 
   /**
-   * The snapshot a preview is computed from: PMSPA's projects and tasks (only the selected projects' tasks when
-   * `sel` is given), the caller's PM4 projects and tasks, and the active links of the connected account.
-   * With `sel.dates`, the time data of those days too (a `TimeSnapshot`).
+   * The snapshot a preview is computed from: PMSPA's selected projects (`sel.projects`, read by id) and their
+   * tasks, the caller's PM4 projects and tasks, and the active links of the connected account.
+   * With `sel.dates`, it reads those days, the selected projects' tasks and the days' event tasks by id instead,
+   * and adds the time data of those days (a `TimeSnapshot`).
    */
   async load(
     userId: string,
-    sel: PmspaImportSelectionDto | null
+    sel: PmspaImportSelectionDto
   ): Promise<SyncSnapshot> {
-    const remoteProjects = await this.remote.listProjects(userId);
-
     const user = await this.users.findById(userId);
     if (!user) {
       throw new UnauthorizedException("Missing or invalid access token.");
+    }
+    const dates = sel.dates?.length ? sel.dates : null;
+
+    // D3: a time import reads its days, the selected projects' tasks and the days' event tasks, not all of PMSPA.
+    let days: RemoteDay[] = [];
+    let remoteProjects: RemoteProject[];
+    let remoteTasks: RemoteTask[];
+    if (dates) {
+      days = await this.timeSync.readDays(userId, user.timeZone, dates);
+      const selected = await this.remote.getProjects(
+        userId,
+        sel.projects.map((p) => p.id)
+      );
+      remoteTasks = await this.remote.listTasksOf(
+        userId,
+        selected.map((p) => p.id)
+      );
+      const have = new Set(remoteTasks.map((t) => t.id));
+      const eventTaskIds = days.flatMap((d) =>
+        d.events.flatMap((e) =>
+          e.taskId !== null && !have.has(e.taskId) ? [e.taskId] : []
+        )
+      );
+      remoteTasks.push(...(await this.remote.getTasks(userId, eventTaskIds)));
+      const inSelected = new Set(selected.map((p) => p.id));
+      remoteProjects = [
+        ...selected,
+        ...(await this.remote.getProjects(
+          userId,
+          remoteTasks
+            .map((t) => t.projectId)
+            .filter((id) => !inSelected.has(id))
+        ))
+      ];
+    } else {
+      remoteProjects = await this.remote.listProjects(userId);
+      const selected = new Set(
+        sel.projects
+          .map((p) => p.id)
+          .filter((id) => remoteProjects.some((r) => r.id === id))
+      );
+      remoteTasks = await this.remote.listTasksOf(userId, selected);
     }
 
     const pmspaUserId =
@@ -119,23 +169,6 @@ export class PmspaSyncService {
     const pm4Projects = await this.sync.pm4Projects(userId);
     const pm4Tasks = await this.sync.pm4Tasks(userId);
 
-    // An event's task may be outside the selected projects, so a time import reads all of PMSPA's tasks.
-    let remoteTasks: RemoteTask[];
-    if (sel && !sel.dates?.length) {
-      const selected = new Set(
-        sel.projects
-          .map((p) => p.id)
-          .filter((id) => remoteProjects.some((r) => r.id === id))
-      );
-      remoteTasks = (
-        await Promise.all(
-          [...selected].map((id) => this.remote.listTasks(userId, id))
-        )
-      ).flat();
-    } else {
-      remoteTasks = await this.remote.listAllTasks(userId);
-    }
-
     const base: SyncSnapshot = {
       timeZone: user.timeZone,
       pm4Projects,
@@ -144,9 +177,122 @@ export class PmspaSyncService {
       remoteTasks,
       links
     };
-    if (sel?.dates?.length)
-      return this.timeSync.loadTime(userId, base, sel.dates);
+    if (dates) return this.timeSync.loadTime(userId, base, dates, days);
     return base;
+  }
+
+  /** D9: the snapshot of a sync or day push: only the PMSPA records linked to the target's PM4 records. */
+  private async loadLinked(
+    userId: string,
+    target: PmspaSyncTargetDto | PmspaPushTargetDto,
+    picks: SyncChoiceDto[] = []
+  ): Promise<SyncSnapshot> {
+    const user = await this.users.findById(userId);
+    if (!user) {
+      throw new UnauthorizedException("Missing or invalid access token.");
+    }
+    const pmspaUserId =
+      (await this.connections.find(userId))?.pmspaUserId ?? null;
+    const links: LinkRow[] =
+      pmspaUserId === null
+        ? []
+        : [
+            ...(await this.links.active(userId, pmspaUserId, "project")),
+            ...(await this.links.active(userId, pmspaUserId, "task"))
+          ];
+    const allProjects = await this.sync.pm4Projects(userId);
+    const allTasks = await this.sync.pm4Tasks(userId);
+    const base: SyncSnapshot = {
+      timeZone: user.timeZone,
+      pm4Projects: allProjects,
+      pm4Tasks: allTasks,
+      remoteProjects: [],
+      remoteTasks: [],
+      links
+    };
+
+    let projectIds: Set<string>;
+    let taskIds: Set<string>;
+    let day: TimeSnapshot | null = null;
+    if (target.type === "day") {
+      if (target.id > todayIn(user.timeZone)) {
+        throw new BadRequestException({
+          errors: [{ field: "id", message: "The date is in the future." }]
+        });
+      }
+      day = await this.timeSync.loadTime(
+        userId,
+        base,
+        [target.id],
+        await this.timeSync.readDays(userId, user.timeZone, [target.id])
+      );
+      const groups = groupDay(
+        day.pm4Logs.filter((l) => l.workDate === target.id)
+      );
+      taskIds = new Set(groups.flatMap((g) => (g.taskId ? [g.taskId] : [])));
+      projectIds = new Set(
+        allTasks.filter((t) => taskIds.has(t.id)).map((t) => t.projectId)
+      );
+      taskIds = new Set(
+        allTasks.filter((t) => taskIds.has(t.id)).map((t) => t.id)
+      );
+    } else if (target.type === "project") {
+      projectIds = new Set(
+        allProjects.filter((p) => p.id === target.id).map((p) => p.id)
+      );
+      taskIds = new Set(
+        projectIds.size
+          ? allTasks.filter((t) => t.projectId === target.id).map((t) => t.id)
+          : []
+      );
+    } else {
+      const t = allTasks.find((x) => x.id === target.id);
+      taskIds = new Set(t ? [t.id] : []);
+      projectIds = new Set(t ? [t.projectId] : []);
+    }
+    const linkedOf = (type: "project" | "task", pm4Ids: Set<string>) =>
+      links
+        .filter((l) => l.type === type && pm4Ids.has(l.pm4Id))
+        .map((l) => l.pmspaId);
+
+    const listed =
+      target.type === "project"
+        ? (linkedOf("project", projectIds)[0] ?? null)
+        : null;
+    const remoteTasks = listed
+      ? await this.remote.listTasks(userId, listed)
+      : [];
+    const haveTask = new Set(remoteTasks.map((t) => t.id));
+    remoteTasks.push(
+      ...(await this.remote.getTasks(
+        userId,
+        linkedOf("task", taskIds).filter((id) => !haveTask.has(id))
+      ))
+    );
+    const remoteProjects = await this.remote.getProjects(userId, [
+      ...linkedOf("project", projectIds),
+      ...(day ? remoteTasks.map((t) => t.projectId) : [])
+    ]);
+    for (const c of picks) {
+      if (c.kind !== "link" || !c.id) continue;
+      const type = c.key.slice(0, c.key.indexOf(":"));
+      if (type === "project") {
+        if (!remoteProjects.some((p) => p.id === c.id))
+          remoteProjects.push(
+            ...(await this.remote.getProjects(userId, [c.id]))
+          );
+      } else if (type === "task") {
+        if (!remoteTasks.some((t) => t.id === c.id))
+          remoteTasks.push(...(await this.remote.getTasks(userId, [c.id])));
+      }
+    }
+    return {
+      ...(day ?? base),
+      pm4Projects: allProjects,
+      pm4Tasks: allTasks,
+      remoteProjects,
+      remoteTasks
+    };
   }
 
   /** API-INT-008: the rows of an import of the selected PMSPA projects and tasks, and of the selected days. */
@@ -157,7 +303,11 @@ export class PmspaSyncService {
     const snapshot = await this.load(userId, sel);
     if (sel.dates?.length) {
       // `load` returns a TimeSnapshot when the selection has dates.
-      return { items: importTimeRows(snapshot as TimeSnapshot, sel) };
+      const t = snapshot as TimeSnapshot;
+      return {
+        items: importTimeRows(t, sel),
+        days: await this.dayItemsOf(userId, t)
+      };
     }
     return { items: importRows(snapshot, sel) };
   }
@@ -167,14 +317,8 @@ export class PmspaSyncService {
     userId: string,
     target: PmspaPushTargetDto
   ): Promise<SyncPreviewDto> {
-    const base = await this.load(userId, null);
-    if (target.id > todayIn(base.timeZone)) {
-      throw new BadRequestException({
-        errors: [{ field: "id", message: "The date is in the future." }]
-      });
-    }
-    const snapshot = await this.timeSync.loadTime(userId, base, [target.id]);
-    return { items: pushDayRows(snapshot, target.id) };
+    const snapshot = await this.loadLinked(userId, target);
+    return { items: pushDayRows(snapshot as TimeSnapshot, target.id) };
   }
 
   /** API-INT-011: pushes one PM4 day to PMSPA, row by row. 400 for a future date. */
@@ -185,7 +329,7 @@ export class PmspaSyncService {
       dto.choices,
       (snapshot) => pushDayRows(snapshot as TimeSnapshot, dto.target.id),
       null,
-      dto.target.id
+      dto.target
     );
   }
 
@@ -194,7 +338,7 @@ export class PmspaSyncService {
     userId: string,
     target: PmspaSyncTargetDto
   ): Promise<SyncPreviewDto> {
-    const items = syncRows(await this.load(userId, null), target);
+    const items = syncRows(await this.loadLinked(userId, target), target);
     if (!items) {
       throw new NotFoundException(
         target.type === "project" ? "Project not found." : "Task not found."
@@ -204,13 +348,71 @@ export class PmspaSyncService {
   }
 
   /** API-INT-019 (D12): the Link to existing PMSPA candidates of many PM4 records, one PMSPA list. */
-  candidates(
+  async candidates(
     userId: string,
     input: PmspaCandidatesInputDto
   ): Promise<PmspaCandidatesDto> {
-    void userId;
-    void input;
-    throw new Error("not implemented (feat-int-budget)");
+    const user = await this.users.findById(userId);
+    if (!user) {
+      throw new UnauthorizedException("Missing or invalid access token.");
+    }
+    const byId = new Map<string, Pm4Project | Pm4Task>(
+      (input.type === "project"
+        ? await this.sync.pm4Projects(userId)
+        : await this.sync.pm4Tasks(userId)
+      ).map((r) => [r.id, r])
+    );
+    const records = input.for.flatMap((id) => {
+      const r = byId.get(id);
+      return r ? [r] : [];
+    });
+    if (records.length === 0) return { items: [] };
+    const pmspaUserId =
+      (await this.connections.find(userId))?.pmspaUserId ?? null;
+    const linked = new Set(
+      pmspaUserId === null
+        ? []
+        : (await this.links.active(userId, pmspaUserId, input.type)).map(
+            (l) => l.pmspaId
+          )
+    );
+    if (input.type === "project") {
+      const remote = await this.remote.listProjects(userId);
+      return {
+        items: records.map((r) => ({
+          pm4Id: r.id,
+          candidates: pmspaCandidateList.project(remote, r, linked)
+        }))
+      };
+    }
+    const remote = await this.remote.listTasks(userId, input.projectId!);
+    return {
+      items: records.map((r) => ({
+        pm4Id: r.id,
+        candidates: pmspaCandidateList.task(
+          remote,
+          r as Pm4Task,
+          linked,
+          user.timeZone
+        )
+      }))
+    };
+  }
+
+  /** The selected days as `PmspaDay`s (no PMSPA read): `linked` = PMSPA logs with an active time-log link. */
+  private async dayItemsOf(
+    userId: string,
+    s: TimeSnapshot
+  ): Promise<PmspaDayDto[]> {
+    const pmspaUserId =
+      (await this.connections.find(userId))?.pmspaUserId ?? null;
+    if (pmspaUserId === null) return [];
+    const linked = new Set(
+      (await this.links.active(userId, pmspaUserId, "time-log")).map(
+        (l) => l.pmspaId
+      )
+    );
+    return dayItems(s.remoteDays, s.remoteTasks, s.remoteProjects, linked);
   }
 
   /** API-INT-009: imports the selection, row by row. */
@@ -223,7 +425,14 @@ export class PmspaSyncService {
         dto.selection.dates?.length
           ? importTimeRows(snapshot as TimeSnapshot, dto.selection)
           : importRows(snapshot, dto.selection),
-      dto.selection
+      dto.selection,
+      null,
+      dto.selection.dates?.length
+        ? (s) =>
+            this.dayItemsOf(userId, s as TimeSnapshot).then((days) => ({
+              days
+            }))
+        : undefined
     );
   }
 
@@ -244,7 +453,8 @@ export class PmspaSyncService {
         }
         return rows;
       },
-      null
+      null,
+      dto.target
     );
   }
 
@@ -254,23 +464,15 @@ export class PmspaSyncService {
     choices: SyncChoiceDto[],
     rowsOf: (snapshot: SyncSnapshot) => SyncPreviewItemDto[],
     sel: PmspaImportSelectionDto | null,
-    pushDate: string | null = null
+    target: PmspaSyncTargetDto | PmspaPushTargetDto | null,
+    after?: (snapshot: SyncSnapshot) => Promise<Partial<SyncResultDto>>
   ): Promise<SyncResultDto> {
     if (!(await this.store.lock(userId))) throw pmspaProblems.syncRunning();
     try {
       const now = new Date();
-      let snapshot: SyncSnapshot;
-      if (pushDate) {
-        const base = await this.load(userId, null);
-        if (pushDate > todayIn(base.timeZone)) {
-          throw new BadRequestException({
-            errors: [{ field: "id", message: "The date is in the future." }]
-          });
-        }
-        snapshot = await this.timeSync.loadTime(userId, base, [pushDate]);
-      } else {
-        snapshot = await this.load(userId, sel);
-      }
+      const snapshot = target
+        ? await this.loadLinked(userId, target, choices)
+        : await this.load(userId, sel!);
       const rows = rowsOf(snapshot);
       const pmspaUserId = (await this.connections.find(userId))?.pmspaUserId;
       if (!pmspaUserId) throw pmspaProblems.notConnected();
@@ -282,7 +484,7 @@ export class PmspaSyncService {
         pmspaUserId,
         links: new RunLinks(snapshot),
         logLinks: new Map(
-          pushDate
+          target?.type === "day"
             ? usableLogLinks(snapshot as TimeSnapshot, "push").map((l) => [
                 l.pm4Id,
                 l
@@ -313,7 +515,8 @@ export class PmspaSyncService {
         }
       }
       await this.connections.setLastSyncAt(userId, now);
-      return { items, syncedAt: now.toISOString() };
+      const extra = after ? await after(snapshot) : {};
+      return { items, syncedAt: now.toISOString(), ...extra };
     } finally {
       await this.store.unlock(userId);
     }
@@ -352,14 +555,17 @@ export class PmspaSyncService {
     const type = row.type as PairType;
     const id = row.key.slice(row.key.indexOf(":") + 1);
     let other: string | null = row.linkedId;
-    const fromChoice = !other && choice.kind === "link";
     if (!other && choice.kind === "link") {
-      if (
-        !choice.id ||
-        !(row.candidates ?? []).some((c) => c.id === choice.id)
-      ) {
-        return result(row, "failed", CANT_LINK);
-      }
+      // D9: a row with listed candidates must offer the pick; a row without them needs the record read in the snapshot.
+      const known =
+        row.candidates !== null
+          ? row.candidates.some((c) => c.id === choice.id)
+          : (type === "project"
+              ? run.snapshot.remoteProjects
+              : run.snapshot.remoteTasks
+            ).some((r) => r.id === choice.id) &&
+            run.links.pm4Of(type, choice.id ?? "") === undefined;
+      if (!choice.id || !known) return result(row, "failed", CANT_LINK);
       other = choice.id;
     }
     if (!other) return this.createPair(run, row, type, id);
@@ -367,16 +573,18 @@ export class PmspaSyncService {
     const [pm4Id, pmspaId] = run.from === "pm4" ? [id, other] : [other, id];
     const direction: SyncDirection | null =
       choice.kind === "link" ? (choice.overwrite ?? null) : null;
-    // D9: a PMSPA record picked by the user may be gone by now.
-    const chosenPmspa = fromChoice && run.from === "pm4";
-    if (chosenPmspa && !(await this.readRemote(run, type, pmspaId))) {
-      return result(row, "failed", CANT_LINK);
-    }
     if (direction) await this.overwrite(run, type, pm4Id, pmspaId, direction);
     else if (row.linkedId) {
       return result(row, "skipped", "Link only: both kept as they are");
     }
-    await this.saveLink(run, type, pm4Id, pmspaId, "linked");
+    await this.saveLink(
+      run,
+      type,
+      pm4Id,
+      pmspaId,
+      "linked",
+      direction === "to-pmspa" ? undefined : this.known(run, type, pmspaId)
+    );
     const out = row.linkedId
       ? result(row, "updated", direction && OVERWRITTEN[direction])
       : result(row, "linked", direction && OVERWRITTEN[direction]);
@@ -385,6 +593,12 @@ export class PmspaSyncService {
         ? (await this.readPm4(run, type, pm4Id))?.title
         : (await this.readRemote(run, type, pmspaId))?.title;
     return title && title !== row.title ? { ...out, newTitle: title } : out;
+  }
+
+  private known(run: Run, type: PairType, id: string) {
+    return type === "project"
+      ? run.snapshot.remoteProjects.find((r) => r.id === id)
+      : run.snapshot.remoteTasks.find((r) => r.id === id);
   }
 
   private async readPm4(run: Run, type: PairType, id: string) {
@@ -484,7 +698,7 @@ export class PmspaSyncService {
         userId,
         toPm4Project(remote, null)
       );
-      await this.saveLink(run, type, created.id, id, "imported");
+      await this.saveLink(run, type, created.id, id, "imported", remote);
     } else {
       const remote = snapshot.remoteTasks.find((t) => t.id === id);
       if (!remote) throw new RowFailure(CANT_LINK);
@@ -494,7 +708,7 @@ export class PmspaSyncService {
         userId,
         toPm4Task(remote, null, projectId, snapshot.timeZone)
       );
-      await this.saveLink(run, type, created.id, id, "imported");
+      await this.saveLink(run, type, created.id, id, "imported", remote);
     }
     return result(row, "created", null);
   }

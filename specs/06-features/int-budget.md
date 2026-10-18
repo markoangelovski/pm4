@@ -25,7 +25,7 @@ existing ▾**, `9fe7adb`; this spec lists the delta.
 ## Decisions
 | # | Decision | Source |
 | --- | --- | --- |
-| D1 | The rate limit is PMSPA's `X-RateLimit-*` of its last answer, one Redis key per PMSPA host (`pmspa:rate:<host>`) expiring at the reset; `PmspaConnection.rateLimit`. Last answer written wins (two overlapping answers can store the older count; the next answer corrects it). A Redis failure there is logged and never fails the PMSPA call. | OQ-200 (owner, 2026-10-18); agent for the write order |
+| D1 | The rate limit is PMSPA's `X-RateLimit-*` of its last answer, one Redis key per PMSPA host (`pmspa:rate:<host>`) expiring at the reset; `PmspaConnection.rateLimit`. Last answer written wins (two overlapping answers can store the older count; the next answer corrects it). While the host is paused (`pmspa:pause:<host>`) the rate limit is stored and read as `remaining: 0` with `resetAt` no earlier than the pause's end, so the requests line and a PMSPA read's "PMSPA is busy" agree (an answer that overlapped the 429 can't revive it, and PMSPA's `Retry-After` is its whole window, often past its `X-RateLimit-Reset`). A Redis failure there is logged and never fails the PMSPA call. | OQ-200 (owner, 2026-10-18); agent for the write order; owner (2026-10-18, AC-17) for the pause |
 | D2 | API-INT-006 drops the all-projects read: PMSPA's `tasks?project=` is owner-scoped, so another account's project answers `[]`, not 404. | OQ-201 (1) |
 | D3 | API-INT-007 is one PMSPA range call answering day summaries (date, start, event count). API-INT-018 reads given days, then one `tasks.getOne` per referenced task and one `projects.getOne` per project of those tasks across all of them. The time import preview reads the selected days the same way. No `stats/*` route. | OQ-201 (2), OQ-202, OQ-203, OQ-205 (owner, 2026-10-18) |
 | D4 | **Expand all** on Projects & tasks = one API-INT-017 read filling each expandable project's task list in the query cache; on Time = one API-INT-018 read of the week's days not cached and fresh, filling each day's query. The rows open when it's in, stay closed with a toast if it fails; nothing is read when all are cached and fresh. | OQ-201 (3), OQ-205 |
@@ -37,6 +37,7 @@ existing ▾**, `9fe7adb`; this spec lists the delta.
 | D10 | API-INT-008/009 with `dates` answer `days` (the selected days they read, as API-INT-018; the import's with links as after it) from reads they already make; the web fills the Time tab's day queries from them. Every project and task row comes before every day row; an event's unlinked task reads "Parent of an imported event from <d MMM yyyy>". | OQ-205 (owner, 2026-10-18) |
 | D11 | Import and day-push event rows with a PMSPA task carry `taskPath: { projectTitle, taskTitle }` and `detail` only the logs; the dialog shows the path with the project and task icons. | OQ-205 (owner, 2026-10-18) |
 | D12 | API-INT-019 `POST /integrations/pmspa/candidates` lists the **Link to existing** PMSPA records for many PM4 records at once: the account's projects, or one PMSPA project's tasks (⌈n/50⌉ calls), unlinked ones only, same title first, differences against each PM4 record. The web reads it when a row's dropdown opens (`usePmspaCandidates`, `PMSPA_READ`, key under `remote()`); a task's list follows its parent's linked or picked PMSPA project (none while the parent is **Create new**); skeleton rows, then the list, or the error with **Retry**. | OQ-204 (owner, 2026-10-18), prototype `9fe7adb` |
+| D13 | An on-screen "PMSPA is busy. Try again in N minutes." line (`PmspaProblemLine`: the Projects and Time tabs, a day's events, the record note, the dialog's commit failure and **Link to existing** read) counts down with the requests line: one shared PMSPA clock (`usePmspaNow`, 15 s), the same `minutesUntil`, to the connection's `rateLimit.resetAt` while it shows the limit reached, else `retryAfterSeconds` after the error. Once that time has passed it reads "PMSPA calls have resumed. Try again." and nothing is retried (OQ-177). Toasts and the sync dialog's preview error keep the static line (`pmspaProblemText`; feat-int-web AC-8 renders the dialog without a QueryClient). | Owner (2026-10-18, AC-17; the "resumed" copy confirmed) |
 
 ## Scope
 **In:** the rate limit in the transport, store, DTO and service; the browse reads (D2, D3, D6), API-INT-017 and API-INT-018;
@@ -101,6 +102,7 @@ Expand all and lazy Time days, the dialog's event icons and lazy **Link to exist
 | web | `web/proto/features/integrations/types.ts` | M | T5 | `PmspaRateLimitDto`, `PmspaDaySummaryDto`, `PmspaCandidatesInputDto`, `PmspaCandidatesDto` |
 | web | `web/proto/features/integrations/proposed-types.ts` | M, D | tests, T5 | Test step: `"/api/v1/integrations/pmspa/candidates"` added to `PmspaChangedPaths`. T5: `rm` |
 | web | `web/proto/features/integrations/api.ts`, `web/proto/mock/client.ts`, `web/proto/mock/pmspa.ts`, `web/proto/features/integrations/components/pmspa-time-tab.tsx`, `web/proto/features/integrations/components/sync-preview-dialog.tsx` | M | T5 | The type switch |
+| web | `web/proto/features/integrations/components/profile-integrations.tsx`, `web/proto/features/integrations/components/pmspa-connector.tsx` | M | T5 | Review finding: a link styled as a button uses `buttonVariants`, not `Button render`; the twins follow |
 | web | `web/features/integrations/types.ts`, `web/features/integrations/components/pmspa-account.tsx`, `web/features/integrations/components/pmspa-connection-card.tsx`, `web/features/integrations/components/pmspa-connector.tsx`, `web/features/integrations/components/pmspa-projects-tab.tsx`, `web/features/integrations/components/pmspa-time-tab.tsx`, `web/features/users/components/user-profile.tsx` | M | T5 | The twins (D8) |
 
 ## Interfaces
@@ -119,12 +121,15 @@ export class PmspaRateLimitDto {
 @ApiProperty({ type: PmspaRateLimitDto, nullable: true }) rateLimit: PmspaRateLimitDto | null;
 
 // pmspa-store.ts: keys.rate = (host) => `pmspa:rate:${host}`
-/** PMSPA's last rate-limit answer for `host`, or null (none, expired, or not JSON). */
+/** PMSPA's last rate-limit answer for `host`, or null (none, expired, or not JSON); through `withPause` (D1). */
 async getRateLimit(host: string): Promise<PmspaRateLimitDto | null>;
-/** Kept until `resetAt`: `SET key JSON PX (Date.parse(resetAt) − Date.now())`; nothing when that's ≤ 0. */
+/** `withPause`, then kept until `resetAt`: `SET key JSON PX (Date.parse(resetAt) − Date.now())`; nothing when that's ≤ 0. */
 async setRateLimit(host: string, rateLimit: PmspaRateLimitDto): Promise<void>;
+/** While `PTTL pmspa:pause:<host>` > 0: `remaining: 0`, `resetAt = max(resetAt, now + PTTL)`; as is otherwise. */
+private async withPause(host: string, rateLimit: PmspaRateLimitDto): Promise<PmspaRateLimitDto>;
 ```
-`PmspaTransport.send`, right after the redirect check (before the 429 branch), calls `private async observe(host, res)`:
+`PmspaTransport.send`, right after the redirect check, calls `private async observe(host, res)`; on a 429 it pauses the host
+first (`store.pause`, then `observe`, then the throw), so an overlapping answer stored after it is kept as spent:
 1. `int(name)` = the header as a non-negative integer, else null. `limit` = `X-RateLimit-Limit`, `remaining` =
    `X-RateLimit-Remaining`, `reset` = `X-RateLimit-Reset` (epoch **seconds**), `retry` = `Retry-After`; `now = Date.now()`.
 2. `resetAt` = `reset * 1000`, or null. On a 429: `remaining = 0`, `resetAt = max(resetAt ?? 0, now + (retry ?? DEFAULT_PAUSE_SECONDS) * 1000)`,
@@ -286,8 +291,9 @@ async candidates(userId: string, input: PmspaCandidatesInputDto): Promise<PmspaC
    PMSPA call. `linked(type, pm4Ids)` = the PMSPA ids of the links of `type` whose `pm4Id` is in `pm4Ids`.
 2. The PM4 records the rows need: a project target `P` → projects `{P}`, tasks = P's PM4 tasks; a task target `T` → tasks
    `{T}`, projects `{T.projectId}`; a day → 400 `{ field: "id", message: "The date is in the future." }` when it's after
-   `todayIn(user.timeZone)`, as today, then `day = await this.timeSync.loadTime(userId, base, [date])` (base without PMSPA records), tasks = the
-   date's `pm4Logs` groups' (`groupDay`) task ids, projects = their project ids. Nothing of the target is the user's →
+   `todayIn(user.timeZone)`, as today, then `day = await this.timeSync.loadTime(userId, base, [date], await this.timeSync.readDays(userId, user.timeZone, [date]))`
+   (base without PMSPA records), tasks = the date's `pm4Logs` groups' (`groupDay`) task ids, projects = the project ids of
+   those tasks (a group without a task builds no row, so its project isn't read). Nothing of the target is the user's →
    no PMSPA call (`syncRows` answers null → 404, as today).
 3. `listed` = a project target's linked PMSPA project, else null. `tasks = listed ? await remote.listTasks(userId, listed) : []`;
    `tasks.push(...await remote.getTasks(userId, <linked("task", tasks) not in tasks>))`.
@@ -416,3 +422,9 @@ None.
 - 2026-10-18: Approved by the owner. Test step: on a 429 without `X-RateLimit-Limit`, `observe` keeps the stored
   answer's `limit` (AC-2; owner, 2026-10-18). *Files* lists the other acceptance tests the test step adjusts
   (`rateLimit: null` fixtures, feat-int-time-api's AC-3).
+- 2026-10-18: Review findings (owner): a day push's `projects` are the projects of the groups' tasks, and `loadLinked` gets
+  the 4-argument `loadTime`. Time-log hashes key a group's task on any of its links, read or not, or made earlier in the same run (`mappedGroup`,
+  `saveTimeLink` and the push alike), so a narrowed snapshot doesn't make a log look changed in PM4. The links styled as buttons in Profile → Integrations
+  and the connector header use `buttonVariants` (proto first, then the twins).
+- 2026-10-18: AC-17 (owner): the requests line said "All available" while a read said "PMSPA is busy". D1: the rate limit follows an active pause (`withPause` in the store); a 429 pauses before `observe`.
+- 2026-10-18: AC-17 (owner): the lists' "PMSPA is busy" minutes didn't move while the requests line counted down. D13: one shared PMSPA clock and the same reset time for both.

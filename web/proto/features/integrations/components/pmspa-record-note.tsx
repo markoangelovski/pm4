@@ -4,7 +4,8 @@ import { PopoverDescription } from "@/components/ui/popover";
 import { Skeleton } from "@/components/ui/skeleton";
 import { usePmspaConnection, usePmspaLinkDetail } from "../api";
 import type { PmspaLinkType, PmspaRecordDetail } from "../types";
-import { STATUS_LABEL, pmspaProblemText } from "../sync";
+import { STATUS_LABEL } from "../sync";
+import { PmspaProblemLine } from "./pmspa-problem-line";
 import { ColdStartHint } from "./cold-start-hint";
 
 const NOUN: Record<PmspaLinkType, string> = {
@@ -72,9 +73,12 @@ export function PmspaRecordNote({
   } else if (detail.isPending) {
     body = null;
   } else if (detail.isError) {
-    body =
-      pmspaProblemText(detail.error) ??
-      `Couldn't read the PMSPA ${NOUN[type]} right now.`;
+    body = (
+      <PmspaProblemLine
+        error={detail.error}
+        fallback={`Couldn't read the PMSPA ${NOUN[type]} right now.`}
+      />
+    );
   } else if (!detail.data.pmspa) {
     body = `The PMSPA ${NOUN[type]} no longer exists.`;
   } else {

@@ -90,9 +90,12 @@ export class PmspaTransport {
         Number.isFinite(header) && header > 0
           ? Math.ceil(header)
           : DEFAULT_PAUSE_SECONDS;
+      // Paused first, so an answer that overlapped this one is stored as spent (D1).
       await this.store.pause(host, seconds);
+      await this.observe(host, res);
       throw pmspaProblems.rateLimited(seconds);
     }
+    await this.observe(host, res);
 
     let body: unknown;
     try {
@@ -102,6 +105,53 @@ export class PmspaTransport {
       body = null;
     }
     return { status: res.status, headers: res.headers, body };
+  }
+
+  /**
+   * Keeps PMSPA's X-RateLimit-* of this answer for every PM4 user on the host
+   * (feat-int-budget D1, OQ-200). A failure to store it is only logged.
+   */
+  private async observe(host: string, res: Response): Promise<void> {
+    const int = (name: string): number | null => {
+      const raw = res.headers.get(name)?.trim();
+      return raw && /^\d+$/.test(raw) ? Number(raw) : null;
+    };
+    const now = Date.now();
+    let limit = int("X-RateLimit-Limit");
+    let remaining = int("X-RateLimit-Remaining");
+    const reset = int("X-RateLimit-Reset");
+    const retry = int("Retry-After");
+    let resetAt = reset === null ? null : reset * 1000;
+    const limited = res.status === 429;
+    if (limited) {
+      remaining = 0;
+      resetAt = Math.max(
+        resetAt ?? 0,
+        now + (retry ?? DEFAULT_PAUSE_SECONDS) * 1000
+      );
+    }
+    try {
+      if (limited && limit === null) {
+        limit = (await this.store.getRateLimit(host))?.limit ?? null;
+      }
+      if (
+        limit === null ||
+        limit === 0 ||
+        remaining === null ||
+        resetAt === null ||
+        resetAt <= now
+      ) {
+        return;
+      }
+      await this.store.setRateLimit(host, {
+        limit,
+        remaining: Math.min(remaining, limit),
+        resetAt: new Date(resetAt).toISOString(),
+        observedAt: new Date(now).toISOString()
+      });
+    } catch {
+      this.logger.warn(`Couldn't keep the PMSPA rate limit for ${host}.`);
+    }
   }
 
   private log(req: PmspaRequest, status: number | string, started: number) {

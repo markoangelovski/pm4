@@ -53,6 +53,7 @@ import type {
   PmspaTaskDto
 } from "../types";
 import { pmspaProblemText, syncedLine } from "../sync";
+import { PmspaProblemLine } from "./pmspa-problem-line";
 import { ExpandAllButton } from "./expand-all-button";
 
 /** Per selected PMSPA project: all its tasks, or the picked ones (none = the project alone, OQ-157). */
@@ -160,7 +161,10 @@ export function PmspaProjectsTab({
         <EmptyHeader>
           <EmptyTitle>Couldn&apos;t read your PMSPA projects.</EmptyTitle>
           <EmptyDescription>
-            {pmspaProblemText(query.error) ?? "PMSPA may be unreachable."}
+            <PmspaProblemLine
+              error={query.error}
+              fallback="PMSPA may be unreachable."
+            />
           </EmptyDescription>
         </EmptyHeader>
         <EmptyContent>

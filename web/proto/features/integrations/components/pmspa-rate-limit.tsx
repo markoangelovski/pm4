@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { TZDate } from "@date-fns/tz";
 import { format } from "date-fns";
 import { Info } from "lucide-react";
@@ -12,22 +11,10 @@ import {
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { useRefreshPmspaRateLimit, type PmspaConnection } from "../api";
-
-/** The countdown's tick. */
-const TICK_MS = 15_000;
+import { minutesUntil, usePmspaNow } from "../sync";
 
 /** Below this many requests left, the bar turns amber. */
 const LOW = 20;
-
-/** Now, updated every `TICK_MS`. */
-function useNow(): number {
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    const id = setInterval(() => setNow(Date.now()), TICK_MS);
-    return () => clearInterval(id);
-  }, []);
-  return now;
-}
 
 /**
  * PMSPA's rate limit as its last answer reported it: requests used of the limit and when the window resets.
@@ -44,7 +31,7 @@ export function PmspaRateLimit({
 }) {
   useRefreshPmspaRateLimit();
   const rateLimit = connection.rateLimit;
-  const now = useNow();
+  const now = usePmspaNow();
   const resetAt = rateLimit ? Date.parse(rateLimit.resetAt) : 0;
 
   // No PMSPA answer in the current window: the whole limit is free.
@@ -57,7 +44,7 @@ export function PmspaRateLimit({
   }
 
   const used = rateLimit.limit - rateLimit.remaining;
-  const minutes = Math.max(1, Math.ceil((resetAt - now) / 60_000));
+  const minutes = minutesUntil(resetAt, now);
   const time = (iso: string) =>
     tz ? format(new TZDate(iso, tz), "HH:mm") : "";
   const reset = `${time(rateLimit.resetAt)} (in ${minutes} min)`;

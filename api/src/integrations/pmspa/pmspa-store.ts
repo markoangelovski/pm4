@@ -13,7 +13,8 @@ const keys = {
   token: (userId: string) => `pmspa:token:${userId}`,
   account: (userId: string) => `pmspa:account:${userId}`,
   pause: (host: string) => `pmspa:pause:${host}`,
-  lock: (userId: string) => `pmspa:lock:${userId}`
+  lock: (userId: string) => `pmspa:lock:${userId}`,
+  rate: (host: string) => `pmspa:rate:${host}`
 };
 
 /**
@@ -111,16 +112,50 @@ export class PmspaStore {
     await this.client.del(keys.lock(userId));
   }
 
-  /** PMSPA's last rate-limit answer for `host`, or null (none, expired, or not JSON). */
-  getRateLimit(host: string): Promise<PmspaRateLimitDto | null> {
-    void host;
-    throw new Error("not implemented (feat-int-budget)");
+  /**
+   * PMSPA's last rate-limit answer for `host`, or null (none, expired, or not JSON).
+   * While the host is paused it reads as spent until the pause ends, the same as a PMSPA read answers then (D1).
+   */
+  async getRateLimit(host: string): Promise<PmspaRateLimitDto | null> {
+    const raw = await this.client.get(keys.rate(host));
+    if (raw === null) return null;
+    let rateLimit: PmspaRateLimitDto;
+    try {
+      rateLimit = JSON.parse(raw) as PmspaRateLimitDto;
+    } catch {
+      return null;
+    }
+    return this.withPause(host, rateLimit);
   }
 
-  /** Kept until `resetAt`: `SET key JSON PX (Date.parse(resetAt) − Date.now())`; nothing when that's ≤ 0. */
-  setRateLimit(host: string, rateLimit: PmspaRateLimitDto): Promise<void> {
-    void host;
-    void rateLimit;
-    throw new Error("not implemented (feat-int-budget)");
+  /**
+   * Kept until `resetAt`: `SET key JSON PX (Date.parse(resetAt) − Date.now())`; nothing when that's ≤ 0.
+   * An answer stored while the host is paused (one that overlapped the 429) is kept as spent until the pause ends.
+   */
+  async setRateLimit(
+    host: string,
+    rateLimit: PmspaRateLimitDto
+  ): Promise<void> {
+    const kept = await this.withPause(host, rateLimit);
+    const ttl = Date.parse(kept.resetAt) - Date.now();
+    if (ttl <= 0) return;
+    await this.client.set(keys.rate(host), JSON.stringify(kept), "PX", ttl);
+  }
+
+  /** `remaining: 0` and `resetAt` no earlier than the pause's end while `host` is paused; as is otherwise. */
+  private async withPause(
+    host: string,
+    rateLimit: PmspaRateLimitDto
+  ): Promise<PmspaRateLimitDto> {
+    const ms = await this.client.pttl(keys.pause(host));
+    if (ms <= 0) return rateLimit;
+    const pauseEnd = Date.now() + ms;
+    return {
+      ...rateLimit,
+      remaining: 0,
+      resetAt: new Date(
+        Math.max(Date.parse(rateLimit.resetAt), pauseEnd)
+      ).toISOString()
+    };
   }
 }

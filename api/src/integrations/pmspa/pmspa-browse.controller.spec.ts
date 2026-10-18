@@ -1,4 +1,3 @@
-import { NotFoundException } from "@nestjs/common";
 import { Test, TestingModule } from "@nestjs/testing";
 import { PmspaBrowseController } from "./pmspa-browse.controller.js";
 import { PmspaConnectionRepository } from "./pmspa-connection.repository.js";
@@ -85,19 +84,17 @@ describe("PmspaBrowseController", () => {
     expect(res.items[0].link).toBeNull();
   });
 
-  it("tasks: a project not in the account's list → 404", async () => {
-    remote.listProjects.mockResolvedValue([]);
+  it("tasks: a project of another account → empty list, no projects call", async () => {
+    remote.listTasks.mockResolvedValue([]);
+    links.active.mockResolvedValue([]);
 
     await expect(
       controller.tasks(user, { id: "b".repeat(24) })
-    ).rejects.toBeInstanceOf(NotFoundException);
-    expect(remote.listTasks).not.toHaveBeenCalled();
+    ).resolves.toEqual({ items: [] });
+    expect(remote.listProjects).not.toHaveBeenCalled();
   });
 
   it("tasks: lists the project's tasks with their links", async () => {
-    remote.listProjects.mockResolvedValue([
-      { id: "p1", title: "Tesla", done: false, taskCount: 1 }
-    ]);
     remote.listTasks.mockResolvedValue([
       { id: "t1", projectId: "p1", title: "PM", column: "Upcoming" }
     ]);

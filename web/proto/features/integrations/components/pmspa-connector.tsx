@@ -14,7 +14,7 @@ import {
   Unplug
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import {
   Item,
   ItemActions,
@@ -55,13 +55,15 @@ const TABS = ["projects", "time"] as const;
 
 function SettingsLink() {
   return (
-    <Button
-      variant="outline"
-      className="cursor-pointer"
-      render={<Link href={`${routes.app.settings}?tab=integrations`} />}
+    <Link
+      href={`${routes.app.settings}?tab=integrations`}
+      className={buttonVariants({
+        variant: "outline",
+        className: "cursor-pointer"
+      })}
     >
       Open Integrations settings
-    </Button>
+    </Link>
   );
 }
 

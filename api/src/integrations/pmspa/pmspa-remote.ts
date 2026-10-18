@@ -65,13 +65,22 @@ export interface RemoteDaySummary {
 export const PMSPA_PARALLEL = 2;
 
 /** `fn` over `items`, PMSPA_PARALLEL at a time, results in `items` order; the first rejection rejects. */
-export function inParallel<T, R>(
+export async function inParallel<T, R>(
   items: readonly T[],
   fn: (item: T) => Promise<R>
 ): Promise<R[]> {
-  void items;
-  void fn;
-  throw new Error("not implemented (feat-int-budget)");
+  const out = new Array<R>(items.length);
+  let next = 0;
+  const worker = async (): Promise<void> => {
+    while (next < items.length) {
+      const i = next++;
+      out[i] = await fn(items[i]);
+    }
+  };
+  await Promise.all(
+    Array.from({ length: Math.min(PMSPA_PARALLEL, items.length) }, worker)
+  );
+  return out;
 }
 
 type Json = Record<string, unknown>;
@@ -334,66 +343,62 @@ export class PmspaRemote {
     );
   }
 
-  /** GET /v1/days?start=&end= (the range form: event ids only), then one day per id. 404 → []. D9. */
-  async listDays(
+  /** One `getTask` per id (deduped, first occurrence order), PMSPA_PARALLEL at a time; 404s dropped. */
+  async getTasks(userId: string, ids: Iterable<string>): Promise<RemoteTask[]> {
+    const found = await inParallel([...new Set(ids)], (id) =>
+      this.getTask(userId, id)
+    );
+    return found.filter((t): t is RemoteTask => t !== null);
+  }
+
+  /** One `getProject` per id (deduped, first occurrence order), PMSPA_PARALLEL at a time; 404s dropped. */
+  async getProjects(
+    userId: string,
+    ids: Iterable<string>
+  ): Promise<RemoteProject[]> {
+    const found = await inParallel([...new Set(ids)], (id) =>
+      this.getProject(userId, id)
+    );
+    return found.filter((p): p is RemoteProject => p !== null);
+  }
+
+  /** `listTasks` per project (deduped), PMSPA_PARALLEL at a time, flattened in project order. */
+  async listTasksOf(
+    userId: string,
+    projectIds: Iterable<string>
+  ): Promise<RemoteTask[]> {
+    const lists = await inParallel([...new Set(projectIds)], (id) =>
+      this.listTasks(userId, id)
+    );
+    return lists.flat();
+  }
+
+  /** GET /v1/days/event.find?start=&end=, one call; `eventCount` = `events.length`; days with 0 left out; 404 → []. */
+  async listDaySummaries(
     userId: string,
     from: string,
     to: string
-  ): Promise<RemoteDay[]> {
+  ): Promise<RemoteDaySummary[]> {
     const body = await this.read(userId, "/v1/days/event.find", {
       start: from,
       end: to
     });
     const found = Array.isArray(body?.days) ? body.days.filter(isRecord) : [];
-    const days: RemoteDay[] = [];
-    for (const d of found) {
-      const day = await this.dayById(userId, String(d._id));
-      if (day) days.push(day);
-    }
-    return days;
-  }
-
-  /** One `getTask` per id (deduped, first occurrence order), PMSPA_PARALLEL at a time; 404s dropped. */
-  getTasks(userId: string, ids: Iterable<string>): Promise<RemoteTask[]> {
-    void userId;
-    void ids;
-    throw new Error("not implemented (feat-int-budget)");
-  }
-
-  /** One `getProject` per id (deduped, first occurrence order), PMSPA_PARALLEL at a time; 404s dropped. */
-  getProjects(userId: string, ids: Iterable<string>): Promise<RemoteProject[]> {
-    void userId;
-    void ids;
-    throw new Error("not implemented (feat-int-budget)");
-  }
-
-  /** `listTasks` per project (deduped), PMSPA_PARALLEL at a time, flattened in project order. */
-  listTasksOf(
-    userId: string,
-    projectIds: Iterable<string>
-  ): Promise<RemoteTask[]> {
-    void userId;
-    void projectIds;
-    throw new Error("not implemented (feat-int-budget)");
-  }
-
-  /** GET /v1/days/event.find?start=&end=, one call; `eventCount` = `events.length`; days with 0 left out; 404 → []. */
-  listDaySummaries(
-    userId: string,
-    from: string,
-    to: string
-  ): Promise<RemoteDaySummary[]> {
-    void userId;
-    void from;
-    void to;
-    throw new Error("not implemented (feat-int-budget)");
+    return found
+      .map((d) => ({
+        date: text(d.day) ?? "",
+        start: typeof d.start === "number" ? d.start : null,
+        eventCount: Array.isArray(d.events) ? d.events.length : 0
+      }))
+      .filter((d) => d.eventCount > 0);
   }
 
   /** `getDay` per date (deduped), PMSPA_PARALLEL at a time; missing days dropped. */
-  getDays(userId: string, dates: Iterable<string>): Promise<RemoteDay[]> {
-    void userId;
-    void dates;
-    throw new Error("not implemented (feat-int-budget)");
+  async getDays(userId: string, dates: Iterable<string>): Promise<RemoteDay[]> {
+    const found = await inParallel([...new Set(dates)], (date) =>
+      this.getDay(userId, date)
+    );
+    return found.filter((d): d is RemoteDay => d !== null);
   }
 
   /** The one-day form: `?start=<date>` with its events populated. 404 → null. */
@@ -401,12 +406,6 @@ export class PmspaRemote {
     const body = await this.read(userId, "/v1/days/event.find", {
       start: date
     });
-    return isRecord(body?.days) ? toDay(body.days) : null;
-  }
-
-  /** The one-day form by the day's PMSPA id (`?id=`). 404 → null. */
-  private async dayById(userId: string, id: string): Promise<RemoteDay | null> {
-    const body = await this.read(userId, "/v1/days/event.find", { id });
     return isRecord(body?.days) ? toDay(body.days) : null;
   }
 

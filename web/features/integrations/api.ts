@@ -1,4 +1,8 @@
+import { useEffect, useRef } from "react";
 import {
+  hashKey,
+  useIsFetching,
+  useIsMutating,
   useMutation,
   useQuery,
   useQueryClient,
@@ -7,11 +11,13 @@ import {
   type UseQueryResult
 } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api/client";
-import type { components } from "@/lib/api/schema";
 import { unwrap, unwrapVoid } from "@/lib/api/problem";
 import type {
+  PmspaCandidatesDto,
+  PmspaCandidatesInputDto,
   PmspaConnectionDto,
   PmspaDayDto,
+  PmspaDaySummaryDto,
   PmspaImportDto,
   PmspaImportSelectionDto,
   PmspaLinkDetailDto,
@@ -28,8 +34,7 @@ import type {
   SyncResultDto
 } from "./types";
 
-type S = components["schemas"];
-
+/** The connection with its PMSPA `rateLimit` (API-INT-001). */
 export type PmspaConnection = PmspaConnectionDto;
 
 export const integrationKeys = {
@@ -46,8 +51,29 @@ export const integrationKeys = {
   tasks: (projectId: string) =>
     [...integrationKeys.remote(), "tasks", projectId] as const,
   days: (from: string, to: string) =>
-    [...integrationKeys.remote(), "days", from, to] as const
+    [...integrationKeys.remote(), "days", from, to] as const,
+  /** One day's events (API-INT-018); null when PMSPA no longer has events on it. */
+  day: (date: string) => [...integrationKeys.remote(), "day", date] as const,
+  /** **Link to existing** candidates (API-INT-019), per list and the PM4 records they're compared with. */
+  candidates: (input: PmspaCandidatesInputDto) =>
+    [
+      ...integrationKeys.remote(),
+      "candidates",
+      input.type,
+      input.type === "task" ? input.projectId : null,
+      [...input.for].sort()
+    ] as const
 };
+
+/**
+ * Live PMSPA reads (OQ-201 (4)): every PM4 user shares PMSPA's 100 requests per 15 minutes, so an answer is
+ * reused for 5 minutes, isn't read again on window focus, and a failed read isn't retried.
+ */
+const PMSPA_READ = {
+  staleTime: 5 * 60_000,
+  refetchOnWindowFocus: false,
+  retry: false
+} as const;
 
 /** Imports change PM4 records: their lists, details and logs refetch. */
 const PM4_KEYS = [["projects"], ["tasks"], ["time"], ["bookings"]] as const;
@@ -59,6 +85,25 @@ export function usePmspaConnection(): UseQueryResult<PmspaConnection> {
     queryFn: async ({ signal }) =>
       unwrap(await apiClient.GET("/api/v1/integrations/pmspa", { signal }))
   });
+}
+
+/**
+ * PMSPA's rate limit on the connection is as fresh as the last PMSPA call: once the PMSPA reads and every
+ * mutation have settled, the connection is read again (a PM4 read, PMSPA isn't called).
+ */
+export function useRefreshPmspaRateLimit(): void {
+  const queryClient = useQueryClient();
+  const busy =
+    useIsFetching({ queryKey: integrationKeys.remote() }) + useIsMutating();
+  const wasBusy = useRef(false);
+  useEffect(() => {
+    if (wasBusy.current && busy === 0)
+      void queryClient.invalidateQueries({
+        queryKey: integrationKeys.connection(),
+        exact: true
+      });
+    wasBusy.current = busy > 0;
+  }, [busy, queryClient]);
 }
 
 /** API-INT-002. A 409 `pmspa-account-switch` asks for confirmation (FR-INT-002); the caller resends with it. */
@@ -143,8 +188,7 @@ export function usePmspaLinks(
 
 /**
  * API-INT-014: one link with its PMSPA counterpart, read live from PMSPA. Only while `enabled` (the edit
- * dialog of a linked log is open). `staleTime` (spec reason): every PM4 user shares PMSPA's 100 requests per
- * 15 minutes, so reopening the dialog within 5 minutes reuses the answer, and a failed read isn't retried (OQ-164).
+ * dialog of a linked log is open). Reopening the dialog within 5 minutes reuses the answer (OQ-164, `PMSPA_READ`).
  */
 export function usePmspaLinkDetail(
   type: PmspaLinkType,
@@ -161,8 +205,7 @@ export function usePmspaLinkDetail(
         })
       ),
     enabled,
-    staleTime: 5 * 60_000,
-    retry: false
+    ...PMSPA_READ
   });
 }
 
@@ -195,11 +238,12 @@ export function usePmspaProjects(
       unwrap(
         await apiClient.GET("/api/v1/integrations/pmspa/projects", { signal })
       ).items,
-    enabled
+    enabled,
+    ...PMSPA_READ
   });
 }
 
-/** API-INT-006: one PMSPA project's tasks, loaded when its row opens. */
+/** API-INT-006: one PMSPA project's tasks, loaded when its row opens (unless **Expand all** filled it). */
 export function usePmspaTasks(
   projectId: string,
   enabled: boolean
@@ -213,16 +257,55 @@ export function usePmspaTasks(
           signal
         })
       ).items,
-    enabled
+    enabled,
+    ...PMSPA_READ
   });
 }
 
-/** API-INT-007: PMSPA days of a range with their events. */
+/** A cached PMSPA read that is in and still fresh, so **Expand all** needn't read it again. */
+function isFresh(queryClient: QueryClient, queryKey: readonly unknown[]) {
+  const state = queryClient.getQueryState(queryKey);
+  return (
+    state?.status === "success" &&
+    !state.isInvalidated &&
+    Date.now() - state.dataUpdatedAt < PMSPA_READ.staleTime
+  );
+}
+
+/**
+ * API-INT-017, for **Expand all** (OQ-201 (3)): one read of every task of the account fills the task list of
+ * each of `projectIds` (an empty list when it has none), so the opened rows don't read PMSPA one project at a
+ * time. Nothing is read when every one of those lists is already cached and fresh.
+ */
+export function useLoadAllPmspaTasks(): UseMutationResult<
+  void,
+  Error,
+  string[]
+> {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (projectIds: string[]) => {
+      const fresh = (id: string) =>
+        isFresh(queryClient, integrationKeys.tasks(id));
+      if (projectIds.every(fresh)) return;
+      const { items } = unwrap(
+        await apiClient.GET("/api/v1/integrations/pmspa/tasks")
+      );
+      for (const id of projectIds)
+        queryClient.setQueryData(
+          integrationKeys.tasks(id),
+          items.filter((t) => t.projectId === id)
+        );
+    }
+  });
+}
+
+/** Proposed API-INT-007: a week's PMSPA days from one range call: date, start and event count, no events. */
 export function usePmspaDays(
   from: string,
   to: string,
   enabled: boolean
-): UseQueryResult<PmspaDayDto[]> {
+): UseQueryResult<PmspaDaySummaryDto[]> {
   return useQuery({
     queryKey: integrationKeys.days(from, to),
     queryFn: async ({ signal }) =>
@@ -232,65 +315,98 @@ export function usePmspaDays(
           signal
         })
       ).items,
-    enabled
+    enabled,
+    ...PMSPA_READ
   });
 }
 
-/** API-INT-017, for **Expand all**: one read of every task fills the task list of each of `projectIds`. */
-export function useLoadAllPmspaTasks(): UseMutationResult<
-  void,
-  Error,
-  string[]
-> {
-  throw new Error("not implemented (feat-int-budget)");
+/** Proposed API-INT-018 for the given dates; a date PMSPA has no events for comes back null. */
+async function readDayDetails(
+  dates: string[],
+  signal?: AbortSignal
+): Promise<Map<string, PmspaDayDto | null>> {
+  const { items } = unwrap(
+    await apiClient.GET("/api/v1/integrations/pmspa/days/details", {
+      params: { query: { dates } },
+      signal
+    })
+  );
+  return new Map(
+    dates.map((d) => [d, items.find((day) => day.date === d) ?? null])
+  );
 }
 
-/** API-INT-018: one PMSPA day with its events, read when it opens; null when PMSPA has no events on it. */
+/** One PMSPA day with its events, their tasks and projects: read when its row opens (unless **Expand all** filled it). */
 export function usePmspaDay(
   date: string,
   enabled: boolean
 ): UseQueryResult<PmspaDayDto | null> {
-  void date;
-  void enabled;
-  throw new Error("not implemented (feat-int-budget)");
+  return useQuery({
+    queryKey: integrationKeys.day(date),
+    queryFn: async ({ signal }) =>
+      (await readDayDetails([date], signal)).get(date) ?? null,
+    enabled,
+    ...PMSPA_READ
+  });
 }
 
-/** **Expand all** on the Time tab: one API-INT-018 read of the days of `dates` not cached and fresh. */
+/**
+ * **Expand all** on the Time tab: one API-INT-018 read of every day of `dates` that isn't cached and fresh
+ * (a task or project used on several days is read once), filling each day's query. Nothing is read when all are.
+ */
 export function useLoadPmspaDays(): UseMutationResult<void, Error, string[]> {
-  throw new Error("not implemented (feat-int-budget)");
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (dates: string[]) => {
+      const missing = dates.filter(
+        (d) => !isFresh(queryClient, integrationKeys.day(d))
+      );
+      if (missing.length === 0) return;
+      for (const [date, day] of await readDayDetails(missing))
+        queryClient.setQueryData(integrationKeys.day(date), day);
+    }
+  });
 }
 
-/** API-INT-019: the PMSPA records a sync or push row can link to, read once its dropdown opens. */
-export function usePmspaCandidates(
-  input: S["PmspaCandidatesInputDto"] | null
-): UseQueryResult<S["PmspaCandidatesDto"]> {
-  void input;
-  throw new Error("not implemented (feat-int-budget)");
+/**
+ * Days an import read (its `days`) fill the Time tab's rows. A selected date it didn't answer (a future one isn't
+ * read) is left as it was.
+ */
+function fillDays(queryClient: QueryClient, days: PmspaDayDto[] | undefined) {
+  for (const day of days ?? [])
+    queryClient.setQueryData(integrationKeys.day(day.date), day);
 }
 
-function refreshAfterSync(queryClient: QueryClient) {
-  void queryClient.invalidateQueries({ queryKey: integrationKeys.pmspa() });
+/** `filled`: days the answer brought, kept as they are instead of read again from PMSPA. */
+function refreshAfterSync(queryClient: QueryClient, filled: string[] = []) {
+  const keep = new Set(filled.map((d) => hashKey(integrationKeys.day(d))));
+  void queryClient.invalidateQueries({
+    queryKey: integrationKeys.pmspa(),
+    predicate: (query) => !keep.has(query.queryHash)
+  });
   for (const queryKey of PM4_KEYS)
     void queryClient.invalidateQueries({ queryKey });
 }
 
-/** API-INT-008: nothing is written (design principle 6). */
+/** API-INT-008: nothing is written (design principle 6). The days it read fill the Time tab's rows. */
 export function useImportPreview(): UseMutationResult<
   SyncPreviewDto,
   Error,
   PmspaImportSelectionDto
 > {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (selection: PmspaImportSelectionDto) =>
       unwrap(
         await apiClient.POST("/api/v1/integrations/pmspa/import/preview", {
           body: selection
         })
-      )
+      ),
+    onSuccess: (preview) => fillDays(queryClient, preview.days)
   });
 }
 
-/** API-INT-009. Per-record outcomes (design principle 9). */
+/** API-INT-009. Per-record outcomes (design principle 9); the days it answers replace the Time tab's rows. */
 export function useImport(): UseMutationResult<
   SyncResultDto,
   Error,
@@ -304,11 +420,20 @@ export function useImport(): UseMutationResult<
           body: input
         })
       ),
-    onSuccess: () => refreshAfterSync(queryClient)
+    onSuccess: (result) => {
+      refreshAfterSync(
+        queryClient,
+        (result.days ?? []).map((d) => d.date)
+      );
+      fillDays(queryClient, result.days);
+    }
   });
 }
 
-/** API-INT-015: a project or task, both ways (OQ-172, OQ-173). Nothing is written (design principle 6). */
+/**
+ * API-INT-015: a project or task, both ways (OQ-172, OQ-173). Nothing is written (design principle 6). Rows
+ * whose PMSPA candidates weren't read have `candidates: null` (OQ-204, `usePmspaCandidates`).
+ */
 export function useSyncPreview(): UseMutationResult<
   SyncPreviewDto,
   Error,
@@ -321,6 +446,29 @@ export function useSyncPreview(): UseMutationResult<
           body: target
         })
       )
+  });
+}
+
+/**
+ * API-INT-019 (OQ-204): the PMSPA records a sync or push row can link to, read only once its dropdown opens
+ * (`input` null until then). One read serves every row of `input.for`; reused for 5 minutes (`PMSPA_READ`).
+ */
+export function usePmspaCandidates(
+  input: PmspaCandidatesInputDto | null
+): UseQueryResult<PmspaCandidatesDto> {
+  return useQuery({
+    queryKey: input
+      ? integrationKeys.candidates(input)
+      : [...integrationKeys.remote(), "candidates", null],
+    queryFn: async ({ signal }) =>
+      unwrap(
+        await apiClient.POST("/api/v1/integrations/pmspa/candidates", {
+          body: input!,
+          signal
+        })
+      ),
+    enabled: input !== null,
+    ...PMSPA_READ
   });
 }
 
@@ -342,7 +490,7 @@ export function useSync(): UseMutationResult<
   });
 }
 
-/** API-INT-010: a day's logs to PMSPA. */
+/** API-INT-010: a day's logs to PMSPA; event rows name their PMSPA project and task (`taskPath`). */
 export function usePushPreview(): UseMutationResult<
   SyncPreviewDto,
   Error,
