@@ -48,7 +48,8 @@ const NOT_CONFIGURED = {
   email: null,
   account: null,
   lastCheckedAt: null,
-  lastSyncAt: null
+  lastSyncAt: null,
+  rateLimit: null
 };
 
 interface AccountBody {
@@ -251,7 +252,8 @@ describe("PMSPA connection API (feat-int-conn-api)", () => {
         role: "admin"
       },
       lastCheckedAt: expect.any(String) as string,
-      lastSyncAt: null
+      lastSyncAt: null,
+      rateLimit: null
     });
     const checkedAt = Date.parse(saved.body.lastCheckedAt!);
     expect(checkedAt).toBeGreaterThanOrEqual(before - 1000);

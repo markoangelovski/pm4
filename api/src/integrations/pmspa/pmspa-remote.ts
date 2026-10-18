@@ -54,6 +54,26 @@ export interface RemoteDay {
   events: RemoteEvent[];
 }
 
+/** A day as PMSPA's range lookup answers it: no events, only how many ids it lists. */
+export interface RemoteDaySummary {
+  date: string;
+  start: number | null;
+  eventCount: number;
+}
+
+/** At most this many PMSPA calls at a time for one PM4 request (OQ-201 (5)). */
+export const PMSPA_PARALLEL = 2;
+
+/** `fn` over `items`, PMSPA_PARALLEL at a time, results in `items` order; the first rejection rejects. */
+export function inParallel<T, R>(
+  items: readonly T[],
+  fn: (item: T) => Promise<R>
+): Promise<R[]> {
+  void items;
+  void fn;
+  throw new Error("not implemented (feat-int-budget)");
+}
+
 type Json = Record<string, unknown>;
 
 const isRecord = (v: unknown): v is Json =>
@@ -331,6 +351,49 @@ export class PmspaRemote {
       if (day) days.push(day);
     }
     return days;
+  }
+
+  /** One `getTask` per id (deduped, first occurrence order), PMSPA_PARALLEL at a time; 404s dropped. */
+  getTasks(userId: string, ids: Iterable<string>): Promise<RemoteTask[]> {
+    void userId;
+    void ids;
+    throw new Error("not implemented (feat-int-budget)");
+  }
+
+  /** One `getProject` per id (deduped, first occurrence order), PMSPA_PARALLEL at a time; 404s dropped. */
+  getProjects(userId: string, ids: Iterable<string>): Promise<RemoteProject[]> {
+    void userId;
+    void ids;
+    throw new Error("not implemented (feat-int-budget)");
+  }
+
+  /** `listTasks` per project (deduped), PMSPA_PARALLEL at a time, flattened in project order. */
+  listTasksOf(
+    userId: string,
+    projectIds: Iterable<string>
+  ): Promise<RemoteTask[]> {
+    void userId;
+    void projectIds;
+    throw new Error("not implemented (feat-int-budget)");
+  }
+
+  /** GET /v1/days/event.find?start=&end=, one call; `eventCount` = `events.length`; days with 0 left out; 404 → []. */
+  listDaySummaries(
+    userId: string,
+    from: string,
+    to: string
+  ): Promise<RemoteDaySummary[]> {
+    void userId;
+    void from;
+    void to;
+    throw new Error("not implemented (feat-int-budget)");
+  }
+
+  /** `getDay` per date (deduped), PMSPA_PARALLEL at a time; missing days dropped. */
+  getDays(userId: string, dates: Iterable<string>): Promise<RemoteDay[]> {
+    void userId;
+    void dates;
+    throw new Error("not implemented (feat-int-budget)");
   }
 
   /** The one-day form: `?start=<date>` with its events populated. 404 → null. */

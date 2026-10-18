@@ -231,6 +231,11 @@ interface PmspaDayBody {
   linkState: string;
   events: PmspaEventBody[];
 }
+interface PmspaDaySummaryBody {
+  date: string;
+  startMinute: number | null;
+  eventCount: number;
+}
 interface PreviewItem {
   key: string;
   parentKey: string | null;
@@ -241,6 +246,7 @@ interface PreviewItem {
   reason: string | null;
   parent: boolean;
   warnings: string[];
+  taskPath?: { projectTitle: string; taskTitle: string };
 }
 interface ResultItem {
   key: string;
@@ -492,11 +498,21 @@ describe("PMSPA time API (feat-int-time-api)", () => {
     return link ? fake.findLog(link.pmspa_id) : undefined;
   };
 
-  it("AC-1 API-INT-007 FR-INT-007: a week of PMSPA days, newest first, with events, tasks and logs in minutes; bad ranges → 400", async () => {
+  it("AC-1 API-INT-007 API-INT-018 FR-INT-007: a week of PMSPA day summaries, newest first; the days' events, tasks and logs in minutes from API-INT-018; bad ranges → 400", async () => {
     const { a } = await setup();
 
-    const res = await as(a).get<{ items: PmspaDayBody[] }>(
+    const week = await as(a).get<{ items: PmspaDaySummaryBody[] }>(
       "/days?from=2026-10-12&to=2026-10-18"
+    );
+    expect(week.status).toBe(200);
+    expect(week.body.items).toEqual([
+      { date: "2026-10-16", startMinute: 540, eventCount: 2 },
+      { date: "2026-10-14", startMinute: 480, eventCount: 3 },
+      { date: "2026-10-13", startMinute: 555, eventCount: 1 }
+    ]);
+
+    const res = await as(a).get<{ items: PmspaDayBody[] }>(
+      "/days/details?dates=2026-10-16&dates=2026-10-14&dates=2026-10-13"
     );
 
     expect(res.status).toBe(200);
@@ -559,7 +575,7 @@ describe("PMSPA time API (feat-int-time-api)", () => {
     }
   });
 
-  it("AC-2 API-INT-008 FR-INT-011: an import preview of a day: the events' unlinked tasks as parents, the day row, one row per event; nothing written", async () => {
+  it("AC-2 API-INT-008 FR-INT-011: an import preview of a day: the events' unlinked tasks as parents with the date, the day row, one row per event with its task path; nothing written", async () => {
     const { a } = await setup();
 
     const res = await importPreview(a, ["2026-10-16"]);
@@ -571,7 +587,7 @@ describe("PMSPA time API (feat-int-time-api)", () => {
         type: "task",
         action: "create",
         parent: true,
-        reason: "Parent of an imported event"
+        reason: "Parent of an imported event from 16 Oct 2026"
       });
     }
     expect(items[`task:${T_RELEASE}`].parentKey).toBe(`project:${P_NVIDIA}`);
@@ -586,9 +602,12 @@ describe("PMSPA time API (feat-int-time-api)", () => {
     });
 
     const keys = res.body.items.map((i) => i.key);
-    expect(keys.indexOf("day:2026-10-16")).toBeGreaterThan(
-      keys.indexOf(`task:${T_HOMEPAGE}`)
+    const lastRecord = Math.max(
+      ...res.body.items
+        .map((i, n) => (i.type === "project" || i.type === "task" ? n : -1))
+        .filter((n) => n >= 0)
     );
+    expect(keys.indexOf("day:2026-10-16")).toBeGreaterThan(lastRecord);
     expect(items["day:2026-10-16"]).toMatchObject({
       type: "day",
       parentKey: null,
@@ -607,13 +626,18 @@ describe("PMSPA time API (feat-int-time-api)", () => {
     expect(events[0]).toMatchObject({
       parentKey: "day:2026-10-16",
       title: "Release 4.2 rollout",
-      detail: "Nvidia › Release 4.2 rollout · 2 logs · 2h 15m",
+      detail: "2 logs · 2h 15m",
+      taskPath: { projectTitle: "Nvidia", taskTitle: "Release 4.2 rollout" },
       action: "create",
       warnings: []
     });
     expect(events[1]).toMatchObject({
       parentKey: "day:2026-10-16",
-      detail: "Acme Website Relaunch › Homepage redesign · 1 log · 1h 30m",
+      detail: "1 log · 1h 30m",
+      taskPath: {
+        projectTitle: "Acme Website Relaunch",
+        taskTitle: "Homepage redesign"
+      },
       action: "create"
     });
 
@@ -674,7 +698,7 @@ describe("PMSPA time API (feat-int-time-api)", () => {
     }
 
     const days = await as(a).get<{ items: PmspaDayBody[] }>(
-      "/days?from=2026-10-14&to=2026-10-14"
+      "/days/details?dates=2026-10-14"
     );
     expect(days.body.items[0].linkState).toBe("linked");
     expect(
@@ -803,7 +827,7 @@ describe("PMSPA time API (feat-int-time-api)", () => {
     }
   });
 
-  it("AC-8 API-INT-010 FR-INT-012: a day push preview: one event per task, project, Unsorted title and nonprod; the excluded log's task isn't a parent", async () => {
+  it("AC-8 API-INT-010 FR-INT-012: a day push preview: one event per task, project, Unsorted title and nonprod, a task's PMSPA path apart; the excluded log's task isn't a parent", async () => {
     const { a, pm, meetings, internal, nvidiaPm } = await pushSetup();
 
     const res = await pushPreview(a);
@@ -827,12 +851,20 @@ describe("PMSPA time API (feat-int-time-api)", () => {
       ["event:unsorted:nonprod", "nonprod"]
     ]);
     expect(events.map((e) => e.detail)).toEqual([
-      "Anthropic › PM · 1 log · 1h",
-      "Anthropic › Meetings & demos · 1 log · 30m",
+      "1 log · 1h",
+      "1 log · 30m",
       "No task · 1 log · 45m",
       "No task · 1 log · 15m",
       "No task · 1 log · 15m",
       "No task · Excluded from statistics · 1 log · 30m"
+    ]);
+    expect(events.map((e) => e.taskPath ?? null)).toEqual([
+      { projectTitle: "Anthropic", taskTitle: "PM" },
+      { projectTitle: "Anthropic", taskTitle: "Meetings & demos" },
+      null,
+      null,
+      null,
+      null
     ]);
     for (const e of events) {
       expect(e).toMatchObject({

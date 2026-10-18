@@ -1,7 +1,8 @@
-import { ApiProperty } from "@nestjs/swagger";
+import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import { Type } from "class-transformer";
 import {
   ArrayMaxSize,
+  ArrayMinSize,
   ArrayUnique,
   IsArray,
   IsDefined,
@@ -15,6 +16,7 @@ import {
   ValidateIf,
   ValidateNested
 } from "class-validator";
+import { PmspaDayDto } from "./pmspa-browse.dto.js";
 
 // The sync shapes of the PMSPA connector (feat-int-sync-api; endpoints.md *Shared PMSPA shapes*), copied from
 // web/proto/features/integrations/proposed-types.ts. Request bodies validate; response shapes document only.
@@ -48,6 +50,12 @@ export class SyncCandidateDto {
   differences: SyncFieldDiffDto[];
 }
 
+/** The PMSPA project and task an event row sits under (OQ-205). */
+export class SyncTaskPathDto {
+  projectTitle: string;
+  taskTitle: string;
+}
+
 /** One row of an import or sync preview (design principle 6). */
 export class SyncPreviewItemDto {
   /** Stable within the preview, e.g. `project:66f1…`. */
@@ -71,18 +79,35 @@ export class SyncPreviewItemDto {
   linkedId: string | null;
   parent: boolean;
   optional: boolean;
-  @ApiProperty({ type: [SyncCandidateDto] })
-  candidates: SyncCandidateDto[];
+  @ApiProperty({
+    type: [SyncCandidateDto],
+    nullable: true,
+    description:
+      "Null: a sync or push row whose PMSPA candidates weren't read (OQ-204, API-INT-019)."
+  })
+  candidates: SyncCandidateDto[] | null;
   @ApiProperty({ type: [SyncFieldDiffDto] })
   differences: SyncFieldDiffDto[];
   @ApiProperty({ type: [String] })
   warnings: string[];
+  @ApiPropertyOptional({
+    type: SyncTaskPathDto,
+    description:
+      "An import's or a day push's event row with a PMSPA task (OQ-205)."
+  })
+  taskPath?: SyncTaskPathDto;
 }
 
 /** `SyncPreview` (API-INT-008, API-INT-015). */
 export class SyncPreviewDto {
   @ApiProperty({ type: [SyncPreviewItemDto] })
   items: SyncPreviewItemDto[];
+  @ApiPropertyOptional({
+    type: [PmspaDayDto],
+    description:
+      "API-INT-008/009 with `dates`: the selected days read (OQ-205)."
+  })
+  days?: PmspaDayDto[];
 }
 
 /** One record's outcome of an import or sync (design principle 9). */
@@ -108,6 +133,12 @@ export class SyncResultDto {
   items: SyncResultItemDto[];
   /** ISO 8601 UTC */
   syncedAt: string;
+  @ApiPropertyOptional({
+    type: [PmspaDayDto],
+    description:
+      "API-INT-008/009 with `dates`: the selected days read (OQ-205)."
+  })
+  days?: PmspaDayDto[];
 }
 
 /**
@@ -241,4 +272,40 @@ export class PmspaPushDto {
   @ValidateNested({ each: true })
   @Type(() => SyncChoiceDto)
   choices: SyncChoiceDto[];
+}
+
+/** `PmspaCandidatesInput` (API-INT-019, OQ-204). */
+export class PmspaCandidatesInputDto {
+  @ApiProperty({ enum: ["project", "task"] })
+  @IsIn(["project", "task"])
+  type: "project" | "task";
+
+  /** A 24-hex PMSPA project id; required for `task`, ignored for `project`. */
+  @ApiProperty({ type: String, required: false })
+  @ValidateIf((o: PmspaCandidatesInputDto) => o.type === "task")
+  @Matches(/^[0-9a-f]{24}$/, { message: "Must be a 24-character hex id." })
+  projectId?: string;
+
+  /** The PM4 projects or tasks of `type` to compare with. */
+  @ApiProperty({ type: [String], format: "uuid" })
+  @IsArray()
+  @ArrayMinSize(1)
+  @ArrayMaxSize(500)
+  @ArrayUnique()
+  @IsUUID("all", { each: true })
+  for: string[];
+}
+
+/** The Link to existing candidates of one PM4 record (API-INT-019). */
+export class PmspaCandidatesItemDto {
+  @ApiProperty({ format: "uuid" })
+  pm4Id: string;
+  @ApiProperty({ type: [SyncCandidateDto] })
+  candidates: SyncCandidateDto[];
+}
+
+/** `PmspaCandidates` (API-INT-019). */
+export class PmspaCandidatesDto {
+  @ApiProperty({ type: [PmspaCandidatesItemDto] })
+  items: PmspaCandidatesItemDto[];
 }

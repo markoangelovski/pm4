@@ -7,6 +7,7 @@ import {
   type UseQueryResult
 } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api/client";
+import type { components } from "@/lib/api/schema";
 import { unwrap, unwrapVoid } from "@/lib/api/problem";
 import type {
   PmspaConnectionDto,
@@ -26,6 +27,8 @@ import type {
   SyncPreviewDto,
   SyncResultDto
 } from "./types";
+
+type S = components["schemas"];
 
 export type PmspaConnection = PmspaConnectionDto;
 
@@ -231,6 +234,38 @@ export function usePmspaDays(
       ).items,
     enabled
   });
+}
+
+/** API-INT-017, for **Expand all**: one read of every task fills the task list of each of `projectIds`. */
+export function useLoadAllPmspaTasks(): UseMutationResult<
+  void,
+  Error,
+  string[]
+> {
+  throw new Error("not implemented (feat-int-budget)");
+}
+
+/** API-INT-018: one PMSPA day with its events, read when it opens; null when PMSPA has no events on it. */
+export function usePmspaDay(
+  date: string,
+  enabled: boolean
+): UseQueryResult<PmspaDayDto | null> {
+  void date;
+  void enabled;
+  throw new Error("not implemented (feat-int-budget)");
+}
+
+/** **Expand all** on the Time tab: one API-INT-018 read of the days of `dates` not cached and fresh. */
+export function useLoadPmspaDays(): UseMutationResult<void, Error, string[]> {
+  throw new Error("not implemented (feat-int-budget)");
+}
+
+/** API-INT-019: the PMSPA records a sync or push row can link to, read once its dropdown opens. */
+export function usePmspaCandidates(
+  input: S["PmspaCandidatesInputDto"] | null
+): UseQueryResult<S["PmspaCandidatesDto"]> {
+  void input;
+  throw new Error("not implemented (feat-int-budget)");
 }
 
 function refreshAfterSync(queryClient: QueryClient) {

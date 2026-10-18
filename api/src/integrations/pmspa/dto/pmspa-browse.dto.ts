@@ -1,5 +1,13 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsISO8601, Matches } from "class-validator";
+import { Transform } from "class-transformer";
+import {
+  ArrayMaxSize,
+  ArrayMinSize,
+  ArrayUnique,
+  IsArray,
+  IsISO8601,
+  Matches
+} from "class-validator";
 import type { PmspaColumn } from "../pmspa-fields.js";
 import type { PmspaLinkOrigin } from "../pmspa-links.repository.js";
 
@@ -117,4 +125,39 @@ export class PmspaDayDto {
 export class PmspaDayListDto {
   @ApiProperty({ type: [PmspaDayDto] })
   items: PmspaDayDto[];
+}
+
+/** `PmspaDaySummary` (API-INT-007, OQ-205): a day as PMSPA's range lookup answers it. */
+export class PmspaDaySummaryDto {
+  /** `YYYY-MM-DD` */
+  @ApiProperty({ type: String, format: "date" })
+  date: string;
+  @ApiProperty({ type: Number, nullable: true })
+  startMinute: number | null;
+  /** The event ids PMSPA lists for the day. */
+  eventCount: number;
+}
+
+/** `{ items: PmspaDaySummary[] }`. */
+export class PmspaDaySummaryListDto {
+  @ApiProperty({ type: [PmspaDaySummaryDto] })
+  items: PmspaDaySummaryDto[];
+}
+
+/** `GET /integrations/pmspa/days/details` query (API-INT-018): 1 to 7 distinct dates, the parameter repeated. */
+export class PmspaDayDetailsQueryDto {
+  @ApiProperty({ type: [String] })
+  @Transform(({ value }: { value: unknown }): unknown[] =>
+    Array.isArray(value) ? (value as unknown[]) : [value]
+  )
+  @IsArray()
+  @ArrayMinSize(1)
+  @ArrayMaxSize(7)
+  @ArrayUnique()
+  @Matches(/^\d{4}-\d{2}-\d{2}$/, {
+    each: true,
+    message: "Must be a YYYY-MM-DD date."
+  })
+  @IsISO8601({ strict: true }, { each: true })
+  dates: string[];
 }

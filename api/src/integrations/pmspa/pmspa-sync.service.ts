@@ -8,6 +8,8 @@ import { ProjectsService } from "../../projects/projects.service.js";
 import { TasksService } from "../../tasks/tasks.service.js";
 import { todayIn } from "../../time/time-logs.service.js";
 import type {
+  PmspaCandidatesDto,
+  PmspaCandidatesInputDto,
   PmspaImportDto,
   PmspaImportSelectionDto,
   PmspaPushDto,
@@ -201,6 +203,16 @@ export class PmspaSyncService {
     return { items };
   }
 
+  /** API-INT-019 (D12): the Link to existing PMSPA candidates of many PM4 records, one PMSPA list. */
+  candidates(
+    userId: string,
+    input: PmspaCandidatesInputDto
+  ): Promise<PmspaCandidatesDto> {
+    void userId;
+    void input;
+    throw new Error("not implemented (feat-int-budget)");
+  }
+
   /** API-INT-009: imports the selection, row by row. */
   importRun(userId: string, dto: PmspaImportDto): Promise<SyncResultDto> {
     return this.commit(
@@ -342,7 +354,10 @@ export class PmspaSyncService {
     let other: string | null = row.linkedId;
     const fromChoice = !other && choice.kind === "link";
     if (!other && choice.kind === "link") {
-      if (!choice.id || !row.candidates.some((c) => c.id === choice.id)) {
+      if (
+        !choice.id ||
+        !(row.candidates ?? []).some((c) => c.id === choice.id)
+      ) {
         return result(row, "failed", CANT_LINK);
       }
       other = choice.id;

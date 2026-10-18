@@ -30,7 +30,8 @@ function notConfigured(): PmspaConnectionResponseDto {
     email: null,
     account: null,
     lastCheckedAt: null,
-    lastSyncAt: null
+    lastSyncAt: null,
+    rateLimit: null
   };
 }
 
@@ -184,7 +185,8 @@ export class PmspaConnectionService {
       email: row.email,
       account,
       lastCheckedAt: row.lastCheckedAt.toISOString(),
-      lastSyncAt: row.lastSyncAt?.toISOString() ?? null
+      lastSyncAt: row.lastSyncAt?.toISOString() ?? null,
+      rateLimit: null
     };
   }
 }

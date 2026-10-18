@@ -112,7 +112,7 @@ describe("importRows", () => {
       ["project", "create", "to-pm4"],
       ["task", "create", "to-pm4"]
     ]);
-    expect(rows[0].candidates[0]).toMatchObject({
+    expect(rows[0].candidates![0]).toMatchObject({
       id: "p1",
       detail: "Lead Jane"
     });

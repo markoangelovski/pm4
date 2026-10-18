@@ -406,6 +406,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/integrations/pmspa/tasks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Every task of the connected account, with their PM4 links (API-INT-017). */
+        get: operations["PmspaBrowseController_allTasks"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/integrations/pmspa/days": {
         parameters: {
             query?: never;
@@ -413,8 +430,25 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** The connected account's days in a week, newest first, with their events and logs (API-INT-007). */
+        /** The connected account's days in a week, newest first, from one PMSPA call: no events (API-INT-007). */
         get: operations["PmspaBrowseController_days"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/integrations/pmspa/days/details": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The given days, newest first, with their events and logs (API-INT-018). */
+        get: operations["PmspaBrowseController_dayDetails"];
         put?: never;
         post?: never;
         delete?: never;
@@ -554,6 +588,23 @@ export interface paths {
         put?: never;
         /** Pushes one PM4 day to PMSPA as events (API-INT-011). */
         post: operations["PmspaSyncController_pushRun"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/integrations/pmspa/candidates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** The Link to existing PMSPA candidates of many PM4 records (API-INT-019). */
+        post: operations["PmspaSyncController_candidates"];
         delete?: never;
         options?: never;
         head?: never;
@@ -952,6 +1003,16 @@ export interface components {
             id: string;
             email: string;
         };
+        PmspaRateLimitDto: {
+            /** @description Requests per window. */
+            limit: number;
+            /** @description 0 after a 429. */
+            remaining: number;
+            /** @description ISO 8601 UTC */
+            resetAt: string;
+            /** @description ISO 8601 UTC */
+            observedAt: string;
+        };
         PmspaConnectionResponseDto: {
             status: components["schemas"]["PmspaConnectionStatus"];
             url: string | null;
@@ -961,6 +1022,7 @@ export interface components {
             lastCheckedAt: string | null;
             /** @description ISO 8601 UTC */
             lastSyncAt: string | null;
+            rateLimit: components["schemas"]["PmspaRateLimitDto"] | null;
         };
         SavePmspaConnectionDto: {
             /** @description ≤ 500 chars; `https://` and a public host. */
@@ -1007,6 +1069,19 @@ export interface components {
         };
         PmspaTaskListDto: {
             items: components["schemas"]["PmspaTaskDto"][];
+        };
+        PmspaDaySummaryDto: {
+            /**
+             * Format: date
+             * @description `YYYY-MM-DD`
+             */
+            date: string;
+            startMinute: number | null;
+            /** @description The event ids PMSPA lists for the day. */
+            eventCount: number;
+        };
+        PmspaDaySummaryListDto: {
+            items: components["schemas"]["PmspaDaySummaryDto"][];
         };
         PmspaEventTaskDto: {
             id: string;
@@ -1101,6 +1176,10 @@ export interface components {
             id: string;
             title: string;
         };
+        SyncTaskPathDto: {
+            projectTitle: string;
+            taskTitle: string;
+        };
         SyncPreviewItemDto: {
             parentKey: string | null;
             /** @enum {string} */
@@ -1116,9 +1195,12 @@ export interface components {
             reason: string | null;
             /** @description The linked counterpart's id on the other side, or null. */
             linkedId: string | null;
-            candidates: components["schemas"]["SyncCandidateDto"][];
+            /** @description Null: a sync or push row whose PMSPA candidates weren't read (OQ-204, API-INT-019). */
+            candidates: components["schemas"]["SyncCandidateDto"][] | null;
             differences: components["schemas"]["SyncFieldDiffDto"][];
             warnings: string[];
+            /** @description An import's or a day push's event row with a PMSPA task (OQ-205). */
+            taskPath?: components["schemas"]["SyncTaskPathDto"];
             /** @description Stable within the preview, e.g. `project:66f1…`. */
             key: string;
             title: string;
@@ -1127,6 +1209,8 @@ export interface components {
         };
         SyncPreviewDto: {
             items: components["schemas"]["SyncPreviewItemDto"][];
+            /** @description API-INT-008/009 with `dates`: the selected days read (OQ-205). */
+            days?: components["schemas"]["PmspaDayDto"][];
         };
         PmspaPushTargetDto: {
             /** @enum {string} */
@@ -1171,6 +1255,8 @@ export interface components {
         };
         SyncResultDto: {
             items: components["schemas"]["SyncResultItemDto"][];
+            /** @description API-INT-008/009 with `dates`: the selected days read (OQ-205). */
+            days?: components["schemas"]["PmspaDayDto"][];
             /** @description ISO 8601 UTC */
             syncedAt: string;
         };
@@ -1181,6 +1267,22 @@ export interface components {
         PmspaPushDto: {
             choices: components["schemas"]["SyncChoiceDto"][];
             target: components["schemas"]["PmspaPushTargetDto"];
+        };
+        PmspaCandidatesInputDto: {
+            /** @enum {string} */
+            type: "project" | "task";
+            /** @description A 24-hex PMSPA project id; required for `task`, ignored for `project`. */
+            projectId?: string;
+            /** @description The PM4 projects or tasks of `type` to compare with. */
+            for: string[];
+        };
+        PmspaCandidatesItemDto: {
+            /** Format: uuid */
+            pm4Id: string;
+            candidates: components["schemas"]["SyncCandidateDto"][];
+        };
+        PmspaCandidatesDto: {
+            items: components["schemas"]["PmspaCandidatesItemDto"][];
         };
     };
     responses: never;
@@ -3032,11 +3134,150 @@ export interface operations {
             };
         };
     };
+    PmspaBrowseController_allTasks: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PmspaTaskListDto"];
+                };
+            };
+            /** @description Missing, invalid or expired credentials. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Conflict. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Unexpected error. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description PMSPA failed or couldn't be reached. */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description PMSPA is busy. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+        };
+    };
     PmspaBrowseController_days: {
         parameters: {
             query: {
                 from: string;
                 to: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PmspaDaySummaryListDto"];
+                };
+            };
+            /** @description Validation failed: one entry in errors[] per invalid field. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Missing, invalid or expired credentials. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Conflict. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Unexpected error. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description PMSPA failed or couldn't be reached. */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description PMSPA is busy. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+        };
+    };
+    PmspaBrowseController_dayDetails: {
+        parameters: {
+            query: {
+                dates: string[];
             };
             header?: never;
             path?: never;
@@ -3753,6 +3994,83 @@ export interface operations {
             };
             /** @description Not found. */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Conflict. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Unexpected error. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description PMSPA failed or couldn't be reached. */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description PMSPA is busy. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+        };
+    };
+    PmspaSyncController_candidates: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PmspaCandidatesInputDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PmspaCandidatesDto"];
+                };
+            };
+            /** @description Validation failed: one entry in errors[] per invalid field. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Missing, invalid or expired credentials. */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -1,6 +1,9 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { Redis } from "../../redis/redis.js";
-import type { PmspaAccountDto } from "./dto/pmspa-connection-response.dto.js";
+import type {
+  PmspaAccountDto,
+  PmspaRateLimitDto
+} from "./dto/pmspa-connection-response.dto.js";
 import { PmspaCrypto } from "./pmspa-crypto.js";
 
 /** The cached PMSPA token expires before PMSPA's own 24 h expiry (D5). */
@@ -106,5 +109,18 @@ export class PmspaStore {
 
   async unlock(userId: string): Promise<void> {
     await this.client.del(keys.lock(userId));
+  }
+
+  /** PMSPA's last rate-limit answer for `host`, or null (none, expired, or not JSON). */
+  getRateLimit(host: string): Promise<PmspaRateLimitDto | null> {
+    void host;
+    throw new Error("not implemented (feat-int-budget)");
+  }
+
+  /** Kept until `resetAt`: `SET key JSON PX (Date.parse(resetAt) − Date.now())`; nothing when that's ≤ 0. */
+  setRateLimit(host: string, rateLimit: PmspaRateLimitDto): Promise<void> {
+    void host;
+    void rateLimit;
+    throw new Error("not implemented (feat-int-budget)");
   }
 }

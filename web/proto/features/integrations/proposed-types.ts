@@ -66,7 +66,8 @@ export interface PmspaCandidatesDto {
 export type PmspaImportResultDto = SyncResultDto & { days?: PmspaDayDto[] };
 
 /** Generated paths that `PmspaPaths` gives a new shape. */
-export type PmspaChangedPaths = "/api/v1/integrations/pmspa/days";
+export type PmspaChangedPaths =
+  "/api/v1/integrations/pmspa/days" | "/api/v1/integrations/pmspa/candidates";
 
 interface NoParams {
   query?: never;

@@ -52,6 +52,7 @@ const connection = (
   },
   lastCheckedAt: "2026-10-15T20:00:00.000Z",
   lastSyncAt: null,
+  rateLimit: null,
   ...over
 });
 

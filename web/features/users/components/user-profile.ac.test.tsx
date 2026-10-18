@@ -59,6 +59,11 @@ vi.mock("@/features/auth/use-sign-out", () => ({
   useSignOut: () => vi.fn()
 }));
 
+// Profile → Integrations reads the PMSPA connection (feat-int-budget); this test has no query client.
+vi.mock("@/features/integrations/components/profile-integrations", () => ({
+  ProfileIntegrations: () => null
+}));
+
 function loaded() {
   hooks.me = {
     data: me,

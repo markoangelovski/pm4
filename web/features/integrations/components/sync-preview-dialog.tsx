@@ -536,12 +536,13 @@ function candidatesFor(
   parent: SyncPreviewItemDto | undefined,
   choices: Choices
 ): SyncCandidateDto[] {
-  if (item.type !== "task") return item.candidates;
-  if (!parent) return item.candidates;
+  const candidates = item.candidates ?? [];
+  if (item.type !== "task") return candidates;
+  if (!parent) return candidates;
   const parentChoice = choices[parent.key];
   const group =
     parent.linkedId ?? (parentChoice?.kind === "link" ? parentChoice.id : null);
-  return group ? item.candidates.filter((c) => c.groupId === group) : [];
+  return group ? candidates.filter((c) => c.groupId === group) : [];
 }
 
 const CREATE: SyncCandidateDto = {

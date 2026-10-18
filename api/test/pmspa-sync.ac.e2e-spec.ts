@@ -283,7 +283,7 @@ interface PreviewItem {
   linkedId: string | null;
   parent: boolean;
   optional: boolean;
-  candidates: Candidate[];
+  candidates: Candidate[] | null;
   differences: Diff[];
   warnings: string[];
 }
@@ -513,7 +513,7 @@ describe("PMSPA sync API (feat-int-sync-api)", () => {
     });
   });
 
-  it("AC-2 API-INT-006 FR-INT-007: a project's tasks with links; none → []; another account's project → 404; bad id → 400; no connection → 409", async () => {
+  it("AC-2 API-INT-006 FR-INT-007: a project's tasks with links; none → []; another account's project → [] (feat-int-budget D2); bad id → 400; no connection → 409", async () => {
     const { a, meetings } = await setup();
 
     const tasks = await as(a).get<{ items: PmspaTaskBody[] }>(
@@ -548,7 +548,11 @@ describe("PMSPA sync API (feat-int-sync-api)", () => {
     expect(empty.status).toBe(200);
     expect(empty.body).toEqual({ items: [] });
 
-    expect((await as(a).get(`/projects/${P_OTHER}/tasks`)).status).toBe(404);
+    const other = await as(a).get<{ items: PmspaTaskBody[] }>(
+      `/projects/${P_OTHER}/tasks`
+    );
+    expect(other.status).toBe(200);
+    expect(other.body).toEqual({ items: [] });
     expect((await as(a).get("/projects/abc/tasks")).status).toBe(400);
 
     const stranger = await newUser();
@@ -647,7 +651,7 @@ describe("PMSPA sync API (feat-int-sync-api)", () => {
       direction: "to-pm4",
       linkedId: null
     });
-    expect(project.candidates.map((c) => c.id)).toEqual([internal.id]);
+    expect(project.candidates?.map((c) => c.id)).toEqual([internal.id]);
     expect(tasks.map((t) => t.key)).toEqual(T_ACME.map((id) => `task:${id}`));
     for (const t of tasks) {
       expect(t).toMatchObject({
@@ -915,7 +919,7 @@ describe("PMSPA sync API (feat-int-sync-api)", () => {
     });
   });
 
-  it("AC-13 API-INT-015 API-INT-016 FR-INT-008: an unlinked PM4 project → create with PMSPA candidates, the closest title first; linking one changes neither side", async () => {
+  it("AC-13 API-INT-015 API-INT-019 API-INT-016 FR-INT-008: an unlinked PM4 project → create with candidates null, API-INT-019 lists the PMSPA ones, the closest title first; linking one changes neither side", async () => {
     const { a, internal } = await setup();
     const P_LOWER = "66f1a0c0e4b0000000000007";
     fake.projects.push({
@@ -935,9 +939,16 @@ describe("PMSPA sync API (feat-int-sync-api)", () => {
       key: `project:${internal.id}`,
       action: "create",
       direction: "to-pmspa",
-      linkedId: null
+      linkedId: null,
+      candidates: null
     });
-    expect(preview.body.items[0].candidates.map((c) => c.id)).toEqual([
+
+    const listed = await as(a).post<{
+      items: { pm4Id: string; candidates: Candidate[] }[];
+    }>("/candidates", { type: "project", for: [internal.id] });
+    expect(listed.status).toBe(200);
+    expect(listed.body.items.map((i) => i.pm4Id)).toEqual([internal.id]);
+    expect(listed.body.items[0].candidates.map((c) => c.id)).toEqual([
       P_LOWER,
       P_ACME,
       P_ARCHIVE,

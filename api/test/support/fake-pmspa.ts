@@ -142,6 +142,13 @@ export class FakePmspa {
   pageSize = 50;
   /** Every answer waits this long, so concurrent requests overlap. */
   latencyMs = 0;
+  /**
+   * Headers every answer carries, e.g. `{"X-RateLimit-Limit": "100", "X-RateLimit-Remaining": "63", "X-RateLimit-Reset":
+   * "<epoch s>"}` (feat-int-budget); not `rateLimitOnce`'s 429.
+   */
+  rateLimitHeaders: Record<string, string> | null = null;
+  /** The most requests that were waiting for their answer at the same time. */
+  maxInFlight = 0;
   /** The next request matching one of these answers its status and body instead; each matches once. */
   rejections: FakePmspaRejection[] = [];
   /** Every request that reached the fake, in order. */
@@ -149,6 +156,7 @@ export class FakePmspa {
   /** Every token login issued, in order. */
   readonly issuedTokens: string[] = [];
 
+  private inFlight = 0;
   private readonly tokens = new Map<string, string>();
   private readonly expired = new Set<string>();
 
@@ -247,6 +255,7 @@ export class FakePmspa {
       query: url.searchParams,
       body
     });
+    const limited = this.rateLimitOnce !== null;
     const response = this.answer(
       method,
       url.pathname,
@@ -254,9 +263,19 @@ export class FakePmspa {
       new Headers(init?.headers),
       body
     );
+    if (!limited && this.rateLimitHeaders) {
+      for (const [name, value] of Object.entries(this.rateLimitHeaders)) {
+        response.headers.set(name, value);
+      }
+    }
     if (this.latencyMs === 0) return Promise.resolve(response);
+    this.inFlight++;
+    this.maxInFlight = Math.max(this.maxInFlight, this.inFlight);
     return new Promise((resolve) =>
-      setTimeout(() => resolve(response), this.latencyMs)
+      setTimeout(() => {
+        this.inFlight--;
+        resolve(response);
+      }, this.latencyMs)
     );
   };
 

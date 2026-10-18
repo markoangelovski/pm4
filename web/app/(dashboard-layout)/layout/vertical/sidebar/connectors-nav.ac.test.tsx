@@ -35,7 +35,8 @@ const connection = (status: Connection["status"]): Connection => ({
   email: status === "not-configured" ? null : "me@example.com",
   account: null,
   lastCheckedAt: null,
-  lastSyncAt: null
+  lastSyncAt: null,
+  rateLimit: null
 });
 
 afterEach(() => {

@@ -6,6 +6,8 @@ import {
   CurrentUser
 } from "../../common/decorators/current-user/current-user.decorator.js";
 import {
+  PmspaCandidatesDto,
+  PmspaCandidatesInputDto,
   PmspaImportDto,
   PmspaImportSelectionDto,
   PmspaPushDto,
@@ -87,5 +89,16 @@ export class PmspaSyncController {
     @Body() dto: PmspaPushDto
   ): Promise<SyncResultDto> {
     return this.service.pushRun(user.id, dto);
+  }
+
+  /** The Link to existing PMSPA candidates of many PM4 records (API-INT-019). */
+  @Post("candidates")
+  @HttpCode(HttpStatus.OK)
+  @ApiProblemResponses(400, 401, 409, 502, 503)
+  candidates(
+    @CurrentUser() user: AuthUser,
+    @Body() dto: PmspaCandidatesInputDto
+  ): Promise<PmspaCandidatesDto> {
+    return this.service.candidates(user.id, dto);
   }
 }

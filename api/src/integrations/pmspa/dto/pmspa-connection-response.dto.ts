@@ -21,6 +21,18 @@ export class PmspaAccountDto {
   role: "admin" | "user";
 }
 
+/** `PmspaRateLimit` (OQ-200): PMSPA's X-RateLimit-* of its last answer to any PM4 user, per host. */
+export class PmspaRateLimitDto {
+  /** Requests per window. */
+  limit: number;
+  /** 0 after a 429. */
+  remaining: number;
+  /** ISO 8601 UTC */
+  resetAt: string;
+  /** ISO 8601 UTC */
+  observedAt: string;
+}
+
 /** `PmspaConnection` (API-INT-001…004). Never a password or token. */
 export class PmspaConnectionResponseDto {
   @ApiProperty({
@@ -40,4 +52,6 @@ export class PmspaConnectionResponseDto {
   /** ISO 8601 UTC */
   @ApiProperty({ type: String, nullable: true })
   lastSyncAt: string | null;
+  @ApiProperty({ type: PmspaRateLimitDto, nullable: true })
+  rateLimit: PmspaRateLimitDto | null;
 }
