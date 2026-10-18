@@ -1,6 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
 import type { ComponentProps } from "react";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor
+} from "@testing-library/react";
 import { ApiError } from "@/lib/api/problem";
 import type { components } from "@/lib/api/schema";
 import { SyncPreviewDialog } from "./sync-preview-dialog";
@@ -114,7 +120,7 @@ describe("SyncPreviewDialog (feat-int-web)", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("AC-8 FR-INT-014, OQ-182: a commit rejected with pmspa-sync-running keeps the problem's line and says records may have been written", async () => {
+  it("AC-8 FR-INT-014, OQ-182, OQ-199: a commit rejected with pmspa-sync-running keeps only the problem's line; another failure adds that records may have been written", async () => {
     renderDialog({
       onRun: vi
         .fn<Props["onRun"]>()
@@ -122,8 +128,22 @@ describe("SyncPreviewDialog (feat-int-web)", () => {
     });
     fireEvent.click(runButton(/^Sync 1 record$/));
     expect(
+      await screen.findByText("Another import, sync or push is still running.")
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText(/Some records may have been written/)
+    ).not.toBeInTheDocument();
+    cleanup();
+
+    renderDialog({
+      onRun: vi
+        .fn<Props["onRun"]>()
+        .mockRejectedValue(problem(502, "pmspa-unreachable"))
+    });
+    fireEvent.click(runButton(/^Sync 1 record$/));
+    expect(
       await screen.findByText(
-        "Another import, sync or push is still running. Some records may have been written: open the preview again to see where things stand."
+        "PMSPA couldn't be reached. Some records may have been written: open the preview again to see where things stand."
       )
     ).toBeInTheDocument();
   });

@@ -135,7 +135,10 @@ describe("PmspaConnectionService", () => {
       account
     });
     await service.save("u", dto);
-    expect(store.setToken).toHaveBeenCalledWith("u", "t");
+    expect(store.setToken).toHaveBeenCalledWith("u", "t", {
+      url: dto.url,
+      email: dto.email
+    });
     expect(store.clear).not.toHaveBeenCalled();
   });
 

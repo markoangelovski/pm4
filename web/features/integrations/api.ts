@@ -272,30 +272,21 @@ function isFresh(queryClient: QueryClient, queryKey: readonly unknown[]) {
   );
 }
 
+/** A PMSPA project as **Expand all** weighs it: its id and how many tasks it has. */
+export type PmspaTaskListSize = { id: string; taskCount: number };
+
 /**
- * API-INT-017, for **Expand all** (OQ-201 (3)): one read of every task of the account fills the task list of
- * each of `projectIds` (an empty list when it has none), so the opened rows don't read PMSPA one project at a
- * time. Nothing is read when every one of those lists is already cached and fresh.
+ * **Expand all** (OQ-206): fills the task list of each of `shown` with the cheaper read, per project (API-INT-006)
+ * or all tasks (API-INT-017).
  */
 export function useLoadAllPmspaTasks(): UseMutationResult<
   void,
   Error,
-  string[]
+  { shown: PmspaTaskListSize[]; all: PmspaTaskListSize[] }
 > {
-  const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (projectIds: string[]) => {
-      const fresh = (id: string) =>
-        isFresh(queryClient, integrationKeys.tasks(id));
-      if (projectIds.every(fresh)) return;
-      const { items } = unwrap(
-        await apiClient.GET("/api/v1/integrations/pmspa/tasks")
-      );
-      for (const id of projectIds)
-        queryClient.setQueryData(
-          integrationKeys.tasks(id),
-          items.filter((t) => t.projectId === id)
-        );
+    mutationFn: () => {
+      throw new Error("not implemented (feat-int-followups)");
     }
   });
 }

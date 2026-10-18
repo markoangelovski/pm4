@@ -1121,6 +1121,8 @@ export interface components {
             pm4Id: string;
             /** @description ISO 8601 UTC */
             syncedAt: string;
+            /** @description ISO 8601 UTC: when PMSPA created the linked record, from its ObjectId (OQ-207). */
+            pmspaCreatedAt: string;
         };
         PmspaLinkListDto: {
             items: components["schemas"]["PmspaLinkDto"][];

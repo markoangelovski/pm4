@@ -153,7 +153,8 @@ describe("PMSPA connection hooks (feat-int-web)", () => {
     const link: S["PmspaLinkDto"] = {
       pm4Id: "t1",
       origin: "imported",
-      syncedAt: "2026-10-15T20:50:00.000Z"
+      syncedAt: "2026-10-15T20:50:00.000Z",
+      pmspaCreatedAt: "2023-10-06T12:38:08.000Z"
     };
     api.GET.mockImplementation(async (path: string) =>
       path === "/api/v1/integrations/pmspa"

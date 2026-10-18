@@ -109,6 +109,7 @@ export class PmspaClient {
   ): Promise<PmspaResponse> {
     const row = await this.repo.find(userId);
     if (!row) throw pmspaProblems.notConnected();
+    const owner = { url: row.url, email: row.email };
     let status: PmspaStatus = row.status;
     const setStatus = async (next: PmspaStatus) => {
       if (status !== next) {
@@ -130,8 +131,8 @@ export class PmspaClient {
       }
       const check = await this.check(row.url, row.email, password);
       if (check.status === "connected") {
-        await this.store.setToken(userId, check.token);
-        await this.store.setAccount(userId, check.account);
+        await this.store.setToken(userId, check.token, owner);
+        await this.store.setAccount(userId, check.account, owner);
         return check.token;
       }
       if (check.status === "invalid-credentials") return invalid();
@@ -142,7 +143,8 @@ export class PmspaClient {
       this.transport.send({ ...req, baseUrl: row.url, token });
 
     try {
-      const token = (await this.store.getToken(userId)) ?? (await login());
+      const token =
+        (await this.store.getToken(userId, owner)) ?? (await login());
       let res = await send(token);
       if (isTokenError(res)) {
         res = await send(await login());

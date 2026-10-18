@@ -100,8 +100,9 @@ export class PmspaConnectionService {
     }
 
     if (connected) {
-      await this.store.setToken(userId, connected.token);
-      await this.store.setAccount(userId, connected.account);
+      const owner = { url: dto.url, email: dto.email };
+      await this.store.setToken(userId, connected.token, owner);
+      await this.store.setAccount(userId, connected.account, owner);
     } else {
       await this.store.clear(userId);
     }
@@ -134,8 +135,9 @@ export class PmspaConnectionService {
       await this.store.clear(userId);
     } else {
       await this.repo.setStatus(userId, "connected", check.account.id);
-      await this.store.setToken(userId, check.token);
-      await this.store.setAccount(userId, check.account);
+      const owner = { url: row.url, email: row.email };
+      await this.store.setToken(userId, check.token, owner);
+      await this.store.setAccount(userId, check.account, owner);
     }
     return this.get(userId);
   }
@@ -178,7 +180,12 @@ export class PmspaConnectionService {
     row: PmspaConnectionRow
   ): Promise<PmspaConnectionResponseDto> {
     const account =
-      row.status === "connected" ? await this.store.getAccount(userId) : null;
+      row.status === "connected"
+        ? await this.store.getAccount(userId, {
+            url: row.url,
+            email: row.email
+          })
+        : null;
     return {
       status: row.status,
       url: row.url,

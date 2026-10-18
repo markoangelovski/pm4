@@ -7,6 +7,7 @@ import {
   pmspaProjectLinks,
   pmspaTaskLinks
 } from "../../database/schema/integrations.js";
+import type { PmspaOwner } from "./pmspa-store.js";
 
 export type PmspaStatus = (typeof pmspaConnections.status.enumValues)[number];
 
@@ -66,6 +67,16 @@ export class PmspaConnectionRepository {
         ...(pmspaUserId === undefined ? {} : { pmspaUserId })
       })
       .where(eq(pmspaConnections.userId, userId));
+  }
+
+  /** `setStatus` (status, `last_checked_at = now()`) only while the row still has `owner`'s URL and email; true when it did. */
+  setStatusFor(
+    userId: string,
+    owner: PmspaOwner,
+    status: PmspaStatus
+  ): Promise<boolean> {
+    void [userId, owner, status];
+    return Promise.reject(new Error("not implemented (feat-int-followups)"));
   }
 
   async delete(userId: string): Promise<void> {

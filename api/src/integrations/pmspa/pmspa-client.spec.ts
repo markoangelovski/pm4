@@ -15,6 +15,7 @@ import { PmspaTransport } from "./pmspa-transport.js";
 const USER = "11111111-1111-4111-8111-111111111111";
 const URL_ = "https://pmspa.test";
 const XID = "65a1b2c3d4e5f6a7b8c9d0e1";
+const OWNER = { url: URL_, email: "x@pmspa.test" };
 
 function setup(status: PmspaConnectionRow["status"] = "connected") {
   const mem = new Map<string, string>();
@@ -144,7 +145,7 @@ describe("PmspaClient", () => {
       status: 409
     });
     expect(s.repo.setStatus).toHaveBeenCalledWith(USER, "invalid-credentials");
-    await expect(s.store.getToken(USER)).resolves.toBeNull();
+    await expect(s.store.getToken(USER, OWNER)).resolves.toBeNull();
   });
 
   it("request: an undecryptable password is invalid credentials without calling PMSPA", async () => {
@@ -154,7 +155,7 @@ describe("PmspaClient", () => {
     });
     expect(s.repo.setStatus).toHaveBeenCalledWith(USER, "invalid-credentials");
     expect(s.fake.callsTo("POST", "/v1/auth/login")).toHaveLength(0);
-    await expect(s.store.getToken(USER)).resolves.toBeNull();
+    await expect(s.store.getToken(USER, OWNER)).resolves.toBeNull();
   });
 
   it("request: an undecryptable password after an expired token is invalid credentials", async () => {
@@ -166,7 +167,7 @@ describe("PmspaClient", () => {
     });
     expect(s.fake.callsTo("POST", "/v1/auth/login")).toHaveLength(1);
     expect(s.repo.setStatus).toHaveBeenCalledWith(USER, "invalid-credentials");
-    await expect(s.store.getToken(USER)).resolves.toBeNull();
+    await expect(s.store.getToken(USER, OWNER)).resolves.toBeNull();
   });
 
   it("request: unreachable sets the status; a response restores connected", async () => {

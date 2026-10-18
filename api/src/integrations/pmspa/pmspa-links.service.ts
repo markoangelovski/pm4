@@ -11,6 +11,12 @@ import {
 import { PmspaRemote } from "./pmspa-remote.js";
 import { PmspaSyncRepository } from "./pmspa-sync.repository.js";
 
+/** OQ-207: a PMSPA ObjectId's first 4 bytes are its creation time in seconds. */
+export function pmspaCreatedAt(pmspaId: string): string {
+  void pmspaId;
+  throw new Error("not implemented (feat-int-followups)");
+}
+
 /** The PM4 links of the caller (API-INT-012…014, FR-INT-010). Nothing is stored beyond the link rows. */
 @Injectable()
 export class PmspaLinksService {
@@ -29,7 +35,8 @@ export class PmspaLinksService {
     return rows.map((row) => ({
       pm4Id: row.pm4Id,
       origin: row.origin,
-      syncedAt: row.syncedAt.toISOString()
+      syncedAt: row.syncedAt.toISOString(),
+      pmspaCreatedAt: pmspaCreatedAt(row.pmspaId)
     }));
   }
 

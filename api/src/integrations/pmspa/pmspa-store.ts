@@ -17,6 +17,12 @@ const keys = {
   rate: (host: string) => `pmspa:rate:${host}`
 };
 
+/** Whose cached token or account it is: the connection's URL and email when it was cached (OQ-208). */
+export interface PmspaOwner {
+  url: string;
+  email: string;
+}
+
 /**
  * Redis-backed PMSPA state (feat-int-conn-api D5): the encrypted token
  * cache, the last who-am-I account and the per-host rate-limit pause.
@@ -36,7 +42,8 @@ export class PmspaStore {
   }
 
   /** The cached token, or null when missing or no longer decryptable. */
-  async getToken(userId: string): Promise<string | null> {
+  async getToken(userId: string, owner: PmspaOwner): Promise<string | null> {
+    void owner;
     const raw = await this.client.get(keys.token(userId));
     if (raw === null) return null;
     try {
@@ -52,7 +59,12 @@ export class PmspaStore {
     }
   }
 
-  async setToken(userId: string, token: string): Promise<void> {
+  async setToken(
+    userId: string,
+    token: string,
+    owner: PmspaOwner
+  ): Promise<void> {
+    void owner;
     await this.client.set(
       keys.token(userId),
       this.crypto.encrypt(token).toString("base64"),
@@ -61,7 +73,11 @@ export class PmspaStore {
     );
   }
 
-  async getAccount(userId: string): Promise<PmspaAccountDto | null> {
+  async getAccount(
+    userId: string,
+    owner: PmspaOwner
+  ): Promise<PmspaAccountDto | null> {
+    void owner;
     const raw = await this.client.get(keys.account(userId));
     if (raw === null) return null;
     try {
@@ -72,7 +88,12 @@ export class PmspaStore {
   }
 
   /** No expiry: kept until disconnect (API-INT-001). */
-  async setAccount(userId: string, account: PmspaAccountDto): Promise<void> {
+  async setAccount(
+    userId: string,
+    account: PmspaAccountDto,
+    owner: PmspaOwner
+  ): Promise<void> {
+    void owner;
     await this.client.set(keys.account(userId), JSON.stringify(account));
   }
 

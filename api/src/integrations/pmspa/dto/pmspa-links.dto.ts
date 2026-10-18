@@ -18,6 +18,8 @@ export class PmspaLinkDto {
   origin: PmspaLinkOrigin;
   /** ISO 8601 UTC */
   syncedAt: string;
+  /** ISO 8601 UTC: when PMSPA created the linked record, from its ObjectId (OQ-207). */
+  pmspaCreatedAt: string;
 }
 
 /** `{ items: PmspaLink[] }`. */

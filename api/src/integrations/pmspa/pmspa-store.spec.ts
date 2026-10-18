@@ -13,6 +13,7 @@ const ACCOUNT: PmspaAccountDto = {
   avatarUrl: null,
   role: "user"
 };
+const OWNER = { url: "https://pmspa.test", email: "ada@example.com" };
 
 function setup() {
   const client = {
@@ -33,7 +34,7 @@ function setup() {
 describe("PmspaStore", () => {
   it("stores the token encrypted with a 23 h TTL and reads it back", async () => {
     const { client, store } = setup();
-    await store.setToken(USER, "secret-token");
+    await store.setToken(USER, "secret-token", OWNER);
 
     const [key, value, mode, ttl] = client.set.mock.calls[0] as unknown[];
     expect(key).toBe(`pmspa:token:${USER}`);
@@ -42,13 +43,13 @@ describe("PmspaStore", () => {
     expect(ttl).toBe(82800);
 
     client.get.mockResolvedValueOnce(value);
-    await expect(store.getToken(USER)).resolves.toBe("secret-token");
+    await expect(store.getToken(USER, OWNER)).resolves.toBe("secret-token");
   });
 
   it("returns null for a missing token and for an undecryptable one", async () => {
     const { client, store } = setup();
     client.get.mockResolvedValueOnce(null);
-    await expect(store.getToken(USER)).resolves.toBeNull();
+    await expect(store.getToken(USER, OWNER)).resolves.toBeNull();
 
     const other = new PmspaCrypto({
       pmspaEncryptionKey: Buffer.alloc(32, 9)
@@ -56,7 +57,7 @@ describe("PmspaStore", () => {
     client.get.mockResolvedValueOnce(
       other.encrypt("secret").toString("base64")
     );
-    await expect(store.getToken(USER)).resolves.toBeNull();
+    await expect(store.getToken(USER, OWNER)).resolves.toBeNull();
   });
 
   it("drops an undecryptable token, warns without the value and returns null", async () => {
@@ -71,7 +72,7 @@ describe("PmspaStore", () => {
       .toString("base64");
     client.get.mockResolvedValueOnce(stored);
 
-    await expect(store.getToken(USER)).resolves.toBeNull();
+    await expect(store.getToken(USER, OWNER)).resolves.toBeNull();
     expect(client.del).toHaveBeenCalledWith(`pmspa:token:${USER}`);
     expect(warn).toHaveBeenCalledTimes(1);
     const message = String(warn.mock.calls[0]?.[0]);
@@ -87,7 +88,7 @@ describe("PmspaStore", () => {
       .spyOn(Logger.prototype, "warn")
       .mockImplementation(() => {});
     client.get.mockResolvedValueOnce(null);
-    await expect(store.getToken(USER)).resolves.toBeNull();
+    await expect(store.getToken(USER, OWNER)).resolves.toBeNull();
     expect(warn).not.toHaveBeenCalled();
     expect(client.del).not.toHaveBeenCalled();
     warn.mockRestore();
@@ -95,16 +96,16 @@ describe("PmspaStore", () => {
 
   it("stores the account without expiry and reads it back", async () => {
     const { client, store } = setup();
-    await store.setAccount(USER, ACCOUNT);
+    await store.setAccount(USER, ACCOUNT, OWNER);
     expect(client.set).toHaveBeenCalledWith(
       `pmspa:account:${USER}`,
       JSON.stringify(ACCOUNT)
     );
 
     client.get.mockResolvedValueOnce(JSON.stringify(ACCOUNT));
-    await expect(store.getAccount(USER)).resolves.toEqual(ACCOUNT);
+    await expect(store.getAccount(USER, OWNER)).resolves.toEqual(ACCOUNT);
     client.get.mockResolvedValueOnce(null);
-    await expect(store.getAccount(USER)).resolves.toBeNull();
+    await expect(store.getAccount(USER, OWNER)).resolves.toBeNull();
   });
 
   it("clear deletes the token and the account", async () => {

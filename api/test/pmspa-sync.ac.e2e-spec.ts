@@ -69,6 +69,8 @@ const T_ACME = [
 const DUE = Date.UTC(2026, 9, 30, 12);
 /** When the seeded links were last synced. */
 const SYNCED_AT = new Date("2026-10-01T08:00:00.000Z");
+/** The creation second in the first 4 bytes of the `66f1a0c0…` project ids (feat-int-followups D2). */
+const P_CREATED_AT = "2024-09-23T17:09:20.000Z";
 
 const ACME_DESCRIPTION = "Relaunch of the Acme website.";
 const ACME_LINK = "https://kanboard.example.com/project/42";
@@ -574,12 +576,14 @@ describe("PMSPA sync API (feat-int-sync-api)", () => {
         {
           pm4Id: anthropic.id,
           origin: "imported",
-          syncedAt: SYNCED_AT.toISOString()
+          syncedAt: SYNCED_AT.toISOString(),
+          pmspaCreatedAt: P_CREATED_AT
         },
         {
           pm4Id: tesla.id,
           origin: "linked",
-          syncedAt: SYNCED_AT.toISOString()
+          syncedAt: SYNCED_AT.toISOString(),
+          pmspaCreatedAt: P_CREATED_AT
         }
       ])
     );

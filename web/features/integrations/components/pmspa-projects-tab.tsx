@@ -96,11 +96,14 @@ export function PmspaProjectsTab({
   const setAllOpen = (expand: boolean) => {
     if (!expand) return setOpen(new Set());
     const ids = expandable.map((p) => p.id);
-    loadAll.mutate(ids, {
-      onSuccess: () => setOpen(new Set(ids)),
-      onError: (error) =>
-        toast.error(pmspaProblemText(error) ?? "Couldn't read the tasks.")
-    });
+    loadAll.mutate(
+      { shown: expandable, all: query.data ?? [] },
+      {
+        onSuccess: () => setOpen(new Set(ids)),
+        onError: (error) =>
+          toast.error(pmspaProblemText(error) ?? "Couldn't read the tasks.")
+      }
+    );
   };
 
   const toggleOpen = (id: string) =>

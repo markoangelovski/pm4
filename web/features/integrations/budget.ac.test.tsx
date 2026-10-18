@@ -184,8 +184,17 @@ describe("PMSPA reads (feat-int-budget)", () => {
       return ok({ items: [] });
     });
 
+    // feat-int-followups D6: per project would cost 1 + 1 reads, all tasks 1, so all tasks are read.
+    const sizes = { p1: 2, p2: 0, p3: 1 };
+    const expand = {
+      shown: [
+        { id: "p1", taskCount: sizes.p1 },
+        { id: "p2", taskCount: sizes.p2 }
+      ],
+      all: Object.entries(sizes).map(([id, taskCount]) => ({ id, taskCount }))
+    };
     const tasks = setup(() => useLoadAllPmspaTasks());
-    await act(() => tasks.result.current.mutateAsync(["p1", "p2"]));
+    await act(() => tasks.result.current.mutateAsync(expand));
     expect(pathCalls(api.GET, "/api/v1/integrations/pmspa/tasks")).toHaveLength(
       1
     );
@@ -194,7 +203,8 @@ describe("PMSPA reads (feat-int-budget)", () => {
       all[1]
     ]);
     expect(tasks.queryClient.getQueryData(tasksKey("p2"))).toEqual([]);
-    await act(() => tasks.result.current.mutateAsync(["p1", "p2"]));
+    expect(tasks.queryClient.getQueryData(tasksKey("p3"))).toEqual([all[2]]);
+    await act(() => tasks.result.current.mutateAsync(expand));
     expect(pathCalls(api.GET, "/api/v1/integrations/pmspa/tasks")).toHaveLength(
       1
     );
