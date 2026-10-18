@@ -33,6 +33,7 @@ editing acceptance tests, specs, agent config, the board and the other app.
 - `write-acceptance-tests <feature-spec>`: the test-first step (ends with `pm4 hash`)
 - `implement-task <T-####>`: delegate one task to the right engineer and model, run `pm4 check`, escalate
 - `review-feature <feature-spec | T-####>`: one Opus review of the feature's diff, verdicts into the tasks
+- `new-session [focus]`: write a short kickoff prompt to resume the current work in a fresh session
 
 ### Conventions for Claude
 
