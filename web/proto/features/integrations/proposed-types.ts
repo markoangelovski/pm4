@@ -5,6 +5,7 @@ import type {
   PmspaConnectionDto,
   PmspaDayDto,
   PmspaTaskDto,
+  SyncCandidateDto,
   SyncPreviewDto,
   SyncPreviewItemDto,
   SyncResultDto
@@ -29,7 +30,7 @@ export interface PmspaDaySummaryDto {
  */
 export type PmspaImportPreviewDto = PmspaPreviewDto & { days?: PmspaDayDto[] };
 
-/** A preview whose event rows may carry `taskPath`: an import's and a day push's. */
+/** A preview whose event rows may carry `taskPath` (an import's and a day push's) and lazy `candidates` (OQ-204). */
 export type PmspaPreviewDto = Omit<SyncPreviewDto, "items"> & {
   items: PmspaPreviewItemDto[];
 };
@@ -38,10 +39,30 @@ export type PmspaPreviewDto = Omit<SyncPreviewDto, "items"> & {
  * Proposed: an import's or a day push's event row names the PMSPA project and task it sits under (a push: the
  * linked task, or the PM4 names it's created with), shown with their icons; its `detail` is then only the logs.
  * Absent on other rows and on an event without a task.
+ *
+ * OQ-204: `candidates` is null on a sync or push row whose PMSPA candidates weren't read for the preview: the
+ * dialog fetches them (`POST /integrations/pmspa/candidates`) when the row's dropdown opens. An unlinked task
+ * under a linked project in a project sync has them already (the preview read that project's tasks).
  */
-export type PmspaPreviewItemDto = SyncPreviewItemDto & {
+export type PmspaPreviewItemDto = Omit<SyncPreviewItemDto, "candidates"> & {
+  candidates: SyncCandidateDto[] | null;
   taskPath?: { projectTitle: string; taskTitle: string };
 };
+
+/**
+ * Proposed API-INT-019 body (OQ-204): the PMSPA records a sync or push row can link to. `project`: the
+ * account's PMSPA projects; `task`: the tasks of one PMSPA project. `for`: the PM4 projects or tasks the
+ * candidates are compared with (the preview's rows of that type with `candidates: null`), so one PMSPA read
+ * serves every such row.
+ */
+export type PmspaCandidatesInputDto =
+  | { type: "project"; for: string[] }
+  | { type: "task"; projectId: string; for: string[] };
+
+/** Proposed API-INT-019 answer: per PM4 record of `for`, the PMSPA records not linked yet, same title first. */
+export interface PmspaCandidatesDto {
+  items: { pm4Id: string; candidates: SyncCandidateDto[] }[];
+}
 export type PmspaImportResultDto = SyncResultDto & { days?: PmspaDayDto[] };
 
 /** Generated paths that `PmspaPaths` gives a new shape. */
@@ -75,7 +96,33 @@ interface GetOnly<Query, Item> {
   trace?: never;
 }
 
+interface PostOnly<Body, Answer> {
+  parameters: NoParams;
+  get?: never;
+  put?: never;
+  post: {
+    parameters: NoParams;
+    requestBody: { content: { "application/json": Body } };
+    responses: {
+      200: {
+        headers: { [name: string]: unknown };
+        content: { "application/json": Answer };
+      };
+    };
+  };
+  delete?: never;
+  options?: never;
+  head?: never;
+  patch?: never;
+  trace?: never;
+}
+
 export interface PmspaPaths {
+  /** Proposed API-INT-019 (OQ-204): **Link to existing** candidates, read when a dropdown opens. */
+  "/api/v1/integrations/pmspa/candidates": PostOnly<
+    PmspaCandidatesInputDto,
+    PmspaCandidatesDto
+  >;
   /** Proposed API-INT-007: the week's days from one PMSPA range call, without their events. */
   "/api/v1/integrations/pmspa/days": GetOnly<
     { from: string; to: string },

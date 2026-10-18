@@ -5,6 +5,7 @@ import createClient from "openapi-fetch";
 import type { components, paths } from "@/lib/api/schema";
 import type { TimeLog } from "@/proto/features/time/types";
 import type {
+  PmspaCandidatesInputDto,
   PmspaChangedPaths,
   PmspaPaths
 } from "@/proto/features/integrations/proposed-types";
@@ -517,6 +518,10 @@ function integrations(
       days: pmspa.listDayDetails(input.selection.dates ?? [])
     });
   }
+  if (sub === "candidates")
+    return json({
+      items: pmspa.listCandidates(body as unknown as PmspaCandidatesInputDto)
+    });
   if (sub === "sync" && a === "preview") {
     const items = pmspa.pushPreview(body as unknown as PmspaSyncTargetDto);
     return items ? json({ items }) : notFound();
@@ -601,8 +606,14 @@ function reachesPmspa(method: string, path: string): boolean {
 }
 
 /** Roughly how many PMSPA requests a call makes (list pages, a read per day, a write per record). */
-function pmspaCost(method: string, url: URL): number {
+function pmspaCost(method: string, url: URL, body: Body): number {
   const path = url.pathname;
+  if (path.endsWith("/candidates"))
+    return pmspa.candidatesCost(body as unknown as PmspaCandidatesInputDto);
+  if (path.endsWith("/sync/preview") || path.endsWith("/push/preview"))
+    return pmspa.previewCost(
+      body as unknown as PmspaSyncTargetDto | PmspaPushTargetDto
+    );
   if (path.endsWith("/integrations/pmspa") || path.endsWith("/test")) return 2;
   if (path.endsWith("/days")) return 1;
   if (path.endsWith("/days/details"))
@@ -620,17 +631,13 @@ async function mockFetch(request: Request): Promise<Response> {
       ? ""
       : await request.text();
   const body = text ? (JSON.parse(text) as Body) : {};
-  const wake = reachesPmspa(request.method, url.pathname)
-    ? pmspa.wakeDelay()
+  const cost = reachesPmspa(request.method, url.pathname)
+    ? pmspaCost(request.method, url, body)
     : 0;
+  const wake = cost > 0 ? pmspa.wakeDelay() : 0;
   await new Promise((r) => setTimeout(r, MOCK_LATENCY_MS + wake));
-  if (
-    reachesPmspa(request.method, url.pathname) &&
-    (pmspa.isConnected() || request.method === "PUT")
-  ) {
-    const retryAfterSeconds = pmspa.spendRequests(
-      pmspaCost(request.method, url)
-    );
+  if (cost > 0 && (pmspa.isConnected() || request.method === "PUT")) {
+    const retryAfterSeconds = pmspa.spendRequests(cost);
     if (retryAfterSeconds > 0)
       return new Response(
         JSON.stringify({

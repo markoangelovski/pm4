@@ -26,10 +26,11 @@ import type {
   PmspaSyncTargetDto,
   PmspaTaskDto,
   SavePmspaConnectionDto,
-  SyncPreviewDto,
   SyncResultDto
 } from "./types";
 import type {
+  PmspaCandidatesDto,
+  PmspaCandidatesInputDto,
   PmspaConnectionWithRateLimitDto,
   PmspaDaySummaryDto,
   PmspaImportPreviewDto,
@@ -56,7 +57,16 @@ export const integrationKeys = {
   days: (from: string, to: string) =>
     [...integrationKeys.remote(), "days", from, to] as const,
   /** One day's events (API-INT-018); null when PMSPA no longer has events on it. */
-  day: (date: string) => [...integrationKeys.remote(), "day", date] as const
+  day: (date: string) => [...integrationKeys.remote(), "day", date] as const,
+  /** **Link to existing** candidates (API-INT-019), per list and the PM4 records they're compared with. */
+  candidates: (input: PmspaCandidatesInputDto) =>
+    [
+      ...integrationKeys.remote(),
+      "candidates",
+      input.type,
+      input.type === "task" ? input.projectId : null,
+      [...input.for].sort()
+    ] as const
 };
 
 /**
@@ -366,18 +376,13 @@ export function useLoadPmspaDays(): UseMutationResult<void, Error, string[]> {
   });
 }
 
-/** Days an import read (`dates` → its `days`) fill the Time tab's rows; a date it didn't find has no events. */
-function fillDays(
-  queryClient: QueryClient,
-  dates: string[] | undefined,
-  days: PmspaDayDto[] | undefined
-) {
-  if (!dates?.length || !days) return;
-  for (const date of dates)
-    queryClient.setQueryData(
-      integrationKeys.day(date),
-      days.find((d) => d.date === date) ?? null
-    );
+/**
+ * Days an import read (its `days`) fill the Time tab's rows. A selected date it didn't answer (a future one isn't
+ * read) is left as it was.
+ */
+function fillDays(queryClient: QueryClient, days: PmspaDayDto[] | undefined) {
+  for (const day of days ?? [])
+    queryClient.setQueryData(integrationKeys.day(day.date), day);
 }
 
 /** `filled`: days the answer brought, kept as they are instead of read again from PMSPA. */
@@ -405,8 +410,7 @@ export function useImportPreview(): UseMutationResult<
           body: selection
         })
       ) as PmspaImportPreviewDto,
-    onSuccess: (preview, selection) =>
-      fillDays(queryClient, selection.dates, preview.days)
+    onSuccess: (preview) => fillDays(queryClient, preview.days)
   });
 }
 
@@ -424,17 +428,22 @@ export function useImport(): UseMutationResult<
           body: input
         })
       ) as PmspaImportResultDto,
-    onSuccess: (result, { selection }) => {
-      const dates = result.days ? (selection.dates ?? []) : [];
-      refreshAfterSync(queryClient, dates);
-      fillDays(queryClient, dates, result.days);
+    onSuccess: (result) => {
+      refreshAfterSync(
+        queryClient,
+        (result.days ?? []).map((d) => d.date)
+      );
+      fillDays(queryClient, result.days);
     }
   });
 }
 
-/** API-INT-015: a project or task, both ways (OQ-172, OQ-173). Nothing is written (design principle 6). */
+/**
+ * API-INT-015: a project or task, both ways (OQ-172, OQ-173). Nothing is written (design principle 6). Rows
+ * whose PMSPA candidates weren't read have `candidates: null` (OQ-204, `usePmspaCandidates`).
+ */
 export function useSyncPreview(): UseMutationResult<
-  SyncPreviewDto,
+  PmspaPreviewDto,
   Error,
   PmspaSyncTargetDto
 > {
@@ -444,7 +453,30 @@ export function useSyncPreview(): UseMutationResult<
         await apiClient.POST("/api/v1/integrations/pmspa/sync/preview", {
           body: target
         })
-      )
+      ) as PmspaPreviewDto
+  });
+}
+
+/**
+ * API-INT-019 (OQ-204): the PMSPA records a sync or push row can link to, read only once its dropdown opens
+ * (`input` null until then). One read serves every row of `input.for`; reused for 5 minutes (`PMSPA_READ`).
+ */
+export function usePmspaCandidates(
+  input: PmspaCandidatesInputDto | null
+): UseQueryResult<PmspaCandidatesDto> {
+  return useQuery({
+    queryKey: input
+      ? integrationKeys.candidates(input)
+      : [...integrationKeys.remote(), "candidates", null],
+    queryFn: async ({ signal }) =>
+      unwrap(
+        await apiClient.POST("/api/v1/integrations/pmspa/candidates", {
+          body: input!,
+          signal
+        })
+      ),
+    enabled: input !== null,
+    ...PMSPA_READ
   });
 }
 

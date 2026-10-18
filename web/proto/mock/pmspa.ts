@@ -29,6 +29,7 @@ import type {
   SyncResultItemDto
 } from "@/proto/features/integrations/types";
 import type {
+  PmspaCandidatesInputDto,
   PmspaConnectionWithRateLimitDto,
   PmspaDaySummaryDto,
   PmspaPreviewItemDto,
@@ -736,6 +737,79 @@ export function dayDetailsCost(dates: string[]): number {
     })
   );
   return Math.max(1, dates.length + tasks.size + projects.size);
+}
+
+/**
+ * Proposed API-INT-019 (OQ-204): the PMSPA records each PM4 record of `for` can link to: the account's projects,
+ * or one PMSPA project's tasks. A PM4 id that isn't the user's is left out.
+ */
+export function listCandidates(
+  input: PmspaCandidatesInputDto
+): { pm4Id: string; candidates: SyncCandidateDto[] }[] {
+  const s = getMockState();
+  if (input.type === "project")
+    return input.for.flatMap((id) => {
+      const p = s.projects.find((x) => x.id === id);
+      return p ? [{ pm4Id: id, candidates: pmspaProjectCandidates(p) }] : [];
+    });
+  return input.for.flatMap((id) => {
+    const t = s.tasks.find((x) => x.id === id);
+    return t
+      ? [
+          {
+            pm4Id: id,
+            candidates: pmspaTaskCandidates(t).filter(
+              (c) => c.groupId === input.projectId
+            )
+          }
+        ]
+      : [];
+  });
+}
+
+/** PMSPA calls API-INT-019 makes: a projects list or one project's tasks, 50 per page. */
+export function candidatesCost(input: PmspaCandidatesInputDto): number {
+  const n =
+    input.type === "project"
+      ? mine().length
+      : remote.tasks.filter((t) => t.projectId === input.projectId).length;
+  return Math.max(1, Math.ceil(n / 50));
+}
+
+/**
+ * PMSPA calls a sync or push preview makes (OQ-204): a linked project and its task list, a linked task and its
+ * project, or a day's PMSPA events plus its linked tasks and their projects. Nothing for unlinked records.
+ */
+export function previewCost(
+  target: PmspaSyncTargetDto | PmspaPushTargetDto
+): number {
+  const s = getMockState();
+  if (target.type === "project") {
+    const l = byPm4("project", target.id);
+    if (!l) return 0;
+    const tasks = remote.tasks.filter((t) => t.projectId === l.pmspaId).length;
+    return 1 + Math.max(1, Math.ceil(tasks / 50));
+  }
+  if (target.type === "task") {
+    const t = s.tasks.find((x) => x.id === target.id);
+    if (!t) return 0;
+    return (
+      Number(Boolean(byPm4("task", t.id))) +
+      Number(Boolean(t.project.id && byPm4("project", t.project.id)))
+    );
+  }
+  const groups = groupDay(target.id);
+  const tasks = new Set(
+    groups.flatMap((g) =>
+      g.task && byPm4("task", g.task.id) ? [g.task.id] : []
+    )
+  );
+  const projects = new Set(
+    groups.flatMap((g) =>
+      g.task && tasks.has(g.task.id) && g.project ? [g.project.id] : []
+    )
+  );
+  return 2 + tasks.size + projects.size;
 }
 
 /** Proposed API-INT-018: the given days with their events, newest first; a date without events is left out. */
@@ -1621,6 +1695,13 @@ export function pushPreview(
   const mode = target.type === "day" ? "push" : "sync";
   const items: Item[] = [];
   const keys = new Set<string>();
+  // OQ-204: the preview reads only linked PMSPA records, so candidates are fetched when a dropdown opens
+  // (`candidates: null`). A project sync of a linked project reads that project's tasks: they are its tasks'
+  // candidates.
+  const listed =
+    target.type === "project"
+      ? (byPm4("project", target.id)?.pmspaId ?? null)
+      : null;
   const projectRow = (p: Project, parentOf?: string) => {
     const key = `project:${p.id}`;
     if (keys.has(key)) return key;
@@ -1645,7 +1726,7 @@ export function pushPreview(
           : createAction(mode)),
         ...(parentOf && !l ? { reason: parentOf, parent: true } : {}),
         linkedId: l?.pmspaId ?? null,
-        candidates: l ? [] : pmspaProjectCandidates(p),
+        candidates: l ? [] : null,
         warnings
       })
     );
@@ -1685,7 +1766,11 @@ export function pushPreview(
         ...(opts.parentOf && !l ? { reason: opts.parentOf, parent: true } : {}),
         optional: Boolean(opts.optional),
         linkedId: l?.pmspaId ?? null,
-        candidates: l ? [] : pmspaTaskCandidates(t),
+        candidates: l
+          ? []
+          : listed && t.project.id === target.id
+            ? pmspaTaskCandidates(t).filter((c) => c.groupId === listed)
+            : null,
         warnings
       })
     );

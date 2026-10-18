@@ -38,6 +38,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { cn } from "@/lib/utils";
 import { ColdStartHint } from "./cold-start-hint";
+import { usePmspaCandidates } from "../api";
 import { pmspaProblemText } from "../sync";
 import type {
   SyncAction,
@@ -46,7 +47,6 @@ import type {
   SyncDirection,
   SyncFieldDiffDto,
   SyncOutcome,
-  SyncPreviewItemDto,
   SyncRecordType,
   SyncResultDto,
   SyncResultItemDto
@@ -132,7 +132,7 @@ type Choices = Record<string, SyncChoiceDto>;
  * when there's none, OQ-173). Undefined = the row's own action.
  */
 function choiceOf(
-  item: SyncPreviewItemDto,
+  item: PmspaPreviewItemDto,
   choices: Choices
 ): SyncChoiceDto | undefined {
   return (
@@ -149,7 +149,7 @@ function choiceOf(
 }
 
 /** Whether the row writes anything: creates, updates, links two records, or overwrites a side. */
-function writes(item: SyncPreviewItemDto, choice: SyncChoiceDto | undefined) {
+function writes(item: PmspaPreviewItemDto, choice: SyncChoiceDto | undefined) {
   if (choice?.kind === "skip" || item.action === "skip") return false;
   if (item.action === "differs")
     return choice?.kind === "link" && choice.overwrite !== null;
@@ -158,7 +158,7 @@ function writes(item: SyncPreviewItemDto, choice: SyncChoiceDto | undefined) {
 
 /** The row's badge: what will happen to it, with the user's choice applied (OQ-172, OQ-173). */
 function rowBadge(
-  item: SyncPreviewItemDto,
+  item: PmspaPreviewItemDto,
   choice: SyncChoiceDto | undefined
 ): { label: string; className: string } {
   const action = ACTION[item.action];
@@ -326,6 +326,7 @@ function PreviewBody({
       </p>
     );
   } else {
+    const lazy = lazyRecords(items);
     body = (
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className="divide-y px-6">
@@ -336,6 +337,7 @@ function PreviewBody({
               item={item}
               depth={depth}
               parent={items.find((i) => i.key === item.parentKey)}
+              lazy={lazy}
               choices={choices}
               onChoice={setChoice}
             />
@@ -347,8 +349,9 @@ function PreviewBody({
 
   const all = (items ?? []).map((i) => ({ i, c: choiceOf(i, choices) }));
   const toWrite = all.filter(({ i, c }) => writes(i, c));
-  const count = (test: (i: SyncPreviewItemDto, c?: SyncChoiceDto) => boolean) =>
-    all.filter(({ i, c }) => test(i, c)).length;
+  const count = (
+    test: (i: PmspaPreviewItemDto, c?: SyncChoiceDto) => boolean
+  ) => all.filter(({ i, c }) => test(i, c)).length;
   const created = count(
     (i, c) => i.action === "create" && c?.kind !== "link" && c?.kind !== "skip"
   );
@@ -430,13 +433,15 @@ function PreviewRow({
   item,
   depth,
   parent,
+  lazy,
   choices,
   onChoice
 }: {
   mode: SyncMode;
   item: PmspaPreviewItemDto;
   depth: number;
-  parent: SyncPreviewItemDto | undefined;
+  parent: PmspaPreviewItemDto | undefined;
+  lazy: LazyRecords;
   choices: Choices;
   onChoice: (key: string, choice: SyncChoiceDto | null) => void;
 }) {
@@ -513,7 +518,8 @@ function PreviewRow({
           <LinkChoice
             mode={mode}
             item={item}
-            candidates={candidatesFor(item, parent, choices)}
+            group={parentGroup(item, parent, choices)}
+            lazy={lazy}
             choice={choice}
             onChoice={choose}
           />
@@ -549,18 +555,32 @@ function PreviewRow({
   );
 }
 
-/** A task's candidates follow its project: linked, or linked to an existing record in this preview. */
-function candidatesFor(
-  item: SyncPreviewItemDto,
-  parent: SyncPreviewItemDto | undefined,
+/**
+ * A task's candidates follow its project: the PMSPA (or PM4) record the parent is linked to, or the one picked
+ * for it under **Link to existing** in this preview. Null: the parent is created, so it has nothing to link to.
+ * Undefined: not a task, or a task without a parent row (its candidates aren't narrowed).
+ */
+function parentGroup(
+  item: PmspaPreviewItemDto,
+  parent: PmspaPreviewItemDto | undefined,
   choices: Choices
-): SyncCandidateDto[] {
-  if (item.type !== "task") return item.candidates;
-  if (!parent) return item.candidates;
+): string | null | undefined {
+  if (item.type !== "task" || !parent) return undefined;
   const parentChoice = choices[parent.key];
-  const group =
-    parent.linkedId ?? (parentChoice?.kind === "link" ? parentChoice.id : null);
-  return group ? item.candidates.filter((c) => c.groupId === group) : [];
+  return (
+    parent.linkedId ?? (parentChoice?.kind === "link" ? parentChoice.id : null)
+  );
+}
+
+/** PM4 ids of the rows whose candidates are read when a dropdown opens (OQ-204), by type: one read serves all. */
+type LazyRecords = { project: string[]; task: string[] };
+
+function lazyRecords(items: PmspaPreviewItemDto[]): LazyRecords {
+  const ids = (type: "project" | "task") =>
+    items
+      .filter((i) => i.type === type && i.candidates === null)
+      .map((i) => i.key.slice(type.length + 1));
+  return { project: ids("project"), task: ids("task") };
 }
 
 const CREATE: SyncCandidateDto = {
@@ -579,21 +599,50 @@ const LINK_OVERWRITE = [
 
 /**
  * OQ-157: **Create new** (the default) or **Link to existing ▾**. OQ-172, OQ-173: a link writes nothing (**Link
- * only**, the default) unless the user picks a side to overwrite, comparing the two records first.
+ * only**, the default) unless the user picks a side to overwrite, comparing the two records first. OQ-204: a row
+ * with `candidates: null` reads them when its dropdown opens (a task's: once its project is linked or picked),
+ * with skeleton rows until they're in.
  */
 function LinkChoice({
   mode,
   item,
-  candidates,
+  group,
+  lazy,
   choice,
   onChoice
 }: {
   mode: SyncMode;
-  item: SyncPreviewItemDto;
-  candidates: SyncCandidateDto[];
+  item: PmspaPreviewItemDto;
+  group: string | null | undefined;
+  lazy: LazyRecords;
   choice: SyncChoiceDto | undefined;
   onChoice: (choice: SyncChoiceDto) => void;
 }) {
+  // The list the dropdown was opened on: a task's follows its project, so a new project waits for a new opening.
+  const [openedOn, setOpenedOn] = useState<string | null | undefined>();
+  const listKey = item.type === "task" ? group : "projects";
+  const isLazy = item.candidates === null;
+  const pm4Id = item.key.slice(item.type.length + 1);
+  const read = usePmspaCandidates(
+    !isLazy || openedOn === undefined || openedOn !== listKey
+      ? null
+      : item.type === "project"
+        ? { type: "project", for: lazy.project }
+        : group
+          ? { type: "task", projectId: group, for: lazy.task }
+          : null
+  );
+  const loading = read.fetchStatus === "fetching" && read.isPending;
+  const candidates = isLazy
+    ? (read.data?.items.find((i) => i.pm4Id === pm4Id)?.candidates ?? [])
+    : group === undefined
+      ? item.candidates!
+      : group
+        ? item.candidates!.filter((c) => c.groupId === group)
+        : [];
+  // Known empty: read (or narrowed) and nothing there, or a task whose project is created.
+  const none =
+    candidates.length === 0 && (group === null || !isLazy || read.isSuccess);
   const linkedTo =
     choice?.kind === "link"
       ? (candidates.find((c) => c.id === choice.id) ?? null)
@@ -606,6 +655,9 @@ function LinkChoice({
       <Combobox<SyncCandidateDto>
         items={options}
         value={value}
+        onOpenChange={(open) => {
+          if (open) setOpenedOn(listKey);
+        }}
         onValueChange={(next) =>
           onChoice(
             next && next.id !== ""
@@ -645,9 +697,34 @@ function LinkChoice({
               </ComboboxItem>
             )}
           </ComboboxList>
+          {loading ? (
+            <div
+              className="flex flex-col gap-1.5 px-2 pb-2"
+              aria-label={`Reading ${OTHER_SIDE[mode]} ${item.type}s`}
+            >
+              <Skeleton className="h-6 w-full" />
+              <Skeleton className="h-6 w-5/6" />
+              <Skeleton className="h-6 w-2/3" />
+            </div>
+          ) : read.isError ? (
+            <div className="flex flex-wrap items-center gap-2 px-2 pb-2 text-xs">
+              <span className="text-destructive">
+                {pmspaProblemText(read.error) ??
+                  `Couldn't read the ${item.type}s.`}
+              </span>
+              <Button
+                variant="outline"
+                size="xs"
+                className="cursor-pointer"
+                onClick={() => void read.refetch()}
+              >
+                Retry
+              </Button>
+            </div>
+          ) : null}
         </ComboboxContent>
       </Combobox>
-      {candidates.length === 0 ? (
+      {none ? (
         <span className="text-muted-foreground">
           No existing {item.type} to link to.
         </span>
