@@ -185,7 +185,7 @@ PM4 key differs.
 | project_id / task_id / time_log_id | uuid | PK, FK → projects / tasks / time_logs ON DELETE CASCADE |
 | user_id | uuid | not null, FK → users ON DELETE CASCADE |
 | pmspa_user_id | bytea (12 B) | not null. The PMSPA account the link was made with; only links of the connected account are **active** (OQ-162) |
-| pmspa_id | bytea (12 B) | not null. The PMSPA project, task or log ObjectId |
+| pmspa_id | bytea (12 B) | not null. The PMSPA project, task or log ObjectId. Its first 4 bytes are PMSPA's creation second, which API-INT-012 answers as `pmspaCreatedAt` (OQ-207); no column for it |
 | pm4_hash | bytea (8 B) | not null. Fingerprint of PM4's shared fields as last synced (OQ-176) |
 | pmspa_hash | bytea (8 B) | not null. Fingerprint of PMSPA's shared fields as last synced (OQ-176) |
 
@@ -244,3 +244,4 @@ None.
 - 2026-10-17: `pmspa_connections` and the three link tables (M6, OQ-161, OQ-162, OQ-164, OQ-176, OQ-178; feat-int-conn-api, feat-int-sync-api, feat-int-time-api).
 - 2026-10-17: The owner approved `pmspa_connections`, `pmspa_project_links`, `pmspa_task_links` and `pmspa_log_links` for feat-int-conn-api, feat-int-sync-api and feat-int-time-api.
 - 2026-10-18: PMSPA's rate limit per host lives in Redis, not in a table (OQ-200, feat-int-budget).
+- 2026-10-18: The PMSPA creation date of a linked record is derived from `pmspa_id`, not stored (OQ-207, feat-int-followups).

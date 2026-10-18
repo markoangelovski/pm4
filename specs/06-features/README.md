@@ -52,4 +52,5 @@ A feature spec links to those. It doesn't copy them.
 | PMSPA sync API: links, browsing, import and two-way sync of projects and tasks | [int-sync-api.md](int-sync-api.md) | M6 | approved |
 | PMSPA time API: PMSPA days, time import and day push | [int-time-api.md](int-time-api.md) | M6 | approved |
 | PMSPA connector web: Integrations settings, the connector page, sync and push, sync flags | [int-web.md](int-web.md) | M6 | approved |
-| PMSPA call budget: the requests line, fewer PMSPA calls, integrations on the profile | [int-budget.md](int-budget.md) | M6 | review |
+| PMSPA call budget: the requests line, fewer PMSPA calls, integrations on the profile | [int-budget.md](int-budget.md) | M6 | approved |
+| PMSPA follow-ups: log limits in the preview, created-in-PMSPA dates, a token per connection, cheaper Expand all, error lines | [int-followups.md](int-followups.md) | M6 | approved |

@@ -421,7 +421,8 @@ PmspaConnection = { status, url: string | null, email: string | null, account: P
                     rateLimit: PmspaRateLimit | null }                          // never a password or token
 PmspaLinkType = "project" | "task" | "time-log"
 PmspaLinkOrigin = "imported" | "pushed" | "linked"                              // OQ-164
-PmspaLink = { pm4Id: string, origin, syncedAt: string }
+PmspaLink = { pm4Id: string, origin, syncedAt: string, pmspaCreatedAt: string }
+  // pmspaCreatedAt: when PMSPA created the linked record, from the first 4 bytes of its ObjectId (OQ-207); ISO 8601 UTC
 PmspaRecordLink = { pm4Id: string, pm4Title: string, origin, syncedAt: string }
 PmspaRecordDetail = { type: "project", title, lead, done: boolean }
                   | { type: "task", title, projectTitle, column: PmspaColumn }
@@ -600,7 +601,7 @@ as API-INT-010, plus the picked records (*Linked-only reads*).
 ### API-INT-012: List active links
 `GET /integrations/pmspa/links?type=project|task|time-log` · Auth: bearer · Implements: FR-INT-010
 The user's links of that type whose PMSPA account is the connected one; no PMSPA call. No connection, or no account
-yet → `{ items: [] }`.
+yet → `{ items: [] }`. Each link's `pmspaCreatedAt` is derived from its `pmspa_id` (OQ-207), not stored.
 **200:** `{ items: PmspaLink[] }`
 **Errors:** 400 validation (`type`) · 401
 
@@ -679,3 +680,4 @@ None.
 - 2026-10-18: API-INT-007 answers `PmspaDaySummary` from one range call; API-INT-018 the given days with their events; API-INT-008/009 with `dates` answer `days` and put projects and tasks before days; `taskPath` on import and push event rows; API-INT-017/018 in the index (feat-int-budget, OQ-205, prototype `072da99`). Back to `review`.
 - 2026-10-18: OQ-204: API-INT-010/011/015/016 read only linked PMSPA records (*Linked-only reads*); `SyncPreviewItem.candidates`
   null on an unlinked sync or push row; API-INT-019 `POST /integrations/pmspa/candidates` (feat-int-budget). Still `review`.
+- 2026-10-18: `PmspaLink.pmspaCreatedAt` on API-INT-012, derived from the PMSPA ObjectId (OQ-207, feat-int-followups). Still `review`.

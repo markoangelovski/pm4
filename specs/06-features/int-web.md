@@ -131,6 +131,7 @@ Where it applies (each in the prototype file, then the twin):
   (`useState<unknown>`) and reads `{pmspaProblemText(e) ?? `Couldn't ${verb.toLowerCase()}.`} Some records may have been written: open the
   preview again to see where things stand.` `push-button.tsx` and `pmspa-connector.tsx` pass `error`.
 - `pmspa-record-note.tsx`: `pmspaProblemText(detail.error) ?? "Couldn't read the PMSPA <noun> right now."`.
+- `pmspa-projects-tab.tsx`, a project row's task list error: `PmspaProblemLine` with the fallback "Couldn't read the tasks." (feat-int-followups D7, OQ-198).
 - `pmspa-connection-card.tsx`: each `toast.error("Couldn't …")` → `toast.error(pmspaProblemText(error) ?? "Couldn't …")`.
 
 ### Sidebar and route (T1, T2)
@@ -153,7 +154,7 @@ Where it applies (each in the prototype file, then the twin):
 | AC-5 | `syncedLine("imported", "2026-10-15T20:50:00Z", "Europe/Zagreb")` → "Synced from PMSPA on 15 October 2026 at 22:50"; `STATUS_LABEL`; `useSlowPmspa` turns true after 3 s and false when the call ends | `web/features/integrations/sync.ac.test.ts` | T1 |
 | AC-6 | `ConnectorsNav`: not configured → nothing; invalid credentials → a "Connectors" heading and a "PMSPA" link to `/app/connectors/pmspa` | `web/app/(dashboard-layout)/layout/vertical/sidebar/connectors-nav.ac.test.tsx` | T1 |
 | AC-7 | Sync preview dialog (sync of a task): a `differs` row preselects its `direction`; picking Link only on every row → the button "Sync 0 records", disabled; choosing Overwrite PMSPA → "Sync 1 record" and `onRun` gets `[{key, kind: "link", id: linkedId, overwrite: "to-pmspa"}]`; the result row with `newTitle` shows "old → new" | `web/features/integrations/components/sync-preview-dialog.ac.test.tsx` | T2 |
-| AC-8 | The dialog with a preview error 503 `pmspa-rate-limited` shows the busy line; a commit rejected with 409 `pmspa-sync-running` shows "Another import, sync or push is still running. Some records may have been written: open the preview again to see where things stand." | `web/features/integrations/components/sync-preview-dialog.ac.test.tsx` | T2 |
+| AC-8 | The dialog with a preview error 503 `pmspa-rate-limited` shows the busy line; a commit rejected with 409 `pmspa-sync-running` shows "Another import, sync or push is still running. Some records may have been written: open the preview again to see where things stand." (since feat-int-followups D8, OQ-199: only "Another import, sync or push is still running.") | `web/features/integrations/components/sync-preview-dialog.ac.test.tsx` | T2 |
 | AC-9 | No `proposed-types.ts` under `web/proto/features/integrations`; nothing imports it; `web/features` has no `@/proto` import; `pm4 twins` reports no failure; the build has `out/app/connectors/pmspa.html` | `check` | T2 |
 | AC-10 | Locally against the API and the owner's local PMSPA: connect in Settings → Integrations (the Connectors section appears); browse, select and import a project with its tasks; sync a renamed PM4 task with Overwrite PMSPA; push a day; hover and click the sync flags; disconnect (the section and flags go) | `manual` | T2 |
 
@@ -181,3 +182,4 @@ None.
 - 2026-10-17: Approved by the owner.
 - 2026-10-17: Test step: D1 spelled out (the type table, the five fixes the looser generated schemas need, checked by a trial switch); the prototype components row is T1, T2 (T1 switches their imports); `api:types` and the stubs land with the tests. Approved by the owner.
 - 2026-10-17: Opus review (approve). Accepted deviation: the dialog keeps the commit failure as `useState<{ error: unknown } | null>`, not `useState<unknown>`, so no failure and a rejection with `undefined` stay distinct. Follow-ups: OQ-197, OQ-198, OQ-199.
+- 2026-10-18: feat-int-followups: the task list error line (D7, OQ-198) and no "Some records may have been written" after `pmspa-sync-running` (D8, OQ-199; AC-8).

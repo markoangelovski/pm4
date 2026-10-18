@@ -4,7 +4,7 @@ title: Integrations and connectors
 status: review
 owner: Marko Angelovski
 last_updated: 2026-10-18
-related: [prod-scope, sec, web-routing, web-screens, OQ-138, OQ-139, OQ-140, OQ-141, OQ-142, OQ-143, OQ-144, OQ-145, OQ-146, OQ-147, OQ-148, OQ-155, OQ-156, OQ-157, OQ-158, OQ-159, OQ-160, OQ-161, OQ-162, OQ-163, OQ-164, OQ-165, OQ-166, OQ-167, OQ-168, OQ-169, OQ-170, OQ-171, OQ-172, OQ-173, OQ-174, OQ-175, OQ-176, OQ-177, OQ-178, OQ-179, OQ-180, OQ-181, OQ-182, OQ-200, OQ-201, OQ-202, OQ-204]
+related: [prod-scope, sec, web-routing, web-screens, OQ-138, OQ-139, OQ-140, OQ-141, OQ-142, OQ-143, OQ-144, OQ-145, OQ-146, OQ-147, OQ-148, OQ-155, OQ-156, OQ-157, OQ-158, OQ-159, OQ-160, OQ-161, OQ-162, OQ-163, OQ-164, OQ-165, OQ-166, OQ-167, OQ-168, OQ-169, OQ-170, OQ-171, OQ-172, OQ-173, OQ-174, OQ-175, OQ-176, OQ-177, OQ-178, OQ-179, OQ-180, OQ-181, OQ-182, OQ-200, OQ-201, OQ-202, OQ-204, OQ-197, OQ-198, OQ-199, OQ-206, OQ-207, OQ-208, OQ-209]
 ---
 
 # Integrations and connectors
@@ -217,8 +217,10 @@ stored password is kept unless the user types a new one.
 
 Every PMSPA call uses the cached token. Without one, or when PMSPA answers with `TokenExpiredError` or
 `JsonWebTokenError`, PM4 logs in with the stored password, caches the new token and retries the call once. If that login
-fails, the status becomes **Invalid credentials**. The password and the token are never returned by any API response and
-never logged. Disconnecting deletes both.
+fails, or logs in as another PMSPA account than the saved one, the status becomes **Invalid credentials** (OQ-209). The
+cached token and account belong to the URL and email they were cached for: after the URL or email changes, they are
+not used, and a call still running from before the change doesn't write its status (OQ-208). The password and the
+token are never returned by any API response and never logged. Disconnecting deletes both.
 **Acceptance criteria:**
 - Given a saved connection, then neither Postgres nor Redis holds the password or the token in plain text.
 - Given a cached token that PMSPA reports as expired, when PM4 calls PMSPA, then it logs in again, caches a new token and the call succeeds.
@@ -336,6 +338,9 @@ lead, done; task: title, its PMSPA project, column; log: text and event title), 
 project or task, push the day) and **Unlink**. The live read happens only while the popover is open, is cached 5
 minutes and isn't retried; nothing of it is stored in PM4. The flag shows only while the record is linked and a
 connection to the links' account is saved (FR-INT-005). It updates after every import, sync or push of that record.
+**Created in PMSPA** (OQ-207): a linked project or task shows when PMSPA created its counterpart, in the user's time zone:
+on its header date line, as a **Created in PMSPA** column of the task lists, and in the sync flag's popover (logs too).
+It is derived from the PMSPA id, so it needs no PMSPA call and nothing is stored.
 **Acceptance criteria:**
 - Given a PM4 project imported from PMSPA, when I import it again, then the PM4 project is updated and no second project is created.
 - Given a linked project, when I unlink it, then both the PM4 and the PMSPA project still exist and the project shows as not linked.
@@ -360,7 +365,8 @@ exists on both sides. A linked project or task is compared as in FR-INT-008 (no 
 through its link (an unlinked task is imported first, with its project), an event without a task as Unsorted, an event
 "nonprod" as excluded from statistics (OQ-168). A log already imported is updated (text, duration, task) unless it is
 unchanged in PMSPA since the last sync. Imported logs are never booked. A log whose duration isn't a 0.25 h step fails
-with the reason; the event's other logs are imported.
+with the reason; the event's other logs are imported. The same goes for a log outside 0.25…24 h or with a text over 1000
+characters (OQ-194); the preview warns about each such log on its event row (OQ-197).
 **Acceptance criteria:**
 - Given a PMSPA project that isn't linked, when I select it and import, then a PM4 project is created and linked to it.
 - Given a PMSPA task whose project isn't linked, when I import the task, then its project is imported too.
@@ -407,7 +413,8 @@ shows "PMSPA is busy. Try again in N minutes." where the call was made. Nothing 
 The other PMSPA problems get their own line too (OQ-182): another sync running → "Another import, sync or push is still
 running."; rejected credentials → "PMSPA rejected the saved email or password."; unreachable → "PMSPA couldn't be
 reached."; anything else the screen's generic line. A failed import, sync or push says "Some records may have been
-written: open the preview again to see where things stand."
+written: open the preview again to see where things stand.", except when another sync was running, which writes
+nothing (OQ-199).
 **Acceptance criteria:**
 - Given PMSPA answered 429 with `Retry-After: 600`, when any user's next PMSPA call comes within 10 minutes, then the API answers 503 `pmspa-rate-limited` without calling PMSPA.
 
@@ -429,8 +436,8 @@ spends as few PMSPA calls as it can and shows what's left (OQ-200, OQ-201, OQ-20
   read when the user opens it: a project's lists the account's projects, a task's the tasks of its parent's PMSPA
   project (the linked one, or the one picked under **Link to existing**; nothing while the parent is **Create new**). One
   read serves every row of that list in the dialog.
-- **Expand all** reads in one request: on the Projects & tasks tab every task of the account once, instead of once per
-  project; on the Time tab the week's days not read yet, a task or project shared by several days once.
+- **Expand all** reads the cheaper way: on the Projects & tasks tab each shown project's tasks, or every task of the
+  account in one request when that costs PMSPA no more calls (OQ-206); on the Time tab the week's days not read yet, a task or project shared by several days once.
 - **The web reuses answers.** A PMSPA read is reused for 5 minutes, isn't repeated on window focus and isn't retried
   after a failure. The API makes at most 2 PMSPA calls at a time for one request.
 **Acceptance criteria:**
@@ -439,6 +446,7 @@ spends as few PMSPA calls as it can and shows what's left (OQ-200, OQ-201, OQ-20
 - Given a week with 5 days in PMSPA, when I open it on the Time tab, then the API makes one PMSPA call.
 - Given a day whose events reference 4 tasks in 2 projects, when I open it, then the API makes 7 PMSPA calls: the day, 4 tasks and 2 projects.
 - Given the Projects & tasks tab with 20 projects that have tasks, when I click **Expand all**, then the web makes one call for all their tasks.
+- Given a search that leaves one project with 60 tasks shown out of 880 tasks, when I click **Expand all**, then only that project's tasks are read (2 PMSPA calls, not 18).
 
 ### FR-INT-016: Integrations on the profile
 **Priority:** Should
@@ -480,3 +488,6 @@ None.
 - 2026-10-18: FR-INT-015 PMSPA call budget and FR-INT-016 integrations on the profile (OQ-200, OQ-201, OQ-202). Approved by the owner for feat-int-budget.
 - 2026-10-18: FR-INT-015: the Time tab reads a week in one call and a day's events only when it opens or is imported; Time **Expand all** in one request (OQ-205). Back to `review`.
 - 2026-10-18: FR-INT-015: sync and push read only linked PMSPA records; **Link to existing ▾** reads its PMSPA list when opened (OQ-204). Still `review`.
+- 2026-10-18: Follow-ups (feat-int-followups): FR-INT-003 token and account tied to the URL and email, re-login as another
+  account → Invalid credentials (OQ-208, OQ-209); FR-INT-010 **Created in PMSPA** (OQ-207); FR-INT-011 preview warnings for
+  every log the import rejects (OQ-197); FR-INT-014 no "Some records may have been written" after `pmspa-sync-running` (OQ-199); FR-INT-015 **Expand all** the cheaper way (OQ-206). Still `review`.

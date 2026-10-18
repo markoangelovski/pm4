@@ -57,7 +57,10 @@ live under `/app` (OQ-047).
 **PMSPA on existing screens** (M6, prototype `eefe787`): SCR-020 and SCR-030 show the sync flag (SCR-062) after the title;
 SCR-021 and SCR-031 show it after the heading and **Sync with PMSPA** before **Edit** (FR-INT-012); SCR-040 shows **Push
 to PMSPA** before the ⋯ menu (disabled on a day without logs); SCR-042 shows the sync flag tag after *Excluded from
-statistics*. All of it only while a PMSPA connection is saved.
+statistics*. All of it only while a PMSPA connection is saved. A linked project or task shows **Created in PMSPA** (OQ-207,
+prototype `b3d9093`): SCR-021 and SCR-031 at the end of the dimmed dates line ("Created in PMSPA 6 October 2023, 13:25"),
+SCR-030 (and SCR-021's task table) as a **Created in PMSPA** column before **Updated** (`d MMM yyyy`, `—` when not linked),
+and SCR-062's popover after the lead, column or event (", created in PMSPA on …").
 
 **Project icon** (SCR-020, SCR-021): a rounded square with a two-colour gradient computed from the project id, so it is stable and nothing is stored (owner, 2026-10-03).
 
@@ -106,3 +109,4 @@ OQ-029
 - 2026-10-18: SCR-052 and SCR-060 show *PMSPA requests* (FR-INT-015) and the account's role badge; SCR-051 gains **Integrations** (FR-INT-016) (prototype `072da99`, OQ-200). Approved by the owner for feat-int-budget.
 - 2026-10-18: SCR-060 Time reads a day's events when it opens, Time Expand all in one request; SCR-061 projects and tasks before days on a time import, event rows with project and task icons (OQ-205, prototype `072da99`). Back to `review`.
 - 2026-10-18: SCR-061 **Link to existing ▾** reads its PMSPA list when opened on sync and push (OQ-204, prototype `9fe7adb`). Still `review`.
+- 2026-10-18: **Created in PMSPA** on SCR-021/030/031 and SCR-062 (OQ-207); SCR-060 **Expand all** reads the cheaper way (OQ-206), its task list error uses the PMSPA line (OQ-198); SCR-061 commit failure without "Some records may have been written" after `pmspa-sync-running` (OQ-199) (prototype `b3d9093`, feat-int-followups). Still `review`.
