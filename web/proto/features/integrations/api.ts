@@ -13,7 +13,11 @@ import {
 import { apiClient } from "@/proto/mock/client";
 import { unwrap, unwrapVoid } from "@/lib/api/problem";
 import type {
+  PmspaCandidatesDto,
+  PmspaCandidatesInputDto,
+  PmspaConnectionDto,
   PmspaDayDto,
+  PmspaDaySummaryDto,
   PmspaImportDto,
   PmspaImportSelectionDto,
   PmspaLinkDetailDto,
@@ -26,20 +30,12 @@ import type {
   PmspaSyncTargetDto,
   PmspaTaskDto,
   SavePmspaConnectionDto,
+  SyncPreviewDto,
   SyncResultDto
 } from "./types";
-import type {
-  PmspaCandidatesDto,
-  PmspaCandidatesInputDto,
-  PmspaConnectionWithRateLimitDto,
-  PmspaDaySummaryDto,
-  PmspaImportPreviewDto,
-  PmspaImportResultDto,
-  PmspaPreviewDto
-} from "./proposed-types";
 
-/** Proposed `rateLimit` included: the casts below go once `npm run api:types` has it. */
-export type PmspaConnection = PmspaConnectionWithRateLimitDto;
+/** The connection with its PMSPA `rateLimit` (API-INT-001). */
+export type PmspaConnection = PmspaConnectionDto;
 
 export const integrationKeys = {
   all: ["integrations"] as const,
@@ -87,9 +83,7 @@ export function usePmspaConnection(): UseQueryResult<PmspaConnection> {
   return useQuery({
     queryKey: integrationKeys.connection(),
     queryFn: async ({ signal }) =>
-      unwrap(
-        await apiClient.GET("/api/v1/integrations/pmspa", { signal })
-      ) as PmspaConnection
+      unwrap(await apiClient.GET("/api/v1/integrations/pmspa", { signal }))
   });
 }
 
@@ -123,7 +117,7 @@ export function useSavePmspaConnection(): UseMutationResult<
     mutationFn: async (input: SavePmspaConnectionDto) =>
       unwrap(
         await apiClient.PUT("/api/v1/integrations/pmspa", { body: input })
-      ) as PmspaConnection,
+      ),
     onSuccess: (connection) => {
       queryClient.setQueryData(integrationKeys.connection(), connection);
       // Another account or links dropped: flags and PMSPA reads change.
@@ -144,9 +138,7 @@ export function useTestPmspaConnection(): UseMutationResult<
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async () =>
-      unwrap(
-        await apiClient.POST("/api/v1/integrations/pmspa/test")
-      ) as PmspaConnection,
+      unwrap(await apiClient.POST("/api/v1/integrations/pmspa/test")),
     onSuccess: (connection) => {
       queryClient.setQueryData(integrationKeys.connection(), connection);
       void queryClient.invalidateQueries({
@@ -398,7 +390,7 @@ function refreshAfterSync(queryClient: QueryClient, filled: string[] = []) {
 
 /** API-INT-008: nothing is written (design principle 6). The days it read fill the Time tab's rows. */
 export function useImportPreview(): UseMutationResult<
-  PmspaImportPreviewDto,
+  SyncPreviewDto,
   Error,
   PmspaImportSelectionDto
 > {
@@ -409,14 +401,14 @@ export function useImportPreview(): UseMutationResult<
         await apiClient.POST("/api/v1/integrations/pmspa/import/preview", {
           body: selection
         })
-      ) as PmspaImportPreviewDto,
+      ),
     onSuccess: (preview) => fillDays(queryClient, preview.days)
   });
 }
 
 /** API-INT-009. Per-record outcomes (design principle 9); the days it answers replace the Time tab's rows. */
 export function useImport(): UseMutationResult<
-  PmspaImportResultDto,
+  SyncResultDto,
   Error,
   PmspaImportDto
 > {
@@ -427,7 +419,7 @@ export function useImport(): UseMutationResult<
         await apiClient.POST("/api/v1/integrations/pmspa/import", {
           body: input
         })
-      ) as PmspaImportResultDto,
+      ),
     onSuccess: (result) => {
       refreshAfterSync(
         queryClient,
@@ -443,7 +435,7 @@ export function useImport(): UseMutationResult<
  * whose PMSPA candidates weren't read have `candidates: null` (OQ-204, `usePmspaCandidates`).
  */
 export function useSyncPreview(): UseMutationResult<
-  PmspaPreviewDto,
+  SyncPreviewDto,
   Error,
   PmspaSyncTargetDto
 > {
@@ -453,7 +445,7 @@ export function useSyncPreview(): UseMutationResult<
         await apiClient.POST("/api/v1/integrations/pmspa/sync/preview", {
           body: target
         })
-      ) as PmspaPreviewDto
+      )
   });
 }
 
@@ -500,7 +492,7 @@ export function useSync(): UseMutationResult<
 
 /** API-INT-010: a day's logs to PMSPA; event rows name their PMSPA project and task (`taskPath`). */
 export function usePushPreview(): UseMutationResult<
-  PmspaPreviewDto,
+  SyncPreviewDto,
   Error,
   PmspaPushTargetDto
 > {
@@ -510,7 +502,7 @@ export function usePushPreview(): UseMutationResult<
         await apiClient.POST("/api/v1/integrations/pmspa/push/preview", {
           body: target
         })
-      ) as PmspaPreviewDto
+      )
   });
 }
 

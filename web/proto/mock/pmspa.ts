@@ -7,9 +7,11 @@ import type { components } from "@/lib/api/schema";
 import { formatDuration, formatWorkDate, today } from "@/lib/time";
 import type {
   PmspaAccountSwitchProblem,
+  PmspaCandidatesInputDto,
   PmspaColumn,
   PmspaConnectionDto,
   PmspaConnectionStatus,
+  PmspaDaySummaryDto,
   PmspaDayDto,
   PmspaImportSelectionDto,
   PmspaLinkDetailDto,
@@ -17,6 +19,7 @@ import type {
   PmspaLinkType,
   PmspaProjectDto,
   PmspaPushTargetDto,
+  PmspaRateLimitDto,
   PmspaRecordLinkDto,
   PmspaSyncTargetDto,
   PmspaTaskDto,
@@ -25,16 +28,10 @@ import type {
   SyncChoiceDto,
   SyncDirection,
   SyncFieldDiffDto,
+  SyncPreviewItemDto,
   SyncResultDto,
   SyncResultItemDto
 } from "@/proto/features/integrations/types";
-import type {
-  PmspaCandidatesInputDto,
-  PmspaConnectionWithRateLimitDto,
-  PmspaDaySummaryDto,
-  PmspaPreviewItemDto,
-  PmspaRateLimitDto
-} from "@/proto/features/integrations/proposed-types";
 import type { TimeLog } from "@/proto/features/time/types";
 import { MOCK_TZ } from "./seed";
 import { getMockState, mock, nextId } from "./store";
@@ -344,7 +341,7 @@ let lastSyncAt: string | null = at(ago(1), "22:50");
 
 // ---------- connection (API-INT-001…004) ----------
 
-export function connectionDto(): PmspaConnectionWithRateLimitDto {
+export function connectionDto(): PmspaConnectionDto {
   if (!connection)
     return {
       status: "not-configured",
@@ -869,7 +866,7 @@ const listJoin = (parts: string[]) =>
     ? (parts[0] ?? "")
     : `${parts.slice(0, -1).join(", ")} and ${parts[parts.length - 1]}`;
 
-type Item = PmspaPreviewItemDto;
+type Item = SyncPreviewItemDto;
 
 const cut = (s: string, max: number) =>
   s.length > max ? s.slice(0, max - 1) + "…" : s;

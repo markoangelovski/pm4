@@ -14,6 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ProfileIntegrations } from "@/features/integrations/components/profile-integrations";
 import { useMe, useSignOutEverywhere } from "@/features/users/api";
 import { UserAvatar } from "@/features/users/components/user-avatar";
 import { formatDate } from "@/lib/time";
@@ -103,6 +104,8 @@ export function UserProfile(): React.JSX.Element {
           </div>
         )}
       </Card>
+
+      <ProfileIntegrations />
 
       <Card className="p-6">
         <h2 className="text-base font-semibold">Sessions</h2>

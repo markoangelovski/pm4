@@ -186,7 +186,18 @@ export class PmspaConnectionService {
       account,
       lastCheckedAt: row.lastCheckedAt.toISOString(),
       lastSyncAt: row.lastSyncAt?.toISOString() ?? null,
-      rateLimit: null
+      rateLimit: await this.rateLimitOf(row.url)
     };
+  }
+
+  /** The host's last PMSPA rate-limit answer (OQ-200); null when the URL doesn't parse. */
+  private async rateLimitOf(url: string) {
+    let host: string;
+    try {
+      host = new URL(url).host.toLowerCase();
+    } catch {
+      return null;
+    }
+    return this.store.getRateLimit(host);
   }
 }

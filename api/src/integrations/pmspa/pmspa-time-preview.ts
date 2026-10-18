@@ -11,6 +11,7 @@ import {
   type SyncSnapshot
 } from "./pmspa-preview.js";
 import type { RemoteDay, RemoteEvent, RemoteLog } from "./pmspa-remote.js";
+import type { RemoteTask } from "./pmspa-fields.js";
 import {
   formatDuration,
   formatWorkDate,
@@ -69,14 +70,23 @@ export function usableLogLinks(
   );
 }
 
-/** D1: the group key mapped to PMSPA: the group's task's usable PMSPA task id, else "title:" + the title. */
+/**
+ * D1: the group key mapped to PMSPA: the PMSPA task id of the group's task, looked up in all the snapshot's task
+ * links (usable or not), else "title:" + the title. Every time-log hash is written and compared with this rule.
+ */
 export function mappedGroup(g: PushGroup, s: TimeSnapshot): string {
   const link =
     g.taskId === null
       ? undefined
-      : usableLinks(s).find((l) => l.type === "task" && l.pm4Id === g.taskId);
+      : s.links.find((l) => l.type === "task" && l.pm4Id === g.taskId);
   return link ? link.pmspaId : `title:${g.title}`;
 }
+
+/** "a", "a and b", "a, b and c". */
+const and = (items: string[]): string =>
+  items.length <= 1
+    ? items.join("")
+    : `${items.slice(0, -1).join(", ")} and ${items[items.length - 1]}`;
 
 const eventDetail = (n: number, minutes: number) =>
   `${plural(n, "log")} · ${formatDuration(minutes)}`;
@@ -116,10 +126,34 @@ export function importTimeRows(
   const byPmspa = new Map(links.map((l) => [l.pmspaId, l]));
   const taskLinks = usableLinks(s).filter((l) => l.type === "task");
   const pm4Log = new Map(s.pm4Logs.map((l) => [l.id, l]));
-  const taskPath = (t: { title: string; projectId: string }) =>
-    `${s.remoteProjects.find((p) => p.id === t.projectId)?.title ?? "?"} › ${t.title}`;
 
-  for (const date of [...(sel.dates ?? [])].sort()) {
+  const sorted = [...(sel.dates ?? [])].sort();
+  const taskOf = (e: RemoteEvent) =>
+    s.remoteTasks.find((t) => t.id === e.taskId) ?? null;
+  // D10: every unlinked event task, once, before any day row, with the dates it appears on.
+  const parents = new Map<
+    string,
+    { task: RemoteTask; count: number; dates: string[] }
+  >();
+  for (const date of sorted) {
+    if (date > s.today) continue;
+    const events = s.remoteDays.find((d) => d.date === date)?.events ?? [];
+    for (const e of events) {
+      const t = taskOf(e);
+      if (!t || taskLinks.some((l) => l.pmspaId === t.id)) continue;
+      const p = parents.get(t.id) ?? { task: t, count: 0, dates: [] };
+      p.count += 1;
+      if (!p.dates.includes(date)) p.dates.push(date);
+      parents.set(t.id, p);
+    }
+  }
+  for (const { task, count, dates } of parents.values())
+    b.addTask(
+      task,
+      `Parent of ${count === 1 ? "an imported event" : "imported events"} from ${and(dates.map(formatWorkDate))}`
+    );
+
+  for (const date of sorted) {
     const dayKey = `day:${date}`;
     if (date > s.today) {
       b.items.push(
@@ -134,13 +168,6 @@ export function importTimeRows(
       continue;
     }
     const events = s.remoteDays.find((d) => d.date === date)?.events ?? [];
-    const taskOf = (e: RemoteEvent) =>
-      s.remoteTasks.find((t) => t.id === e.taskId) ?? null;
-    for (const e of events) {
-      const t = taskOf(e);
-      if (t && !taskLinks.some((l) => l.pmspaId === t.id))
-        b.addTask(t, "Parent of an imported event");
-    }
 
     /** The link of a PMSPA log, and whether the PMSPA side and the PM4 side changed since it. */
     const state = (log: RemoteLog, e: RemoteEvent) => {
@@ -228,13 +255,23 @@ export function importTimeRows(
           parentKey: dayKey,
           type: "event",
           title: e.title,
-          detail: `${
-            t
-              ? taskPath(t)
-              : isNonprod(e.title)
-                ? "No task → Unsorted, excluded from statistics"
-                : "No task → Unsorted"
-          } · ${eventDetail(e.logs.length, minutesOf([e]))}`,
+          ...(t
+            ? {
+                taskPath: {
+                  projectTitle:
+                    s.remoteProjects.find((p) => p.id === t.projectId)?.title ??
+                    "?",
+                  taskTitle: t.title
+                }
+              }
+            : {}),
+          detail: t
+            ? eventDetail(e.logs.length, minutesOf([e]))
+            : `${
+                isNonprod(e.title)
+                  ? "No task → Unsorted, excluded from statistics"
+                  : "No task → Unsorted"
+              } · ${eventDetail(e.logs.length, minutesOf([e]))}`,
           action:
             st.total === 0
               ? "skip"
@@ -261,7 +298,7 @@ export function pushDayRows(
   const logs = s.pm4Logs.filter((l) => l.workDate === date);
   const groups = groupDay(logs);
   if (groups.length === 0) return [];
-  const b = syncBuilder(s);
+  const b = syncBuilder(s, null);
   const taskLinks = usableLinks(s).filter((l) => l.type === "task");
   for (const g of groups) {
     const t = g.taskId && s.pm4Tasks.find((x) => x.id === g.taskId);
@@ -334,16 +371,27 @@ export function pushDayRows(
     })
   ];
 
-  const pushedTaskPath = (g: PushGroup): string => {
+  const pushedTaskPath = (
+    g: PushGroup
+  ): { projectTitle: string; taskTitle: string } | null => {
     if (g.title === NONPROD && g.logs.some((l) => l.excludeFromStats))
-      return "No task · Excluded from statistics";
-    if (!g.taskId) return "No task";
+      return null;
+    if (!g.taskId) return null;
     const link = taskLinks.find((l) => l.pm4Id === g.taskId);
     const rt = link && s.remoteTasks.find((t) => t.id === link.pmspaId);
     if (rt)
-      return `${s.remoteProjects.find((p) => p.id === rt.projectId)?.title ?? "?"} › ${rt.title}`;
+      return {
+        projectTitle:
+          s.remoteProjects.find((p) => p.id === rt.projectId)?.title ?? "?",
+        taskTitle: rt.title
+      };
     const task = g.logs.find((l) => l.task?.id === g.taskId)?.task;
-    return `${g.logs.find((l) => l.project?.id === g.projectId)?.project?.title ?? "?"} › ${task?.title ?? "?"}`;
+    return {
+      projectTitle:
+        g.logs.find((l) => l.project?.id === g.projectId)?.project?.title ??
+        "?",
+      taskTitle: task?.title ?? "?"
+    };
   };
 
   groups.forEach((g, i) => {
@@ -388,13 +436,21 @@ export function pushDayRows(
         `${plural(both, "log")} also changed in PMSPA since the last sync: PMSPA's version is overwritten.`
       );
     const st = groupStates[i];
+    const path = pushedTaskPath(g);
+    const noTask =
+      g.title === NONPROD && g.logs.some((l) => l.excludeFromStats)
+        ? "No task · Excluded from statistics"
+        : "No task";
     rows.push(
       row({
         key: `event:${g.key}`,
         parentKey: dayKey,
         type: "event",
         title: g.title,
-        detail: `${pushedTaskPath(g)} · ${eventDetail(g.logs.length, minutesOf(g.logs))}`,
+        ...(path ? { taskPath: path } : {}),
+        detail: path
+          ? eventDetail(g.logs.length, minutesOf(g.logs))
+          : `${noTask} · ${eventDetail(g.logs.length, minutesOf(g.logs))}`,
         action: eventActions[i],
         reason: unchanged(st.total, st.linked, st.changed)
           ? "No changes since the last sync"

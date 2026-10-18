@@ -57,9 +57,13 @@ import { formatClock } from "@/lib/time/clock";
 import { cn } from "@/lib/utils";
 import { useLoadPmspaDays, usePmspaDay, usePmspaDays } from "../api";
 import { pmspaProblemText } from "../sync";
+import { PmspaProblemLine } from "./pmspa-problem-line";
 import { ExpandAllButton } from "./expand-all-button";
-import type { PmspaDaySummaryDto } from "../proposed-types";
-import type { PmspaDayLinkState, PmspaEventDto } from "../types";
+import type {
+  PmspaDayLinkState,
+  PmspaDaySummaryDto,
+  PmspaEventDto
+} from "../types";
 
 const DATE = "yyyy-MM-dd";
 const monday = (date: string) =>
@@ -135,7 +139,10 @@ export function PmspaTimeTab({
         <EmptyHeader>
           <EmptyTitle>Couldn&apos;t read your PMSPA days.</EmptyTitle>
           <EmptyDescription>
-            {pmspaProblemText(query.error) ?? "PMSPA may be unreachable."}
+            <PmspaProblemLine
+              error={query.error}
+              fallback="PMSPA may be unreachable."
+            />
           </EmptyDescription>
         </EmptyHeader>
         <EmptyContent>
@@ -404,8 +411,10 @@ function DayRows({
               </ItemGroup>
             ) : detail.isError ? (
               <p className="text-sm text-muted-foreground">
-                {pmspaProblemText(detail.error) ??
-                  "Couldn't read this day's events."}{" "}
+                <PmspaProblemLine
+                  error={detail.error}
+                  fallback="Couldn't read this day's events."
+                />{" "}
                 <Button
                   variant="link"
                   className="h-auto cursor-pointer p-0"

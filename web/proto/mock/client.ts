@@ -6,10 +6,6 @@ import type { components, paths } from "@/lib/api/schema";
 import type { TimeLog } from "@/proto/features/time/types";
 import type {
   PmspaCandidatesInputDto,
-  PmspaChangedPaths,
-  PmspaPaths
-} from "@/proto/features/integrations/proposed-types";
-import type {
   PmspaImportDto,
   PmspaImportSelectionDto,
   PmspaLinkType,
@@ -657,9 +653,7 @@ async function mockFetch(request: Request): Promise<Response> {
 }
 
 /** Same surface as `apiClient` in `lib/api/client`; the base URL is never requested. */
-export const apiClient = createClient<
-  Omit<paths, PmspaChangedPaths> & PmspaPaths
->({
+export const apiClient = createClient<paths>({
   baseUrl: "http://proto.localhost",
   fetch: mockFetch
 });

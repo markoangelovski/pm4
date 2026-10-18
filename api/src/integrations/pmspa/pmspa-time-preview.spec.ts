@@ -161,7 +161,7 @@ describe("importTimeRows", () => {
     ]);
     expect(rows[1]).toMatchObject({
       parent: true,
-      reason: "Parent of an imported event"
+      reason: "Parent of an imported event from 16 Oct 2026"
     });
     expect(rows[2]).toMatchObject({
       title: "16 Oct 2026",
@@ -171,7 +171,8 @@ describe("importTimeRows", () => {
     });
     expect(rows[3]).toMatchObject({
       parentKey: `day:${DATE}`,
-      detail: "Nvidia › Release · 2 logs · 2h 15m",
+      taskPath: { projectTitle: "Nvidia", taskTitle: "Release" },
+      detail: "2 logs · 2h 15m",
       action: "create",
       warnings: ["Booked in PMSPA: imported logs aren't booked."]
     });
@@ -331,7 +332,12 @@ describe("pushDayRows", () => {
       action: "create",
       reason: null
     });
-    expect(rows[1].detail).toBe("Anthropic › Meetings · 1 log · 1h");
+    expect(rows[1].taskPath).toEqual({
+      projectTitle: "Anthropic",
+      taskTitle: "Meetings"
+    });
+    expect(rows[1].detail).toBe("1 log · 1h");
+    expect(rows[2].taskPath).toBeUndefined();
     expect(rows[2].detail).toBe(
       "No task · Excluded from statistics · 1 log · 30m"
     );

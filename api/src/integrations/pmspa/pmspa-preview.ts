@@ -166,10 +166,15 @@ const pm4Candidates = {
     )
 };
 
-const pmspaCandidates = {
-  project: (s: SyncSnapshot, p: Pm4Project, linked: Set<string>) =>
+/** The Link to existing candidates of a PM4 record, from the PMSPA records read (API-INT-019, D9). */
+export const pmspaCandidateList = {
+  project: (
+    remote: RemoteProject[],
+    p: Pm4Project,
+    linked: ReadonlySet<string>
+  ): SyncCandidateDto[] =>
     sortByMatch(
-      s.remoteProjects
+      remote
         .filter((r) => !linked.has(r.id))
         .map((r) => ({
           id: r.id,
@@ -180,20 +185,21 @@ const pmspaCandidates = {
         })),
       p.title
     ),
-  task: (s: SyncSnapshot, t: Pm4Task, linked: Set<string>) =>
+  task: (
+    remote: RemoteTask[],
+    t: Pm4Task,
+    linked: ReadonlySet<string>,
+    timeZone: string
+  ): SyncCandidateDto[] =>
     sortByMatch(
-      s.remoteTasks
-        .filter(
-          (r) =>
-            !linked.has(r.id) &&
-            s.remoteProjects.some((p) => p.id === r.projectId)
-        )
+      remote
+        .filter((r) => !linked.has(r.id))
         .map((r) => ({
           id: r.id,
           title: r.title,
           groupId: r.projectId,
           detail: r.column,
-          differences: taskDiff(t, r, s.timeZone)
+          differences: taskDiff(t, r, timeZone)
         })),
       t.title
     )
@@ -330,7 +336,10 @@ export function importRows(
 }
 
 /** The row builders of a sync preview: `projectRow` / `taskRow` add a row once, with the parents it needs. */
-export function syncBuilder(s: SyncSnapshot): {
+export function syncBuilder(
+  s: SyncSnapshot,
+  listed: string | null
+): {
   items: SyncPreviewItemDto[];
   projectRow(p: Pm4Project, parentOf?: string): string;
   taskRow(t: Pm4Task, opts: { optional?: boolean; parentOf?: string }): string;
@@ -367,9 +376,7 @@ export function syncBuilder(s: SyncSnapshot): {
         ...base,
         ...(parentOf && !pair ? { reason: parentOf, parent: true } : {}),
         linkedId: pair?.remote.id ?? null,
-        candidates: pair
-          ? []
-          : pmspaCandidates.project(s, p, linkedPmspa.project),
+        candidates: pair ? [] : null,
         warnings: [
           ...lengthWarnings(p),
           ...(base.action === "differs" ? clearWarnings(base.differences) : [])
@@ -378,6 +385,17 @@ export function syncBuilder(s: SyncSnapshot): {
     );
     return key;
   };
+
+  /** D9: an unlinked task's candidates are read only when its project is the listed one. */
+  const taskCandidates = (t: Pm4Task): SyncCandidateDto[] | null =>
+    listed && links.project.byPm4.get(t.projectId)?.pmspaId === listed
+      ? pmspaCandidateList.task(
+          s.remoteTasks.filter((r) => r.projectId === listed),
+          t,
+          linkedPmspa.task,
+          s.timeZone
+        )
+      : null;
 
   const taskRow = (
     t: Pm4Task,
@@ -424,7 +442,7 @@ export function syncBuilder(s: SyncSnapshot): {
           : {}),
         optional: Boolean(opts.optional),
         linkedId: pair?.remote.id ?? null,
-        candidates: pair ? [] : pmspaCandidates.task(s, t, linkedPmspa.task),
+        candidates: pair ? [] : taskCandidates(t),
         warnings: [
           ...lengthWarnings(t),
           ...(base.action === "differs" ? clearWarnings(base.differences) : [])
@@ -442,10 +460,13 @@ export function syncRows(
   s: SyncSnapshot,
   target: PmspaSyncTargetDto
 ): SyncPreviewItemDto[] | null {
-  const b = syncBuilder(s);
   if (target.type === "project") {
     const p = s.pm4Projects.find((x) => x.id === target.id);
     if (!p) return null;
+    const listed =
+      usableLinks(s).find((l) => l.type === "project" && l.pm4Id === p.id)
+        ?.pmspaId ?? null;
+    const b = syncBuilder(s, listed);
     b.projectRow(p);
     for (const t of s.pm4Tasks.filter((x) => x.projectId === p.id))
       b.taskRow(t, { optional: true });
@@ -453,6 +474,7 @@ export function syncRows(
   }
   const t = s.pm4Tasks.find((x) => x.id === target.id);
   if (!t) return null;
+  const b = syncBuilder(s, null);
   b.taskRow(t, {});
   return b.items;
 }

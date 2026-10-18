@@ -158,6 +158,67 @@ describe("PmspaStore", () => {
     );
   });
 
+  describe("rate limit (feat-int-budget D1)", () => {
+    const HOST = "pmspa.example.com";
+    const inMs = (ms: number) => new Date(Date.now() + ms).toISOString();
+    const answer = (remaining: number, resetInMs: number) => ({
+      limit: 100,
+      remaining,
+      resetAt: inMs(resetInMs),
+      observedAt: new Date().toISOString()
+    });
+
+    it("stores the answer until its reset and reads it back when the host isn't paused", async () => {
+      const { client, store } = setup();
+      client.pttl.mockResolvedValue(-2);
+      const rate = answer(40, 60_000);
+      await store.setRateLimit(HOST, rate);
+      const [key, value, mode, ttl] = client.set.mock.calls[0] as unknown[];
+      expect(key).toBe(`pmspa:rate:${HOST}`);
+      expect(JSON.parse(value as string)).toEqual(rate);
+      expect(mode).toBe("PX");
+      expect(ttl).toBeGreaterThan(59_000);
+
+      client.get.mockResolvedValueOnce(value);
+      await expect(store.getRateLimit(HOST)).resolves.toEqual(rate);
+    });
+
+    it("an answer stored while paused is kept as spent until the pause ends", async () => {
+      const { client, store } = setup();
+      client.pttl.mockResolvedValue(600_000);
+      await store.setRateLimit(HOST, answer(3, 240_000));
+      const [, value, , ttl] = client.set.mock.calls[0] as unknown[];
+      const kept = JSON.parse(value as string) as {
+        remaining: number;
+        resetAt: string;
+      };
+      expect(kept.remaining).toBe(0);
+      expect(Date.parse(kept.resetAt) - Date.now()).toBeGreaterThan(599_000);
+      expect(ttl).toBeGreaterThan(599_000);
+    });
+
+    it("reads as spent until the pause ends while the host is paused", async () => {
+      const { client, store } = setup();
+      client.get.mockResolvedValueOnce(JSON.stringify(answer(95, 60_000)));
+      client.pttl.mockResolvedValueOnce(300_000);
+      const read = await store.getRateLimit(HOST);
+      expect(read).toMatchObject({ limit: 100, remaining: 0 });
+      expect(Date.parse(read!.resetAt) - Date.now()).toBeGreaterThan(299_000);
+      expect(client.pttl).toHaveBeenCalledWith(`pmspa:pause:${HOST}`);
+    });
+
+    it("a pause shorter than the answer's reset keeps the reset", async () => {
+      const { client, store } = setup();
+      const rate = answer(10, 600_000);
+      client.get.mockResolvedValueOnce(JSON.stringify(rate));
+      client.pttl.mockResolvedValueOnce(60_000);
+      await expect(store.getRateLimit(HOST)).resolves.toEqual({
+        ...rate,
+        remaining: 0
+      });
+    });
+  });
+
   it("lock sets the key NX with a 5 min expiry; unlock deletes it", async () => {
     const { client, store } = setup();
     client.set.mockResolvedValueOnce("OK").mockResolvedValueOnce(null);

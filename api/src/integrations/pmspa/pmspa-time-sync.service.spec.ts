@@ -12,7 +12,13 @@ import { PmspaSyncRepository } from "./pmspa-sync.repository.js";
 import { RowFailure, RunLinks, type Run } from "./pmspa-run.js";
 import { PmspaTimeSyncService } from "./pmspa-time-sync.service.js";
 import type { SyncPreviewItemDto } from "./dto/sync.dto.js";
-import type { TimeSnapshot, Pm4DayLog } from "./pmspa-time-preview.js";
+import {
+  mappedGroup,
+  type TimeSnapshot,
+  type Pm4DayLog
+} from "./pmspa-time-preview.js";
+import { fingerprint } from "./pmspa-fields.js";
+import { groupDay, pm4LogTuple } from "./pmspa-time-fields.js";
 import { TimeLogsService } from "../../time/time-logs.service.js";
 import { WorkdaysService } from "../../time/workdays.service.js";
 
@@ -664,6 +670,48 @@ describe("PmspaTimeSyncService", () => {
       await expect(
         service.pushEventRow(run, eventRow("task:none"), DATE)
       ).rejects.toBeInstanceOf(RowFailure);
+    });
+  });
+
+  describe("time-log hash key", () => {
+    it("a saved link's pm4Hash matches mappedGroup when the task's link wasn't read", async () => {
+      const run = runOf([event()]);
+      const snap = run.snapshot as TimeSnapshot;
+      // A task link in the snapshot that the run doesn't know (not usable): mappedGroup finds it, RunLinks doesn't.
+      snap.links = [
+        {
+          type: "task",
+          pm4Id: "t2",
+          pmspaId: "rt2",
+          pmspaUserId: PMSPA_USER,
+          origin: "imported",
+          syncedAt: new Date(0),
+          pm4Hash: Buffer.alloc(0),
+          pmspaHash: Buffer.alloc(0)
+        }
+      ];
+      expect(run.links.pmspaOf("task", "t2")).toBeUndefined();
+      const logged = pm4Log({ task: { id: "t2", title: "T", deleted: false } });
+      sync.pm4Logs.mockResolvedValue([logged]);
+      const remoteEvent = event();
+
+      await (
+        service as unknown as {
+          saveTimeLink: (
+            r: Run,
+            id: string,
+            l: RemoteEvent["logs"][number],
+            e: RemoteEvent
+          ) => Promise<void>;
+        }
+      ).saveTimeLink(run, "pm4-1", remoteEvent.logs[0], remoteEvent);
+
+      const saved = links.save.mock.calls[0][1] as LinkRow;
+      const expected = fingerprint(
+        pm4LogTuple(logged, mappedGroup(groupDay([logged])[0], snap))
+      );
+      expect(saved.pm4Hash.equals(expected)).toBe(true);
+      expect(mappedGroup(groupDay([logged])[0], snap)).toBe("rt2");
     });
   });
 });

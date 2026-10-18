@@ -40,6 +40,7 @@ import { cn } from "@/lib/utils";
 import { ColdStartHint } from "./cold-start-hint";
 import { usePmspaCandidates } from "../api";
 import { pmspaProblemText } from "../sync";
+import { PmspaProblemLine } from "./pmspa-problem-line";
 import type {
   SyncAction,
   SyncCandidateDto,
@@ -47,11 +48,11 @@ import type {
   SyncDirection,
   SyncFieldDiffDto,
   SyncOutcome,
+  SyncPreviewItemDto,
   SyncRecordType,
   SyncResultDto,
   SyncResultItemDto
 } from "../types";
-import type { PmspaPreviewItemDto } from "../proposed-types";
 
 /** `sync`: a project or task, both ways (OQ-172); `push`: a day's logs to PMSPA; `import`: the connector page. */
 export type SyncMode = "import" | "push" | "sync";
@@ -132,7 +133,7 @@ type Choices = Record<string, SyncChoiceDto>;
  * when there's none, OQ-173). Undefined = the row's own action.
  */
 function choiceOf(
-  item: PmspaPreviewItemDto,
+  item: SyncPreviewItemDto,
   choices: Choices
 ): SyncChoiceDto | undefined {
   return (
@@ -149,7 +150,7 @@ function choiceOf(
 }
 
 /** Whether the row writes anything: creates, updates, links two records, or overwrites a side. */
-function writes(item: PmspaPreviewItemDto, choice: SyncChoiceDto | undefined) {
+function writes(item: SyncPreviewItemDto, choice: SyncChoiceDto | undefined) {
   if (choice?.kind === "skip" || item.action === "skip") return false;
   if (item.action === "differs")
     return choice?.kind === "link" && choice.overwrite !== null;
@@ -158,7 +159,7 @@ function writes(item: PmspaPreviewItemDto, choice: SyncChoiceDto | undefined) {
 
 /** The row's badge: what will happen to it, with the user's choice applied (OQ-172, OQ-173). */
 function rowBadge(
-  item: PmspaPreviewItemDto,
+  item: SyncPreviewItemDto,
   choice: SyncChoiceDto | undefined
 ): { label: string; className: string } {
   const action = ACTION[item.action];
@@ -231,7 +232,7 @@ export function SyncPreviewDialog({
   mode: SyncMode;
   title: string;
   description: React.ReactNode;
-  items: PmspaPreviewItemDto[] | undefined;
+  items: SyncPreviewItemDto[] | undefined;
   isPending: boolean;
   isError: boolean;
   error: unknown;
@@ -274,7 +275,7 @@ function PreviewBody({
   mode: SyncMode;
   title: string;
   description: React.ReactNode;
-  items: PmspaPreviewItemDto[] | undefined;
+  items: SyncPreviewItemDto[] | undefined;
   isPending: boolean;
   isError: boolean;
   error: unknown;
@@ -349,9 +350,8 @@ function PreviewBody({
 
   const all = (items ?? []).map((i) => ({ i, c: choiceOf(i, choices) }));
   const toWrite = all.filter(({ i, c }) => writes(i, c));
-  const count = (
-    test: (i: PmspaPreviewItemDto, c?: SyncChoiceDto) => boolean
-  ) => all.filter(({ i, c }) => test(i, c)).length;
+  const count = (test: (i: SyncPreviewItemDto, c?: SyncChoiceDto) => boolean) =>
+    all.filter(({ i, c }) => test(i, c)).length;
   const created = count(
     (i, c) => i.action === "create" && c?.kind !== "link" && c?.kind !== "skip"
   );
@@ -396,8 +396,10 @@ function PreviewBody({
         <div className="text-xs text-muted-foreground">
           {failure ? (
             <span className="text-destructive">
-              {pmspaProblemText(failure.error) ??
-                `Couldn't ${verb.toLowerCase()}.`}{" "}
+              <PmspaProblemLine
+                error={failure.error}
+                fallback={`Couldn't ${verb.toLowerCase()}.`}
+              />{" "}
               Some records may have been written: open the preview again to see
               where things stand.
             </span>
@@ -438,9 +440,9 @@ function PreviewRow({
   onChoice
 }: {
   mode: SyncMode;
-  item: PmspaPreviewItemDto;
+  item: SyncPreviewItemDto;
   depth: number;
-  parent: PmspaPreviewItemDto | undefined;
+  parent: SyncPreviewItemDto | undefined;
   lazy: LazyRecords;
   choices: Choices;
   onChoice: (key: string, choice: SyncChoiceDto | null) => void;
@@ -561,8 +563,8 @@ function PreviewRow({
  * Undefined: not a task, or a task without a parent row (its candidates aren't narrowed).
  */
 function parentGroup(
-  item: PmspaPreviewItemDto,
-  parent: PmspaPreviewItemDto | undefined,
+  item: SyncPreviewItemDto,
+  parent: SyncPreviewItemDto | undefined,
   choices: Choices
 ): string | null | undefined {
   if (item.type !== "task" || !parent) return undefined;
@@ -575,7 +577,7 @@ function parentGroup(
 /** PM4 ids of the rows whose candidates are read when a dropdown opens (OQ-204), by type: one read serves all. */
 type LazyRecords = { project: string[]; task: string[] };
 
-function lazyRecords(items: PmspaPreviewItemDto[]): LazyRecords {
+function lazyRecords(items: SyncPreviewItemDto[]): LazyRecords {
   const ids = (type: "project" | "task") =>
     items
       .filter((i) => i.type === type && i.candidates === null)
@@ -612,7 +614,7 @@ function LinkChoice({
   onChoice
 }: {
   mode: SyncMode;
-  item: PmspaPreviewItemDto;
+  item: SyncPreviewItemDto;
   group: string | null | undefined;
   lazy: LazyRecords;
   choice: SyncChoiceDto | undefined;
@@ -709,8 +711,10 @@ function LinkChoice({
           ) : read.isError ? (
             <div className="flex flex-wrap items-center gap-2 px-2 pb-2 text-xs">
               <span className="text-destructive">
-                {pmspaProblemText(read.error) ??
-                  `Couldn't read the ${item.type}s.`}
+                <PmspaProblemLine
+                  error={read.error}
+                  fallback={`Couldn't read the ${item.type}s.`}
+                />
               </span>
               <Button
                 variant="outline"

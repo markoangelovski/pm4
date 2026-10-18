@@ -20,6 +20,7 @@ describe("PmspaConnectionService", () => {
     setToken: vi.fn(),
     setAccount: vi.fn(),
     getAccount: vi.fn(),
+    getRateLimit: vi.fn().mockResolvedValue(null),
     clear: vi.fn()
   };
   const guard = { check: vi.fn() };

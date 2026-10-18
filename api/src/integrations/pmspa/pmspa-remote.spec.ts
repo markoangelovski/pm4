@@ -1,5 +1,10 @@
 import type { PmspaClient } from "./pmspa-client.js";
-import { PmspaRemote, PmspaWriteError } from "./pmspa-remote.js";
+import {
+  inParallel,
+  PMSPA_PARALLEL,
+  PmspaRemote,
+  PmspaWriteError
+} from "./pmspa-remote.js";
 import type { PmspaResponse } from "./pmspa-transport.js";
 
 const USER = "65f1a0c0ffee00000000000a";
@@ -313,5 +318,39 @@ describe("PmspaRemote days writes (feat-int-time-api)", () => {
       method: "DELETE",
       path: "/v1/days/log.delete/l1"
     });
+  });
+});
+
+describe("inParallel (feat-int-budget)", () => {
+  it("keeps the input order", async () => {
+    const out = await inParallel([30, 1, 10, 2], async (n) => {
+      await new Promise((r) => setTimeout(r, n));
+      return n * 2;
+    });
+    expect(out).toEqual([60, 2, 20, 4]);
+  });
+
+  it("runs at most PMSPA_PARALLEL at a time", async () => {
+    let active = 0;
+    let peak = 0;
+    await inParallel([1, 2, 3, 4, 5, 6], async () => {
+      active += 1;
+      peak = Math.max(peak, active);
+      await new Promise((r) => setTimeout(r, 5));
+      active -= 1;
+    });
+    expect(peak).toBe(PMSPA_PARALLEL);
+  });
+
+  it("rejects with the first rejection", async () => {
+    await expect(
+      inParallel([1, 2, 3], (n) =>
+        n >= 2 ? Promise.reject(new Error(`bad ${n}`)) : Promise.resolve(n)
+      )
+    ).rejects.toThrow("bad 2");
+  });
+
+  it("is empty for no items", async () => {
+    expect(await inParallel([], () => Promise.resolve(1))).toEqual([]);
   });
 });

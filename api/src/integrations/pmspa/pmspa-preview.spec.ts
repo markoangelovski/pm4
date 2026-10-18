@@ -164,7 +164,7 @@ describe("syncRows", () => {
     expect(syncRows(empty, { type: "task", id: "x" })).toBeNull();
   });
 
-  it("gives a task and its parent project, with PMSPA candidates", () => {
+  it("gives a task and its parent project, without candidates (D9)", () => {
     const s: SyncSnapshot = {
       ...empty,
       pm4Projects: [pm4P("p1", "Acme")],
@@ -179,7 +179,8 @@ describe("syncRows", () => {
       direction: "to-pmspa"
     });
     expect(rows[1]).toMatchObject({ key: "task:t1", parentKey: "project:p1" });
-    expect(rows[0].candidates).toHaveLength(1);
+    expect(rows[0].candidates).toBeNull();
+    expect(rows[1].candidates).toBeNull();
   });
 
   it("warns about long text and values PMSPA can't clear", () => {
