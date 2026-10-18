@@ -126,7 +126,7 @@ export function DayHeader({
             >
               <SelectValue />
             </SelectTrigger>
-            <SelectContent className="max-h-64">
+            <SelectContent className="max-h-64" alignItemWithTrigger={false}>
               {START_OPTIONS.map((o) => (
                 <SelectItem
                   key={o.value}

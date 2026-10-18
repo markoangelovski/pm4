@@ -139,7 +139,7 @@ function SettingsForm({ me }: { me: Me }): React.JSX.Element {
               >
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent className="max-h-72">
+              <SelectContent className="max-h-72" alignItemWithTrigger={false}>
                 {ZONES.map((z) => (
                   <SelectItem
                     key={z.value}
