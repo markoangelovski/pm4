@@ -20,6 +20,7 @@ import { ProjectIcon } from "@/proto/features/projects/components/project-icon";
 import { useMe } from "@/proto/features/users/api";
 import { ProjectLeadLabel } from "@/proto/features/users/components/project-lead-label";
 import { PushToPmspaButton } from "@/proto/features/integrations/components/push-button";
+import { PmspaCreatedStamp } from "@/proto/features/integrations/components/pmspa-created-stamp";
 import { SyncFlag } from "@/proto/features/integrations/components/sync-flag";
 import { DeleteTaskDialog } from "@/proto/features/tasks/components/delete-task-dialog";
 import { DueDateBadge } from "@/proto/features/tasks/components/due-date-badge";
@@ -163,6 +164,11 @@ function TaskView({
                 Last modified{" "}
                 {me ? formatDateTime(task.updatedAt, me.timeZone) : "—"}
               </span>
+              <PmspaCreatedStamp
+                type="task"
+                id={task.id}
+                timeZone={me?.timeZone}
+              />
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">

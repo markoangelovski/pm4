@@ -2,7 +2,9 @@
 
 import { PopoverDescription } from "@/components/ui/popover";
 import { Skeleton } from "@/components/ui/skeleton";
-import { usePmspaConnection, usePmspaLinkDetail } from "../api";
+import { formatDateTime } from "@/lib/time";
+import { useMe } from "@/proto/features/users/api";
+import { usePmspaConnection, usePmspaLinkDetail, usePmspaLinks } from "../api";
 import type { PmspaLinkType, PmspaRecordDetail } from "../types";
 import { STATUS_LABEL } from "../sync";
 import { PmspaProblemLine } from "./pmspa-problem-line";
@@ -24,13 +26,25 @@ function Quoted({ children }: { children: string }) {
   return <span className="text-foreground">“{children}”</span>;
 }
 
-function Detail({ record }: { record: PmspaRecordDetail }) {
+/**
+ * The PMSPA record in one line. `created` (OQ-207, from the link list) follows the lead, the column or the
+ * event: ", created in PMSPA on 6 October 2023, 13:25".
+ */
+function Detail({
+  record,
+  created
+}: {
+  record: PmspaRecordDetail;
+  created: string | null;
+}) {
+  const createdPart = created ? `, created in PMSPA on ${created}` : null;
   switch (record.type) {
     case "project":
       return (
         <>
           PMSPA project: <Quoted>{record.title}</Quoted>
           {record.lead ? `, lead ${record.lead}` : null}
+          {createdPart}
           {record.done ? ", done" : null}
         </>
       );
@@ -39,6 +53,7 @@ function Detail({ record }: { record: PmspaRecordDetail }) {
         <>
           PMSPA task: <Quoted>{record.title}</Quoted> in the project{" "}
           <Quoted>{record.projectTitle ?? ""}</Quoted>, {record.column}
+          {createdPart}
         </>
       );
     case "time-log":
@@ -46,6 +61,7 @@ function Detail({ record }: { record: PmspaRecordDetail }) {
         <>
           PMSPA log: <Quoted>{record.title}</Quoted> in the event{" "}
           <Quoted>{record.eventTitle ?? ""}</Quoted>
+          {createdPart}
         </>
       );
   }
@@ -65,6 +81,11 @@ export function PmspaRecordNote({
   const { data: connection } = usePmspaConnection();
   const connected = connection?.status === "connected";
   const detail = usePmspaLinkDetail(type, id, connected);
+  const { data: links } = usePmspaLinks(type);
+  const { data: me } = useMe();
+  const createdAt = links?.get(id)?.pmspaCreatedAt;
+  const created =
+    createdAt && me ? formatDateTime(createdAt, me.timeZone) : null;
   if (!connection) return null;
 
   let body: React.ReactNode;
@@ -82,7 +103,7 @@ export function PmspaRecordNote({
   } else if (!detail.data.pmspa) {
     body = `The PMSPA ${NOUN[type]} no longer exists.`;
   } else {
-    body = <Detail record={detail.data.pmspa} />;
+    body = <Detail record={detail.data.pmspa} created={created} />;
   }
 
   return (
