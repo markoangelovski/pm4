@@ -225,6 +225,25 @@ export function importTimeRows(
         warnings.push(
           `${plural(offStep.length, "log")} of ${offStep.map((l) => `${l.duration} h`).join(", ")} isn't in 0.25 h steps and will fail.`
         );
+      const outOfRange = e.logs.filter(
+        (l) =>
+          isQuarterHours(l.duration) && (l.duration < 0.25 || l.duration > 24)
+      );
+      if (outOfRange.length)
+        warnings.push(
+          `${plural(outOfRange.length, "log")} of ${outOfRange.map((l) => `${l.duration} h`).join(", ")} isn't between 0.25 h and 24 h and will fail.`
+        );
+      const tooLong = e.logs.filter(
+        (l) =>
+          isQuarterHours(l.duration) &&
+          l.duration >= 0.25 &&
+          l.duration <= 24 &&
+          l.title.trim().length > 1000
+      );
+      if (tooLong.length)
+        warnings.push(
+          `${plural(tooLong.length, "log")} with a text over 1000 characters will fail.`
+        );
       const counterpart = t
         ? taskLinks.find((l) => l.pmspaId === t.id)?.pm4Id
         : undefined;

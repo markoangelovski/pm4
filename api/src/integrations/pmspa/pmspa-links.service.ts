@@ -13,8 +13,7 @@ import { PmspaSyncRepository } from "./pmspa-sync.repository.js";
 
 /** OQ-207: a PMSPA ObjectId's first 4 bytes are its creation time in seconds. */
 export function pmspaCreatedAt(pmspaId: string): string {
-  void pmspaId;
-  throw new Error("not implemented (feat-int-followups)");
+  return new Date(parseInt(pmspaId.slice(0, 8), 16) * 1000).toISOString();
 }
 
 /** The PM4 links of the caller (API-INT-012…014, FR-INT-010). Nothing is stored beyond the link rows. */

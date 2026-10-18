@@ -70,13 +70,23 @@ export class PmspaConnectionRepository {
   }
 
   /** `setStatus` (status, `last_checked_at = now()`) only while the row still has `owner`'s URL and email; true when it did. */
-  setStatusFor(
+  async setStatusFor(
     userId: string,
     owner: PmspaOwner,
     status: PmspaStatus
   ): Promise<boolean> {
-    void [userId, owner, status];
-    return Promise.reject(new Error("not implemented (feat-int-followups)"));
+    const rows = await this.db
+      .update(pmspaConnections)
+      .set({ status, lastCheckedAt: new Date() })
+      .where(
+        and(
+          eq(pmspaConnections.userId, userId),
+          eq(pmspaConnections.url, owner.url),
+          eq(pmspaConnections.email, owner.email)
+        )
+      )
+      .returning({ userId: pmspaConnections.userId });
+    return rows.length > 0;
   }
 
   async delete(userId: string): Promise<void> {

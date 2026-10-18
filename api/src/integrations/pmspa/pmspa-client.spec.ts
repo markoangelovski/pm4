@@ -59,10 +59,16 @@ function setup(status: PmspaConnectionRow["status"] = "connected") {
   };
   const repo = {
     find: vi.fn(() => Promise.resolve(row)),
-    setStatus: vi.fn((_u: string, s: PmspaConnectionRow["status"]) => {
-      if (row) row.status = s;
-      return Promise.resolve();
-    })
+    setStatusFor: vi.fn(
+      (
+        _u: string,
+        _o: { url: string; email: string },
+        s: PmspaConnectionRow["status"]
+      ) => {
+        if (row) row.status = s;
+        return Promise.resolve(true);
+      }
+    )
   };
   const client = new PmspaClient(
     transport,
@@ -144,7 +150,11 @@ describe("PmspaClient", () => {
     await expect(s.client.request(USER, who)).rejects.toMatchObject({
       status: 409
     });
-    expect(s.repo.setStatus).toHaveBeenCalledWith(USER, "invalid-credentials");
+    expect(s.repo.setStatusFor).toHaveBeenCalledWith(
+      USER,
+      OWNER,
+      "invalid-credentials"
+    );
     await expect(s.store.getToken(USER, OWNER)).resolves.toBeNull();
   });
 
@@ -153,7 +163,11 @@ describe("PmspaClient", () => {
     await expect(s.client.request(USER, who)).rejects.toMatchObject({
       status: 409
     });
-    expect(s.repo.setStatus).toHaveBeenCalledWith(USER, "invalid-credentials");
+    expect(s.repo.setStatusFor).toHaveBeenCalledWith(
+      USER,
+      OWNER,
+      "invalid-credentials"
+    );
     expect(s.fake.callsTo("POST", "/v1/auth/login")).toHaveLength(0);
     await expect(s.store.getToken(USER, OWNER)).resolves.toBeNull();
   });
@@ -166,7 +180,11 @@ describe("PmspaClient", () => {
       status: 409
     });
     expect(s.fake.callsTo("POST", "/v1/auth/login")).toHaveLength(1);
-    expect(s.repo.setStatus).toHaveBeenCalledWith(USER, "invalid-credentials");
+    expect(s.repo.setStatusFor).toHaveBeenCalledWith(
+      USER,
+      OWNER,
+      "invalid-credentials"
+    );
     await expect(s.store.getToken(USER, OWNER)).resolves.toBeNull();
   });
 
@@ -175,9 +193,17 @@ describe("PmspaClient", () => {
     await expect(s.client.request(USER, who)).rejects.toMatchObject({
       status: 502
     });
-    expect(s.repo.setStatus).toHaveBeenCalledWith(USER, "unreachable");
+    expect(s.repo.setStatusFor).toHaveBeenCalledWith(
+      USER,
+      OWNER,
+      "unreachable"
+    );
     s.fake.unreachable = false;
     await s.client.request(USER, who);
-    expect(s.repo.setStatus).toHaveBeenLastCalledWith(USER, "connected");
+    expect(s.repo.setStatusFor).toHaveBeenLastCalledWith(
+      USER,
+      OWNER,
+      "connected"
+    );
   });
 });
