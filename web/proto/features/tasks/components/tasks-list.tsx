@@ -77,6 +77,7 @@ import { useDebouncedValue } from "@/lib/use-debounced-value";
 import { useMe } from "@/proto/features/users/api";
 import { formatShortDate } from "@/lib/time";
 import { LoggedTotal } from "@/proto/features/time/components/logged-total";
+import { usePmspaLinks } from "@/proto/features/integrations/api";
 import { SyncFlag } from "@/proto/features/integrations/components/sync-flag";
 import { routes } from "@/proto/lib/routes";
 import { cn } from "@/lib/utils";
@@ -114,6 +115,8 @@ export function TasksList({
   const router = useRouter();
   const queryClient = useQueryClient();
   const { data: me } = useMe();
+  /** OQ-207: with a saved PMSPA connection, the linked tasks' PMSPA creation dates (the sync flags' list). */
+  const { data: taskLinks } = usePmspaLinks("task");
   const [params, setParams] = useQueryStates(
     {
       status: parseAsArrayOf(parseAsStringLiteral(TASK_STATUSES)).withDefault([
@@ -320,6 +323,7 @@ export function TasksList({
               <TableHead>Project lead</TableHead>
               <TableHead>Logged</TableHead>
               <TableHead>Created</TableHead>
+              {taskLinks ? <TableHead>Created in PMSPA</TableHead> : null}
               <TableHead className="pr-4">Updated</TableHead>
             </TableRow>
           </TableHeader>
@@ -388,6 +392,12 @@ export function TasksList({
                       <span className="text-muted-foreground">—</span>
                     )}
                   </TableCell>
+                  {taskLinks ? (
+                    <PmspaCreatedCell
+                      createdAt={taskLinks.get(task.id)?.pmspaCreatedAt}
+                      timeZone={me?.timeZone}
+                    />
+                  ) : null}
                   <TableCell className="whitespace-nowrap pr-4">
                     {me ? (
                       formatShortDate(task.updatedAt, me.timeZone)
@@ -540,5 +550,24 @@ function ProjectFilterPicker({
       onChange={onProjectChange}
       className="sm:w-56"
     />
+  );
+}
+
+/** OQ-207: when PMSPA created a linked task; "—" for a task that isn't linked. */
+function PmspaCreatedCell({
+  createdAt,
+  timeZone
+}: {
+  createdAt: string | undefined;
+  timeZone: string | undefined;
+}) {
+  return (
+    <TableCell className="whitespace-nowrap">
+      {createdAt && timeZone ? (
+        formatShortDate(createdAt, timeZone)
+      ) : (
+        <span className="text-muted-foreground">—</span>
+      )}
+    </TableCell>
   );
 }

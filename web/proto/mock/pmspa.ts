@@ -125,18 +125,29 @@ const ago = (n: number) =>
 const at = (date: string, time: string) =>
   new Date(`${date}T${time}:00`).toISOString();
 let oidSeq = 0x100;
-/** A 24-hex PMSPA ObjectId. */
-const oid = () => "66f1a0c0e4b0" + (oidSeq++).toString(16).padStart(12, "0");
+/** A 24-hex PMSPA ObjectId: its first 4 bytes are the creation second (OQ-207). */
+const oid = (createdAt = Date.now()) =>
+  Math.floor(createdAt / 1000)
+    .toString(16)
+    .padStart(8, "0") +
+  "e4b0" +
+  (oidSeq++).toString(16).padStart(12, "0");
+/** OQ-207: when PMSPA created a record, from its ObjectId (what the API derives from a link's `pmspa_id`). */
+const createdAtOf = (pmspaId: string) =>
+  new Date(parseInt(pmspaId.slice(0, 8), 16) * 1000).toISOString();
 
 const LONG_TITLE =
   "Internal tooling and automation for the operations team, including the reporting pipeline, the invoicing exports and the onboarding checklists";
 
 function seedRemote() {
+  // Seeded projects and tasks were created in PMSPA days to years ago, a few days apart.
+  let seedDaysAgo = 900;
+  const seedTime = () => Date.now() - (seedDaysAgo -= 3) * 86_400_000;
   const p = (
     title: string,
     extra: Partial<RemoteProject> = {}
   ): RemoteProject => ({
-    id: oid(),
+    id: oid(seedTime()),
     userId: A,
     title,
     description: "",
@@ -156,13 +167,15 @@ function seedRemote() {
   const tesla = p("Tesla", { description: "QA retainer." });
   const tooling = p(LONG_TITLE);
   const archive = p("Archive 2025", { done: true });
+  // OQ-206: enough tasks that Expand all reads one project's lists rather than all tasks when a search narrows the list.
+  const support = p("Support desk", { description: "Client support tickets." });
   const t = (
     project: RemoteProject,
     title: string,
     column: PmspaColumn = "Upcoming",
     extra: Partial<RemoteTask> = {}
   ): RemoteTask => ({
-    id: oid(),
+    id: oid(seedTime()),
     projectId: project.id,
     title,
     description: "",
@@ -191,7 +204,10 @@ function seedRemote() {
     t(tesla, "Meetings", "In Progress"),
     t(tesla, "QA", "In Progress"),
     t(tesla, "Regression suite for the charging app", "Completed"),
-    t(archive, "Wrap-up", "Completed")
+    t(archive, "Wrap-up", "Completed"),
+    ...Array.from({ length: 120 }, (_, i) =>
+      t(support, `Ticket #${1001 + i}`, i < 110 ? "Completed" : "In Progress")
+    )
   ];
   const task = (projectId: string, title: string) =>
     tasks.find((x) => x.projectId === projectId && x.title === title)!;
@@ -201,14 +217,22 @@ function seedRemote() {
     taskId: string | null,
     logs: [string, number][],
     booked = false
-  ): RemoteEvent => ({
-    id: oid(),
-    date,
-    title,
-    taskId,
-    booked,
-    logs: logs.map(([title, duration]) => ({ id: oid(), title, duration }))
-  });
+  ): RemoteEvent => {
+    // Logged in PMSPA on its day (OQ-207: a log's id carries that time).
+    const loggedAt = new Date(`${date}T17:00:00`).getTime();
+    return {
+      id: oid(loggedAt),
+      date,
+      title,
+      taskId,
+      booked,
+      logs: logs.map(([title, duration]) => ({
+        id: oid(loggedAt),
+        title,
+        duration
+      }))
+    };
+  };
   const events = [
     // Day 2 was pushed from PM4 earlier: its Meetings log sits in PMSPA's PM event (moved in PM4 since).
     ev(ago(2), "Anthropic", task(anthropic.id, "PM").id, [
@@ -237,6 +261,17 @@ function seedRemote() {
     ev(ago(4), "Development", task(nvidia.id, "Development").id, [
       ["Import pipeline fixes.", 2],
       ["Hotfix review.", 0.3]
+    ]),
+    // OQ-197: logs the import can't take, warned about in the preview.
+    ev(ago(5), "Ticket #1115", task(support.id, "Ticket #1115").id, [
+      ["Call logged twice by mistake.", 0],
+      ["Overnight migration watch.", 25],
+      [
+        "Pasted the whole support thread here: " +
+          "The customer reports that the export stops halfway. ".repeat(20),
+        1
+      ],
+      ["Reproduced and fixed the export.", 1.5]
     ]),
     ev(ago(8), "SEO audit", task(acme.id, "SEO audit").id, [
       ["Crawl report and fixes list.", 3]
@@ -320,7 +355,7 @@ function seedRemote() {
   events.push(...todayEvents.values());
   starts[todayStr] = 8 * 60;
   return {
-    projects: [anthropic, nvidia, acme, tesla, tooling, archive],
+    projects: [anthropic, nvidia, acme, tesla, tooling, archive, support],
     tasks,
     events,
     starts,
@@ -474,6 +509,17 @@ export const isConnected = () => connection?.status === "connected";
 // ---------- cold start (OQ-165) ----------
 
 /** PMSPA runs on an Azure F1 plan: after idling, its first answer takes long. Set from the prototype banner. */
+/** The prototype shell's switch: the next import, sync or push commit answers 409 `pmspa-sync-running` (OQ-199). */
+let syncRunningOnce = false;
+export const runOtherSync = () => {
+  syncRunningOnce = true;
+};
+export function takeSyncRunning(): boolean {
+  const was = syncRunningOnce;
+  syncRunningOnce = false;
+  return was;
+}
+
 let asleep = false;
 export const COLD_START_MS = 9000;
 export const sleepPmspa = () => {
@@ -546,7 +592,12 @@ const active = () =>
 export function activeLinks(type: PmspaLinkType) {
   return active()
     .filter((l) => l.type === type)
-    .map((l) => ({ pm4Id: l.pm4Id, origin: l.origin, syncedAt: l.syncedAt }));
+    .map((l) => ({
+      pm4Id: l.pm4Id,
+      origin: l.origin,
+      syncedAt: l.syncedAt,
+      pmspaCreatedAt: createdAtOf(l.pmspaId)
+    }));
 }
 
 const byPm4 = (type: PmspaLinkType, id: string) =>
@@ -1044,6 +1095,17 @@ function taskDiff(t: Task, r: RemoteTask) {
   ]);
 }
 
+/** The API's OQ-194 checks, in its order: why a PMSPA log can't be imported, or null. */
+function logFailure(log: { duration: number; title: string }): string | null {
+  if (!Number.isInteger(log.duration * 4))
+    return `A log of ${log.duration} h isn't in 0.25 h steps`;
+  if (log.duration < 0.25 || log.duration > 24)
+    return `A log of ${log.duration} h isn't between 0.25 h and 24 h`;
+  if (log.title.trim().length > 1000)
+    return "A log's text is over 1000 characters";
+  return null;
+}
+
 const plural = (n: number, one: string, many = one + "s") =>
   `${n} ${n === 1 ? one : many}`;
 // OQ-196: the logs an event with a failed log still imported.
@@ -1204,6 +1266,24 @@ export function importPreview(sel: PmspaImportSelectionDto): Item[] {
       if (offStep.length)
         warnings.push(
           `${plural(offStep.length, "log")} of ${offStep.map((l) => `${l.duration} h`).join(", ")} isn't in 0.25 h steps and will fail.`
+        );
+      // OQ-197: the commit's other checks (logFailure's order), each log warned about once.
+      const outOfRange = e.logs.filter(
+        (l) => !offStep.includes(l) && (l.duration < 0.25 || l.duration > 24)
+      );
+      if (outOfRange.length)
+        warnings.push(
+          `${plural(outOfRange.length, "log")} of ${outOfRange.map((l) => `${l.duration} h`).join(", ")} isn't between 0.25 h and 24 h and will fail.`
+        );
+      const tooLong = e.logs.filter(
+        (l) =>
+          !offStep.includes(l) &&
+          !outOfRange.includes(l) &&
+          l.title.trim().length > 1000
+      );
+      if (tooLong.length)
+        warnings.push(
+          `${plural(tooLong.length, "log")} with a text over 1000 characters will fail.`
         );
       const pm4Logs = eLinks
         .filter(Boolean)
@@ -1543,15 +1623,16 @@ export function runImport(
       out.push(result(item, item.action === "create" ? "created" : "updated"));
     } else {
       const e = remote.events.find((x) => x.id === id)!;
-      const bad = e.logs.find((l) => !Number.isInteger(l.duration * 4));
+      const reasons = e.logs.map(logFailure);
+      const firstReason = reasons.find((r) => r !== null);
       const t = taskOf(e.taskId);
       const taskLink = t ? byPmspa("task", t.id) : undefined;
       const task = taskLink
         ? getMockState().tasks.find((x) => x.id === taskLink.pm4Id)
         : undefined;
       let failed = 0;
-      for (const l of e.logs) {
-        if (l === bad) {
+      for (const [i, l] of e.logs.entries()) {
+        if (reasons[i] !== null) {
           failed++;
           continue;
         }
@@ -1587,7 +1668,7 @@ export function runImport(
           ? result(
               item,
               "failed",
-              `A log of ${bad!.duration} h isn't in 0.25 h steps (${otherLogsImported(e.logs.length - failed)}).`
+              `${firstReason} (${otherLogsImported(e.logs.length - failed)}).`
             )
           : result(item, item.action === "create" ? "created" : "updated")
       );

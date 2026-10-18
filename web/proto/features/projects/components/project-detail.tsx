@@ -20,6 +20,7 @@ import { ProjectIcon } from "@/proto/features/projects/components/project-icon";
 import { ProjectLeadLabel } from "@/proto/features/users/components/project-lead-label";
 import { ProjectTaskStats } from "@/proto/features/projects/components/project-task-stats";
 import { PushToPmspaButton } from "@/proto/features/integrations/components/push-button";
+import { PmspaCreatedStamp } from "@/proto/features/integrations/components/pmspa-created-stamp";
 import { SyncFlag } from "@/proto/features/integrations/components/sync-flag";
 import { LoggedTimeSection } from "@/proto/features/time/components/logged-time-section";
 import { TasksList } from "@/proto/features/tasks/components/tasks-list";
@@ -159,6 +160,11 @@ function ProjectView({
                 <DateStamp
                   label="Last modified"
                   value={project.updatedAt}
+                  timeZone={me?.timeZone}
+                />
+                <PmspaCreatedStamp
+                  type="project"
+                  id={project.id}
                   timeZone={me?.timeZone}
                 />
               </div>

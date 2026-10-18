@@ -616,6 +616,9 @@ function pmspaCost(method: string, url: URL, body: Body): number {
     return pmspa.dayDetailsCost(url.searchParams.getAll("dates"));
   if (path.endsWith("/pmspa/tasks"))
     return Math.max(1, Math.ceil(pmspa.listAllTasks().length / 50));
+  const projectTasks = /\/pmspa\/projects\/([^/]+)\/tasks$/.exec(path);
+  if (projectTasks)
+    return Math.max(1, Math.ceil(pmspa.listTasks(projectTasks[1]).length / 50));
   if (method === "POST") return path.endsWith("/preview") ? 4 : 6;
   return 1;
 }
@@ -627,6 +630,25 @@ async function mockFetch(request: Request): Promise<Response> {
       ? ""
       : await request.text();
   const body = text ? (JSON.parse(text) as Body) : {};
+  // The prototype shell's "another one running" switch: the API turns the next commit away on its lock,
+  // before it calls PMSPA or writes anything (so ahead of the rate limit).
+  if (
+    request.method === "POST" &&
+    /\/integrations\/pmspa\/(import|sync|push)$/.test(url.pathname) &&
+    pmspa.isConnected() &&
+    pmspa.takeSyncRunning()
+  ) {
+    await new Promise((r) => setTimeout(r, MOCK_LATENCY_MS));
+    return new Response(
+      JSON.stringify({
+        type: "https://pm4.angelovski.top/errors/pmspa-sync-running",
+        title: "Conflict",
+        status: 409,
+        detail: "Another import, sync or push is still running."
+      }),
+      { status: 409, headers: { "Content-Type": "application/problem+json" } }
+    );
+  }
   const cost = reachesPmspa(request.method, url.pathname)
     ? pmspaCost(request.method, url, body)
     : 0;

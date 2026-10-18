@@ -1,6 +1,7 @@
 // The PMSPA connector's API types (M6, req-integrations): aliases of the generated OpenAPI schema
 // (`npm run api:types`), named as the prototype and the screens use them.
 import type { components } from "@/lib/api/schema";
+import type { PmspaLinkCreatedAtDto } from "./proposed-types";
 
 type S = components["schemas"];
 
@@ -10,7 +11,7 @@ export type SavePmspaConnectionDto = S["SavePmspaConnectionDto"];
 export type PmspaConnectionDto = S["PmspaConnectionResponseDto"];
 export type PmspaLinkType = S["PmspaLinkType"];
 export type PmspaLinkOrigin = S["PmspaLinkOrigin"];
-export type PmspaLinkDto = S["PmspaLinkDto"];
+export type PmspaLinkDto = S["PmspaLinkDto"] & PmspaLinkCreatedAtDto;
 export type PmspaRecordLinkDto = S["PmspaRecordLinkDto"];
 export type PmspaRecordDetail = S["PmspaRecordDetailDto"];
 export type PmspaLinkDetailDto = S["PmspaLinkDetailDto"];

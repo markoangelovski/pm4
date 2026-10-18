@@ -36,6 +36,7 @@ import {
 } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { isApiError } from "@/lib/api/problem";
 import { cn } from "@/lib/utils";
 import { ColdStartHint } from "./cold-start-hint";
 import { usePmspaCandidates } from "../api";
@@ -399,9 +400,11 @@ function PreviewBody({
               <PmspaProblemLine
                 error={failure.error}
                 fallback={`Couldn't ${verb.toLowerCase()}.`}
-              />{" "}
-              Some records may have been written: open the preview again to see
-              where things stand.
+              />
+              {/* OQ-199: the API turns a commit away before writing anything while another one runs. */}
+              {isApiError(failure.error, 409, "pmspa-sync-running")
+                ? null
+                : " Some records may have been written: open the preview again to see where things stand."}
             </span>
           ) : running ? (
             <ColdStartHint active />

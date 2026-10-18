@@ -248,19 +248,21 @@ export function usePmspaTasks(
   projectId: string,
   enabled: boolean
 ): UseQueryResult<PmspaTaskDto[]> {
-  return useQuery({
-    queryKey: integrationKeys.tasks(projectId),
-    queryFn: async ({ signal }) =>
-      unwrap(
-        await apiClient.GET("/api/v1/integrations/pmspa/projects/{id}/tasks", {
-          params: { path: { id: projectId } },
-          signal
-        })
-      ).items,
-    enabled,
-    ...PMSPA_READ
-  });
+  return useQuery({ ...pmspaTasksQuery(projectId), enabled });
 }
+
+/** API-INT-006's query, shared by a row that opens and **Expand all**'s per-project reads. */
+const pmspaTasksQuery = (projectId: string) => ({
+  queryKey: integrationKeys.tasks(projectId),
+  queryFn: async ({ signal }: { signal?: AbortSignal }) =>
+    unwrap(
+      await apiClient.GET("/api/v1/integrations/pmspa/projects/{id}/tasks", {
+        params: { path: { id: projectId } },
+        signal
+      })
+    ).items,
+  ...PMSPA_READ
+});
 
 /** A cached PMSPA read that is in and still fresh, so **Expand all** needn't read it again. */
 function isFresh(queryClient: QueryClient, queryKey: readonly unknown[]) {
@@ -272,29 +274,48 @@ function isFresh(queryClient: QueryClient, queryKey: readonly unknown[]) {
   );
 }
 
+/** PMSPA requests a task list costs: it reads 50 tasks per page, and an empty list still takes one. */
+const taskPages = (taskCount: number) => Math.max(1, Math.ceil(taskCount / 50));
+
+/** A PMSPA project as **Expand all** weighs it: its id and how many tasks it has. */
+export type PmspaTaskListSize = { id: string; taskCount: number };
+
 /**
- * API-INT-017, for **Expand all** (OQ-201 (3)): one read of every task of the account fills the task list of
- * each of `projectIds` (an empty list when it has none), so the opened rows don't read PMSPA one project at a
- * time. Nothing is read when every one of those lists is already cached and fresh.
+ * **Expand all** (OQ-206): fills the task list of each of `shown` with the cheaper read. Per project (API-INT-006)
+ * costs `Σ⌈taskCount/50⌉` over the shown lists not cached and fresh; all tasks (API-INT-017) costs
+ * `⌈Σ taskCount/50⌉` over every project in `all`, and then fills every one of their lists. A tie reads all tasks.
+ * Nothing is read when every shown list is cached and fresh.
  */
 export function useLoadAllPmspaTasks(): UseMutationResult<
   void,
   Error,
-  string[]
+  { shown: PmspaTaskListSize[]; all: PmspaTaskListSize[] }
 > {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (projectIds: string[]) => {
-      const fresh = (id: string) =>
-        isFresh(queryClient, integrationKeys.tasks(id));
-      if (projectIds.every(fresh)) return;
+    mutationFn: async ({ shown, all }) => {
+      const missing = shown.filter(
+        (p) => !isFresh(queryClient, integrationKeys.tasks(p.id))
+      );
+      if (missing.length === 0) return;
+      const perProject = missing.reduce(
+        (n, p) => n + taskPages(p.taskCount),
+        0
+      );
+      const allTasks = taskPages(all.reduce((n, p) => n + p.taskCount, 0));
+      if (perProject < allTasks) {
+        await Promise.all(
+          missing.map((p) => queryClient.fetchQuery(pmspaTasksQuery(p.id)))
+        );
+        return;
+      }
       const { items } = unwrap(
         await apiClient.GET("/api/v1/integrations/pmspa/tasks")
       );
-      for (const id of projectIds)
+      for (const p of all)
         queryClient.setQueryData(
-          integrationKeys.tasks(id),
-          items.filter((t) => t.projectId === id)
+          integrationKeys.tasks(p.id),
+          items.filter((t) => t.projectId === p.id)
         );
     }
   });
