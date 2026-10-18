@@ -111,15 +111,16 @@ export class PmspaClient {
     if (!row) throw pmspaProblems.notConnected();
     const owner = { url: row.url, email: row.email };
     let status: PmspaStatus = row.status;
+    let stale = false;
     const setStatus = async (next: PmspaStatus) => {
       if (status !== next) {
-        await this.repo.setStatus(userId, next);
+        stale = !(await this.repo.setStatusFor(userId, owner, next));
         status = next;
       }
     };
     const invalid = async (): Promise<never> => {
       await setStatus("invalid-credentials");
-      await this.store.clear(userId);
+      if (!stale) await this.store.clear(userId);
       throw pmspaProblems.invalidCredentials();
     };
     const login = async (): Promise<string> => {
@@ -131,6 +132,9 @@ export class PmspaClient {
       }
       const check = await this.check(row.url, row.email, password);
       if (check.status === "connected") {
+        if (row.pmspaUserId !== null && check.account.id !== row.pmspaUserId) {
+          return invalid();
+        }
         await this.store.setToken(userId, check.token, owner);
         await this.store.setAccount(userId, check.account, owner);
         return check.token;

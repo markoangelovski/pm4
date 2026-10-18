@@ -92,7 +92,7 @@ export function PmspaProjectsTab({
   const allOpen =
     expandable.length > 0 && expandable.every((p) => open.has(p.id));
   const loadAll = useLoadAllPmspaTasks();
-  /** **Expand all** reads every task once (OQ-201 (3)); the rows open when it's in, and stay closed if it fails. */
+  /** **Expand all** reads the shown lists the cheaper way (OQ-206); the rows open when it's in, and stay closed if it fails. */
   const setAllOpen = (expand: boolean) => {
     if (!expand) return setOpen(new Set());
     const ids = expandable.map((p) => p.id);
@@ -393,7 +393,10 @@ function ProjectRows({
           <TableRow>
             <TableCell />
             <TableCell colSpan={3} className="pl-13! text-muted-foreground">
-              Couldn&apos;t read the tasks.{" "}
+              <PmspaProblemLine
+                error={tasks.error}
+                fallback="Couldn't read the tasks."
+              />{" "}
               <Button
                 variant="link"
                 className="h-auto cursor-pointer p-0"

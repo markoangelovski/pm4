@@ -99,10 +99,12 @@ describe("PmspaStore", () => {
     await store.setAccount(USER, ACCOUNT, OWNER);
     expect(client.set).toHaveBeenCalledWith(
       `pmspa:account:${USER}`,
-      JSON.stringify(ACCOUNT)
+      JSON.stringify({ ...OWNER, account: ACCOUNT })
     );
 
-    client.get.mockResolvedValueOnce(JSON.stringify(ACCOUNT));
+    client.get.mockResolvedValueOnce(
+      JSON.stringify({ ...OWNER, account: ACCOUNT })
+    );
     await expect(store.getAccount(USER, OWNER)).resolves.toEqual(ACCOUNT);
     client.get.mockResolvedValueOnce(null);
     await expect(store.getAccount(USER, OWNER)).resolves.toBeNull();

@@ -23,6 +23,21 @@ export interface PmspaOwner {
   email: string;
 }
 
+/** The parsed JSON when it is an object whose url and email equal `owner`'s; else null. */
+function parseOwned(
+  raw: string,
+  owner: PmspaOwner
+): Record<string, unknown> | null {
+  try {
+    const value: unknown = JSON.parse(raw);
+    if (typeof value !== "object" || value === null) return null;
+    const rec = value as Record<string, unknown>;
+    return rec.url === owner.url && rec.email === owner.email ? rec : null;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Redis-backed PMSPA state (feat-int-conn-api D5): the encrypted token
  * cache, the last who-am-I account and the per-host rate-limit pause.
@@ -41,13 +56,13 @@ export class PmspaStore {
     return this.redis.client;
   }
 
-  /** The cached token, or null when missing or no longer decryptable. */
+  /** The cached token, or null when missing, not decryptable, in the old form, or cached for another owner. */
   async getToken(userId: string, owner: PmspaOwner): Promise<string | null> {
-    void owner;
     const raw = await this.client.get(keys.token(userId));
     if (raw === null) return null;
+    let plain: string;
     try {
-      return this.crypto.decrypt(Buffer.from(raw, "base64"));
+      plain = this.crypto.decrypt(Buffer.from(raw, "base64"));
     } catch {
       // Wrong key or a changed blob: the cache is only a cache, so drop it and
       // re-login. Log the user id only, never the cached value or the error.
@@ -57,6 +72,8 @@ export class PmspaStore {
       await this.client.del(keys.token(userId));
       return null;
     }
+    const value = parseOwned(plain, owner);
+    return typeof value?.token === "string" ? value.token : null;
   }
 
   async setToken(
@@ -64,10 +81,11 @@ export class PmspaStore {
     token: string,
     owner: PmspaOwner
   ): Promise<void> {
-    void owner;
     await this.client.set(
       keys.token(userId),
-      this.crypto.encrypt(token).toString("base64"),
+      this.crypto
+        .encrypt(JSON.stringify({ url: owner.url, email: owner.email, token }))
+        .toString("base64"),
       "EX",
       TOKEN_TTL_SECONDS
     );
@@ -77,14 +95,13 @@ export class PmspaStore {
     userId: string,
     owner: PmspaOwner
   ): Promise<PmspaAccountDto | null> {
-    void owner;
     const raw = await this.client.get(keys.account(userId));
     if (raw === null) return null;
-    try {
-      return JSON.parse(raw) as PmspaAccountDto;
-    } catch {
-      return null;
-    }
+    const value = parseOwned(raw, owner);
+    const account = value?.account;
+    return typeof account === "object" && account !== null
+      ? (account as PmspaAccountDto)
+      : null;
   }
 
   /** No expiry: kept until disconnect (API-INT-001). */
@@ -93,8 +110,10 @@ export class PmspaStore {
     account: PmspaAccountDto,
     owner: PmspaOwner
   ): Promise<void> {
-    void owner;
-    await this.client.set(keys.account(userId), JSON.stringify(account));
+    await this.client.set(
+      keys.account(userId),
+      JSON.stringify({ url: owner.url, email: owner.email, account })
+    );
   }
 
   /** Removes the token and the account. */

@@ -20,6 +20,7 @@ import { ProjectIcon } from "@/features/projects/components/project-icon";
 import { ProjectLeadLabel } from "@/features/users/components/project-lead-label";
 import { ProjectTaskStats } from "@/features/projects/components/project-task-stats";
 import { PushToPmspaButton } from "@/features/integrations/components/push-button";
+import { PmspaCreatedStamp } from "@/features/integrations/components/pmspa-created-stamp";
 import { SyncFlag } from "@/features/integrations/components/sync-flag";
 import { LoggedTimeSection } from "@/features/time/components/logged-time-section";
 import { TasksList } from "@/features/tasks/components/tasks-list";
@@ -159,6 +160,11 @@ function ProjectView({
                 <DateStamp
                   label="Last modified"
                   value={project.updatedAt}
+                  timeZone={me?.timeZone}
+                />
+                <PmspaCreatedStamp
+                  type="project"
+                  id={project.id}
                   timeZone={me?.timeZone}
                 />
               </div>

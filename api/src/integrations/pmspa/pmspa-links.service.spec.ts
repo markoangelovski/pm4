@@ -49,10 +49,20 @@ describe("PmspaLinksService", () => {
   it("list: maps the active links to pm4Id, origin and syncedAt", async () => {
     connections.find.mockResolvedValue({ pmspaUserId: PMSPA_USER });
     links.active.mockResolvedValue([
-      { pm4Id: "p1", origin: "imported", syncedAt: SYNCED, pmspaId: "x" }
+      {
+        pm4Id: "p1",
+        origin: "imported",
+        syncedAt: SYNCED,
+        pmspaId: "651fffb0".padEnd(24, "0")
+      }
     ]);
     expect(await service.list("u", "project")).toEqual([
-      { pm4Id: "p1", origin: "imported", syncedAt: SYNCED.toISOString() }
+      {
+        pm4Id: "p1",
+        origin: "imported",
+        syncedAt: SYNCED.toISOString(),
+        pmspaCreatedAt: "2023-10-06T12:38:08.000Z"
+      }
     ]);
   });
 
