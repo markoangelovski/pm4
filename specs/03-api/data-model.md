@@ -3,7 +3,7 @@ id: api-data-model
 title: Data Model
 status: draft
 owner: Marko Angelovski
-last_updated: 2026-10-17
+last_updated: 2026-10-18
 related: [api-conventions, req-integrations, prod-glossary, req-projects, req-tasks, req-time-logs, ADR-0008]
 ---
 
@@ -170,6 +170,7 @@ One user's PMSPA connection (req-integrations FR-INT-002…005). Deleted on **Di
 | password_enc | bytea | not null. AES-256-GCM: 12-byte IV ‖ ciphertext ‖ 16-byte tag, under `PMSPA_ENCRYPTION_KEY` (FR-INT-003) |
 
 No other index (the PK serves every read). The PMSPA token, avatar and role live in Redis, not here (FR-INT-003, OQ-166).
+So does PMSPA's last rate-limit answer, one key per PMSPA host that expires when its window resets (FR-INT-015, OQ-200).
 
 ### pmspa_project_links, pmspa_task_links, pmspa_log_links
 A **link** pairs one PM4 record with one PMSPA record (req-integrations *Model*, design principle 1). One table per
@@ -242,3 +243,4 @@ None.
 - 2026-10-10: Replacing a log's link clears its retained names (owner, from the feat-book-api review).
 - 2026-10-17: `pmspa_connections` and the three link tables (M6, OQ-161, OQ-162, OQ-164, OQ-176, OQ-178; feat-int-conn-api, feat-int-sync-api, feat-int-time-api).
 - 2026-10-17: The owner approved `pmspa_connections`, `pmspa_project_links`, `pmspa_task_links` and `pmspa_log_links` for feat-int-conn-api, feat-int-sync-api and feat-int-time-api.
+- 2026-10-18: PMSPA's rate limit per host lives in Redis, not in a table (OQ-200, feat-int-budget).

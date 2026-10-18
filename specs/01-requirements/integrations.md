@@ -1,10 +1,10 @@
 ---
 id: req-integrations
 title: Integrations and connectors
-status: approved
+status: review
 owner: Marko Angelovski
-last_updated: 2026-10-17
-related: [prod-scope, sec, web-routing, web-screens, OQ-138, OQ-139, OQ-140, OQ-141, OQ-142, OQ-143, OQ-144, OQ-145, OQ-146, OQ-147, OQ-148, OQ-155, OQ-156, OQ-157, OQ-158, OQ-159, OQ-160, OQ-161, OQ-162, OQ-163, OQ-164, OQ-165, OQ-166, OQ-167, OQ-168, OQ-169, OQ-170, OQ-171, OQ-172, OQ-173, OQ-174, OQ-175, OQ-176, OQ-177, OQ-178, OQ-179, OQ-180, OQ-181, OQ-182]
+last_updated: 2026-10-18
+related: [prod-scope, sec, web-routing, web-screens, OQ-138, OQ-139, OQ-140, OQ-141, OQ-142, OQ-143, OQ-144, OQ-145, OQ-146, OQ-147, OQ-148, OQ-155, OQ-156, OQ-157, OQ-158, OQ-159, OQ-160, OQ-161, OQ-162, OQ-163, OQ-164, OQ-165, OQ-166, OQ-167, OQ-168, OQ-169, OQ-170, OQ-171, OQ-172, OQ-173, OQ-174, OQ-175, OQ-176, OQ-177, OQ-178, OQ-179, OQ-180, OQ-181, OQ-182, OQ-200, OQ-201, OQ-202, OQ-204]
 ---
 
 # Integrations and connectors
@@ -411,6 +411,44 @@ written: open the preview again to see where things stand."
 **Acceptance criteria:**
 - Given PMSPA answered 429 with `Retry-After: 600`, when any user's next PMSPA call comes within 10 minutes, then the API answers 503 `pmspa-rate-limited` without calling PMSPA.
 
+### FR-INT-015: PMSPA call budget
+**Priority:** Must
+**Statement:** Every PM4 user of one PMSPA shares its 100 requests per 15 minutes (*PMSPA API summary*), so the connector
+spends as few PMSPA calls as it can and shows what's left (OQ-200, OQ-201, OQ-202, OQ-204, OQ-205):
+- **Requests line.** The connection carries PMSPA's rate limit as PMSPA's last answer reported it (requests used of the
+  limit and when the window resets), shown as *PMSPA requests* in Settings → Integrations and on the connector page. It's
+  shared by every PM4 user of that PMSPA, so it can drop without this user calling PMSPA. Once the window has reset, it
+  reads "All available". It refreshes after the user's PMSPA reads and actions settle (a PM4 read; PMSPA isn't called).
+- **Reads only what's shown, when the user asks.** A project's task list reads only that project's tasks. The Time tab's
+  week is one PMSPA call (its days, without their events). Opening a day reads its events, then only the tasks and
+  projects they reference, each once; a day that isn't opened isn't read. A time import preview reads the selected days
+  the same way, and the Time tab shows what it read without reading it again. PMSPA's aggregate statistics routes are
+  never used (no owner filter, OQ-202).
+- **Sync and push read only what is linked** (OQ-204). A sync or day push preview, and its commit, read only the PMSPA
+  records PM4 has a link to (a linked project's tasks as one list). The **Link to existing ▾** list of PMSPA records is
+  read when the user opens it: a project's lists the account's projects, a task's the tasks of its parent's PMSPA
+  project (the linked one, or the one picked under **Link to existing**; nothing while the parent is **Create new**). One
+  read serves every row of that list in the dialog.
+- **Expand all** reads in one request: on the Projects & tasks tab every task of the account once, instead of once per
+  project; on the Time tab the week's days not read yet, a task or project shared by several days once.
+- **The web reuses answers.** A PMSPA read is reused for 5 minutes, isn't repeated on window focus and isn't retried
+  after a failure. The API makes at most 2 PMSPA calls at a time for one request.
+**Acceptance criteria:**
+- Given PMSPA's last answer said 37 of 100 requests were used and the window resets in 9 minutes, when I open Settings → Integrations, then *PMSPA requests* shows "37 of 100 used, resets at <time> (in 9 min)".
+- Given PMSPA has 300 projects, when I open one project's tasks, then the API makes one PMSPA call (two when it has more than 50 tasks).
+- Given a week with 5 days in PMSPA, when I open it on the Time tab, then the API makes one PMSPA call.
+- Given a day whose events reference 4 tasks in 2 projects, when I open it, then the API makes 7 PMSPA calls: the day, 4 tasks and 2 projects.
+- Given the Projects & tasks tab with 20 projects that have tasks, when I click **Expand all**, then the web makes one call for all their tasks.
+
+### FR-INT-016: Integrations on the profile
+**Priority:** Should
+**Statement:** The profile (SCR-051) lists every integration with the external account it uses, and links to Settings →
+Integrations to manage them. Today the list holds only PMSPA: its account (email, role, host) and status, or "No PMSPA
+account connected." with **Connect in Settings**. Read only; nothing is changed there.
+**Acceptance criteria:**
+- Given a connected PMSPA account, when I open my profile, then I see its email, its role and its status under **Integrations**.
+- Given no connection, when I open my profile, then I see "No PMSPA account connected." and a link to Settings → Integrations.
+
 ## Next steps
 1. Feature specs, in order (OQ-175): `feat-int-conn-api` → `feat-int-sync-api` → `feat-int-time-api` → `feat-int-web`.
 
@@ -439,3 +477,6 @@ None.
   the sync flag's popover (FR-INT-010), account details and status writes (FR-INT-004), slow answers (FR-INT-013) and
   the rate limit (FR-INT-014). OQ-140 settled by prototype `eefe787`.
 - 2026-10-17: Approved by the owner.
+- 2026-10-18: FR-INT-015 PMSPA call budget and FR-INT-016 integrations on the profile (OQ-200, OQ-201, OQ-202). Approved by the owner for feat-int-budget.
+- 2026-10-18: FR-INT-015: the Time tab reads a week in one call and a day's events only when it opens or is imported; Time **Expand all** in one request (OQ-205). Back to `review`.
+- 2026-10-18: FR-INT-015: sync and push read only linked PMSPA records; **Link to existing ▾** reads its PMSPA list when opened (OQ-204). Still `review`.

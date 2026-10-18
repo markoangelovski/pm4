@@ -1,9 +1,9 @@
 ---
 id: api-endpoints
 title: API Endpoints
-status: approved
+status: review
 owner: Marko Angelovski
-last_updated: 2026-10-17
+last_updated: 2026-10-18
 related: [api-conventions, api-data-model, req-auth, req-projects, req-tasks, req-time-logs, req-reporting, req-integrations]
 ---
 
@@ -68,9 +68,9 @@ defines its request, response and errors. Paths are relative to `/api/v1` unless
 | API-INT-004 | DELETE | `/integrations/pmspa` (connection and token; links kept) | FR-INT-005 | specified |
 | API-INT-005 | GET | `/integrations/pmspa/projects` → `{items: PmspaProject[]}` (live) | FR-INT-007 | specified |
 | API-INT-006 | GET | `/integrations/pmspa/projects/{id}/tasks` → `{items: PmspaTask[]}` (live) | FR-INT-007 | specified |
-| API-INT-007 | GET | `/integrations/pmspa/days?from=&to=` → `{items: PmspaDay[]}` (live) | FR-INT-007 | specified |
-| API-INT-008 | POST | `/integrations/pmspa/import/preview` `PmspaImportSelection` → `SyncPreview` | FR-INT-011 | specified |
-| API-INT-009 | POST | `/integrations/pmspa/import` `{selection, choices}` → `SyncResult` | FR-INT-011 | specified |
+| API-INT-007 | GET | `/integrations/pmspa/days?from=&to=` → `{items: PmspaDaySummary[]}` (live, one PMSPA call) | FR-INT-007, FR-INT-015 | specified |
+| API-INT-008 | POST | `/integrations/pmspa/import/preview` `PmspaImportSelection` → `SyncPreview` (with `days` for `dates`) | FR-INT-011 | specified |
+| API-INT-009 | POST | `/integrations/pmspa/import` `{selection, choices}` → `SyncResult` (with `days` for `dates`) | FR-INT-011 | specified |
 | API-INT-010 | POST | `/integrations/pmspa/push/preview` `{type: day, id}` → `SyncPreview` | FR-INT-012 | specified |
 | API-INT-011 | POST | `/integrations/pmspa/push` `{target, choices}` → `SyncResult` | FR-INT-012 | specified |
 | API-INT-012 | GET | `/integrations/pmspa/links?type=` → `{items: PmspaLink[]}` (active links, for the sync flags) | FR-INT-010 | specified |
@@ -78,6 +78,9 @@ defines its request, response and errors. Paths are relative to `/api/v1` unless
 | API-INT-014 | GET | `/integrations/pmspa/links/{type}/{id}` → `PmspaLinkDetail` (the counterpart, live) | FR-INT-010 | specified |
 | API-INT-015 | POST | `/integrations/pmspa/sync/preview` `{type: project\|task, id}` → `SyncPreview` | FR-INT-008, FR-INT-012 | specified |
 | API-INT-016 | POST | `/integrations/pmspa/sync` `{target, choices}` → `SyncResult` | FR-INT-008, FR-INT-012 | specified |
+| API-INT-017 | GET | `/integrations/pmspa/tasks` → `{items: PmspaTask[]}` (live, every task, for **Expand all**) | FR-INT-007, FR-INT-015 | specified |
+| API-INT-018 | GET | `/integrations/pmspa/days/details?dates=` → `{items: PmspaDay[]}` (live, the given days with their events) | FR-INT-007, FR-INT-015 | specified |
+| API-INT-019 | POST | `/integrations/pmspa/candidates` `PmspaCandidatesInput` → `PmspaCandidates` (live, **Link to existing** lists) | FR-INT-008, FR-INT-012, FR-INT-015 | specified |
 
 ## Endpoint details
 
@@ -411,8 +414,11 @@ The connector's endpoints (req-integrations). PMSPA ids are 24-hex ObjectId stri
 PmspaConnectionStatus = "not-configured" | "connected" | "invalid-credentials" | "unreachable"
 PmspaAccount = { id: string, email: string, avatarUrl: string | null, role: "admin" | "user" }
   // from PMSPA's who-am-I; avatarUrl only when its host is images.unsplash.com, else null (OQ-166)
+PmspaRateLimit = { limit: integer, remaining: integer, resetAt: string, observedAt: string }
+  // PMSPA's X-RateLimit-* headers of its last answer to any PM4 user, per PMSPA host (FR-INT-015, OQ-200)
 PmspaConnection = { status, url: string | null, email: string | null, account: PmspaAccount | null,
-                    lastCheckedAt: string | null, lastSyncAt: string | null }   // never a password or token
+                    lastCheckedAt: string | null, lastSyncAt: string | null,
+                    rateLimit: PmspaRateLimit | null }                          // never a password or token
 PmspaLinkType = "project" | "task" | "time-log"
 PmspaLinkOrigin = "imported" | "pushed" | "linked"                              // OQ-164
 PmspaLink = { pm4Id: string, origin, syncedAt: string }
@@ -428,6 +434,7 @@ PmspaLog = { id, title, durationMinutes: integer, linked: boolean }
 PmspaEvent = { id, title, task: { id, title, projectTitle } | null, booked: boolean, logs: PmspaLog[] }
 PmspaDay = { date: "YYYY-MM-DD", startMinute: integer | null, totalMinutes: integer,
              linkState: "linked" | "partly-linked" | "not-linked", events: PmspaEvent[] }
+PmspaDaySummary = { date: "YYYY-MM-DD", startMinute: integer | null, eventCount: integer }  // OQ-205
 SyncRecordType = "project" | "task" | "day" | "event"
 SyncAction = "create" | "update" | "skip" | "differs"
 SyncDirection = "to-pm4" | "to-pmspa"
@@ -436,22 +443,36 @@ SyncCandidate = { id, title, groupId: string | null, detail: string | null, diff
 SyncPreviewItem = { key, parentKey: string | null, type: SyncRecordType, title, detail: string | null,
                     action: SyncAction, direction: SyncDirection | null, reason: string | null,
                     linkedId: string | null, parent: boolean, optional: boolean,
-                    candidates: SyncCandidate[], differences: SyncFieldDiff[], warnings: string[] }
-SyncPreview = { items: SyncPreviewItem[] }
+                    candidates: SyncCandidate[] | null, differences: SyncFieldDiff[], warnings: string[],
+                    taskPath?: { projectTitle: string, taskTitle: string } }
+  // taskPath: an import's or a day push's event row with a PMSPA task (OQ-205); absent otherwise
+  // candidates null: a sync or push row whose PMSPA candidates weren't read; API-INT-019 reads them (OQ-204)
+SyncPreview = { items: SyncPreviewItem[], days?: PmspaDay[] }      // days: API-INT-008 with `dates` only
 SyncChoice = { key, kind: "create" } | { key, kind: "link", id, overwrite: SyncDirection | null } | { key, kind: "skip" }
 SyncOutcome = "created" | "updated" | "linked" | "skipped" | "failed"
 SyncResultItem = { key, parentKey, type, title, newTitle: string | null, outcome: SyncOutcome, reason: string | null }
-SyncResult = { items: SyncResultItem[], syncedAt: string }
+SyncResult = { items: SyncResultItem[], syncedAt: string, days?: PmspaDay[] }  // days: API-INT-009 with `dates` only
+PmspaCandidatesInput = { type: "project", for: uuid[] } | { type: "task", projectId: string(24-hex), for: uuid[] }  // OQ-204
+PmspaCandidates = { items: { pm4Id: uuid, candidates: SyncCandidate[] }[] }
 ```
 - A preview row's `key` is `<type>:<id>`, the id on the side the row starts from (PMSPA on import, PM4 on sync and push;
   an event row of a push is `event:<group key>`). A commit recomputes the preview and applies `choices` by `key`; a
   choice whose key isn't in the recomputed preview is ignored. A row without a choice: `create`, or for a row that
   differs, `link` to its counterpart with its suggested `direction` (OQ-173).
+- `candidates` (OQ-204): on an import row, the user's unlinked PM4 records of the type (no PMSPA call). On a sync or push
+  row, `[]` when it's linked, else `null`: the preview doesn't list PMSPA records, and the web reads them with
+  API-INT-019 when the row's **Link to existing ▾** opens. One exception: a project sync of a linked project lists that
+  project's tasks anyway, so its unlinked task rows carry that project's unlinked tasks as `candidates`.
+- *Linked-only reads* (OQ-204), API-INT-010/011/015/016: PMSPA is read only for records PM4 has an active link to, each
+  by id, at most 2 calls at a time. A linked project whose tasks the preview needs is read as one `tasks?project=` list
+  (⌈n/50⌉ calls); a linked task not in that list is read by id. A link whose PMSPA record PMSPA no longer answers counts
+  as no link. A commit reads the same, plus each PMSPA record a `link` choice picks, by id; a picked record PMSPA doesn't
+  answer, or that is already linked, fails its row with "The chosen record can't be linked."
 - Rules per row (FR-INT-008, FR-INT-011, FR-INT-012) are in the feature specs `feat-int-sync-api` and `feat-int-time-api`.
 
 ### PMSPA errors
-Every endpoint that calls PMSPA can answer, besides its own errors (Problem Details, conventions.md#errors, with the
-slug as the last path segment of `type`):
+Every endpoint that calls PMSPA makes at most 2 PMSPA calls at a time (FR-INT-015, OQ-201), and can answer, besides its
+own errors (Problem Details, conventions.md#errors, with the slug as the last path segment of `type`):
 
 | Status | Slug | When |
 | --- | --- | --- |
@@ -468,7 +489,9 @@ A write that PMSPA rejects inside an import, sync or push isn't an error of the 
 ### API-INT-001: Get the PMSPA connection
 `GET /integrations/pmspa` · Auth: bearer · Implements: FR-INT-001, FR-INT-004, FR-INT-006
 Reads the stored row; no PMSPA call. No row → `{status: "not-configured", url: null, email: null, account: null,
-lastCheckedAt: null, lastSyncAt: null}`. `account` is what the last successful check returned (who-am-I), kept in
+lastCheckedAt: null, lastSyncAt: null, rateLimit: null}`. `rateLimit` (FR-INT-015, OQ-200): the numbers of PMSPA's last
+answer to the row's host (any PM4 user's), kept in Redis until that window resets; null when there's none (also for
+API-INT-002/003). `account` is what the last successful check returned (who-am-I), kept in
 Redis without expiry and deleted on disconnect; null before the first successful check or when Redis lost it.
 **200:** `PmspaConnection`
 **Errors:** 401
@@ -505,43 +528,72 @@ Every project of the connected account, read live (all pages of `projects.list`,
 
 ### API-INT-006: List a PMSPA project's tasks
 `GET /integrations/pmspa/projects/{id}/tasks` · Auth: bearer · Implements: FR-INT-007
-All tasks of one PMSPA project of the connected account (`tasks.listByProject`, all pages), PMSPA's order.
+All tasks of one PMSPA project of the connected account (`tasks.listByProject`, all pages), PMSPA's order. No other
+PMSPA read: `tasks.listByProject` is owner-scoped, so another account's or an unknown project has no tasks (OQ-201).
 **200:** `{ items: PmspaTask[] }` (PMSPA's 404 for no tasks → `[]`)
-**Errors:** 400 (`id` not 24-hex) · 401 · 404 (not a project of the connected account) · *PMSPA errors*
+**Errors:** 400 (`id` not 24-hex) · 401 · *PMSPA errors*
 
 ### API-INT-007: List PMSPA days
-`GET /integrations/pmspa/days?from=&to=` · Auth: bearer · Implements: FR-INT-007
+`GET /integrations/pmspa/days?from=&to=` · Auth: bearer · Implements: FR-INT-007, FR-INT-015
 The connected account's days from `from` to `to` (inclusive, `YYYY-MM-DD`, at most 7 days: one week of the Time tab), newest
-first, each with its events and logs (`days.findByRange` for the range, then the one-day form per day found: the range form
-returns event ids only). `startMinute` = PMSPA `start` × 60, rounded to 15. `totalMinutes`,
-`durationMinutes` = hours × 60, rounded. `linkState` from the day's log links. A day without events isn't returned.
-**200:** `{ items: PmspaDay[] }`
+first, from **one** PMSPA call (`days.findByRange`, the range form: each day's date, start and event ids; OQ-205). Nothing
+else is read: a day's events come from API-INT-018 when it opens. `eventCount` = the event ids PMSPA lists (it can list an
+event it never saved; API-INT-018 leaves that out). `startMinute` = PMSPA `start` × 60, rounded to 15. A day without event
+ids isn't returned; PMSPA's 404 → `[]`.
+**200:** `{ items: PmspaDaySummary[] }`
 **Errors:** 400 validation (`from`, `to`, range) · 401 · *PMSPA errors*
+
+### API-INT-018: Get PMSPA days with their events
+`GET /integrations/pmspa/days/details?dates=` · Auth: bearer · Implements: FR-INT-007, FR-INT-015
+`dates`: 1 to 7 distinct `YYYY-MM-DD`, the query parameter repeated (`?dates=2026-10-16&dates=2026-10-17`). Those days
+of the connected account, newest first, each with its events and logs: one `days.findByDay` per date, then one
+`tasks.getOne` per distinct task the events of all those days reference, then one `projects.getOne` per distinct project
+of those tasks, nothing else (OQ-201, OQ-205). A task PMSPA no longer has → `task: null`, a project it no longer has →
+`projectTitle: ""`. `startMinute`, `totalMinutes`, `durationMinutes` as API-INT-007; `linkState` from the day's log
+links. A date PMSPA has no day or no events for is left out.
+**200:** `{ items: PmspaDay[] }`
+**Errors:** 400 validation (`dates` missing, more than 7, a repeat, not a date) · 401 · *PMSPA errors*
+
+### API-INT-017: List every PMSPA task
+`GET /integrations/pmspa/tasks` · Auth: bearer · Implements: FR-INT-007, FR-INT-015
+Every task of the connected account (`tasks.list`, all pages), PMSPA's order: **Expand all** reads it once instead of
+API-INT-006 per project (OQ-201). Same items as API-INT-006.
+**200:** `{ items: PmspaTask[] }` (PMSPA's 404 for no tasks → `[]`)
+**Errors:** 401 · *PMSPA errors*
 
 ### API-INT-008: Preview an import
 `POST /integrations/pmspa/import/preview` · Auth: bearer · Implements: FR-INT-011
 **Request body:** `PmspaImportSelection` = `{ projects: { id: string(24-hex), taskIds: string(24-hex)[] (≤ 500) | null }[] (≤ 50), dates?: string(YYYY-MM-DD)[] (≤ 7) }`
-(`taskIds: null` = all of the project's tasks; `dates` arrives with feat-int-time-api). Writes nothing.
+(`taskIds: null` = all of the project's tasks; `dates` arrives with feat-int-time-api). Writes nothing. With `dates`,
+PMSPA is read like API-INT-018 (OQ-201): the days, the selected projects one by one and their tasks, then only the tasks
+the days' events reference and their projects; without `dates`, all projects and the selected projects' tasks. With
+`dates`, every project and task row comes before every day row (OQ-205), and `days` = the selected days it read, as
+API-INT-018 answers them (a future date isn't read, so it isn't there), from those reads: no extra PMSPA call.
 **200:** `SyncPreview`
 **Errors:** 400 validation · 401 · *PMSPA errors*
 
 ### API-INT-009: Import
 `POST /integrations/pmspa/import` · Auth: bearer · Implements: FR-INT-011
 **Request body:** `{ selection: PmspaImportSelection, choices: SyncChoice[] (≤ 500) }`. Recomputes the preview, writes
-record by record (parents first), sets `last_sync_at`.
+record by record (parents first), sets `last_sync_at`. With `dates`, `days` = API-INT-008's `days` with `linkState` and
+`linked` as they stand after the import (the links are read again; no PMSPA call).
 **200:** `SyncResult`
 **Errors:** 400 validation · 401 · *PMSPA errors* (incl. `pmspa-sync-running`)
 
 ### API-INT-010: Preview a day push
 `POST /integrations/pmspa/push/preview` · Auth: bearer · Implements: FR-INT-012
 **Request body:** `{ type: "day", id: string(YYYY-MM-DD) }` (not in the future in the user's zone). Writes nothing. A
-day without logs → `{ items: [] }`.
+day without logs → `{ items: [] }`. An event row whose group has a task names its PMSPA project and task in `taskPath`
+(the linked task's, or the PM4 names it's created with) and `detail` is only the logs (OQ-205). PMSPA reads (OQ-204):
+the day, then by id the linked tasks of its logs' PM4 tasks, and the linked projects of their PM4 projects and of those
+PMSPA tasks (*Linked-only reads*).
 **200:** `SyncPreview`
 **Errors:** 400 validation · 401 · *PMSPA errors*
 
 ### API-INT-011: Push a day
 `POST /integrations/pmspa/push` · Auth: bearer · Implements: FR-INT-012
-**Request body:** `{ target: { type: "day", id }, choices: SyncChoice[] (≤ 500) }`. As API-INT-009, PM4 → PMSPA.
+**Request body:** `{ target: { type: "day", id }, choices: SyncChoice[] (≤ 500) }`. As API-INT-009, PM4 → PMSPA. Reads
+as API-INT-010, plus the picked records (*Linked-only reads*).
 **200:** `SyncResult`
 **Errors:** 400 validation · 401 · *PMSPA errors* (incl. `pmspa-sync-running`)
 
@@ -568,15 +620,30 @@ record any more → `pmspa: null`.
 ### API-INT-015: Preview a sync
 `POST /integrations/pmspa/sync/preview` · Auth: bearer · Implements: FR-INT-008, FR-INT-012
 **Request body:** `{ type: "project" | "task", id: uuid }` (a PM4 record of the user). A project brings its tasks as
-optional rows; a task its project as a parent when that isn't linked. Writes nothing.
+optional rows; a task its project as a parent when that isn't linked. Writes nothing. PMSPA reads (OQ-204, *Linked-only
+reads*): a project sync reads the linked project by id and its tasks as one list, then by id the linked tasks of the
+project's PM4 tasks not in that list; a task sync reads by id the task's linked task and its project's linked project.
+Unlinked → nothing read.
 **200:** `SyncPreview`
 **Errors:** 400 validation · 401 · 404 (no such project or task) · *PMSPA errors*
 
 ### API-INT-016: Sync
 `POST /integrations/pmspa/sync` · Auth: bearer · Implements: FR-INT-008, FR-INT-012
-**Request body:** `{ target: { type, id }, choices: SyncChoice[] (≤ 500) }`. As API-INT-009, both ways per row.
+**Request body:** `{ target: { type, id }, choices: SyncChoice[] (≤ 500) }`. As API-INT-009, both ways per row. Reads
+as API-INT-015, plus the picked records (*Linked-only reads*).
 **200:** `SyncResult`
 **Errors:** 400 validation · 401 · 404 · *PMSPA errors* (incl. `pmspa-sync-running`)
+
+### API-INT-019: List Link to existing candidates
+`POST /integrations/pmspa/candidates` · Auth: bearer · Implements: FR-INT-008, FR-INT-012, FR-INT-015
+**Request body:** `PmspaCandidatesInput`: `type` `project` or `task`; `projectId` (24-hex, required for `task`, ignored
+for `project`); `for`: the PM4 projects or tasks of that type to compare with (uuid, 1…500, unique). Writes nothing.
+Reads PMSPA once per list (OQ-204): `project` = the account's projects, `task` = the tasks of PMSPA project `projectId`
+(another account's project, or one without tasks → none). ⌈n/50⌉ calls.
+**200:** `PmspaCandidates`: one item per id of `for` that is the user's (others left out), in `for` order; its
+`candidates` = the listed PMSPA records with no active link, same title first, `differences` against that PM4 record,
+`groupId` = the PMSPA project of a task (null for a project), as a preview row's.
+**Errors:** 400 validation · 401 · *PMSPA errors*
 
 ## Open questions
 None.
@@ -608,3 +675,7 @@ None.
 - 2026-10-15: API-WD-004 *Delete a day* (OQ-152, prototype `51c6200`). Back to `review` (feat-hard-delete).
 - 2026-10-17: API-INT-001…016 with the shared PMSPA shapes and *PMSPA errors* (prototype `eefe787` `proposed-types.ts`; OQ-164…OQ-180). Back to `review` (feat-int-conn-api, feat-int-sync-api, feat-int-time-api).
 - 2026-10-17: Approved by the owner.
+- 2026-10-18: `PmspaRateLimit` on `PmspaConnection`; API-INT-006 without the project check, API-INT-007 and API-INT-008 (`dates`) read only the referenced tasks and projects, API-INT-017 every task, at most 2 PMSPA calls at a time (feat-int-budget, OQ-200…OQ-202). Approved by the owner for feat-int-budget.
+- 2026-10-18: API-INT-007 answers `PmspaDaySummary` from one range call; API-INT-018 the given days with their events; API-INT-008/009 with `dates` answer `days` and put projects and tasks before days; `taskPath` on import and push event rows; API-INT-017/018 in the index (feat-int-budget, OQ-205, prototype `072da99`). Back to `review`.
+- 2026-10-18: OQ-204: API-INT-010/011/015/016 read only linked PMSPA records (*Linked-only reads*); `SyncPreviewItem.candidates`
+  null on an unlinked sync or push row; API-INT-019 `POST /integrations/pmspa/candidates` (feat-int-budget). Still `review`.

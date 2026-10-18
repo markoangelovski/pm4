@@ -1,6 +1,6 @@
 # Task Board
 
-**Next free ID:** T-0081
+**Next free ID:** T-0086
 
 | ID | Title | Milestone | App | Size | Status | Depends on |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -84,5 +84,10 @@
 | [T-0078](m6-integrations/T-0078-the-push-commit-event-writes-moves.md) | The push commit: event writes, moves, D3 linking, empty-event deletes, the push endpoint (API-INT-011) | M6 | api | L | done | T-0077 |
 | [T-0079](m6-integrations/T-0079-types-switch-d1-features-integrations-api.md) | Types switch (D1), features/integrations/api.ts, sync.ts with pmspaProblemText, the Settings → Integrations tab, routes and the Connectors sidebar section | M6 | web | M | done | — |
 | [T-0080](m6-integrations/T-0080-the-connector-page-and-route-the.md) | The connector page and route, the dialog, Sync / Push buttons, sync flags, the error lines, and the project/task/day twins | M6 | web | M | done | T-0079 |
+| [T-0081](m6-integrations/T-0081-rate-limit-store-transport-observe-connection.md) | Rate limit: store, transport observe, connection service; openapi:export | M6 | api | S | ready | — |
+| [T-0082](m6-integrations/T-0082-browse-reads-inparallel-and-the-remote.md) | Browse reads: inParallel and the remote methods, dayItems, API-INT-006/007/017/018 | M6 | api | M | blocked | T-0081 |
+| [T-0083](m6-integrations/T-0083-import-the-snapshot-for-dates-the.md) | Import: the snapshot for dates, the time preview's order, reasons and taskPath, push taskPath, days on preview and import | M6 | api | M | blocked | T-0082 |
+| [T-0084](m6-integrations/T-0084-linked-only-reads-loadlinked-for-sync.md) | Linked-only reads: loadLinked for sync and push previews and commits, the pick check, candidates: null, API-INT-019 | M6 | api | M | blocked | T-0083 |
+| [T-0085](m6-integrations/T-0085-type-switch-in-the-prototype-then.md) | Type switch in the prototype, then the twins: hooks, rate-limit line, account badge, connector header, both Expand alls, lazy Time days, dialog icons and lazy Link to existing, Profile → Integrations | M6 | web | M | blocked | T-0084 |
 
 M0–M5 are done. M6 (Integrations) is in progress: feat-int-conn-api first, then int-sync-api, int-time-api and int-web (OQ-175).
