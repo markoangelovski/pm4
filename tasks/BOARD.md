@@ -1,6 +1,6 @@
 # Task Board
 
-**Next free ID:** T-0089
+**Next free ID:** T-0090
 
 | ID | Title | Milestone | App | Size | Status | Depends on |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -92,5 +92,6 @@
 | [T-0086](m6-integrations/T-0086-preview-warnings-d1-and-pmspacreatedat-on.md) | Preview warnings (D1) and pmspaCreatedAt on the link list (D2) | M6 | api | S | done | — |
 | [T-0087](m6-integrations/T-0087-a-token-per-connection-store-owner.md) | A token per connection: store owner, setStatusFor, request's stale and account checks, the connection service callers | M6 | api | S | done | T-0086 |
 | [T-0088](m6-integrations/T-0088-type-switch-in-the-prototype-then.md) | Type switch in the prototype, then the twins: Expand all, task list error line, commit failure line, created-in-PMSPA stamp, column and popover | M6 | web | S | done | T-0087 |
+| [T-0089](m4-time-logs/T-0089-the-prompt-item-and-dialog-the.md) | The Prompt item and dialog: the three prototype twins | M4 | web | S | ready | — |
 
 M0–M5 are done. M6 (Integrations) is in progress: feat-int-conn-api first, then int-sync-api, int-time-api and int-web (OQ-175).

@@ -3,7 +3,7 @@ id: req-time-logs
 title: Time Capture (Workdays and Time Logs)
 status: approved
 owner: Marko Angelovski
-last_updated: 2026-10-15
+last_updated: 2026-10-19
 related: [req-projects, req-tasks, req-reporting, api-endpoints, api-data-model, web-screens]
 ---
 
@@ -217,9 +217,21 @@ keep their booking. A day with no start and no logs can't be deleted (OQ-152).
   then the day has no start and no logs, and the earlier day's log is still booked to it.
 - Given a day with no start and no logs, then **Delete day** is disabled.
 
+### FR-TLOG-020: Booking prompt
+**Priority:** Should
+**Statement:** From the day view, the user opens the viewed day's logs as a booking prompt, to paste into Slack: one section
+per project + task, in the order they first appear, each with the project, the task, the date and one note line per log, and
+copies one section or all of them as markdown. Excluded logs (FR-TLOG-018) are left out. A project or task with an external
+link shows it after its name (OQ-210).
+**Acceptance criteria:**
+- Given a day with two logs on project A / task X, one on project B without a task and one excluded log, then the prompt has
+  two sections, A · X with two note lines and B with "—" as the task, and **Copy all** copies "Book my time accordingly:" once
+  followed by both sections.
+- Given a day with no logs, then **Prompt** is disabled.
+
 ## Out of scope
 - Ordering, inserting or repeating logs, per-log clock times, break logs, the legacy "event" level.
-- Per-day targets, a date-range view of the day screen, exports.
+- Per-day targets, a date-range view of the day screen.
 - Dashboard reporting over date ranges: [req-reporting](reporting.md).
 
 ## Removed requirement IDs (never reused)
@@ -237,3 +249,5 @@ None.
 - 2026-10-11: FR-TLOG-012: the booked total and each log's booking date; the row shows the log text, and its date links to the day (OQ-135, prototype `fa9a030`). Sample names renamed (OQ-136). Back to `review` (feat-proto-sync-web).
 - 2026-10-11: Approved by the owner.
 - 2026-10-15: FR-TLOG-019 *Delete day* (OQ-152). Back to `review` (feat-hard-delete).
+- 2026-10-19: FR-TLOG-020 *Booking prompt*; "exports" removed from *Out of scope* (OQ-210). Back to `review` (feat-tlog-prompt).
+- 2026-10-19: Approved by the owner.
