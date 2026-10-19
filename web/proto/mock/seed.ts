@@ -51,6 +51,16 @@ export const MOCK_TASKS: TaskRef[] = [
   { id: "t-tesla-qa", title: "QA", project: proj("p-tesla") }
 ];
 
+/** Some projects and tasks link out (to a board); the rest have no link. */
+const PROJECT_LINKS: Record<string, string> = {
+  "p-anthropic": "https://kanboard.example.com/project/12",
+  "p-nvidia": "https://kanboard.example.com/project/27"
+};
+const TASK_LINKS: Record<string, string> = {
+  "t-anthropic-pm": "https://kanboard.example.com/task/1041",
+  "t-nvidia-dev": "https://kanboard.example.com/task/2210"
+};
+
 const STATUSES: Status[] = ["upcoming", "in-progress", "completed"];
 
 /** The API shapes of the projects and tasks above (task counts and logged minutes are computed by the mock client). */
@@ -59,7 +69,7 @@ export const seedProjects = (): Project[] =>
     id: p.id,
     title: p.title,
     description: null,
-    externalLink: null,
+    externalLink: PROJECT_LINKS[p.id] ?? null,
     projectLead: lead,
     taskCounts: { upcoming: 0, inProgress: 0, completed: 0, total: 0 },
     loggedMinutes: 0,
@@ -72,7 +82,7 @@ export const seedTasks = (): Task[] =>
     id: t.id,
     title: t.title,
     description: null,
-    externalLink: null,
+    externalLink: TASK_LINKS[t.id] ?? null,
     projectLead: lead,
     status: STATUSES[i % 3],
     dueDate: i % 2 ? format(addDays(new Date(), i), "yyyy-MM-dd") : null,
