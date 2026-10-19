@@ -53,6 +53,7 @@ prototype files.
 | web | `web/features/time/prompt.ts` | C | tests, T1 | Stub (tests), then the twin of `web/proto/features/time/prompt.ts` |
 | web | `web/features/time/components/day-prompt-dialog.tsx` | C | tests, T1 | Stub (tests), then the twin of `web/proto/features/time/components/day-prompt-dialog.tsx` |
 | web | `web/features/time/components/day-menu.tsx` | M | T1 | Twin of `web/proto/features/time/components/day-menu.tsx` |
+| web | `web/proto/features/time/components/day-prompt-dialog.tsx` | M | T1 | Review fix: copying again restarts the 2 s Copied state (D4); fixed here first, then copied over again |
 
 ## Interfaces
 

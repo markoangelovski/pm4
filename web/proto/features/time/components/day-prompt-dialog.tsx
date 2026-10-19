@@ -28,18 +28,21 @@ import {
 } from "../prompt";
 import type { Day } from "../types";
 
-/** Copies `text`; true for 2 s after a copy, for the button's Copied state. Toasts when the clipboard refuses. */
+/** Copies `text`; true for 2 s after the latest copy, for the button's Copied state. Toasts when the clipboard refuses. */
 function useCopy(): [boolean, (text: string) => Promise<void>] {
   const [copied, setCopied] = useState(false);
+  // Counts copies, so a copy while Copied is showing restarts the 2 s.
+  const [copies, setCopies] = useState(0);
   useEffect(() => {
-    if (!copied) return;
+    if (!copies) return;
     const t = setTimeout(() => setCopied(false), 2000);
     return () => clearTimeout(t);
-  }, [copied]);
+  }, [copies]);
   const copy = async (text: string) => {
     try {
       await navigator.clipboard.writeText(text);
       setCopied(true);
+      setCopies((n) => n + 1);
     } catch {
       toast.error("Couldn't copy to the clipboard.");
     }
