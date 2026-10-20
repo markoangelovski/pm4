@@ -1,9 +1,9 @@
 ---
 id: feat-tlog-prompt
 title: "Booking prompt: the day's logs as a Slack prompt"
-status: review
+status: approved
 owner: Marko Angelovski
-last_updated: 2026-10-19
+last_updated: 2026-10-20
 milestone: M4
 requirements: [FR-TLOG-020, SCR-040]
 related: [req-time-logs, web-screens, feat-tlog-web, feat-hard-delete, OQ-210]
@@ -25,7 +25,7 @@ sections, one per project + task, each copyable as markdown, or all at once, to 
 | D4 | Copied format: standard markdown (`**Label:**`, `- ` bullets), "Book my time accordingly:" once at the top, a blank line between sections. A copy button shows a check and "Copied" for 2 s; a failed copy → toast "Couldn't copy to the clipboard." | Owner, prototype `d091e93` |
 | D5 | "Exports" is no longer out of scope in req-time-logs. | OQ-210 (owner, 2026-10-19) |
 | D6 | The production files are twins of the prototype's: copy, `@/proto/` → `@/`, then Prettier, so `pm4 twins` reports them equal. No new hook: production's `useProject`, `useTask`, `projectKeys` and `taskKeys` already match the mock ones. | as feat-hard-delete D5 |
-| D7 | The dialog's header (title) and footer (**Cancel**, **Copy all**) stay fixed and only the body (the sections, or the empty message) scrolls, the way the PMSPA **Import** preview dialog does (`sync-preview-dialog.tsx`, e.g. Time tab with all days selected). Same layout: `DialogContent` `flex! max-h-[90vh] flex-col gap-0! rounded-md! p-0! sm:max-w-2xl!` (no `overflow-y-auto`); `DialogHeader` `border-b p-6 pb-4`; body `min-h-0 flex-1 overflow-y-auto` with the content padded `px-6` (plus vertical padding so the first and last card don't touch the borders); `DialogFooter` `mx-0 mb-0 rounded-b-md border-t p-4`. Built and confirmed in the prototype (`prototype` step), then copied over as the twin (D6). | Owner, 2026-10-19; prototype commit: to fill in |
+| D7 | The dialog's header (title) and footer (**Cancel**, **Copy all**) stay fixed and only the body (the sections, or the empty message) scrolls, the way the PMSPA **Import** preview dialog does (`sync-preview-dialog.tsx`, e.g. Time tab with all days selected). Same layout: `DialogContent` `flex! max-h-[90vh] flex-col gap-0! rounded-md! p-0! sm:max-w-2xl!` (no `overflow-y-auto`); `DialogHeader` `border-b p-6 pb-4`; body `min-h-0 flex-1 overflow-y-auto` with the content padded `px-6` (plus vertical padding so the first and last card don't touch the borders); `DialogFooter` `mx-0 mb-0 rounded-b-md border-t p-4`. Built and confirmed in the prototype (`prototype` step), then copied over as the twin (D6). | Owner, 2026-10-19; prototype `8fe9c80` |
 
 ## Scope
 **In:** the **Prompt** menu item, the Prompt dialog and its pure prompt builder in `web/features/time/`, as twins of the
@@ -129,3 +129,4 @@ None.
 - 2026-10-19: To `review`.
 - 2026-10-19: Approved by the owner.
 - 2026-10-19: D7 (owner): the dialog's header and footer stay fixed and the body scrolls, as in the PMSPA Import dialog. T2, AC-13. Back to `review`; the prototype step comes first.
+- 2026-10-20: D7 confirmed in prototype `8fe9c80`. Approved by the owner.
