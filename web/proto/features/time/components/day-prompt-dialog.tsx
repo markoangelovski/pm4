@@ -86,20 +86,24 @@ export function DayPromptDialog({
     );
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="rounded-md! sm:max-w-2xl! max-h-[92vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="flex! max-h-[90vh] flex-col gap-0! rounded-md! p-0! sm:max-w-2xl!">
+        <DialogHeader className="border-b p-6 pb-4">
           <DialogTitle>Prompt for {date}</DialogTitle>
         </DialogHeader>
-        {sections.length === 0 ? (
-          <p className="text-muted-foreground">This day has no logs to book.</p>
-        ) : (
-          <div className="flex flex-col gap-3">
-            {sections.map((s) => (
-              <PromptCard key={s.key} section={s} />
-            ))}
-          </div>
-        )}
-        <DialogFooter className="rounded-b-md">
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          {sections.length === 0 ? (
+            <p className="px-6 py-4 text-muted-foreground">
+              This day has no logs to book.
+            </p>
+          ) : (
+            <div className="flex flex-col gap-3 px-6 py-4">
+              {sections.map((s) => (
+                <PromptCard key={s.key} section={s} />
+              ))}
+            </div>
+          )}
+        </div>
+        <DialogFooter className="mx-0 mb-0 rounded-b-md border-t p-4">
           <DialogClose
             render={<Button variant="outline" className="cursor-pointer" />}
           >
