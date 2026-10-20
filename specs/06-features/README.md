@@ -54,4 +54,4 @@ A feature spec links to those. It doesn't copy them.
 | PMSPA connector web: Integrations settings, the connector page, sync and push, sync flags | [int-web.md](int-web.md) | M6 | approved |
 | PMSPA call budget: the requests line, fewer PMSPA calls, integrations on the profile | [int-budget.md](int-budget.md) | M6 | approved |
 | PMSPA follow-ups: log limits in the preview, created-in-PMSPA dates, a token per connection, cheaper Expand all, error lines | [int-followups.md](int-followups.md) | M6 | approved |
-| Booking prompt: the day's logs as a Slack prompt | [tlog-prompt.md](tlog-prompt.md) | M4 | review |
+| Booking prompt: the day's logs as a Slack prompt | [tlog-prompt.md](tlog-prompt.md) | M4 | approved |
