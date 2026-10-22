@@ -14,6 +14,7 @@ import {
   DialogHeader,
   DialogTitle
 } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 import {
   projectKeys,
   useProject,
@@ -50,7 +51,8 @@ function useCopy(): [boolean, (text: string) => Promise<void>] {
   return [copied, copy];
 }
 
-/** SCR-040's Prompt dialog: one section per project + task of the day, each copyable as Slack markdown, or all at once. */
+/** SCR-040's Prompt dialog: one section per project + task of the day, each copyable as Slack markdown, or all at once.
+ *  Each note is editable for the copy only; the logs don't change. */
 export function DayPromptDialog({
   day,
   open,
@@ -60,10 +62,31 @@ export function DayPromptDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
-  const sections = promptSections(day.workDate, day.logs);
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="flex! max-h-[90vh] flex-col gap-0! rounded-md! p-0! sm:max-w-2xl!">
+        <PromptContent day={day} />
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/** The dialog's content. It unmounts with the closed dialog, so edited notes reset on the next open. */
+function PromptContent({ day }: { day: Day }) {
   const date = format(parseISO(day.workDate), "EEEE, d MMMM yyyy");
   const queryClient = useQueryClient();
   const [copiedAll, copy] = useCopy();
+  // Edited notes by section key; a section not edited yet keeps its logs' notes.
+  const [edits, setEdits] = useState<Record<string, string[]>>({});
+  const sections = promptSections(day.workDate, day.logs).map((s) => ({
+    ...s,
+    notes: edits[s.key] ?? s.notes
+  }));
+  const handleNoteChange = (section: PromptSection, i: number, text: string) =>
+    setEdits((prev) => ({
+      ...prev,
+      [section.key]: section.notes.map((n, j) => (j === i ? text : n))
+    }));
   // Each card fetches its project and task, so their links are in the cache by the time Copy all is clicked.
   const handleCopyAll = () =>
     copy(
@@ -85,42 +108,44 @@ export function DayPromptDialog({
       )
     );
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex! max-h-[90vh] flex-col gap-0! rounded-md! p-0! sm:max-w-2xl!">
-        <DialogHeader className="border-b p-6 pb-4">
-          <DialogTitle>Prompt for {date}</DialogTitle>
-        </DialogHeader>
-        <div className="min-h-0 flex-1 overflow-y-auto">
-          {sections.length === 0 ? (
-            <p className="px-6 py-4 text-muted-foreground">
-              This day has no logs to book.
-            </p>
-          ) : (
-            <div className="flex flex-col gap-3 px-6 py-4">
-              {sections.map((s) => (
-                <PromptCard key={s.key} section={s} />
-              ))}
-            </div>
-          )}
-        </div>
-        <DialogFooter className="mx-0 mb-0 rounded-b-md border-t p-4">
-          <DialogClose
-            render={<Button variant="outline" className="cursor-pointer" />}
-          >
-            Cancel
-          </DialogClose>
-          <Button
-            disabled={sections.length === 0}
-            className="cursor-pointer"
-            onClick={handleCopyAll}
-            aria-live="polite"
-          >
-            {copiedAll ? <Check /> : <Copy />}
-            {copiedAll ? "Copied" : "Copy all"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    <>
+      <DialogHeader className="border-b p-6 pb-4">
+        <DialogTitle>Prompt for {date}</DialogTitle>
+      </DialogHeader>
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        {sections.length === 0 ? (
+          <p className="px-6 py-4 text-muted-foreground">
+            This day has no logs to book.
+          </p>
+        ) : (
+          <div className="flex flex-col gap-3 px-6 py-4">
+            {sections.map((s) => (
+              <PromptCard
+                key={s.key}
+                section={s}
+                onNoteChange={(i, text) => handleNoteChange(s, i, text)}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+      <DialogFooter className="mx-0 mb-0 rounded-b-md border-t p-4">
+        <DialogClose
+          render={<Button variant="outline" className="cursor-pointer" />}
+        >
+          Cancel
+        </DialogClose>
+        <Button
+          disabled={sections.length === 0}
+          className="cursor-pointer"
+          onClick={handleCopyAll}
+          aria-live="polite"
+        >
+          {copiedAll ? <Check /> : <Copy />}
+          {copiedAll ? "Copied" : "Copy all"}
+        </Button>
+      </DialogFooter>
+    </>
   );
 }
 
@@ -151,7 +176,13 @@ function RefLink({
   );
 }
 
-function PromptCard({ section }: { section: PromptSection }) {
+function PromptCard({
+  section,
+  onNoteChange
+}: {
+  section: PromptSection;
+  onNoteChange: (i: number, text: string) => void;
+}) {
   const projectId = section.project?.id ?? null;
   const taskId = section.task?.id ?? null;
   const project = useProject(projectId ?? "", projectId !== null);
@@ -178,9 +209,16 @@ function PromptCard({ section }: { section: PromptSection }) {
         <dd>{section.date}</dd>
         <dt className="font-medium">Note:</dt>
         <dd className="min-w-0">
-          <ul className="list-disc space-y-0.5 pl-4 break-words">
+          <ul className="list-disc space-y-0.5 pl-4">
             {section.notes.map((n, i) => (
-              <li key={i}>{n}</li>
+              <li key={i}>
+                <Textarea
+                  aria-label={`Note ${i + 1}`}
+                  value={n}
+                  onChange={(e) => onNoteChange(i, e.target.value)}
+                  className="min-h-0 resize-none rounded-md border-transparent px-1.5 py-0.5 align-top hover:border-input md:text-base"
+                />
+              </li>
             ))}
           </ul>
         </dd>

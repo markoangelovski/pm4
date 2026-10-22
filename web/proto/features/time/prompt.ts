@@ -9,6 +9,9 @@ export interface PromptSection {
   notes: string[];
 }
 
+/** A note on one line: line breaks and repeated spaces collapse to one space, trimmed. */
+const oneLine = (text: string) => text.replace(/\s+/g, " ").trim();
+
 const refKey = (ref: { id: string | null; title: string } | null) =>
   ref ? (ref.id ?? `deleted:${ref.title}`) : "none";
 
@@ -36,7 +39,7 @@ export function promptSections(
       };
       sections.set(key, section);
     }
-    const note = log.text.replace(/\s+/g, " ").trim();
+    const note = oneLine(log.text);
     if (note) section.notes.push(note);
   }
   return [...sections.values()];
@@ -54,7 +57,7 @@ export interface PromptLinks {
 }
 
 /** Slack markdown, ready to paste: "Book my time accordingly:" once, then each section with the project's and task's
- *  external links, separated by a blank line. */
+ *  external links, separated by a blank line. Notes (edited in the dialog) go on one line; empty ones are left out. */
 export function promptMarkdown(
   entries: { section: PromptSection; links: PromptLinks }[]
 ): string {
@@ -64,7 +67,10 @@ export function promptMarkdown(
       `**Task:** ${withLink(section.task, links.task)}`,
       `**Date:** ${section.date}`,
       "**Note:**",
-      ...section.notes.map((n) => `- ${n}`)
+      ...section.notes
+        .map(oneLine)
+        .filter(Boolean)
+        .map((n) => `- ${n}`)
     ].join("\n")
   );
   return ["Book my time accordingly:", ...body].join("\n\n");
