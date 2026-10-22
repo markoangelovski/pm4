@@ -1,9 +1,9 @@
 ---
 id: req-time-logs
 title: Time Capture (Workdays and Time Logs)
-status: approved
+status: review
 owner: Marko Angelovski
-last_updated: 2026-10-19
+last_updated: 2026-10-22
 related: [req-projects, req-tasks, req-reporting, api-endpoints, api-data-model, web-screens]
 ---
 
@@ -222,12 +222,15 @@ keep their booking. A day with no start and no logs can't be deleted (OQ-152).
 **Statement:** From the day view, the user opens the viewed day's logs as a booking prompt, to paste into Slack: one section
 per project + task, in the order they first appear, each with the project, the task, the date and one note line per log, and
 copies one section or all of them as markdown. Excluded logs (FR-TLOG-018) are left out. A project or task with an external
-link shows it after its name (OQ-210).
+link shows it after its name (OQ-210). Before copying, the user can edit each note line; the edits change only
+what is copied, not the logs, and are discarded when the prompt closes (OQ-211).
 **Acceptance criteria:**
 - Given a day with two logs on project A / task X, one on project B without a task and one excluded log, then the prompt has
   two sections, A · X with two note lines and B with "—" as the task, and **Copy all** copies "Book my time accordingly:" once
   followed by both sections.
 - Given a day with no logs, then **Prompt** is disabled.
+- Given a note line edited in the prompt, when its section or all sections are copied, then the copy has the edited line;
+  when the prompt is closed and opened again, the line shows the log's text, and the log is unchanged.
 
 ## Out of scope
 - Ordering, inserting or repeating logs, per-log clock times, break logs, the legacy "event" level.
@@ -251,3 +254,4 @@ None.
 - 2026-10-15: FR-TLOG-019 *Delete day* (OQ-152). Back to `review` (feat-hard-delete).
 - 2026-10-19: FR-TLOG-020 *Booking prompt*; "exports" removed from *Out of scope* (OQ-210). Back to `review` (feat-tlog-prompt).
 - 2026-10-19: Approved by the owner.
+- 2026-10-22: FR-TLOG-020: note lines are editable for the copy (OQ-211). Back to `review` (feat-tlog-prompt).
