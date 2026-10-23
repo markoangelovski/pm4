@@ -22,8 +22,8 @@ API-BOOK-001/002, API-TLOG-001/004, API-RPT-001, `PmspaEvent`. Table: [data-mode
 ## Decisions
 | # | Decision | Source |
 | --- | --- | --- |
-| D1 | Bookings move to a `bookings` table, one row per log and date; `time_logs.booking_date` is copied over as one booking of the log's whole duration. | OQ-212, OQ-216 (owner) |
-| D2 | Two releases. T1–T3 ship with migration `0008` (create + copy) and keep `booking_date` declared but unused. T4 drops it (`0009`, copying again what the old API wrote in between) in two pushes of its own: the schema change first, then `0009` once that deploy has finished. | OQ-216 (owner), as feat-hard-delete D2 |
+| D1 | Bookings move to a `bookings` table, one row per log and date. Prod has no bookings, so nothing is copied from `time_logs.booking_date`. | OQ-212, OQ-216 (owner) |
+| D2 | One release. T1–T3 add migration `0008` (creates `bookings`), T4 drops `booking_date` and its index (`0009`); all four ship in one push. No data step and no deploy precautions: prod has no bookings (owner), and an old API instance failing on the dropped column during the swap is accepted. | OQ-216 (owner) |
 | D3 | `PUT /bookings` replaces each listed log's whole list; the web computes the new list (add to a date, remove one, edit one, Book all). | Owner, prototype `f3851c1` (`proposed-types.ts`) |
 | D4 | Every write to a log's bookings or duration locks the log row (`FOR UPDATE`) in its transaction, so the booked-time rules hold under concurrent requests. | Agent |
 | D5 | A shorter duration than the booked time → `400` on `durationMinutes` (OQ-213), unless the same update makes the log unbookable, which removes its bookings. | OQ-213 (owner) · prototype mock |
@@ -33,7 +33,7 @@ API-BOOK-001/002, API-TLOG-001/004, API-RPT-001, `PmspaEvent`. Table: [data-mode
 | D9 | A changed production web file becomes its prototype twin: `sed -e 's#@/proto/mock/client#@/lib/api/client#' -e 's#@/proto/#@/#g'`, then Prettier. | as feat-hard-delete D5 |
 
 ## Scope
-**In:** `api/`: the `bookings` table and migrations `0008`/`0009`; the booking read model on API-BOOK-001/002, API-TLOG-001; the booked-time rule and the
+**In:** `api/`: the `bookings` table and migrations `0008`/`0009` (no data step); the booking read model on API-BOOK-001/002, API-TLOG-001; the booked-time rule and the
 clearing in API-TLOG-004; booked minutes in API-RPT-001; PMSPA: no `booked` in push, fingerprints, browse and import warnings, and the import's
 booked-time failure. `web/`: the prototype's twins of Bookings, the Logged time section and the PMSPA time tab; the booking hooks; the prototype
 moves from `proposed-types.ts` to the generated types.
@@ -49,7 +49,7 @@ moves from `proposed-types.ts` to the generated types.
 | Path | Why / copy this |
 | --- | --- |
 | `specs/03-api/endpoints.md#shared-booking-shapes`, API-BOOK-001/002, API-TLOG-001/004, API-RPT-001 | Contract |
-| `specs/03-api/data-model.md#bookings`, `#migrations` | The table, its invariants and the two-release migration |
+| `specs/03-api/data-model.md#bookings`, `#migrations` | The table, its invariants and the migration |
 | `api/src/time/time.repository.ts` | `setBookingDate` is the locking transaction to copy; `selectRows`, `listLogs`, `reportDays`, `reportProjects` change |
 | `api/src/time/bookings.service.ts`, `api/src/time/time-logs.service.ts` | `assertDate`, `todayIn`, the D5 rule in `update`, `toTimeLogDto` |
 | `api/src/database/schema/time.ts`, `api/drizzle/0005_permanent_delete.sql` | Where the table goes; a generated migration with a hand-added data step |
@@ -69,14 +69,14 @@ moves from `proposed-types.ts` to the generated types.
 | api | `api/src/time/bookings.service.ts`, `api/src/time/time-logs.service.ts` | M | tests, T1 | Stubs (D8), then real |
 | api | `api/openapi.json` | M | tests | `npm run openapi:export` |
 | api | `api/src/database/schema/time.ts` | M | T1, T4 | T1: `bookings`; T4: no `bookingDate` |
-| api | `api/drizzle/0008_*.sql`, `api/drizzle/meta/0008_snapshot.json`, `api/drizzle/meta/_journal.json` | C/M | T1 | `npm run db:generate -- --name bookings`, then the data step appended |
+| api | `api/drizzle/0008_*.sql`, `api/drizzle/meta/0008_snapshot.json`, `api/drizzle/meta/_journal.json` | C/M | T1, T4 | `npm run db:generate -- --name bookings`; T4 removes the data step T1 appended |
 | api | `api/src/time/time.repository.ts`, `api/src/time/reports.service.ts` | M | T1 | |
 | api | `api/src/common/duration.ts` | C | T1 | `formatDuration`, moved from `pmspa-time-fields.ts` |
 | api | `api/src/time/bookings.service.spec.ts`, `api/src/time/time-logs.service.spec.ts` | M | T1 | Ordinary tests |
 | api | `api/src/integrations/pmspa/pmspa-time-fields.ts` | M | T1, T2 | T1: re-exports `formatDuration`; T2: tuples, `booked` |
 | api | `api/src/integrations/pmspa/pmspa-time-sync.service.ts`, `api/src/integrations/pmspa/pmspa-time-preview.ts`, `api/src/integrations/pmspa/pmspa-sync.repository.ts`, `api/src/integrations/pmspa/pmspa-remote.ts` | M | T2 | |
 | api | `api/src/integrations/pmspa/*.spec.ts` (not `*.ac.spec.ts`) | M | T2 | Ordinary tests: no `booked` |
-| api | `api/drizzle/0009_*.sql`, `api/drizzle/meta/0009_snapshot.json`, `api/drizzle/meta/_journal.json` | C/M | T4 | `npm run db:generate -- --name drop_booking_date`, then the data step prepended |
+| api | `api/drizzle/0009_*.sql`, `api/drizzle/meta/0009_snapshot.json`, `api/drizzle/meta/_journal.json` | C/M | T4 | `npm run db:generate -- --name drop_booking_date`, as generated |
 | web | `web/features/bookings/days.ac.test.ts`, `web/features/bookings/api.ac.test.tsx`, `web/features/bookings/components/bookings-view.ac.test.tsx` | M | tests | Acceptance tests |
 | web | `web/features/time/logged-time.ac.test.tsx`, `web/features/time/components/logged-time-section.ac.test.tsx` | M | tests | `bookings` lines (SCR-044) |
 | web | `web/lib/api/schema.d.ts` | M | tests | `npm run api:types` |
@@ -140,15 +140,11 @@ export const bookings = pgTable("bookings", {
 ]);
 export type Booking = typeof bookings.$inferSelect;
 ```
-T1: `timeLogs.bookingDate` and `time_logs_user_booking` stay, with the comment `// Unused since feat-book-partial (bookings table); dropped by T4 (D2).`
-Then `npm run db:generate -- --name bookings` and **append** to `0008_bookings.sql` (after a `--> statement-breakpoint`):
-```sql
-INSERT INTO "bookings" ("booking_date", "minutes", "time_log_id", "user_id")
-  SELECT "booking_date", "duration_minutes", "id", "user_id" FROM "time_logs"
-  WHERE "booking_date" IS NOT NULL AND NOT "exclude_from_stats" AND ("project_id" IS NOT NULL OR "deleted_project_title" IS NOT NULL);
-```
-T4: remove `bookingDate` and its index from `timeLogs`, `npm run db:generate -- --name drop_booking_date`, and **prepend** to `0009_drop_booking_date.sql`
-the same `INSERT … SELECT` with one more condition, `AND NOT EXISTS (SELECT 1 FROM "bookings" b WHERE b."time_log_id" = "time_logs"."id")`.
+T1 (done): `timeLogs.bookingDate` and `time_logs_user_booking` stayed, with the comment `// Unused since feat-book-partial (bookings table); dropped by T4 (D2).`,
+and `npm run db:generate -- --name bookings` made `0008_bookings.sql`, to which T1 appended an `INSERT INTO "bookings" … SELECT … FROM "time_logs"` copy step.
+T4 (D2: prod has no bookings): delete that copy step (the last `--> statement-breakpoint` and the `INSERT … SELECT` after it) from `0008_bookings.sql`;
+remove `bookingDate`, its index `time_logs_user_booking` and the comment from `timeLogs`; then `npm run db:generate -- --name drop_booking_date` and keep
+`0009_drop_booking_date.sql` as generated (it drops the index and the column).
 
 ### Repository (T1)
 ```ts
@@ -302,7 +298,7 @@ Web: as feat-book-web (mocked client, `NuqsTestingAdapter`, 2026-10-09 12:00 Zag
 | AC-10 | `GET /time-logs?projectId=<Anthropic>` → `totalMinutes 345`, `bookedMinutes 195` (a 120 + f 75), items with `bookings`; `?taskId=<Meetings>` → `bookedMinutes 195` | `api/test/bookings.ac.e2e-spec.ts` | T1 |
 | AC-11 | `GET /reports/dashboard?from=2026-10-01&to=2026-10-09` → days 6 Oct `bookedMinutes 120`, 7 Oct `315` (e 240 + f 75: counted on the work day), and no 1 Oct day (g counts on 30 Sep); projects Anthropic `bookedMinutes 195`, Nvidia `240`; `?from=2026-09-30&to=2026-09-30` → `60` | `api/test/bookings.ac.e2e-spec.ts` | T1 |
 | AC-12 | The other suites pass with the new body: `time-logs`, `logged-time`, `reports`, `delete-day` e2e | `api/test/time-logs.ac.e2e-spec.ts`, `api/test/logged-time.ac.e2e-spec.ts`, `api/test/reports.ac.e2e-spec.ts`, `api/test/delete-day.ac.e2e-spec.ts` | T1 |
-| AC-13 | Migration `0008` on a local database at `0007` with a booked and an unbooked log: `npm run db:migrate` → the booked log has one `bookings` row (its date, its whole duration), the other none; `\d bookings` shows the PK, `bookings_user_date` and `bookings_minutes` | manual | T1 |
+| AC-13 | `npm run db:migrate` on a local database at `0007` → `\d bookings` shows the PK, `bookings_user_date` and `bookings_minutes` | manual | T1 |
 | AC-14 | Push of a day whose logs are all booked → the PMSPA event's `booked` stays as it was (false on a new event, true when PMSPA had true); import of a PMSPA event with `booked: true` → no "Booked in PMSPA" warning, the imported logs have no bookings | `api/test/pmspa-time.ac.e2e-spec.ts` | T2 |
 | AC-15 | `pm4LogTuple` / `pmspaLogTuple` have no booked element; a PMSPA event's `booked` toggled after a sync → its logs stay unchanged in the preview | `api/src/integrations/pmspa/pmspa-time-fields.ac.spec.ts`, `api/test/pmspa-time.ac.e2e-spec.ts` | T2 |
 | AC-16 | Import where PMSPA shortened a linked 2 h PM4 log with 1 h 30 m booked to 1 h, and changed another log of the event → the row is `failed` with "1h 30m of a log is booked in PM4: remove bookings first, or keep at least 1h 30m (1 other log was imported)."; the booked log is unchanged, the other is updated. Its preview before that: the event row warns "1 log of 1 h is shorter than the time booked in PM4 (1h 30m) and will fail."; no such warning when the event is "nonprod", when PMSPA's 1 h is unchanged since the last sync (row `skip`), or for a 2 h PMSPA duration | `api/test/pmspa-time.ac.e2e-spec.ts` | T2 |
@@ -313,7 +309,7 @@ Web: as feat-book-web (mocked client, `NuqsTestingAdapter`, 2026-10-09 12:00 Zag
 | AC-21 | `useBookingRange` returns the items; `useSetBooking` sends `PUT /bookings` with the `{logs}` body and invalidates `bookingKeys.all` and `timeKeys.logs()` | `web/features/bookings/api.ac.test.tsx` | T3 |
 | AC-22 | Bookings page: b's unbooked row **Book** → `{logs:[{logId:b, bookings:[{date:"2026-10-06",minutes:60}]}]}`; Booking time `30m` → minutes 30; `1h 15m` → "At most 1h." and **Book** disabled; `20m` → "Use 15-minute steps."; **Book all** on Anthropic (7 Oct) → f `[6 Oct 30, 7 Oct 105]`; **Remove booking** on f's 6 Oct → f `[7 Oct 45]`; **Edit booking** on e, 8 Oct and `2h`, **Save booking** → e `[8 Oct 120]`; a failure → toast "Couldn't save the booking." | `web/features/bookings/components/bookings-view.ac.test.tsx` | T3 |
 | AC-23 | The prototype has no `proposed-types.ts`, and `pm4 twins` reports no difference under `features/bookings`, `features/time` or `features/integrations` | `check` | T3 |
-| AC-24 | Migration `0009` on a local database at `0008` where a log got a `booking_date` after `0008` and has no `bookings` row: `npm run db:migrate` → it has one booking of its whole duration; `time_logs` has no `booking_date` and no `time_logs_user_booking` | manual | T4 |
+| AC-24 | `npm run db:migrate` on a local database at `0007` or `0008` → `\d time_logs` has no `booking_date` and no `time_logs_user_booking`; `0008_bookings.sql` has no `INSERT` | manual | T4 |
 | AC-25 | The schema no longer declares `booking_date` on `time_logs` | `check` | T4 |
 | AC-26 | Prototype (`/proto/app/connectors/pmspa`, mock): an event whose linked log was shortened in PMSPA below its PM4 booked time → the preview's event row has the AC-16 warning, and the import fails the row with the AC-16 message while the log keeps its duration and bookings | manual | T3 |
 
@@ -349,7 +345,7 @@ test ! -e web/proto/features/bookings/proposed-types.ts
 | T1 | `bookings` table and migration `0008`, the booking read model, `PUT /bookings`, the booked-time rule in `PATCH /time-logs`, booked minutes in lists and reports | api | L | sonnet | Writes over two tables under row locks, with the order spelled out (D4) | — |
 | T2 | PMSPA without the booked flag; the import's booked-time failure and its preview warning | api | M | haiku | Deletions, one `try` and one warning spelled out in *PMSPA* | T1 |
 | T3 | Booking hooks (the twin), the prototype on the generated types, the mock import's booked-time warning and failure | web | S | haiku | A twin, import swaps (D9) and one mock rule spelled out in *Web* | T2 |
-| T4 | Drop `booking_date` (migration `0009`), after the release with T1–T3 is live (D2) | api | S | haiku | A generated migration plus the data step from *Database* | T3 |
+| T4 | Drop `booking_date` (migration `0009`) and the copy step from `0008`, in the same release as T1–T3 (D2) | api | S | haiku | A generated migration and one deletion from *Database* | T3 |
 
 ## Open questions
 None.
@@ -357,3 +353,4 @@ None.
 ## Changelog
 - 2026-10-23: Initial draft from the owner's Partial Bookings prototype `f3851c1` (OQ-212…OQ-220). Ready for review.
 - 2026-10-23: D7: the import preview warns about a log the import would fail for its booked time (owner); `pm4Logs` reads booked minutes (T2), AC-16. The mock import gets the same warning and failure (T3, AC-26; owner).
+- 2026-10-23: D1, D2: one release, no data step. Prod has no bookings (owner), so `0008` loses its copy step and T4 drops `booking_date` in the same push (OQ-216); AC-13, AC-24 check the schema only.

@@ -133,7 +133,6 @@ One row per logged block of work (req-time-logs §Model).
 | Column | Type | Constraints |
 | --- | --- | --- |
 | work_date | date | not null, not in the future (checked by the service, in the user's zone) |
-| booking_date | date | **Unused since feat-book-partial T1** (bookings live in `bookings`); still declared, never read or written, until T4 drops it with its index (OQ-216) |
 | duration_minutes | smallint | not null, 15–1440, a multiple of 15 |
 | exclude_from_stats | boolean | not null, default false (FR-TLOG-018) |
 | id | uuid | PK (v7) |
@@ -155,7 +154,6 @@ Invariants:
 
 Indexes: `(user_id, work_date, id)` (day view, calendar marks), `(task_id) WHERE task_id IS NOT NULL`,
 `(project_id) WHERE project_id IS NOT NULL` (task/project sections and totals, and FK SET NULL on delete).
-`(user_id, booking_date) WHERE booking_date IS NOT NULL` stays until the column goes (feat-book-partial T4).
 
 ### bookings
 Part of a log's time booked to a date (req-bookings §Model, OQ-212). One row per log and date.
@@ -243,9 +241,8 @@ drizzle-kit generates SQL migrations into `api/drizzle/`, which are committed an
 explicitly in CI against the direct URL (ADR-0008). They must be expand/contract compatible, because
 there's no staging.
 
-`time_logs.booking_date` → `bookings` (OQ-216), in two releases: `0008` creates `bookings` and copies each set `booking_date` as one booking of
-the log's whole `duration_minutes`; once that release is deployed, `0009` copies again the bookings the old API wrote in between (for logs with
-no `bookings` row yet), then drops the column and its index.
+`time_logs.booking_date` → `bookings` (OQ-216), in one release with no data step (prod had no bookings): `0008` creates `bookings`, `0009` drops
+the column and its index. This one isn't expand/contract compatible: an old API instance fails on the dropped column during the swap (accepted).
 
 ## Open questions
 None.
@@ -267,4 +264,4 @@ None.
 - 2026-10-17: The owner approved `pmspa_connections`, `pmspa_project_links`, `pmspa_task_links` and `pmspa_log_links` for feat-int-conn-api, feat-int-sync-api and feat-int-time-api.
 - 2026-10-18: PMSPA's rate limit per host lives in Redis, not in a table (OQ-200, feat-int-budget).
 - 2026-10-18: The PMSPA creation date of a linked record is derived from `pmspa_id`, not stored (OQ-207, feat-int-followups).
-- 2026-10-23: `bookings` replaces `time_logs.booking_date` (partial bookings, two-release migration; OQ-212, OQ-213, OQ-216; feat-book-partial).
+- 2026-10-23: `bookings` replaces `time_logs.booking_date` (partial bookings, one release, no data copied; OQ-212, OQ-213, OQ-216; feat-book-partial).

@@ -1,6 +1,6 @@
 ---
 id: T-0095
-title: Drop booking_date (migration 0009), after the release with T1–T3 is live (D2)
+title: Drop booking_date (migration 0009) and the copy step from 0008, in the same release as T1–T3 (D2)
 milestone: M4
 app: api
 status: ready
@@ -12,9 +12,9 @@ spec_row: T4
 ac_files: []
 ---
 
-# T-0095: Drop booking_date (migration 0009), after the release with T1–T3 is live (D2)
+# T-0095: Drop booking_date (migration 0009) and the copy step from 0008, in the same release as T1–T3 (D2)
 
-**Tier reason:** A generated migration plus the data step from *Database*
+**Tier reason:** A generated migration and one deletion from *Database*
 
 Work from the brief: `node scripts/pm4.mjs brief T-0095`. Verify with `node scripts/pm4.mjs check T-0095`.
 
