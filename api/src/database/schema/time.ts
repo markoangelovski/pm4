@@ -37,8 +37,6 @@ export const timeLogs = pgTable(
   "time_logs",
   {
     workDate: date("work_date", { mode: "string" }).notNull(),
-    // Unused since feat-book-partial (bookings table); dropped by T4 (D2).
-    bookingDate: date("booking_date", { mode: "string" }),
     durationMinutes: smallint("duration_minutes").notNull(),
     excludeFromStats: boolean("exclude_from_stats").notNull().default(false),
     id: uuid("id")
@@ -60,9 +58,6 @@ export const timeLogs = pgTable(
   },
   (t) => [
     index("time_logs_user_date").on(t.userId, t.workDate, t.id),
-    index("time_logs_user_booking")
-      .on(t.userId, t.bookingDate)
-      .where(sql`${t.bookingDate} IS NOT NULL`),
     index("time_logs_task")
       .on(t.taskId)
       .where(sql`${t.taskId} IS NOT NULL`),
