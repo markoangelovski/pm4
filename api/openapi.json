@@ -1953,7 +1953,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/SetBookingDto"
+                "$ref": "#/components/schemas/SetBookingsDto"
               }
             }
           }
@@ -2015,7 +2015,7 @@
             "bearer": []
           }
         ],
-        "summary": "Book, re-date or unbook one or many logs (API-BOOK-002).",
+        "summary": "Replace the bookings of one or many logs (API-BOOK-002).",
         "tags": [
           "Bookings"
         ]
@@ -4640,6 +4640,28 @@
           "startMinute"
         ]
       },
+      "BookingDto": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "description": "`YYYY-MM-DD`; not after today in the caller's zone (checked by the service).",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+            "format": "date",
+            "example": "2026-10-07"
+          },
+          "minutes": {
+            "type": "number",
+            "description": "15–1440, a multiple of 15.",
+            "minimum": 15,
+            "maximum": 1440
+          }
+        },
+        "required": [
+          "date",
+          "minutes"
+        ]
+      },
       "BookingLogResponseDto": {
         "type": "object",
         "properties": {
@@ -4669,11 +4691,12 @@
               }
             ]
           },
-          "bookingDate": {
-            "type": "string",
-            "nullable": true,
-            "format": "date",
-            "example": "2026-10-07"
+          "bookings": {
+            "description": "By date ascending; [] = not booked.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BookingDto"
+            }
           },
           "id": {
             "type": "string"
@@ -4693,7 +4716,7 @@
           "title",
           "project",
           "task",
-          "bookingDate",
+          "bookings",
           "id",
           "durationMinutes",
           "text",
@@ -4724,7 +4747,7 @@
           },
           "bookedMinutes": {
             "type": "integer",
-            "description": "Minutes of the matching logs that have a booking date."
+            "description": "Booked minutes of the matching logs (the sum of their bookings)."
           }
         },
         "required": [
@@ -4853,30 +4876,41 @@
           "items"
         ]
       },
-      "SetBookingDto": {
+      "SetLogBookingsDto": {
         "type": "object",
         "properties": {
-          "logIds": {
-            "description": "1–100 time log ids; repeats are allowed.",
+          "logId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "bookings": {
+            "description": "The log's whole new list ([] = unbooked).",
+            "maxItems": 96,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BookingDto"
+            }
+          }
+        },
+        "required": [
+          "logId",
+          "bookings"
+        ]
+      },
+      "SetBookingsDto": {
+        "type": "object",
+        "properties": {
+          "logs": {
             "minItems": 1,
             "maxItems": 100,
             "type": "array",
             "items": {
-              "type": "string",
-              "format": "uuid"
+              "$ref": "#/components/schemas/SetLogBookingsDto"
             }
-          },
-          "bookingDate": {
-            "type": "string",
-            "nullable": true,
-            "description": "A date not after today in the caller's zone, or `null` to remove the booking. Absent → 400.",
-            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
-            "format": "date"
           }
         },
         "required": [
-          "logIds",
-          "bookingDate"
+          "logs"
         ]
       },
       "ReportDayDto": {
@@ -5377,17 +5411,13 @@
           },
           "title": {
             "type": "string"
-          },
-          "booked": {
-            "type": "boolean"
           }
         },
         "required": [
           "task",
           "logs",
           "id",
-          "title",
-          "booked"
+          "title"
         ]
       },
       "PmspaDayDto": {

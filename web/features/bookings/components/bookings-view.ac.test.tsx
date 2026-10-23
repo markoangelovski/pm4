@@ -71,7 +71,7 @@ const log = (over: Partial<BookingLog> & { id: string }): BookingLog => ({
   project: null,
   task: null,
   excludeFromStats: false,
-  bookingDate: null,
+  bookings: [],
   ...over
 });
 
@@ -84,7 +84,7 @@ const ownerLogs: BookingLog[] = [
     text: "Nvidia planning",
     project: nvidia,
     task: ref("t-pm", "PM"),
-    bookingDate: "2026-10-01"
+    bookings: [{ date: "2026-10-01", minutes: 60 }]
   }),
   log({
     id: "a",
@@ -92,7 +92,7 @@ const ownerLogs: BookingLog[] = [
     text: "Anthropic sync",
     project: anthropic,
     task: meetings,
-    bookingDate: "2026-10-07"
+    bookings: [{ date: "2026-10-07", minutes: 120 }]
   }),
   log({
     id: "b",
@@ -115,7 +115,7 @@ const ownerLogs: BookingLog[] = [
     text: "Feature work",
     project: nvidia,
     task: ref("t-dev", "Development"),
-    bookingDate: "2026-10-07"
+    bookings: [{ date: "2026-10-07", minutes: 240 }]
   }),
   log({
     id: "f",
@@ -123,7 +123,11 @@ const ownerLogs: BookingLog[] = [
     durationMinutes: 135,
     text: "Client call",
     project: anthropic,
-    task: meetings
+    task: meetings,
+    bookings: [
+      { date: "2026-10-06", minutes: 30 },
+      { date: "2026-10-07", minutes: 45 }
+    ]
   })
 ];
 
@@ -230,7 +234,7 @@ const clickDay = (iso: string) => {
 const lastPut = () =>
   (api.PUT.mock.lastCall?.[1] as { body: Record<string, unknown> }).body;
 
-describe("BookingsView (feat-book-web)", () => {
+describe("BookingsView (feat-book-web, feat-book-partial)", () => {
   beforeEach(() => {
     // "Now" is 2026-10-09 12:00 in Zagreb; only Date is faked, timers stay real.
     vi.useFakeTimers({ toFake: ["Date"] });
@@ -266,9 +270,9 @@ describe("BookingsView (feat-book-web)", () => {
     expect(card(seventh, "Logged")).toHaveTextContent("6h 15m");
     expect(card(seventh, "Billable")).toHaveTextContent("6h 15m");
     expect(card(seventh, "Overtime")).toHaveTextContent("0h");
-    expect(card(seventh, "Booked current")).toHaveTextContent("4h");
+    expect(card(seventh, "Booked current")).toHaveTextContent("4h 45m");
     expect(card(seventh, "Booked from external")).toHaveTextContent("2h");
-    expect(card(seventh, "Booked total")).toHaveTextContent("6h");
+    expect(card(seventh, "Booked total")).toHaveTextContent("6h 45m");
     expect(screen.queryByText("Today")).not.toBeInTheDocument();
     first.unmount();
 
@@ -305,6 +309,7 @@ describe("BookingsView (feat-book-web)", () => {
     const sixth = "2026-10-06";
     expect(headers(sixth)).toEqual([
       "Projects",
+      "",
       "",
       "",
       "",
@@ -355,6 +360,7 @@ describe("BookingsView (feat-book-web)", () => {
         "Tasks",
         "Logs",
         "Booking date",
+        "Booking time",
         "Hours worked",
         "Hours booked"
       ])
@@ -375,6 +381,7 @@ describe("BookingsView (feat-book-web)", () => {
       "",
       "",
       "",
+      "",
       "Hours worked",
       "Hours booked"
     ]);
@@ -387,6 +394,7 @@ describe("BookingsView (feat-book-web)", () => {
     await waitFor(() =>
       expect(headers(sixth)).toEqual([
         "Projects",
+        "",
         "",
         "",
         "",
@@ -413,7 +421,7 @@ describe("BookingsView (feat-book-web)", () => {
     expect(cells(rowA).at(-2)).toBe("2h");
     expect(cells(rowA).at(-1)).toBe("0h");
     expect(
-      within(rowA).getByRole("button", { name: "Edit booking date" })
+      within(rowA).getByRole("button", { name: "Edit booking" })
     ).toBeInTheDocument();
     expect(
       within(rowA).getByRole("button", { name: "Remove booking" })
@@ -435,6 +443,15 @@ describe("BookingsView (feat-book-web)", () => {
     expect(
       within(rowB).getByRole("button", { name: "Book" })
     ).toBeInTheDocument();
+    expect(
+      within(rowB).getByRole("textbox", { name: "Booking time" })
+    ).toHaveValue("1h");
+
+    // f comes in to 6 Oct with its 30m part.
+    const fIn = rowOf(sixth, "Client call");
+    expect(fIn).toHaveTextContent("Worked on 7 Oct 2026");
+    expect(within(fIn).queryAllByRole("button")).toHaveLength(0);
+    expect(cells(fIn).at(-1)).toBe("30m");
 
     // On 7 Oct, a is an incoming log: where it was worked, no actions.
     expand("2026-10-07", "Anthropic");
@@ -445,51 +462,99 @@ describe("BookingsView (feat-book-web)", () => {
     expect(cells(incoming).at(-1)).toBe("2h");
   });
 
-  it("AC-10 FR-BOOK-004 FR-BOOK-005 SCR-045: Book, Book all, Remove, Edit + Save, Cancel, a failure toast", async () => {
+  it("AC-22 FR-BOOK-004 FR-BOOK-005 SCR-045 OQ-212: Book with a Booking time, its checks, Book all, Remove, Edit + Save, Cancel, a failure toast", async () => {
     renderView();
     await loaded();
     const sixth = "2026-10-06";
     const seventh = "2026-10-07";
 
+    // b's unbooked row: Book books all of it to the work date.
     expand(sixth, "PM Internal");
-    const rowB = await waitFor(() => rowOf(sixth, "Internal planning"));
-    fireEvent.click(within(rowB).getByRole("button", { name: "Book" }));
+    const rowB = () => rowOf(sixth, "Internal planning");
+    await waitFor(() => rowB());
+    const time = () =>
+      within(rowB()).getByRole("textbox", { name: "Booking time" });
+    const book = () => within(rowB()).getByRole("button", { name: "Book" });
+    fireEvent.click(book());
     await waitFor(() =>
       expect(api.PUT).toHaveBeenCalledWith(
         "/api/v1/bookings",
         expect.objectContaining({
-          body: { logIds: ["b"], bookingDate: "2026-10-06" }
+          body: {
+            logs: [
+              {
+                logId: "b",
+                bookings: [{ date: "2026-10-06", minutes: 60 }]
+              }
+            ]
+          }
         })
       )
     );
 
+    // A part of it.
+    await waitFor(() => expect(book()).toBeEnabled());
+    fireEvent.change(time(), { target: { value: "30m" } });
+    fireEvent.click(book());
+    await waitFor(() =>
+      expect(lastPut()).toEqual({
+        logs: [{ logId: "b", bookings: [{ date: "2026-10-06", minutes: 30 }] }]
+      })
+    );
+
+    // More than is left, or off the 15-minute step: an error under the input, Book disabled.
+    await waitFor(() => expect(book()).toBeEnabled());
+    const puts = () => api.PUT.mock.calls.length;
+    const sent = puts();
+    fireEvent.change(time(), { target: { value: "1h 15m" } });
+    expect(await within(rowB()).findByText("At most 1h.")).toBeInTheDocument();
+    expect(book()).toBeDisabled();
+    fireEvent.change(time(), { target: { value: "20m" } });
+    expect(
+      await within(rowB()).findByText("Use 15-minute steps.")
+    ).toBeInTheDocument();
+    expect(book()).toBeDisabled();
+    expect(puts()).toBe(sent);
+
+    // Book all on Anthropic (7 Oct) adds f's unbooked hour to its 7 Oct booking.
     fireEvent.click(
       within(rowOf(seventh, "Anthropic")).getByRole("button", {
         name: "Book all"
       })
     );
     await waitFor(() =>
-      expect(lastPut()).toEqual({ logIds: ["f"], bookingDate: "2026-10-07" })
+      expect(lastPut()).toEqual({
+        logs: [
+          {
+            logId: "f",
+            bookings: [
+              { date: "2026-10-06", minutes: 30 },
+              { date: "2026-10-07", minutes: 105 }
+            ]
+          }
+        ]
+      })
     );
 
+    // Remove booking on f's 6 Oct row (its first row on 7 Oct) keeps the other one.
+    expand(seventh, "Anthropic");
+    const rowF = await waitFor(() => rowOf(seventh, "Client call"));
+    expect(rowF).toHaveTextContent("6 Oct 2026");
+    fireEvent.click(
+      within(rowF).getByRole("button", { name: "Remove booking" })
+    );
+    await waitFor(() =>
+      expect(lastPut()).toEqual({
+        logs: [{ logId: "f", bookings: [{ date: "2026-10-07", minutes: 45 }] }]
+      })
+    );
+
+    // Edit e's booking: the date field opens at the booking date; pick 8 Oct, 2h, Save booking.
     expand(seventh, "Nvidia");
     const rowE = () => rowOf(seventh, "Feature work");
     await waitFor(() => rowE());
     fireEvent.click(
-      within(rowE()).getByRole("button", { name: "Remove booking" })
-    );
-    await waitFor(() =>
-      expect(lastPut()).toEqual({ logIds: ["e"], bookingDate: null })
-    );
-
-    // Edit: the date field opens at the booking date; pick 8 Oct and save.
-    await waitFor(() =>
-      expect(
-        within(rowE()).getByRole("button", { name: "Edit booking date" })
-      ).toBeEnabled()
-    );
-    fireEvent.click(
-      within(rowE()).getByRole("button", { name: "Edit booking date" })
+      within(rowE()).getByRole("button", { name: "Edit booking" })
     );
     fireEvent.click(within(rowE()).getByRole("button", { name: /7 Oct 2026/ }));
     await waitFor(() => expect(dayCell("2026-10-08")).toBeTruthy());
@@ -499,31 +564,37 @@ describe("BookingsView (feat-book-web)", () => {
         within(rowE()).getByRole("button", { name: /8 Oct 2026/ })
       ).toBeInTheDocument()
     );
+    fireEvent.change(
+      within(rowE()).getByRole("textbox", { name: "Booking time" }),
+      { target: { value: "2h" } }
+    );
     fireEvent.click(
-      within(rowE()).getByRole("button", { name: "Save booking date" })
+      within(rowE()).getByRole("button", { name: "Save booking" })
     );
     await waitFor(() =>
-      expect(lastPut()).toEqual({ logIds: ["e"], bookingDate: "2026-10-08" })
+      expect(lastPut()).toEqual({
+        logs: [{ logId: "e", bookings: [{ date: "2026-10-08", minutes: 120 }] }]
+      })
     );
     // Save closes the editor.
     await waitFor(() =>
       expect(
-        within(rowE()).queryByRole("button", { name: "Save booking date" })
+        within(rowE()).queryByRole("button", { name: "Save booking" })
       ).not.toBeInTheDocument()
     );
 
     // Cancel sends nothing.
-    const puts = api.PUT.mock.calls.length;
+    const beforeCancel = puts();
     fireEvent.click(
-      within(rowE()).getByRole("button", { name: "Edit booking date" })
+      within(rowE()).getByRole("button", { name: "Edit booking" })
     );
     fireEvent.click(within(rowE()).getByRole("button", { name: "Cancel" }));
     await waitFor(() =>
       expect(
-        within(rowE()).getByRole("button", { name: "Edit booking date" })
+        within(rowE()).getByRole("button", { name: "Edit booking" })
       ).toBeInTheDocument()
     );
-    expect(api.PUT.mock.calls.length).toBe(puts);
+    expect(puts()).toBe(beforeCancel);
 
     // A failure → toast.
     api.PUT.mockResolvedValueOnce({

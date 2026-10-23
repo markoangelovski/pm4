@@ -5,7 +5,6 @@ import { addDays, format, parseISO, startOfWeek } from "date-fns";
 import { parseAsString, useQueryState } from "nuqs";
 import { toast } from "sonner";
 import {
-  CalendarCheck,
   CalendarIcon,
   CalendarX,
   ChevronLeft,
@@ -441,7 +440,7 @@ function DayRows({
   );
 }
 
-/** One PMSPA event: its title, "<project> › <task>" (or "imports as Unsorted"), booked flag and logs. */
+/** One PMSPA event: its title, "<project> › <task>" (or "imports as Unsorted") and logs. */
 function EventItem({ event: e }: { event: PmspaEventDto }) {
   const minutes = e.logs.reduce((t, l) => t + l.durationMinutes, 0);
   return (
@@ -455,14 +454,7 @@ function EventItem({ event: e }: { event: PmspaEventDto }) {
         <Clock />
       </ItemMedia>
       <ItemContent className="min-w-0">
-        <ItemTitle className="flex-wrap">
-          {e.title}
-          {e.booked ? (
-            <Badge variant="outline" className="font-normal">
-              <CalendarCheck /> Booked in PMSPA
-            </Badge>
-          ) : null}
-        </ItemTitle>
+        <ItemTitle className="flex-wrap">{e.title}</ItemTitle>
         <ItemDescription className="flex flex-wrap items-center gap-x-1.5">
           {e.task ? (
             <>

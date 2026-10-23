@@ -27,7 +27,6 @@ export function dayItems(
                 projectTitle: titles.get(task.projectId) ?? ""
               }
             : null,
-          booked: e.booked,
           logs: e.logs.map((l) => ({
             id: l.id,
             title: l.title,

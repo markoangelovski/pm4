@@ -5,10 +5,8 @@ import {
   type UseMutationResult,
   type UseQueryResult
 } from "@tanstack/react-query";
-import { apiClient } from "@/lib/api/client";
-import { unwrap } from "@/lib/api/problem";
 import { timeKeys } from "@/features/time/api";
-import type { BookingLog } from "./days";
+import type { BookingLog, SetBookingsDto } from "./days";
 
 export type { BookingLog } from "./days";
 
@@ -25,34 +23,25 @@ export function useBookingRange(
 ): UseQueryResult<BookingLog[], Error> {
   return useQuery({
     queryKey: bookingKeys.range(from, to),
-    queryFn: async ({ signal }) => {
-      const data = unwrap(
-        await apiClient.GET("/api/v1/bookings", {
-          params: { query: { from, to } },
-          signal
-        })
-      );
-      return data.items as BookingLog[];
+    queryFn: async (): Promise<BookingLog[]> => {
+      throw new Error("not implemented (feat-book-partial)");
     }
   });
 }
 
-/** API-BOOK-002: PUT /bookings, returns data.items; invalidates bookingKeys.all and timeKeys.logs(). */
+/**
+ * API-BOOK-002: PUT /bookings replaces each listed log's bookings (book, Book all, edit, remove), returns data.items;
+ * invalidates bookingKeys.all and timeKeys.logs().
+ */
 export function useSetBooking(): UseMutationResult<
   BookingLog[],
   Error,
-  { logIds: string[]; bookingDate: string | null }
+  SetBookingsDto
 > {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (input: {
-      logIds: string[];
-      bookingDate: string | null;
-    }) => {
-      const data = unwrap(
-        await apiClient.PUT("/api/v1/bookings", { body: input })
-      );
-      return data.items as BookingLog[];
+    mutationFn: async (): Promise<BookingLog[]> => {
+      throw new Error("not implemented (feat-book-partial)");
     },
     onSuccess: () =>
       Promise.all([

@@ -32,7 +32,7 @@ const item = (over: Partial<Item>): Item => ({
   project,
   task: null,
   excludeFromStats: false,
-  bookingDate: null,
+  bookings: [],
   ...over
 });
 
@@ -46,7 +46,7 @@ const projectLogs: TimeLogList = {
       text: "Weekly sync",
       task: meetings
     }),
-    item({ id: "l1", bookingDate: "2026-10-07" }),
+    item({ id: "l1", bookings: [{ date: "2026-10-07", minutes: 60 }] }),
     item({
       id: "l3",
       durationMinutes: 15,
@@ -110,7 +110,12 @@ function renderSection(
 const headers = () =>
   screen.getAllByRole("columnheader").map((h) => h.textContent);
 
-describe("LoggedTimeSection (feat-proto-sync-web)", () => {
+/** An element whose whole text is `text` (a booking line spans nested elements). */
+const wholeText = (text: string) => (_: string, el: Element | null) =>
+  el?.textContent === text &&
+  Array.from(el.children).every((child) => child.textContent !== text);
+
+describe("LoggedTimeSection (feat-proto-sync-web, feat-book-partial)", () => {
   beforeEach(() => {
     api.GET.mockReset();
     routeGet();
@@ -161,6 +166,55 @@ describe("LoggedTimeSection (feat-proto-sync-web)", () => {
     expect(booked.getByText("7 Oct 2026")).toBeInTheDocument();
     expect(booked.getByText("1h")).toBeInTheDocument();
     expect(booked.queryByRole("link", { name: "Meetings" })).toBeNull();
+  });
+
+  it("AC-20 FR-TLOG-012 SCR-044 OQ-214: Booked date lists each booking with its minutes, then the unbooked part; - without bookings; Booked is bookedMinutes", async () => {
+    listResult = () => ({
+      data: {
+        items: [
+          item({
+            id: "f",
+            workDate: "2026-10-07",
+            durationMinutes: 135,
+            text: "Planning",
+            task: meetings,
+            bookings: [
+              { date: "2026-10-06", minutes: 30 },
+              { date: "2026-10-07", minutes: 45 }
+            ]
+          }),
+          item({
+            id: "e",
+            workDate: "2026-10-07",
+            durationMinutes: 240,
+            text: "Development",
+            bookings: [{ date: "2026-10-07", minutes: 240 }]
+          }),
+          item({ id: "b", text: "Internal sync" })
+        ],
+        page: 1,
+        pageSize: 25,
+        total: 3,
+        totalMinutes: 435,
+        bookedMinutes: 315
+      },
+      response: res(200)
+    });
+
+    renderSection({ projectId: "p1" });
+
+    expect(await screen.findByText("Planning")).toBeInTheDocument();
+    expect(screen.getByText(/Booked: 5h 15m$/)).toBeInTheDocument();
+    const [f, e, b] = screen
+      .getAllByRole("row")
+      .slice(1)
+      .map((r) => within(r));
+    expect(f.getByText(wholeText("6 Oct 2026 · 30m"))).toBeInTheDocument();
+    expect(f.getByText(wholeText("7 Oct 2026 · 45m"))).toBeInTheDocument();
+    expect(f.getByText("1h unbooked")).toBeInTheDocument();
+    expect(e.getByText(wholeText("7 Oct 2026 · 4h"))).toBeInTheDocument();
+    expect(e.queryByText(/unbooked/)).toBeNull();
+    expect(b.getByText("-")).toBeInTheDocument();
   });
 
   it("AC-12 FR-TLOG-012 SCR-044: a task's section has no Task column, pages through logsPage, and shows the empty and error states", async () => {

@@ -53,7 +53,7 @@ interface Body extends TimeLogBody {
     workDate: string;
     startMinute: number;
     totalMinutes: number;
-    bookingDate: string | null;
+    bookings: { date: string; minutes: number }[];
   }[];
   type: string;
   errors?: { field: string; message: string }[];
@@ -879,8 +879,10 @@ describe("Time logging API (feat-tlog-api)", () => {
       durationMinutes: 45
     });
     const booked = await as(a).put("/bookings", {
-      logIds: [byProject.id, byTask.id],
-      bookingDate: TODAY
+      logs: [
+        { logId: byProject.id, bookings: [{ date: TODAY, minutes: 15 }] },
+        { logId: byTask.id, bookings: [{ date: TODAY, minutes: 30 }] }
+      ]
     });
     expect(booked.status, JSON.stringify(booked.body)).toBe(200);
 
@@ -899,10 +901,10 @@ describe("Time logging API (feat-tlog-api)", () => {
 
     const bookings = await as(a).get(`/bookings?from=${TODAY}&to=${TODAY}`);
     expect(bookings.status).toBe(200);
-    const bookingOf = (id: string) =>
-      bookings.body.items.find((i) => i.id === id)?.bookingDate;
-    expect(bookingOf(byProject.id)).toBe(TODAY);
-    expect(bookingOf(byTask.id)).toBe(TODAY);
+    const bookingsOf = (id: string) =>
+      bookings.body.items.find((i) => i.id === id)?.bookings;
+    expect(bookingsOf(byProject.id)).toEqual([{ date: TODAY, minutes: 15 }]);
+    expect(bookingsOf(byTask.id)).toEqual([{ date: TODAY, minutes: 30 }]);
 
     for (const link of [
       { projectId: p.id },

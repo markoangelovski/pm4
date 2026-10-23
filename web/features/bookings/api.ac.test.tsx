@@ -29,7 +29,7 @@ const log: BookingLog = {
   project: { id: "p1", title: "Manhatan", deleted: false },
   task: { id: "t1", title: "Specifications 01", deleted: false },
   excludeFromStats: false,
-  bookingDate: "2026-10-07"
+  bookings: [{ date: "2026-10-07", minutes: 30 }]
 };
 
 const res = (status: number) => new Response(null, { status });
@@ -46,12 +46,12 @@ function setup<T>(hook: () => T, seed?: (queryClient: QueryClient) => void) {
 const invalidated = (queryClient: QueryClient, key: readonly unknown[]) =>
   queryClient.getQueryState(key)?.isInvalidated;
 
-describe("booking hooks (feat-book-web)", () => {
+describe("booking hooks (feat-book-web, feat-book-partial)", () => {
   beforeEach(() => {
     Object.values(api).forEach((fn) => fn.mockReset());
   });
 
-  it("AC-6 FR-BOOK-001 FR-BOOK-004 FR-BOOK-005: GET /bookings with the range, PUT /bookings with the body, invalidation, keys under timeKeys.all", async () => {
+  it("AC-21 FR-BOOK-001 FR-BOOK-004 FR-BOOK-005: GET /bookings with the range returns the items; PUT /bookings with the {logs} body invalidates bookingKeys.all and timeKeys.logs(); keys under timeKeys.all", async () => {
     expect(bookingKeys.all.slice(0, timeKeys.all.length)).toEqual([
       ...timeKeys.all
     ]);
@@ -79,9 +79,10 @@ describe("booking hooks (feat-book-web)", () => {
     );
     range.unmount();
 
-    // useSetBooking → API-BOOK-002, then bookingKeys.all is invalidated.
+    // useSetBooking → API-BOOK-002, then bookingKeys.all and timeKeys.logs() are invalidated.
     const rangeKey = bookingKeys.range("2026-10-01", "2026-10-09");
     const otherRangeKey = bookingKeys.range("2026-09-01", "2026-09-30");
+    const logListKey = timeKeys.logList({ projectId: "p1" }, 1);
     api.PUT.mockResolvedValueOnce({
       data: { items: [log] },
       response: res(200)
@@ -89,37 +90,31 @@ describe("booking hooks (feat-book-web)", () => {
     const set = setup(useSetBooking, (queryClient) => {
       queryClient.setQueryData(rangeKey, []);
       queryClient.setQueryData(otherRangeKey, []);
+      queryClient.setQueryData(logListKey, { items: [] });
     });
+    const body = {
+      logs: [
+        {
+          logId: "l1",
+          bookings: [
+            { date: "2026-10-06", minutes: 15 },
+            { date: "2026-10-07", minutes: 15 }
+          ]
+        },
+        { logId: "l2", bookings: [] }
+      ]
+    };
     let items: BookingLog[] | undefined;
     await act(async () => {
-      items = await set.result.current.mutateAsync({
-        logIds: ["l1"],
-        bookingDate: "2026-10-07"
-      });
+      items = await set.result.current.mutateAsync(body);
     });
     expect(items).toEqual([log]);
     expect(api.PUT).toHaveBeenCalledWith(
       "/api/v1/bookings",
-      expect.objectContaining({
-        body: { logIds: ["l1"], bookingDate: "2026-10-07" }
-      })
+      expect.objectContaining({ body })
     );
     expect(invalidated(set.queryClient, rangeKey)).toBe(true);
     expect(invalidated(set.queryClient, otherRangeKey)).toBe(true);
-
-    // Removing a booking sends null.
-    api.PUT.mockResolvedValueOnce({ data: { items: [] }, response: res(200) });
-    await act(async () => {
-      await set.result.current.mutateAsync({
-        logIds: ["l1"],
-        bookingDate: null
-      });
-    });
-    expect(api.PUT).toHaveBeenLastCalledWith(
-      "/api/v1/bookings",
-      expect.objectContaining({
-        body: { logIds: ["l1"], bookingDate: null }
-      })
-    );
+    expect(invalidated(set.queryClient, logListKey)).toBe(true);
   });
 });

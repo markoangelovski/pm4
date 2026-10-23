@@ -31,8 +31,13 @@ interface TimeLogBody {
   excludeFromStats: boolean;
 }
 
+interface BookingBody {
+  date: string;
+  minutes: number;
+}
+
 interface BookingLogBody extends TimeLogBody {
-  bookingDate: string | null;
+  bookings: BookingBody[];
 }
 
 interface ItemBody {
@@ -129,10 +134,13 @@ describe("Logged time API (feat-proto-sync-web)", () => {
     return response.body as unknown as TimeLogBody;
   };
 
-  const withBooking = (log: TimeLogBody, bookingDate: string | null) => ({
+  const withBooking = (log: TimeLogBody, bookings: BookingBody[]) => ({
     ...log,
-    bookingDate
+    bookings
   });
+
+  /** The direct log's booking. */
+  const BOOKED = [{ date: "2026-10-07", minutes: 60 }];
 
   const byId = (x: { id: string }, y: { id: string }) =>
     x.id < y.id ? -1 : x.id > y.id ? 1 : 0;
@@ -174,8 +182,9 @@ describe("Logged time API (feat-proto-sync-web)", () => {
       excludeFromStats: true
     });
     const booked = await as(a).put("/bookings", {
-      logIds: [direct.id],
-      bookingDate: "2026-10-07"
+      logs: [
+        { logId: direct.id, bookings: [{ date: "2026-10-07", minutes: 60 }] }
+      ]
     });
     expect(booked.status, JSON.stringify(booked.body)).toBe(200);
 
@@ -203,10 +212,8 @@ describe("Logged time API (feat-proto-sync-web)", () => {
     expect(response.status, JSON.stringify(response.body)).toBe(200);
     expect(response.body).toEqual({
       items: [
-        withBooking(onT1, null),
-        ...[withBooking(direct, "2026-10-07"), withBooking(onT2, null)].sort(
-          byId
-        )
+        withBooking(onT1, []),
+        ...[withBooking(direct, BOOKED), withBooking(onT2, [])].sort(byId)
       ],
       page: 1,
       pageSize: 25,
@@ -223,7 +230,7 @@ describe("Logged time API (feat-proto-sync-web)", () => {
 
     expect(response.status, JSON.stringify(response.body)).toBe(200);
     expect(response.body).toEqual({
-      items: [withBooking(logs.onT1, null)],
+      items: [withBooking(logs.onT1, [])],
       page: 1,
       pageSize: 25,
       total: 1,
@@ -240,9 +247,7 @@ describe("Logged time API (feat-proto-sync-web)", () => {
     const second = await as(a).get(`${url}&page=2`);
     expect(second.status, JSON.stringify(second.body)).toBe(200);
     expect(second.body).toEqual({
-      items: [
-        withBooking(last, last.id === logs.direct.id ? "2026-10-07" : null)
-      ],
+      items: [withBooking(last, last.id === logs.direct.id ? BOOKED : [])],
       page: 2,
       pageSize: 2,
       total: 3,

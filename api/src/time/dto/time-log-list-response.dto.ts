@@ -14,7 +14,7 @@ export class TimeLogListResponseDto {
   /** Minutes of all the matching logs, not only this page. */
   @ApiProperty({ type: "integer" })
   totalMinutes: number;
-  /** Minutes of the matching logs that have a booking date. */
+  /** Booked minutes of the matching logs (the sum of their bookings). */
   @ApiProperty({ type: "integer" })
   bookedMinutes: number;
 }

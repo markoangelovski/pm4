@@ -9,6 +9,7 @@ import type { RefDto } from "../common/dto/ref.dto.js";
 import { ProjectsService } from "../projects/projects.service.js";
 import { TasksService } from "../tasks/tasks.service.js";
 import { UsersRepository } from "../users/users.repository.js";
+import { toBookingLogDto } from "./bookings.service.js";
 import { CreateTimeLogDto } from "./dto/create-time-log.dto.js";
 import { ListTimeLogsQueryDto } from "./dto/list-time-logs-query.dto.js";
 import { TimeLogListResponseDto } from "./dto/time-log-list-response.dto.js";
@@ -135,10 +136,7 @@ export class TimeLogsService {
         query.pageSize
       );
     return {
-      items: rows.map((row) => ({
-        ...toTimeLogDto(row),
-        bookingDate: row.bookingDate
-      })),
+      items: rows.map(toBookingLogDto),
       page: query.page,
       pageSize: query.pageSize,
       total,

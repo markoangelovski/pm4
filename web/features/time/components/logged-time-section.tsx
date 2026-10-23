@@ -15,8 +15,36 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatDuration, formatWorkDate } from "@/lib/time";
 import { routes } from "@/lib/routes";
-import { TIME_LOG_PAGE_SIZE, useTimeLogs } from "../api";
+import { TIME_LOG_PAGE_SIZE, useTimeLogs, type TimeLogList } from "../api";
 import { DeletedName } from "./deleted-marker";
+
+/**
+ * A log's bookings, one per line ("6 Oct 2026 · 30m"), then "30m unbooked" while part of it is left;
+ * "-" when it has none.
+ */
+function BookedDates({ log }: { log: TimeLogList["items"][number] }) {
+  if (!log.bookings.length) return <>-</>;
+  const left =
+    log.durationMinutes - log.bookings.reduce((t, b) => t + b.minutes, 0);
+  return (
+    <div className="flex flex-col">
+      {log.bookings.map((b) => (
+        <span key={b.date}>
+          {formatWorkDate(b.date)}
+          <span className="text-muted-foreground tabular-nums">
+            {" "}
+            · {formatDuration(b.minutes)}
+          </span>
+        </span>
+      ))}
+      {left > 0 ? (
+        <span className="text-xs text-muted-foreground tabular-nums">
+          {formatDuration(left)} unbooked
+        </span>
+      ) : null}
+    </div>
+  );
+}
 
 /** SCR-044: the logged time of one project (with a Task column) or one task. */
 export function LoggedTimeSection({
@@ -120,7 +148,7 @@ export function LoggedTimeSection({
                       </TableCell>
                     ) : null}
                     <TableCell className="whitespace-nowrap">
-                      {l.bookingDate ? formatWorkDate(l.bookingDate) : "-"}
+                      <BookedDates log={l} />
                     </TableCell>
                     <TableCell className="whitespace-nowrap tabular-nums">
                       {formatDuration(l.durationMinutes)}

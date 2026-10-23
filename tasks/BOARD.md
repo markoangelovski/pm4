@@ -95,7 +95,7 @@
 | [T-0089](m4-time-logs/T-0089-the-prompt-item-and-dialog-the.md) | The Prompt item and dialog: the three prototype twins | M4 | web | S | done | — |
 | [T-0090](m4-time-logs/T-0090-fixed-header-and-footer-scrolling-body.md) | Fixed header and footer, scrolling body (D7): the confirmed prototype dialog's twin | M4 | web | S | done | T-0089 |
 | [T-0091](m4-time-logs/T-0091-editable-notes-d8-the-confirmed-prototype.md) | Editable notes (D8): the confirmed prototype's prompt.ts and dialog twins | M4 | web | S | done | T-0090 |
-| [T-0092](m4-time-logs/T-0092-bookings-table-and-migration-0008-the.md) | bookings table and migration 0008, the booking read model, PUT /bookings, the booked-time rule in PATCH /time-logs, booked minutes in lists and reports | M4 | api | L | blocked | — |
+| [T-0092](m4-time-logs/T-0092-bookings-table-and-migration-0008-the.md) | bookings table and migration 0008, the booking read model, PUT /bookings, the booked-time rule in PATCH /time-logs, booked minutes in lists and reports | M4 | api | L | ready | — |
 | [T-0093](m4-time-logs/T-0093-pmspa-without-the-booked-flag-the.md) | PMSPA without the booked flag; the import's booked-time failure and its preview warning | M4 | api | M | blocked | T-0092 |
 | [T-0094](m4-time-logs/T-0094-booking-hooks-the-twin-the-prototype.md) | Booking hooks (the twin), the prototype on the generated types, the mock import's booked-time warning and failure | M4 | web | S | blocked | T-0093 |
 | [T-0095](m4-time-logs/T-0095-drop-booking-date-migration-0009-after.md) | Drop booking_date (migration 0009), after the release with T1–T3 is live (D2) | M4 | api | S | blocked | T-0094 |

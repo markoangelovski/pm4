@@ -119,8 +119,18 @@ describe("Dashboard report API (feat-rpt-api)", () => {
     return response.body.id;
   };
 
-  const book = async (user: UserRow, logIds: string[], bookingDate: string) => {
-    const response = await as(user).put("/bookings", { logIds, bookingDate });
+  /** Books each `[logId, minutes]` to `date`, replacing the log's bookings. */
+  const book = async (
+    user: UserRow,
+    entries: [string, number][],
+    date: string
+  ) => {
+    const response = await as(user).put("/bookings", {
+      logs: entries.map(([logId, minutes]) => ({
+        logId,
+        bookings: [{ date, minutes }]
+      }))
+    });
     expect(response.status, JSON.stringify(response.body)).toBe(200);
   };
 
@@ -226,8 +236,15 @@ describe("Dashboard report API (feat-rpt-api)", () => {
       taskId: pm.id
     });
 
-    await book(user, [a, e], "2026-10-07");
-    await book(user, [g], "2026-10-01");
+    await book(
+      user,
+      [
+        [a, 120],
+        [e, 240]
+      ],
+      "2026-10-07"
+    );
+    await book(user, [[g, 60]], "2026-10-01");
 
     return {
       user,
@@ -335,7 +352,7 @@ describe("Dashboard report API (feat-rpt-api)", () => {
       projectId: otherProject.id
     });
     await createLog(other, { workDate: "2026-10-07", durationMinutes: 60 });
-    await book(other, [otherLog], "2026-10-06");
+    await book(other, [[otherLog, 300]], "2026-10-06");
 
     const result = await report(user, "2026-10-01", "2026-10-09");
     expect(result.days).toEqual(octoberDays);

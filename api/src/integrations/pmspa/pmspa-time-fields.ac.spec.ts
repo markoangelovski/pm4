@@ -21,17 +21,18 @@ const PM = { id: "t-pm", title: "PM", deleted: false };
 const MEETINGS = { id: "t-meetings", title: "Meetings", deleted: false };
 
 let seq = 0;
-const log = (fields: Partial<Pm4LogForPush> = {}): Pm4LogForPush => ({
-  id: `log-${++seq}`,
-  text: "Sprint planning",
-  title: null,
-  durationMinutes: 60,
-  excludeFromStats: false,
-  booked: false,
-  task: null,
-  project: null,
-  ...fields
-});
+// No `booked` (D6): cast, so this compiles before and after it leaves Pm4LogForPush.
+const log = (fields: Partial<Pm4LogForPush> = {}): Pm4LogForPush =>
+  ({
+    id: `log-${++seq}`,
+    text: "Sprint planning",
+    title: null,
+    durationMinutes: 60,
+    excludeFromStats: false,
+    task: null,
+    project: null,
+    ...fields
+  }) as Pm4LogForPush;
 
 const LONG = "x".repeat(200);
 
@@ -171,44 +172,38 @@ describe("PMSPA time mapping (feat-int-time-api)", () => {
     expect(plural(2, "entry", "entries")).toBe("2 entries");
   });
 
-  it("AC-17 FR-INT-010: the fingerprint tuples (D1)", () => {
+  it("AC-15 FR-INT-011 FR-INT-012: the fingerprint tuples (D1) have no booked element (D6)", () => {
     expect(
       pm4LogTuple(
-        log({ text: "Sprint planning", durationMinutes: 60, booked: true }),
+        log({ text: "Sprint planning", durationMinutes: 60 }),
         "66f1a0c0e4b0000000000011"
       )
-    ).toEqual(["Sprint planning", 60, "66f1a0c0e4b0000000000011", true]);
+    ).toStrictEqual(["Sprint planning", 60, "66f1a0c0e4b0000000000011"]);
     const [long] = pm4LogTuple(log({ text: "y".repeat(400) }), "title:AI");
     expect(long).toBe("y".repeat(349) + "…");
 
-    const event: RemoteEvent = {
+    // No `booked` (D6), cast as `log` above.
+    const event = {
       id: "66f1a0c0e4b00000000000e1",
       dayId: "66f1a0c0e4b00000000000d1",
       date: "2026-10-16",
       title: "Anthropic",
       taskId: "66f1a0c0e4b0000000000011",
-      booked: false,
-      logs: []
-    };
+      logs: [] as RemoteEvent["logs"]
+    } as RemoteEvent;
     const remoteLog = {
       id: "66f1a0c0e4b00000000000f1",
       title: "Review",
       duration: 1.25
     };
-    expect(pmspaLogTuple(remoteLog, event)).toEqual([
+    expect(pmspaLogTuple(remoteLog, event)).toStrictEqual([
       "Review",
       75,
       "66f1a0c0e4b0000000000011",
-      "Anthropic",
-      false
+      "Anthropic"
     ]);
     expect(
-      pmspaLogTuple(remoteLog, {
-        ...event,
-        taskId: null,
-        title: "Internal",
-        booked: true
-      })
-    ).toEqual(["Review", 75, null, "Internal", true]);
+      pmspaLogTuple(remoteLog, { ...event, taskId: null, title: "Internal" })
+    ).toStrictEqual(["Review", 75, null, "Internal"]);
   });
 });

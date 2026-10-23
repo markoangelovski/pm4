@@ -896,7 +896,6 @@ export function listDayDetails(dates: string[]): PmspaDayDto[] {
                       ?.title ?? ""
                 }
               : null,
-            booked: e.booked,
             logs: e.logs.map((l) => ({
               id: l.id,
               title: l.title,

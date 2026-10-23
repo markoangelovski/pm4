@@ -1,28 +1,20 @@
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException
-} from "@nestjs/common";
+import { BadRequestException, Injectable } from "@nestjs/common";
 import { UsersRepository } from "../users/users.repository.js";
 import {
   BookingListResponseDto,
   BookingLogResponseDto
 } from "./dto/booking-log-response.dto.js";
-import { SetBookingDto } from "./dto/set-booking.dto.js";
+import { SetBookingsDto } from "./dto/set-bookings.dto.js";
 import { WorkdaysQueryDto } from "./dto/workdays-query.dto.js";
 import { TimeRepository, type TimeLogRow } from "./time.repository.js";
-import {
-  assertDate,
-  assertNotFuture,
-  daysBetween,
-  toTimeLogDto
-} from "./time-logs.service.js";
+import { assertDate, daysBetween } from "./time-logs.service.js";
 
 const MAX_RANGE_DAYS = 366;
 
-/** The `BookingLog` read model: a `TimeLog` plus its booking date. */
+/** The `BookingLog` read model: a `TimeLog` plus its bookings. */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- stub (feat-book-partial)
 export function toBookingLogDto(row: TimeLogRow): BookingLogResponseDto {
-  return { ...toTimeLogDto(row), bookingDate: row.bookingDate };
+  throw new Error("not implemented (feat-book-partial)");
 }
 
 /** Bookings (API-BOOK-001/002), always the caller's own. */
@@ -58,34 +50,9 @@ export class BookingsService {
     return { items: rows.map(toBookingLogDto) };
   }
 
-  async set(
-    userId: string,
-    dto: SetBookingDto
-  ): Promise<BookingListResponseDto> {
-    if (dto.bookingDate !== null) {
-      assertDate(dto.bookingDate, "bookingDate");
-      await assertNotFuture(
-        this.usersRepository,
-        userId,
-        dto.bookingDate,
-        "bookingDate"
-      );
-    }
-    const result = await this.timeRepository.setBookingDate(
-      userId,
-      dto.logIds,
-      dto.bookingDate
-    );
-    if (result.status === "not-found") {
-      throw new NotFoundException("Time log not found.");
-    }
-    if (result.status === "not-bookable") {
-      throw new BadRequestException({
-        errors: [
-          { field: "logIds", message: "contains a log that can't be booked" }
-        ]
-      });
-    }
-    return { items: result.rows.map(toBookingLogDto) };
+  /** API-BOOK-002. */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- stub (feat-book-partial)
+  set(userId: string, dto: SetBookingsDto): Promise<BookingListResponseDto> {
+    throw new Error("not implemented (feat-book-partial)");
   }
 }

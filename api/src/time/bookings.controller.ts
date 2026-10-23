@@ -6,7 +6,7 @@ import {
   CurrentUser
 } from "../common/decorators/current-user/current-user.decorator.js";
 import { BookingListResponseDto } from "./dto/booking-log-response.dto.js";
-import { SetBookingDto } from "./dto/set-booking.dto.js";
+import { SetBookingsDto } from "./dto/set-bookings.dto.js";
 import { WorkdaysQueryDto } from "./dto/workdays-query.dto.js";
 import { BookingsService } from "./bookings.service.js";
 
@@ -26,13 +26,13 @@ export class BookingsController {
     return this.bookingsService.list(user.id, query);
   }
 
-  /** Book, re-date or unbook one or many logs (API-BOOK-002). */
+  /** Replace the bookings of one or many logs (API-BOOK-002). */
   @Put()
   @HttpCode(200)
   @ApiProblemResponses(400, 401, 404)
   set(
     @CurrentUser() user: AuthUser,
-    @Body() dto: SetBookingDto
+    @Body() dto: SetBookingsDto
   ): Promise<BookingListResponseDto> {
     return this.bookingsService.set(user.id, dto);
   }

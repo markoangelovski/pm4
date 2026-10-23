@@ -7,6 +7,7 @@ import {
   closeTestClients,
   deleteTestUsers,
   insertUser,
+  testDb,
   type UserRow
 } from "./support/auth-test-utils.js";
 import { insertProject, insertTask } from "./support/project-test-utils.js";
@@ -33,14 +34,38 @@ interface TimeLogBody {
   excludeFromStats: boolean;
 }
 
-interface BookingLogBody extends TimeLogBody {
-  bookingDate: string | null;
+interface BookingBody {
+  date: string;
+  minutes: number;
 }
 
-/** Any response body these tests read: a log, a day, a booking list or a Problem. */
+interface BookingLogBody extends TimeLogBody {
+  bookings: BookingBody[];
+}
+
+interface ReportDayBody {
+  workDate: string;
+  startMinute: number | null;
+  workedMinutes: number;
+  bookedMinutes: number;
+}
+
+interface ReportProjectBody {
+  kind: "project" | "unsorted" | "nonprod";
+  project: RefBody | null;
+  workedMinutes: number;
+  bookedMinutes: number;
+}
+
+/** Any response body these tests read: a log, a day, a list, a report or a Problem. */
 interface Body extends TimeLogBody {
+  startMinute: number | null;
   logs: TimeLogBody[];
   items: BookingLogBody[];
+  totalMinutes: number;
+  bookedMinutes: number;
+  days: ReportDayBody[];
+  projects: ReportProjectBody[];
   type: string;
   errors?: { field: string; message: string }[];
 }
@@ -55,7 +80,7 @@ async function send(req: request.Test): Promise<Res> {
   return { status: response.status, body: response.body as Body };
 }
 
-describe("Bookings API (feat-book-api)", () => {
+describe("Partial bookings API (feat-book-partial)", () => {
   let app: NestExpressApplication;
 
   beforeAll(async () => {
@@ -107,6 +132,11 @@ describe("Bookings API (feat-book-api)", () => {
   const fieldsOf = (body: { errors?: { field: string }[] }) =>
     (body.errors ?? []).map((e) => e.field);
 
+  const messageOf = (
+    body: { errors?: { field: string; message: string }[] },
+    field: string
+  ) => body.errors?.find((e) => e.field === field)?.message;
+
   /** Creates a log for `user` (day start 09:00) and returns it. */
   const createLog = async (
     user: UserRow,
@@ -121,12 +151,11 @@ describe("Bookings API (feat-book-api)", () => {
     return response.body;
   };
 
-  const book = async (
+  const setBookings = async (
     user: UserRow,
-    logIds: string[],
-    bookingDate: string | null
+    logs: { logId: string; bookings: BookingBody[] }[]
   ): Promise<BookingLogBody[]> => {
-    const response = await as(user).put("/bookings", { logIds, bookingDate });
+    const response = await as(user).put("/bookings", { logs });
     expect(response.status, JSON.stringify(response.body)).toBe(200);
     return response.body.items;
   };
@@ -141,23 +170,44 @@ describe("Bookings API (feat-book-api)", () => {
     return response.body.items;
   };
 
-  /** The booking date of log `id` as `GET /bookings` lists it (Sep–Oct 2026). */
-  const bookingDateOf = async (user: UserRow, id: string) => {
+  /** Log `id` as `GET /bookings` lists it (Sep–Oct 2026). */
+  const itemOf = async (user: UserRow, id: string) => {
     const items = await listBookings(user, "2026-09-01", "2026-10-09");
     const item = items.find((i) => i.id === id);
     expect(item, id).toBeDefined();
-    return item!.bookingDate;
+    return item!;
   };
 
-  const withBooking = (log: TimeLogBody, bookingDate: string | null) => ({
+  const bookingsOf = async (user: UserRow, id: string) =>
+    (await itemOf(user, id)).bookings;
+
+  /** The `bookings` rows of log `id`, straight from the database. */
+  const bookingRowCount = async (id: string) => {
+    const result = await testDb().query<{ count: string }>(
+      "SELECT count(*) AS count FROM bookings WHERE time_log_id = $1",
+      [id]
+    );
+    return Number(result.rows[0].count);
+  };
+
+  const withBookings = (log: TimeLogBody, bookings: BookingBody[]) => ({
     ...log,
-    bookingDate
+    bookings
   });
 
   const byId = (x: { id: string }, y: { id: string }) =>
     x.id < y.id ? -1 : x.id > y.id ? 1 : 0;
 
-  /** User A (Zagreb) with Anthropic (Meetings), Nvidia (Development, PM), PM Internal and logs a…h. */
+  const OCT6_30 = { date: "2026-10-06", minutes: 30 };
+  const OCT7_45 = { date: "2026-10-07", minutes: 45 };
+  const OCT7_120 = { date: "2026-10-07", minutes: 120 };
+  const OCT7_240 = { date: "2026-10-07", minutes: 240 };
+  const OCT1_60 = { date: "2026-10-01", minutes: 60 };
+
+  /**
+   * User A (Zagreb) with Anthropic (Meetings), Nvidia (Development, PM), PM Internal and logs a…h:
+   * a [7 Oct 120], e [7 Oct 240], f [6 Oct 30, 7 Oct 45], g [1 Oct 60]; b, c, d, h unbooked.
+   */
   const seed = async () => {
     const user = await insertUser({ time_zone: "Europe/Zagreb" });
     const anthropic = await insertProject(user.id, { title: "Anthropic" });
@@ -212,8 +262,12 @@ describe("Bookings API (feat-book-api)", () => {
       taskId: pm.id
     });
 
-    await book(user, [a.id, e.id], "2026-10-07");
-    await book(user, [g.id], "2026-10-01");
+    await setBookings(user, [
+      { logId: a.id, bookings: [OCT7_120] },
+      { logId: e.id, bookings: [OCT7_240] },
+      { logId: f.id, bookings: [OCT6_30, OCT7_45] },
+      { logId: g.id, bookings: [OCT1_60] }
+    ]);
 
     return {
       user,
@@ -223,9 +277,19 @@ describe("Bookings API (feat-book-api)", () => {
     };
   };
 
-  it("AC-1 API-BOOK-001: a range lists the logs worked or booked in it, by work date then entry order, each with its bookingDate", async () => {
+  it("AC-1 API-BOOK-001: a range lists the logs worked or booked in it, each with all its bookings by date and no bookingDate; other users' logs never", async () => {
     const { user, logs } = await seed();
-    const { a, b, c, d, e, f, g } = logs;
+    const { a, b, c, d, e, f, g, h } = logs;
+    const other = await insertUser({ time_zone: "Europe/Zagreb" });
+    const otherProject = await insertProject(other.id, { title: "Anthropic" });
+    const otherLog = await createLog(other, {
+      workDate: "2026-09-15",
+      durationMinutes: 60,
+      projectId: otherProject.id
+    });
+    await setBookings(other, [
+      { logId: otherLog.id, bookings: [{ date: "2026-10-06", minutes: 60 }] }
+    ]);
 
     const response = await as(user).get(
       "/bookings?from=2026-10-01&to=2026-10-09"
@@ -234,36 +298,25 @@ describe("Bookings API (feat-book-api)", () => {
     expect(response.status).toBe(200);
     expect(response.body).toEqual({
       items: [
-        withBooking(g, "2026-10-01"),
-        withBooking(a, "2026-10-07"),
-        withBooking(b, null),
-        withBooking(c, null),
-        withBooking(d, null),
-        withBooking(e, "2026-10-07"),
-        withBooking(f, null)
+        withBookings(g, [OCT1_60]),
+        withBookings(a, [OCT7_120]),
+        withBookings(b, []),
+        withBookings(c, []),
+        withBookings(d, []),
+        withBookings(e, [OCT7_240]),
+        withBookings(f, [OCT6_30, OCT7_45])
       ]
     });
-  });
-
-  it("AC-2 API-BOOK-001: a log booked outside the range is listed by its work date; other users' logs never appear; an empty range → []", async () => {
-    const { user, logs } = await seed();
-    const other = await insertUser();
-    const otherProject = await insertProject(other.id, { title: "Anthropic" });
-    const otherLog = await createLog(other, {
-      workDate: "2026-09-15",
-      durationMinutes: 60,
-      projectId: otherProject.id
-    });
-    await book(other, [otherLog.id], "2026-09-16");
-
+    for (const item of response.body.items) {
+      expect(item).not.toHaveProperty("bookingDate");
+    }
     expect(await listBookings(user, "2026-09-01", "2026-09-30")).toEqual([
-      withBooking(logs.g, "2026-10-01"),
-      withBooking(logs.h, null)
+      withBookings(g, [OCT1_60]),
+      withBookings(h, [])
     ]);
-    expect(await listBookings(user, "2026-08-01", "2026-08-31")).toEqual([]);
   });
 
-  describe("AC-3 API-BOOK-001: an invalid range → 400", () => {
+  describe("AC-2 API-BOOK-001/002: an invalid range → 400; no token → 401", () => {
     const invalid: [string, string][] = [
       ["from after to", "from=2026-10-09&to=2026-10-01"],
       ["a range over 366 days", "from=2025-01-01&to=2026-10-09"],
@@ -271,7 +324,7 @@ describe("Bookings API (feat-book-api)", () => {
       ["no to", "from=2026-10-01"]
     ];
 
-    it.each(invalid)("AC-3 API-BOOK-001: %s → 400", async (_, query) => {
+    it.each(invalid)("AC-2 API-BOOK-001: %s → 400", async (_, query) => {
       const user = await insertUser();
 
       const response = await as(user).get(`/bookings?${query}`);
@@ -279,224 +332,15 @@ describe("Bookings API (feat-book-api)", () => {
       expect(response.status).toBe(400);
       expect(response.body.type).toBe(errorType("validation"));
     });
-  });
 
-  it("AC-4 API-BOOK-002: PUT books one log → 200 with the log and its bookingDate; GET shows it", async () => {
-    const { user, logs } = await seed();
-
-    const response = await as(user).put("/bookings", {
-      logIds: [logs.b.id],
-      bookingDate: "2026-10-06"
-    });
-
-    expect(response.status).toBe(200);
-    expect(response.body).toEqual({
-      items: [withBooking(logs.b, "2026-10-06")]
-    });
-    expect(await bookingDateOf(user, logs.b.id)).toBe("2026-10-06");
-  });
-
-  it("AC-5 API-BOOK-002: repeated ids → each log once, in id order", async () => {
-    const { user, logs } = await seed();
-    const { b, f } = logs;
-
-    const items = await book(user, [f.id, b.id, f.id], "2026-10-07");
-
-    expect(items).toEqual(
-      [withBooking(b, "2026-10-07"), withBooking(f, "2026-10-07")].sort(byId)
-    );
-  });
-
-  it("AC-6 API-BOOK-002: bookingDate null unbooks; a booking date before the work date is allowed", async () => {
-    const { user, logs } = await seed();
-
-    expect(await book(user, [logs.a.id], null)).toEqual([
-      withBooking(logs.a, null)
-    ]);
-    expect(await bookingDateOf(user, logs.a.id)).toBeNull();
-
-    expect(await book(user, [logs.a.id], "2026-09-01")).toEqual([
-      withBooking(logs.a, "2026-09-01")
-    ]);
-  });
-
-  describe("AC-7 API-BOOK-002: invalid bodies → 400 naming the field", () => {
-    let user: UserRow;
-    let logId: string;
-
-    beforeAll(async () => {
-      const seeded = await seed();
-      user = seeded.user;
-      logId = seeded.logs.b.id;
-    });
-
-    const cases: [string, () => object, string][] = [
-      [
-        "a future bookingDate",
-        () => ({ logIds: [logId], bookingDate: "2026-10-10" }),
-        "bookingDate"
-      ],
-      [
-        "bookingDate 2026-02-30",
-        () => ({ logIds: [logId], bookingDate: "2026-02-30" }),
-        "bookingDate"
-      ],
-      [
-        "bookingDate 7.10.2026",
-        () => ({ logIds: [logId], bookingDate: "7.10.2026" }),
-        "bookingDate"
-      ],
-      ["no bookingDate", () => ({ logIds: [logId] }), "bookingDate"],
-      [
-        "logIds []",
-        () => ({ logIds: [], bookingDate: "2026-10-06" }),
-        "logIds"
-      ],
-      [
-        "101 logIds",
-        () => ({
-          logIds: Array.from({ length: 101 }, () => randomUUID()),
-          bookingDate: "2026-10-06"
-        }),
-        "logIds"
-      ],
-      [
-        'logIds ["abc"]',
-        () => ({ logIds: ["abc"], bookingDate: "2026-10-06" }),
-        "logIds"
-      ],
-      ["no logIds", () => ({ bookingDate: "2026-10-06" }), "logIds"]
-    ];
-
-    it.each(cases)("AC-7 API-BOOK-002: %s → 400", async (_, body, field) => {
-      const response = await as(user).put("/bookings", body());
-
-      expect(response.status).toBe(400);
-      expect(response.body.type).toBe(errorType("validation"));
-      expect(fieldsOf(response.body)).toContain(field);
-    });
-
-    it("AC-7 API-BOOK-002: the rejected requests changed nothing", async () => {
-      expect(await bookingDateOf(user, logId)).toBeNull();
-    });
-  });
-
-  it("AC-8 API-BOOK-002: booking an unsorted or excluded log → 400 naming logIds, nothing changes; unbooking them → 200", async () => {
-    const { user, logs } = await seed();
-    const { b, c, d } = logs;
-
-    for (const unbookable of [c, d]) {
-      const response = await as(user).put("/bookings", {
-        logIds: [b.id, unbookable.id],
-        bookingDate: "2026-10-06"
-      });
-      expect(response.status, unbookable.text).toBe(400);
-      expect(fieldsOf(response.body)).toContain("logIds");
-      expect(await bookingDateOf(user, b.id)).toBeNull();
-    }
-
-    expect(await book(user, [c.id, d.id], null)).toEqual(
-      [withBooking(c, null), withBooking(d, null)].sort(byId)
-    );
-  });
-
-  it("AC-9 API-BOOK-002: another user's log or an unknown id among the ids → 404, and nothing changes", async () => {
-    const { user, logs } = await seed();
-    const other = await insertUser();
-    const otherProject = await insertProject(other.id, { title: "Anthropic" });
-    const otherLog = await createLog(other, {
-      workDate: "2026-10-06",
-      durationMinutes: 60,
-      projectId: otherProject.id
-    });
-
-    for (const foreign of [otherLog.id, randomUUID()]) {
-      const response = await as(user).put("/bookings", {
-        logIds: [logs.b.id, logs.f.id, foreign],
-        bookingDate: "2026-10-06"
-      });
-      expect(response.status, foreign).toBe(404);
-      expect(response.body.type).toBe(errorType("not-found"));
-    }
-    expect(await bookingDateOf(user, logs.b.id)).toBeNull();
-    expect(await bookingDateOf(user, logs.f.id)).toBeNull();
-    expect(await bookingDateOf(other, otherLog.id)).toBeNull();
-  });
-
-  describe("AC-10 API-TLOG-004: edits that keep a log bookable keep its booking", () => {
-    const edits: [string, (t: { pmId: string }) => object][] = [
-      ["durationMinutes 180", () => ({ durationMinutes: 180 })],
-      ["text", () => ({ text: "Refactoring" })],
-      [
-        "workDate 2026-10-05",
-        () => ({ workDate: "2026-10-05", dayStartMinute: 540 })
-      ],
-      ["taskId of Nvidia/PM", ({ pmId }) => ({ taskId: pmId })]
-    ];
-
-    it.each(edits)(
-      "AC-10 API-TLOG-004: PATCH %s → e stays booked to 2026-10-07",
-      async (_, edit) => {
-        const { user, logs, tasks } = await seed();
-
-        const response = await as(user).patch(
-          `/time-logs/${logs.e.id}`,
-          edit({ pmId: tasks.pm.id })
-        );
-
-        expect(response.status, JSON.stringify(response.body)).toBe(200);
-        expect(await bookingDateOf(user, logs.e.id)).toBe("2026-10-07");
-      }
-    );
-  });
-
-  it("AC-11 API-TLOG-004: excluding a log or removing its project clears its booking; another project keeps it", async () => {
-    const { user, logs, projects } = await seed();
-
-    const excluded = await as(user).patch(`/time-logs/${logs.e.id}`, {
-      excludeFromStats: true
-    });
-    expect(excluded.status).toBe(200);
-    expect(await bookingDateOf(user, logs.e.id)).toBeNull();
-
-    const unlinked = await as(user).patch(`/time-logs/${logs.a.id}`, {
-      projectId: null
-    });
-    expect(unlinked.status).toBe(200);
-    expect(await bookingDateOf(user, logs.a.id)).toBeNull();
-
-    const moved = await as(user).patch(`/time-logs/${logs.g.id}`, {
-      projectId: projects.anthropic.id
-    });
-    expect(moved.status).toBe(200);
-    expect(await bookingDateOf(user, logs.g.id)).toBe("2026-10-01");
-  });
-
-  it("AC-12 API-BOOK-001, API-TLOG-006: a deleted log leaves the bookings; the day's logs carry no bookingDate", async () => {
-    const { user, logs } = await seed();
-
-    expect((await as(user).delete(`/time-logs/${logs.a.id}`)).status).toBe(204);
-
-    const items = await listBookings(user, "2026-10-01", "2026-10-09");
-    expect(items.map((i) => i.id)).not.toContain(logs.a.id);
-
-    const day = await as(user).get("/workdays/2026-10-06");
-    expect(day.status).toBe(200);
-    expect(day.body.logs).toHaveLength(3);
-    for (const log of day.body.logs) {
-      expect(log).not.toHaveProperty("bookingDate");
-    }
-  });
-
-  describe("AC-13 API-BOOK-*: both endpoints need a token", () => {
     type Method = "get" | "put";
-    const cases: [Method, string, object | undefined][] = [
+    const unauthorized: [Method, string, object | undefined][] = [
       ["get", "/bookings?from=2026-10-01&to=2026-10-09", undefined],
-      ["put", "/bookings", { logIds: [randomUUID()], bookingDate: null }]
+      ["put", "/bookings", { logs: [{ logId: randomUUID(), bookings: [] }] }]
     ];
 
-    it.each(cases)(
-      "AC-13 API-BOOK-*: %s %s without a token → 401",
+    it.each(unauthorized)(
+      "AC-2 API-BOOK-*: %s %s without a token → 401",
       async (method, url, body) => {
         const server = request(app.getHttpServer());
         const req = server[method](`/api/v1${url}`);
@@ -509,5 +353,430 @@ describe("Bookings API (feat-book-api)", () => {
         });
       }
     );
+  });
+
+  it("AC-3 API-BOOK-002: PUT replaces each listed log's whole list → 200 with the logs in id order, bookings by date", async () => {
+    const { user, logs } = await seed();
+    const { a, b, f } = logs;
+
+    const one = await as(user).put("/bookings", {
+      logs: [{ logId: b.id, bookings: [OCT6_30] }]
+    });
+    expect(one.status, JSON.stringify(one.body)).toBe(200);
+    expect(one.body).toEqual({ items: [withBookings(b, [OCT6_30])] });
+    expect(await bookingsOf(user, b.id)).toEqual([OCT6_30]);
+
+    const all = { date: "2026-10-07", minutes: 135 };
+    expect(await setBookings(user, [{ logId: f.id, bookings: [all] }])).toEqual(
+      [withBookings(f, [all])]
+    );
+    expect(await bookingsOf(user, f.id)).toEqual([all]);
+
+    expect(await setBookings(user, [{ logId: a.id, bookings: [] }])).toEqual([
+      withBookings(a, [])
+    ]);
+    expect(await bookingsOf(user, a.id)).toEqual([]);
+
+    const beforeWork = { date: "2026-09-01", minutes: 120 };
+    expect(
+      await setBookings(user, [{ logId: a.id, bookings: [beforeWork] }])
+    ).toEqual([withBookings(a, [beforeWork])]);
+
+    const oct6 = { date: "2026-10-06", minutes: 15 };
+    const oct7 = { date: "2026-10-07", minutes: 15 };
+    expect(
+      await setBookings(user, [{ logId: b.id, bookings: [oct7, oct6] }])
+    ).toEqual([withBookings(b, [oct6, oct7])]);
+
+    expect(
+      await setBookings(user, [
+        { logId: f.id, bookings: [OCT6_30, OCT7_45] },
+        { logId: b.id, bookings: [] }
+      ])
+    ).toEqual(
+      [withBookings(b, []), withBookings(f, [OCT6_30, OCT7_45])].sort(byId)
+    );
+  });
+
+  describe("AC-4 API-BOOK-002: invalid bodies → 400 naming the field, and nothing changes", () => {
+    let user: UserRow;
+    let ids: { a: string; b: string; c: string; d: string };
+
+    beforeAll(async () => {
+      const seeded = await seed();
+      user = seeded.user;
+      const { a, b, c, d } = seeded.logs;
+      ids = { a: a.id, b: b.id, c: c.id, d: d.id };
+    });
+
+    const booking = (date: string, minutes: number) => ({ date, minutes });
+    /** b's valid new list, sent first where a later entry fails. */
+    const validB = () => ({
+      logId: ids.b,
+      bookings: [booking("2026-10-06", 15)]
+    });
+    const oneBooking = (date: string, minutes: number) => ({
+      logs: [{ logId: ids.b, bookings: [booking(date, minutes)] }]
+    });
+
+    const cases: [string, () => object, string, string?][] = [
+      ["logs []", () => ({ logs: [] }), "logs"],
+      [
+        "101 entries",
+        () => ({
+          logs: Array.from({ length: 101 }, () => ({
+            logId: randomUUID(),
+            bookings: []
+          }))
+        }),
+        "logs"
+      ],
+      ["no logs", () => ({}), "logs"],
+      [
+        'logId "abc"',
+        () => ({ logs: [{ logId: "abc", bookings: [] }] }),
+        "logs.0.logId"
+      ],
+      ["no bookings", () => ({ logs: [{ logId: ids.b }] }), "logs.0.bookings"],
+      [
+        "97 bookings",
+        () => ({
+          logs: [
+            {
+              logId: ids.b,
+              bookings: Array.from({ length: 97 }, (_, i) =>
+                booking(
+                  `2026-0${1 + Math.floor(i / 28)}-${String(1 + (i % 28)).padStart(2, "0")}`,
+                  15
+                )
+              )
+            }
+          ]
+        }),
+        "logs.0.bookings"
+      ],
+      [
+        "date 2026-02-30",
+        () => oneBooking("2026-02-30", 15),
+        "logs.0.bookings.0.date"
+      ],
+      [
+        "date 7.10.2026",
+        () => oneBooking("7.10.2026", 15),
+        "logs.0.bookings.0.date"
+      ],
+      [
+        "date 2026-10-10 (tomorrow)",
+        () => oneBooking("2026-10-10", 15),
+        "logs.0.bookings.0.date",
+        "must not be after today"
+      ],
+      [
+        "minutes 0",
+        () => oneBooking("2026-10-06", 0),
+        "logs.0.bookings.0.minutes"
+      ],
+      [
+        "minutes 20",
+        () => oneBooking("2026-10-06", 20),
+        "logs.0.bookings.0.minutes"
+      ],
+      [
+        "minutes 1455",
+        () => oneBooking("2026-10-06", 1455),
+        "logs.0.bookings.0.minutes"
+      ],
+      [
+        "a log listed twice",
+        () => ({ logs: [validB(), { logId: ids.b, bookings: [] }] }),
+        "logs.1.logId",
+        "lists a log twice"
+      ],
+      [
+        "two bookings on one date",
+        () => ({
+          logs: [
+            {
+              logId: ids.b,
+              bookings: [booking("2026-10-06", 15), booking("2026-10-06", 15)]
+            }
+          ]
+        }),
+        "logs.0.bookings",
+        "has two bookings on one date"
+      ],
+      [
+        "b [6 Oct 45, 7 Oct 30] (60 min log)",
+        () => ({
+          logs: [
+            {
+              logId: ids.b,
+              bookings: [booking("2026-10-06", 45), booking("2026-10-07", 30)]
+            }
+          ]
+        }),
+        "logs.0.bookings",
+        "adds up to more than the log's duration"
+      ],
+      [
+        "the unsorted log c with a booking",
+        () => ({
+          logs: [
+            validB(),
+            { logId: ids.c, bookings: [booking("2026-10-06", 15)] }
+          ]
+        }),
+        "logs.1.bookings",
+        "can't be booked"
+      ],
+      [
+        "the excluded log d with a booking",
+        () => ({
+          logs: [
+            validB(),
+            { logId: ids.d, bookings: [booking("2026-10-06", 15)] }
+          ]
+        }),
+        "logs.1.bookings",
+        "can't be booked"
+      ]
+    ];
+
+    it.each(cases)(
+      "AC-4 API-BOOK-002: %s → 400",
+      async (_, body, field, message) => {
+        const response = await as(user).put("/bookings", body());
+
+        expect(response.status, JSON.stringify(response.body)).toBe(400);
+        expect(response.body.type).toBe(errorType("validation"));
+        expect(fieldsOf(response.body)).toContain(field);
+        if (message) expect(messageOf(response.body, field)).toBe(message);
+      }
+    );
+
+    it("AC-4 API-BOOK-002: the rejected requests changed nothing; c and d with [] → 200", async () => {
+      expect(await bookingsOf(user, ids.a)).toEqual([OCT7_120]);
+      expect(await bookingsOf(user, ids.b)).toEqual([]);
+
+      const response = await as(user).put("/bookings", {
+        logs: [
+          { logId: ids.c, bookings: [] },
+          { logId: ids.d, bookings: [] }
+        ]
+      });
+      expect(response.status, JSON.stringify(response.body)).toBe(200);
+      expect(response.body.items.map((i) => i.bookings)).toEqual([[], []]);
+    });
+  });
+
+  it("AC-5 API-BOOK-002: another user's log or an unknown id among the logs → 404, and nothing changes", async () => {
+    const { user, logs } = await seed();
+    const other = await insertUser({ time_zone: "Europe/Zagreb" });
+    const otherProject = await insertProject(other.id, { title: "Anthropic" });
+    const otherLog = await createLog(other, {
+      workDate: "2026-10-06",
+      durationMinutes: 60,
+      projectId: otherProject.id
+    });
+
+    for (const foreign of [otherLog.id, randomUUID()]) {
+      const response = await as(user).put("/bookings", {
+        logs: [
+          { logId: logs.b.id, bookings: [OCT6_30] },
+          { logId: logs.f.id, bookings: [] },
+          { logId: foreign, bookings: [OCT6_30] }
+        ]
+      });
+      expect(response.status, foreign).toBe(404);
+      expect(response.body.type).toBe(errorType("not-found"));
+    }
+    expect(await bookingsOf(user, logs.b.id)).toEqual([]);
+    expect(await bookingsOf(user, logs.f.id)).toEqual([OCT6_30, OCT7_45]);
+    expect(await bookingsOf(other, otherLog.id)).toEqual([]);
+  });
+
+  describe("AC-6 API-TLOG-004: edits that keep a log bookable and long enough keep its bookings", () => {
+    const edits: [string, (t: { pmId: string }) => object][] = [
+      ["durationMinutes 300", () => ({ durationMinutes: 300 })],
+      ["text", () => ({ text: "Refactoring" })],
+      [
+        "workDate 2026-10-05",
+        () => ({ workDate: "2026-10-05", dayStartMinute: 540 })
+      ],
+      ["taskId of Nvidia/PM", ({ pmId }) => ({ taskId: pmId })]
+    ];
+
+    it.each(edits)(
+      "AC-6 API-TLOG-004: PATCH %s → e keeps [7 Oct 240]",
+      async (_, edit) => {
+        const { user, logs, tasks } = await seed();
+
+        const response = await as(user).patch(
+          `/time-logs/${logs.e.id}`,
+          edit({ pmId: tasks.pm.id })
+        );
+
+        expect(response.status, JSON.stringify(response.body)).toBe(200);
+        expect(await bookingsOf(user, logs.e.id)).toEqual([OCT7_240]);
+      }
+    );
+  });
+
+  it("AC-7 API-TLOG-004: a duration below the booked time → 400 on durationMinutes and nothing changes; down to the booked time → 200", async () => {
+    const { user, logs } = await seed();
+    const { e, f } = logs;
+
+    const shorter = await as(user).patch(`/time-logs/${e.id}`, {
+      durationMinutes: 180
+    });
+    expect(shorter.status, JSON.stringify(shorter.body)).toBe(400);
+    expect(shorter.body.type).toBe(errorType("validation"));
+    expect(messageOf(shorter.body, "durationMinutes")).toBe(
+      "4h of this log is booked. Remove bookings first, or keep at least 4h."
+    );
+    expect(await itemOf(user, e.id)).toMatchObject({
+      durationMinutes: 240,
+      bookings: [OCT7_240]
+    });
+
+    const partly = await as(user).patch(`/time-logs/${f.id}`, {
+      durationMinutes: 60
+    });
+    expect(partly.status, JSON.stringify(partly.body)).toBe(400);
+    expect(messageOf(partly.body, "durationMinutes")).toBe(
+      "1h 15m of this log is booked. Remove bookings first, or keep at least 1h 15m."
+    );
+    expect((await itemOf(user, f.id)).durationMinutes).toBe(135);
+
+    const exact = await as(user).patch(`/time-logs/${f.id}`, {
+      durationMinutes: 75
+    });
+    expect(exact.status, JSON.stringify(exact.body)).toBe(200);
+    expect(await itemOf(user, f.id)).toMatchObject({
+      durationMinutes: 75,
+      bookings: [OCT6_30, OCT7_45]
+    });
+
+    const moved = await as(user).patch(`/time-logs/${e.id}`, {
+      durationMinutes: 180,
+      workDate: "2026-10-08",
+      dayStartMinute: 540
+    });
+    expect(moved.status, JSON.stringify(moved.body)).toBe(400);
+    expect(fieldsOf(moved.body)).toContain("durationMinutes");
+    const day = await as(user).get("/workdays/2026-10-08");
+    expect(day.status).toBe(200);
+    expect(day.body.startMinute).toBeNull();
+    expect(day.body.logs).toEqual([]);
+    expect(await itemOf(user, e.id)).toMatchObject({
+      workDate: "2026-10-07",
+      durationMinutes: 240
+    });
+  });
+
+  it("AC-8 API-TLOG-004: excluding a log or removing its project removes its bookings (even with a shorter duration); another project keeps them", async () => {
+    const { user, logs, projects } = await seed();
+
+    const excluded = await as(user).patch(`/time-logs/${logs.e.id}`, {
+      excludeFromStats: true
+    });
+    expect(excluded.status, JSON.stringify(excluded.body)).toBe(200);
+    expect(await bookingsOf(user, logs.e.id)).toEqual([]);
+
+    const shortened = await as(user).patch(`/time-logs/${logs.f.id}`, {
+      excludeFromStats: true,
+      durationMinutes: 15
+    });
+    expect(shortened.status, JSON.stringify(shortened.body)).toBe(200);
+    expect(await itemOf(user, logs.f.id)).toMatchObject({
+      durationMinutes: 15,
+      bookings: []
+    });
+
+    const unlinked = await as(user).patch(`/time-logs/${logs.a.id}`, {
+      projectId: null
+    });
+    expect(unlinked.status, JSON.stringify(unlinked.body)).toBe(200);
+    expect(await bookingsOf(user, logs.a.id)).toEqual([]);
+
+    const moved = await as(user).patch(`/time-logs/${logs.g.id}`, {
+      projectId: projects.internal.id
+    });
+    expect(moved.status, JSON.stringify(moved.body)).toBe(200);
+    expect(await bookingsOf(user, logs.g.id)).toEqual([OCT1_60]);
+  });
+
+  it("AC-9 API-TLOG-006, API-WD-004: deleting a log or its day deletes its bookings; a log booked to the deleted day keeps its booking", async () => {
+    const first = await seed();
+
+    expect(
+      (await as(first.user).delete(`/time-logs/${first.logs.a.id}`)).status
+    ).toBe(204);
+    const items = await listBookings(first.user, "2026-10-01", "2026-10-09");
+    expect(items.map((i) => i.id)).not.toContain(first.logs.a.id);
+    expect(await bookingRowCount(first.logs.a.id)).toBe(0);
+
+    const { user, logs } = await seed();
+    expect((await as(user).delete("/workdays/2026-10-07")).status).toBe(204);
+    const after = await listBookings(user, "2026-10-01", "2026-10-09");
+    expect(after.map((i) => i.id)).not.toContain(logs.e.id);
+    expect(after.map((i) => i.id)).not.toContain(logs.f.id);
+    expect(await bookingRowCount(logs.e.id)).toBe(0);
+    expect(await bookingRowCount(logs.f.id)).toBe(0);
+    expect(await bookingsOf(user, logs.a.id)).toEqual([OCT7_120]);
+  });
+
+  it("AC-10 API-TLOG-001: a project's or task's logs carry their bookings; bookedMinutes sums the bookings", async () => {
+    const { user, logs, projects, tasks } = await seed();
+
+    const byProject = await as(user).get(
+      `/time-logs?projectId=${projects.anthropic.id}`
+    );
+    expect(byProject.status, JSON.stringify(byProject.body)).toBe(200);
+    expect(byProject.body).toMatchObject({
+      totalMinutes: 345,
+      bookedMinutes: 195
+    });
+    const bookingsById = Object.fromEntries(
+      byProject.body.items.map((i) => [i.id, i.bookings])
+    );
+    expect(bookingsById).toEqual({
+      [logs.a.id]: [OCT7_120],
+      [logs.d.id]: [],
+      [logs.f.id]: [OCT6_30, OCT7_45]
+    });
+    for (const item of byProject.body.items) {
+      expect(item).not.toHaveProperty("bookingDate");
+    }
+
+    const byTask = await as(user).get(`/time-logs?taskId=${tasks.meetings.id}`);
+    expect(byTask.status, JSON.stringify(byTask.body)).toBe(200);
+    expect(byTask.body.bookedMinutes).toBe(195);
+  });
+
+  it("AC-11 API-RPT-001: booked minutes count on the log's work date and project, whatever the bookings' dates", async () => {
+    const { user } = await seed();
+
+    const report = await as(user).get(
+      "/reports/dashboard?from=2026-10-01&to=2026-10-09"
+    );
+    expect(report.status, JSON.stringify(report.body)).toBe(200);
+    expect(report.body.days.map((d) => [d.workDate, d.bookedMinutes])).toEqual([
+      ["2026-10-06", 120],
+      ["2026-10-07", 315]
+    ]);
+    const bookedOf = (title: string) =>
+      report.body.projects.find((p) => p.project?.title === title)
+        ?.bookedMinutes;
+    expect(bookedOf("Anthropic")).toBe(195);
+    expect(bookedOf("Nvidia")).toBe(240);
+
+    const sep30 = await as(user).get(
+      "/reports/dashboard?from=2026-09-30&to=2026-09-30"
+    );
+    expect(sep30.status, JSON.stringify(sep30.body)).toBe(200);
+    expect(sep30.body.days).toMatchObject([
+      { workDate: "2026-09-30", bookedMinutes: 60 }
+    ]);
   });
 });

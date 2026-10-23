@@ -169,12 +169,13 @@ async function findLogLink(timeLogId: string): Promise<LinkDbRow | null> {
   return result.rows[0] ?? null;
 }
 
-async function bookingDateOf(timeLogId: string): Promise<string | null> {
-  const result = await testDb().query<{ booking_date: string | null }>(
-    "SELECT booking_date::text AS booking_date FROM time_logs WHERE id = $1",
+/** The number of `bookings` rows of a PM4 log. */
+async function bookingCount(timeLogId: string): Promise<number> {
+  const result = await testDb().query<{ count: string }>(
+    "SELECT count(*) AS count FROM bookings WHERE time_log_id = $1",
     [timeLogId]
   );
-  return result.rows[0].booking_date;
+  return Number(result.rows[0].count);
 }
 
 async function insertTaskRow(
@@ -221,7 +222,6 @@ interface PmspaEventBody {
   id: string;
   title: string;
   task: { id: string; title: string; projectTitle: string } | null;
-  booked: boolean;
   logs: PmspaLogBody[];
 }
 interface PmspaDayBody {
@@ -538,7 +538,6 @@ describe("PMSPA time API (feat-int-time-api)", () => {
         title: "Release 4.2 rollout",
         projectTitle: "Nvidia"
       },
-      booked: false,
       logs: [
         {
           id: rollout.logs[0].id,
@@ -555,12 +554,10 @@ describe("PMSPA time API (feat-int-time-api)", () => {
       ]
     });
     expect(d16.events[1].task?.projectTitle).toBe("Acme Website Relaunch");
-    expect(
-      d14.events.map((e) => [e.title, e.task?.title ?? null, e.booked])
-    ).toEqual([
-      ["Internal", null, false],
-      ["Meetings", "Meetings", true],
-      ["nonprod", null, false]
+    expect(d14.events.map((e) => [e.title, e.task?.title ?? null])).toEqual([
+      ["Internal", null],
+      ["Meetings", "Meetings"],
+      ["nonprod", null]
     ]);
     expect(d13.events[0].logs.map((l) => l.durationMinutes)).toEqual([120, 18]);
 
@@ -680,7 +677,7 @@ describe("PMSPA time API (feat-int-time-api)", () => {
       task: { title: "Meetings", deleted: false },
       excludeFromStats: false
     });
-    expect(await bookingDateOf(byText["Client sync"].id)).toBeNull();
+    expect(await bookingCount(byText["Client sync"].id)).toBe(0);
     expect(byText["Sick leave"]).toMatchObject({
       title: "nonprod",
       project: null,
@@ -783,10 +780,7 @@ describe("PMSPA time API (feat-int-time-api)", () => {
       byKey(preview.body.items)[`event:${meetingsEvent.id}`]
     ).toMatchObject({
       action: "update",
-      warnings: [
-        "1 PM4 log moves to “QA” (its task changed in PMSPA).",
-        "Booked in PMSPA: imported logs aren't booked."
-      ]
+      warnings: ["1 PM4 log moves to “QA” (its task changed in PMSPA)."]
     });
 
     const run = await runImport(a, ["2026-10-14"]);
@@ -915,8 +909,8 @@ describe("PMSPA time API (feat-int-time-api)", () => {
     }
   });
 
-  it("AC-10 API-INT-010 API-INT-011 FR-INT-012: a pushed day is skipped with no PMSPA write; booking a log updates its event's booked flag", async () => {
-    const { a, internal, logs } = await pushSetup();
+  it("AC-10 API-INT-010 API-INT-011 FR-INT-012: a pushed day is skipped with no PMSPA write", async () => {
+    const { a } = await pushSetup();
     await pushed(a);
     const writes = dayWrites().length;
 
@@ -938,19 +932,188 @@ describe("PMSPA time API (feat-int-time-api)", () => {
       Array<string>(7).fill("skipped")
     );
     expect(dayWrites()).toHaveLength(writes);
+  });
 
+  it("AC-14 FR-INT-012 API-INT-011: pushing a day whose logs are all booked never writes PMSPA's booked flag: false on a new event, PMSPA's true kept", async () => {
+    const { a, internal, logs } = await pushSetup();
     const booked = await pm4(a).put("/bookings", {
-      logIds: [logs.hiring.id],
-      bookingDate: TODAY
+      logs: [
+        { logId: logs.sprint.id, bookings: [{ date: TODAY, minutes: 60 }] },
+        { logId: logs.weekly.id, bookings: [{ date: TODAY, minutes: 30 }] },
+        { logId: logs.hiring.id, bookings: [{ date: TODAY, minutes: 45 }] }
+      ]
     });
-    expect(booked.status).toBe(200);
-    const key = `event:project:${internal.id}`;
-    const changed = await pushPreview(a);
-    expect(byKey(changed.body.items)[key].action).toBe("update");
+    expect(booked.status, JSON.stringify(booked.body)).toBe(200);
+
+    await pushed(a);
+    expect(fake.eventsOn(TODAY, X).map((e) => e.booked)).toEqual(
+      Array<boolean>(6).fill(false)
+    );
+
+    eventOn(fake, TODAY, "PM Internal")!.booked = true;
+    const edited = await pm4(a).patch(`/time-logs/${logs.hiring.id}`, {
+      text: "Hiring and onboarding"
+    });
+    expect(edited.status).toBe(200);
     const run = await push(a);
-    expect(byKey(run.body.items)[key].outcome).toBe("updated");
+    expect(byKey(run.body.items)[`event:project:${internal.id}`].outcome).toBe(
+      "updated"
+    );
     expect(eventOn(fake, TODAY, "PM Internal")?.booked).toBe(true);
-    expect(eventOn(fake, TODAY, "AI · Time")?.booked).toBe(false);
+    expect(
+      dayWrites().filter((c) =>
+        JSON.stringify(c.body ?? null).includes("booked")
+      )
+    ).toEqual([]);
+  });
+
+  it("AC-14 FR-INT-011 API-INT-008: importing an event booked in PMSPA warns nothing about it, and its logs have no bookings", async () => {
+    const { a } = await setup();
+    const meetings = eventOn(fake, "2026-10-14", "Meetings")!;
+    expect(meetings.booked).toBe(true);
+
+    const preview = await importPreview(a, ["2026-10-14"]);
+    expect(preview.status).toBe(200);
+    expect(byKey(preview.body.items)[`event:${meetings.id}`].warnings).toEqual(
+      []
+    );
+
+    await imported(a, ["2026-10-14"]);
+    const day = await pm4(a).get<WorkdayBody>("/workdays/2026-10-14");
+    for (const l of day.body.logs) {
+      expect(await bookingCount(l.id), l.text).toBe(0);
+    }
+  });
+
+  it("AC-15 FR-INT-011 API-INT-008: an event's booked flag toggled in PMSPA after an import leaves its logs unchanged in the import preview", async () => {
+    const { a } = await setup();
+    await imported(a, ["2026-10-14"]);
+    const meetings = eventOn(fake, "2026-10-14", "Meetings")!;
+    meetings.booked = false;
+
+    const preview = await importPreview(a, ["2026-10-14"]);
+
+    expect(preview.status).toBe(200);
+    expect(byKey(preview.body.items)[`event:${meetings.id}`]).toMatchObject({
+      action: "skip",
+      reason: "Already imported",
+      warnings: []
+    });
+  });
+
+  it("AC-15 FR-INT-012 API-INT-010: an event's booked flag toggled in PMSPA after a push leaves its logs unchanged in the push preview", async () => {
+    const { a, internal } = await pushSetup();
+    await pushed(a);
+    eventOn(fake, TODAY, "PM Internal")!.booked = true;
+
+    const preview = await pushPreview(a);
+
+    expect(preview.status).toBe(200);
+    expect(
+      byKey(preview.body.items)[`event:project:${internal.id}`]
+    ).toMatchObject({
+      action: "skip",
+      reason: "No changes since the last sync",
+      warnings: []
+    });
+  });
+
+  it("AC-16 FR-INT-011 API-INT-008 API-INT-009: an import that would shorten a linked log below its booked time warns in the preview and fails that log; the event's other log is imported", async () => {
+    const { a } = await setup();
+    fake.addDay(X, "2026-10-15", 9, [
+      {
+        title: "Meetings",
+        task: T_TESLA_MEETINGS,
+        logs: [
+          ["Planning", 2],
+          ["Notes", 0.5]
+        ]
+      },
+      { title: "QA", task: T_TESLA_QA, logs: [["Regression", 1]] }
+    ]);
+    await imported(a, ["2026-10-15"]);
+    const meetings = eventOn(fake, "2026-10-15", "Meetings")!;
+    const qa = eventOn(fake, "2026-10-15", "QA")!;
+    const day = await pm4(a).get<WorkdayBody>("/workdays/2026-10-15");
+    const byText = Object.fromEntries(day.body.logs.map((l) => [l.text, l]));
+    const planning = byText["Planning"];
+    const regression = byText["Regression"];
+    expect(
+      (
+        await pm4(a).patch(`/time-logs/${regression.id}`, {
+          durationMinutes: 120
+        })
+      ).status
+    ).toBe(200);
+    const BOOKED = [{ date: "2026-10-15", minutes: 90 }];
+    const booked = await pm4(a).put("/bookings", {
+      logs: [
+        { logId: planning.id, bookings: BOOKED },
+        { logId: regression.id, bookings: BOOKED }
+      ]
+    });
+    expect(booked.status, JSON.stringify(booked.body)).toBe(200);
+    const bookedWarning = (w: string) =>
+      w.includes("shorter than the time booked in PM4");
+    const rowsOf = async () =>
+      byKey((await importPreview(a, ["2026-10-15"])).body.items);
+
+    // QA's 1 h is unchanged in PMSPA since the import (its PM4 log is 2 h, 1h 30m booked): skip, no warning.
+    const unchanged = await rowsOf();
+    expect(unchanged[`event:${qa.id}`].action).toBe("skip");
+    expect(unchanged[`event:${qa.id}`].warnings.filter(bookedWarning)).toEqual(
+      []
+    );
+
+    // Another log changed, Planning still 2 h in PMSPA: no warning.
+    meetings.logs[1].title = "Notes and actions";
+    const longEnough = await rowsOf();
+    expect(longEnough[`event:${meetings.id}`]).toMatchObject({
+      action: "update",
+      warnings: []
+    });
+
+    // Planning shortened to 1 h in PMSPA.
+    meetings.logs[0].duration = 1;
+    const shortened = await rowsOf();
+    expect(shortened[`event:${meetings.id}`]).toMatchObject({
+      action: "update",
+      warnings: [
+        "1 log of 1 h is shorter than the time booked in PM4 (1h 30m) and will fail."
+      ]
+    });
+
+    // The same event as "nonprod": the import would exclude the log and remove its bookings, so no warning.
+    meetings.title = "nonprod";
+    const nonprod = await rowsOf();
+    expect(
+      nonprod[`event:${meetings.id}`].warnings.filter(bookedWarning)
+    ).toEqual([]);
+    meetings.title = "Meetings";
+
+    const run = await runImport(a, ["2026-10-15"]);
+
+    expect(run.status).toBe(200);
+    expect(byKey(run.body.items)[`event:${meetings.id}`]).toMatchObject({
+      outcome: "failed",
+      reason:
+        "1h 30m of a log is booked in PM4: remove bookings first, or keep at least 1h 30m (1 other log was imported)."
+    });
+    const after = await pm4(a).get<{
+      items: (TimeLogBody & {
+        bookings: { date: string; minutes: number }[];
+      })[];
+    }>("/bookings?from=2026-10-15&to=2026-10-15");
+    const item = (id: string) => after.body.items.find((i) => i.id === id);
+    expect(item(planning.id)).toMatchObject({
+      durationMinutes: 120,
+      bookings: BOOKED
+    });
+    expect(item(byText["Notes"].id)?.text).toBe("Notes and actions");
+    expect(item(regression.id)).toMatchObject({
+      durationMinutes: 120,
+      bookings: BOOKED
+    });
   });
 
   it("AC-11 API-INT-010 API-INT-011 FR-INT-012: a log moved to another task in PM4 moves to that event in PMSPA; the emptied event is deleted", async () => {

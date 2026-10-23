@@ -66,7 +66,7 @@ const task: Task = {
 };
 
 const list = (page: number, text: string): TimeLogList => ({
-  items: [{ ...log, id: `l${page}`, text, bookingDate: null }],
+  items: [{ ...log, id: `l${page}`, text, bookings: [] }],
   page,
   pageSize: 25,
   total: 30,
@@ -206,14 +206,15 @@ describe("logged time hooks (feat-proto-sync-web)", () => {
 
   it("AC-10 FR-TLOG-012 FR-BOOK-005: setting a booking invalidates bookings and the logged time; updating a task invalidates the logged time", async () => {
     api.PUT.mockResolvedValueOnce({
-      data: { items: [{ ...log, bookingDate: "2026-10-07" }] },
+      data: {
+        items: [{ ...log, bookings: [{ date: "2026-10-07", minutes: 30 }] }]
+      },
       response: res(200)
     });
     const booking = setup(() => useSetBooking(), { seed: seedAll });
     await act(() =>
       booking.result.current.mutateAsync({
-        logIds: ["l1"],
-        bookingDate: "2026-10-07"
+        logs: [{ logId: "l1", bookings: [{ date: "2026-10-07", minutes: 30 }] }]
       })
     );
     expect(invalidated(booking.queryClient, bookingRangeKey)).toBe(true);

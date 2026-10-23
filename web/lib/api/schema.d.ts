@@ -310,7 +310,7 @@ export interface paths {
         };
         /** The logs worked or booked in a date range (API-BOOK-001). */
         get: operations["BookingsController_list"];
-        /** Book, re-date or unbook one or many logs (API-BOOK-002). */
+        /** Replace the bookings of one or many logs (API-BOOK-002). */
         put: operations["BookingsController_set"];
         post?: never;
         delete?: never;
@@ -883,17 +883,24 @@ export interface components {
             workDate: string;
             startMinute: number;
         };
+        BookingDto: {
+            /**
+             * Format: date
+             * @description `YYYY-MM-DD`; not after today in the caller's zone (checked by the service).
+             * @example 2026-10-07
+             */
+            date: string;
+            /** @description 15–1440, a multiple of 15. */
+            minutes: number;
+        };
         BookingLogResponseDto: {
             /** Format: date */
             workDate: string;
             title: string | null;
             project: components["schemas"]["RefDto"] | null;
             task: components["schemas"]["RefDto"] | null;
-            /**
-             * Format: date
-             * @example 2026-10-07
-             */
-            bookingDate: string | null;
+            /** @description By date ascending; [] = not booked. */
+            bookings: components["schemas"]["BookingDto"][];
             id: string;
             durationMinutes: number;
             text: string;
@@ -906,7 +913,7 @@ export interface components {
             total: number;
             /** @description Minutes of all the matching logs, not only this page. */
             totalMinutes: number;
-            /** @description Minutes of the matching logs that have a booking date. */
+            /** @description Booked minutes of the matching logs (the sum of their bookings). */
             bookedMinutes: number;
         };
         CreateTimeLogDto: {
@@ -954,14 +961,14 @@ export interface components {
         BookingListResponseDto: {
             items: components["schemas"]["BookingLogResponseDto"][];
         };
-        SetBookingDto: {
-            /** @description 1–100 time log ids; repeats are allowed. */
-            logIds: string[];
-            /**
-             * Format: date
-             * @description A date not after today in the caller's zone, or `null` to remove the booking. Absent → 400.
-             */
-            bookingDate: string | null;
+        SetLogBookingsDto: {
+            /** Format: uuid */
+            logId: string;
+            /** @description The log's whole new list ([] = unbooked). */
+            bookings: components["schemas"]["BookingDto"][];
+        };
+        SetBookingsDto: {
+            logs: components["schemas"]["SetLogBookingsDto"][];
         };
         ReportDayDto: {
             /**
@@ -1099,7 +1106,6 @@ export interface components {
             logs: components["schemas"]["PmspaLogDto"][];
             id: string;
             title: string;
-            booked: boolean;
         };
         PmspaDayDto: {
             /**
@@ -2692,7 +2698,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["SetBookingDto"];
+                "application/json": components["schemas"]["SetBookingsDto"];
             };
         };
         responses: {

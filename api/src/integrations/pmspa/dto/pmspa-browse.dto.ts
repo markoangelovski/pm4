@@ -102,7 +102,6 @@ export class PmspaEventDto {
   title: string;
   @ApiProperty({ type: PmspaEventTaskDto, nullable: true })
   task: PmspaEventTaskDto | null;
-  booked: boolean;
   @ApiProperty({ type: [PmspaLogDto] })
   logs: PmspaLogDto[];
 }

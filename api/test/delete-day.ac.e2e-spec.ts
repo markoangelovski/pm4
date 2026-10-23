@@ -30,7 +30,7 @@ interface Body extends TimeLogBody {
   startMinute: number | null;
   totalMinutes: number;
   logs: TimeLogBody[];
-  items: (TimeLogBody & { bookingDate: string | null })[];
+  items: (TimeLogBody & { bookings: { date: string; minutes: number }[] })[];
   type: string;
   errors?: { field: string; message: string }[];
 }
@@ -102,8 +102,14 @@ describe("Delete day API (feat-hard-delete)", () => {
     return response.body;
   };
 
-  const book = async (user: UserRow, logIds: string[], bookingDate: string) => {
-    const response = await as(user).put("/bookings", { logIds, bookingDate });
+  /** Books each log's whole duration to `date`, replacing its bookings. */
+  const book = async (user: UserRow, logs: TimeLogBody[], date: string) => {
+    const response = await as(user).put("/bookings", {
+      logs: logs.map((l) => ({
+        logId: l.id,
+        bookings: [{ date, minutes: l.durationMinutes }]
+      }))
+    });
     expect(response.status, JSON.stringify(response.body)).toBe(200);
   };
 
@@ -127,7 +133,7 @@ describe("Delete day API (feat-hard-delete)", () => {
       durationMinutes: 60
     });
     await createLog(a, { workDate: DAY, durationMinutes: 30 });
-    await book(a, [first.id, earlier.id], DAY);
+    await book(a, [first, earlier], DAY);
 
     const deleted = await as(a).delete(`/workdays/${DAY}`);
     expect(deleted.status).toBe(204);
@@ -144,8 +150,8 @@ describe("Delete day API (feat-hard-delete)", () => {
 
     const bookings = await as(a).get(`/bookings?from=${DAY}&to=${DAY}`);
     expect(bookings.status).toBe(200);
-    expect(bookings.body.items.map((i) => [i.id, i.bookingDate])).toEqual([
-      [earlier.id, DAY]
+    expect(bookings.body.items.map((i) => [i.id, i.bookings])).toEqual([
+      [earlier.id, [{ date: DAY, minutes: 45 }]]
     ]);
     expect((await getDay(a, EARLIER)).logs.map((l) => l.id)).toEqual([
       earlier.id
