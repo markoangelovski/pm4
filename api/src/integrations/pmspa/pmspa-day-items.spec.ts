@@ -13,7 +13,6 @@ const day = (date: string, logIds: string[]): RemoteDay => ({
           date,
           title: "Work",
           taskId: "t1",
-          booked: false,
           logs: logIds.map((id) => ({ id, title: "L", duration: 1.5 }))
         }
       ]

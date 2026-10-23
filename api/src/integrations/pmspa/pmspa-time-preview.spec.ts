@@ -21,7 +21,7 @@ const log = (id: string, over: Partial<Pm4DayLog> = {}): Pm4DayLog => ({
   title: null,
   durationMinutes: 60,
   excludeFromStats: false,
-  booked: false,
+  bookedMinutes: 0,
   task: null,
   project: null,
   ...over
@@ -38,7 +38,6 @@ const event = (
   date: DATE,
   title,
   taskId: null,
-  booked: false,
   logs,
   ...over
 });
@@ -145,7 +144,7 @@ describe("importTimeRows", () => {
               { id: "l1", title: "a", duration: 1 },
               { id: "l2", title: "b", duration: 1.25 }
             ],
-            { taskId: "t1", booked: true }
+            { taskId: "t1" }
           ),
           event("e2", "nonprod", [{ id: "l3", title: "c", duration: 0.5 }])
         ])
@@ -174,7 +173,7 @@ describe("importTimeRows", () => {
       taskPath: { projectTitle: "Nvidia", taskTitle: "Release" },
       detail: "2 logs · 2h 15m",
       action: "create",
-      warnings: ["Booked in PMSPA: imported logs aren't booked."]
+      warnings: []
     });
     expect(rows[4].detail).toBe(
       "No task → Unsorted, excluded from statistics · 1 log · 30m"

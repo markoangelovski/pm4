@@ -42,7 +42,6 @@ export interface RemoteEvent {
   date: string;
   title: string;
   taskId: string | null;
-  booked: boolean;
   logs: RemoteLog[];
 }
 
@@ -174,7 +173,6 @@ function toDay(raw: Json): RemoteDay {
       date,
       title: text(e.title) ?? "",
       taskId: text(e.task),
-      booked: e.booked === true,
       logs: (Array.isArray(e.logs) ? e.logs.filter(isRecord) : []).map(toLog)
     }))
   };
@@ -427,23 +425,6 @@ export class PmspaRemote {
       duration: e.duration,
       ...(e.task === null ? {} : { task: e.task })
     });
-  }
-
-  /** PATCH /v1/days/event.update/{id} with the given fields as `{propName, propValue}`. */
-  async updateEvent(
-    userId: string,
-    eventId: string,
-    f: { booked?: boolean; title?: string }
-  ): Promise<void> {
-    const body = Object.entries(f)
-      .filter(([, value]) => value !== undefined)
-      .map(([propName, propValue]) => ({ propName, propValue }));
-    await this.write(
-      userId,
-      "PATCH",
-      `/v1/days/event.update/${encodeURIComponent(eventId)}`,
-      body
-    );
   }
 
   /** DELETE /v1/days/event.delete/{dayId}/{eventId}. */

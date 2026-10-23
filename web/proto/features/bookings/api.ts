@@ -8,8 +8,7 @@ import {
 import { apiClient } from "@/proto/mock/client";
 import { unwrap } from "@/lib/api/problem";
 import { timeKeys } from "@/proto/features/time/api";
-import type { BookingLog } from "./days";
-import type { SetBookingsDto } from "./proposed-types";
+import type { BookingLog, SetBookingsDto } from "./days";
 
 export type { BookingLog } from "./days";
 
@@ -33,7 +32,7 @@ export function useBookingRange(
           signal
         })
       );
-      return data.items as unknown as BookingLog[];
+      return data.items;
     }
   });
 }
@@ -51,10 +50,9 @@ export function useSetBooking(): UseMutationResult<
   return useMutation({
     mutationFn: async (input: SetBookingsDto) => {
       const data = unwrap(
-        // The generated body is still SetBookingDto until the API changes (proposed-types.ts).
-        await apiClient.PUT("/api/v1/bookings", { body: input as never })
+        await apiClient.PUT("/api/v1/bookings", { body: input })
       );
-      return data.items as unknown as BookingLog[];
+      return data.items;
     },
     onSuccess: () =>
       Promise.all([

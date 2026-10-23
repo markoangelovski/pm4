@@ -9,6 +9,7 @@ import type { RefDto } from "../common/dto/ref.dto.js";
 import { ProjectsService } from "../projects/projects.service.js";
 import { TasksService } from "../tasks/tasks.service.js";
 import { UsersRepository } from "../users/users.repository.js";
+import { formatDuration } from "../common/duration.js";
 import { toBookingLogDto } from "./bookings.service.js";
 import { CreateTimeLogDto } from "./dto/create-time-log.dto.js";
 import { ListTimeLogsQueryDto } from "./dto/list-time-logs-query.dto.js";
@@ -64,6 +65,21 @@ export async function assertNotFuture(
   if (date > today) {
     throw new BadRequestException({
       errors: [{ field, message: "must not be after today" }]
+    });
+  }
+}
+
+/** PATCH would leave the log shorter than its booked time (API-TLOG-004, OQ-213). */
+export class BookedTimeException extends BadRequestException {
+  constructor(readonly bookedMinutes: number) {
+    const t = formatDuration(bookedMinutes);
+    super({
+      errors: [
+        {
+          field: "durationMinutes",
+          message: `${t} of this log is booked. Remove bookings first, or keep at least ${t}.`
+        }
+      ]
     });
   }
 }
@@ -228,9 +244,18 @@ export class TimeLogsService {
     const hasProject = link
       ? link.projectId !== null
       : log.projectId !== null || log.deletedProjectTitle !== null;
-    if (excluded || !hasProject) values.bookingDate = null;
+    const clear = excluded || !hasProject;
 
-    await this.timeRepository.updateLog(userId, id, values, dayStart);
+    const result = await this.timeRepository.updateLog(
+      userId,
+      id,
+      values,
+      dayStart,
+      clear ? "clear" : "keep"
+    );
+    if (result.status === "over-booked") {
+      throw new BookedTimeException(result.bookedMinutes);
+    }
     return this.get(userId, id);
   }
 

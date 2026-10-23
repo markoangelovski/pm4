@@ -1,11 +1,13 @@
 import { differenceInCalendarDays, format, isValid, parseISO } from "date-fns";
 import type { Ref } from "@/proto/features/time/types";
 import { formatWorkDate } from "@/lib/time";
-import type { BookingDto, BookingLogResponseDto } from "./proposed-types";
+import type { components } from "@/lib/api/schema";
 
+type S = components["schemas"];
 /** A time log with its bookings (API-BOOK-001). */
-export type BookingLog = BookingLogResponseDto;
-export type { BookingDto } from "./proposed-types";
+export type BookingLog = S["BookingLogResponseDto"];
+export type BookingDto = S["BookingDto"];
+export type SetBookingsDto = S["SetBookingsDto"];
 
 export interface DateRange {
   from: string;

@@ -21,18 +21,16 @@ const PM = { id: "t-pm", title: "PM", deleted: false };
 const MEETINGS = { id: "t-meetings", title: "Meetings", deleted: false };
 
 let seq = 0;
-// No `booked` (D6): cast, so this compiles before and after it leaves Pm4LogForPush.
-const log = (fields: Partial<Pm4LogForPush> = {}): Pm4LogForPush =>
-  ({
-    id: `log-${++seq}`,
-    text: "Sprint planning",
-    title: null,
-    durationMinutes: 60,
-    excludeFromStats: false,
-    task: null,
-    project: null,
-    ...fields
-  }) as Pm4LogForPush;
+const log = (fields: Partial<Pm4LogForPush> = {}): Pm4LogForPush => ({
+  id: `log-${++seq}`,
+  text: "Sprint planning",
+  title: null,
+  durationMinutes: 60,
+  excludeFromStats: false,
+  task: null,
+  project: null,
+  ...fields
+});
 
 const LONG = "x".repeat(200);
 

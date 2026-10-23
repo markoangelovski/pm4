@@ -1107,6 +1107,25 @@ function logFailure(log: { duration: number; title: string }): string | null {
 
 const plural = (n: number, one: string, many = one + "s") =>
   `${n} ${n === 1 ? one : many}`;
+
+/** Minutes booked on a PM4 log, as client.ts `bookedOf` (0 while the log isn't bookable). */
+const bookedOf = (l: TimeLog): number =>
+  l.excludeFromStats || l.project === null
+    ? 0
+    : (getMockState().bookings[l.id] ?? []).reduce((t, b) => t + b.minutes, 0);
+
+/** The booked-time failure of a linked log the import would update, or null (OQ-220). */
+function overBooked(e: RemoteEvent, log: RemoteLog): string | null {
+  if (!taskOf(e.taskId) || e.title.trim().toLowerCase() === NONPROD)
+    return null;
+  const link = byPmspa("time-log", log.id);
+  const l = link && getMockState().logs.find((x) => x.id === link.pm4Id);
+  if (!l) return null;
+  const b = bookedOf(l);
+  return hoursToMinutes(log.duration) < b
+    ? `${formatDuration(b)} of a log is booked in PM4: remove bookings first, or keep at least ${formatDuration(b)}`
+    : null;
+}
 // OQ-196: the logs an event with a failed log still imported.
 const otherLogsImported = (n: number) =>
   n === 0
@@ -1299,6 +1318,34 @@ export function importPreview(sel: PmspaImportSelectionDto): Item[] {
         warnings.push(
           `${plural(moved.length, "PM4 log")} moves to “${t!.title}” (its task changed in PMSPA).`
         );
+      const action: SyncPreviewItemDto["action"] =
+        eLinks.length === 0
+          ? "skip"
+          : eLinks.every(Boolean)
+            ? eLinks.some((l) => l!.pmspaChanged)
+              ? "update"
+              : "skip"
+            : eLinks.some(Boolean)
+              ? "update"
+              : "create";
+      // The booked-time failure: each log the import would update and can't take (OQ-220).
+      const booked = e.logs.filter(
+        (l) =>
+          !offStep.includes(l) &&
+          !outOfRange.includes(l) &&
+          !tooLong.includes(l) &&
+          overBooked(e, l) !== null
+      );
+      if (action !== "skip" && booked.length) {
+        const amounts = booked.map((l) => {
+          const link = byPmspa("time-log", l.id);
+          const pm4 = getMockState().logs.find((x) => x.id === link?.pm4Id);
+          return formatDuration(pm4 ? bookedOf(pm4) : 0);
+        });
+        warnings.push(
+          `${plural(booked.length, "log")} of ${booked.map((l) => `${l.duration} h`).join(", ")} is shorter than the time booked in PM4 (${amounts.join(", ")}) and will fail.`
+        );
+      }
       items.push(
         row({
           key: `event:${e.id}`,
@@ -1310,16 +1357,7 @@ export function importPreview(sel: PmspaImportSelectionDto): Item[] {
             e.logs.length,
             e.logs.reduce((s, l) => s + hoursToMinutes(l.duration), 0)
           )}`,
-          action:
-            eLinks.length === 0
-              ? "skip"
-              : eLinks.every(Boolean)
-                ? eLinks.some((l) => l!.pmspaChanged)
-                  ? "update"
-                  : "skip"
-                : eLinks.some(Boolean)
-                  ? "update"
-                  : "create",
+          action,
           reason:
             eLinks.length === 0
               ? "No logs"
@@ -1617,7 +1655,7 @@ export function runImport(
       out.push(result(item, item.action === "create" ? "created" : "updated"));
     } else {
       const e = remote.events.find((x) => x.id === id)!;
-      const reasons = e.logs.map(logFailure);
+      const reasons = e.logs.map((l) => logFailure(l) ?? overBooked(e, l));
       const firstReason = reasons.find((r) => r !== null);
       const t = taskOf(e.taskId);
       const taskLink = t ? byPmspa("task", t.id) : undefined;

@@ -37,6 +37,7 @@ export const timeLogs = pgTable(
   "time_logs",
   {
     workDate: date("work_date", { mode: "string" }).notNull(),
+    // Unused since feat-book-partial (bookings table); dropped by T4 (D2).
     bookingDate: date("booking_date", { mode: "string" }),
     durationMinutes: smallint("duration_minutes").notNull(),
     excludeFromStats: boolean("exclude_from_stats").notNull().default(false),
@@ -75,5 +76,29 @@ export const timeLogs = pgTable(
   ]
 );
 
+/** Part of a log's time booked to a date (data-model.md *bookings*). */
+export const bookings = pgTable(
+  "bookings",
+  {
+    bookingDate: date("booking_date", { mode: "string" }).notNull(),
+    minutes: smallint("minutes").notNull(),
+    timeLogId: uuid("time_log_id")
+      .notNull()
+      .references(() => timeLogs.id, { onDelete: "cascade" }),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" })
+  },
+  (t) => [
+    primaryKey({ columns: [t.timeLogId, t.bookingDate] }),
+    index("bookings_user_date").on(t.userId, t.bookingDate),
+    check(
+      "bookings_minutes",
+      sql`${t.minutes} BETWEEN 15 AND 1440 AND ${t.minutes} % 15 = 0`
+    )
+  ]
+);
+
 export type Workday = typeof workdays.$inferSelect;
 export type TimeLog = typeof timeLogs.$inferSelect;
+export type Booking = typeof bookings.$inferSelect;

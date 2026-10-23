@@ -57,6 +57,13 @@
       "when": 1792197160452,
       "tag": "0007_pmspa",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1792788761878,
+      "tag": "0008_bookings",
+      "breakpoints": true
     }
   ]
 }

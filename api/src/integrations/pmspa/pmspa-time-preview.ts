@@ -33,6 +33,8 @@ import {
 
 export interface Pm4DayLog extends Pm4LogForPush {
   workDate: string;
+  /** Σ of the log's bookings (0 = none). */
+  bookedMinutes: number;
 }
 
 export interface TimeSnapshot extends SyncSnapshot {
@@ -219,6 +221,8 @@ export function importTimeRows(
     for (const e of events) {
       const t = taskOf(e);
       const st = stateOf([e]);
+      const action: Action =
+        st.total === 0 ? "skip" : linkedAction(st.total, st.linked, st.changed);
       const warnings: string[] = [];
       const offStep = e.logs.filter((l) => !isQuarterHours(l.duration));
       if (offStep.length)
@@ -266,8 +270,25 @@ export function importTimeRows(
         warnings.push(
           `${plural(both, "log")} also changed in PM4 since the last sync: PM4's version is overwritten.`
         );
-      if (e.booked)
-        warnings.push("Booked in PMSPA: imported logs aren't booked.");
+      // D5: an update of a log shorter than its booked time fails, so the warning comes first.
+      if (t && !isNonprod(e.title) && action !== "skip") {
+        const overBooked = e.logs.flatMap((log) => {
+          const link = byPmspa.get(log.id);
+          const l = link && pm4Log.get(link.pm4Id);
+          const passes =
+            isQuarterHours(log.duration) &&
+            log.duration >= 0.25 &&
+            log.duration <= 24 &&
+            log.title.trim().length <= 1000;
+          return passes && l && hoursToMinutes(log.duration) < l.bookedMinutes
+            ? [{ log, booked: l.bookedMinutes }]
+            : [];
+        });
+        if (overBooked.length)
+          warnings.push(
+            `${plural(overBooked.length, "log")} of ${overBooked.map((x) => `${x.log.duration} h`).join(", ")} is shorter than the time booked in PM4 (${overBooked.map((x) => formatDuration(x.booked)).join(", ")}) and will fail.`
+          );
+      }
       b.items.push(
         row({
           key: `event:${e.id}`,
@@ -291,10 +312,7 @@ export function importTimeRows(
                   ? "No task → Unsorted, excluded from statistics"
                   : "No task → Unsorted"
               } · ${eventDetail(e.logs.length, minutesOf([e]))}`,
-          action:
-            st.total === 0
-              ? "skip"
-              : linkedAction(st.total, st.linked, st.changed),
+          action,
           reason:
             st.total === 0
               ? "No logs"

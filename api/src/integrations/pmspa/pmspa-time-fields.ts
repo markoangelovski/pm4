@@ -14,7 +14,6 @@ export interface Pm4LogForPush {
   title: string | null;
   durationMinutes: number;
   excludeFromStats: boolean;
-  booked: boolean;
   task: { id: string | null; title: string; deleted: boolean } | null;
   project: { id: string | null; title: string; deleted: boolean } | null;
 }
@@ -103,15 +102,7 @@ export function minuteToStart(minute: number): number {
   return minute / 60;
 }
 
-/** As web/lib/time: "3h 45m", "45m", "2h". */
-export function formatDuration(minutes: number): string {
-  const total = Math.abs(Math.round(minutes));
-  const h = Math.floor(total / 60);
-  const m = total % 60;
-  if (h === 0) return `${m}m`;
-  if (m === 0) return `${h}h`;
-  return `${h}h ${m}m`;
-}
+export { formatDuration } from "../../common/duration.js";
 
 /** As web/lib/time: "16 Oct 2026". */
 export function formatWorkDate(date: string): string {
@@ -127,14 +118,14 @@ export function plural(n: number, one: string, many = `${one}s`): string {
 export function pm4LogTuple(
   l: Pm4LogForPush,
   group: string
-): (string | number | boolean | null)[] {
-  return [cut(l.text, 350), l.durationMinutes, group, l.booked];
+): (string | number | null)[] {
+  return [cut(l.text, 350), l.durationMinutes, group];
 }
 
 /** D1: a PMSPA log's fingerprint tuple. */
 export function pmspaLogTuple(
   log: RemoteLog,
   e: RemoteEvent
-): (string | number | boolean | null)[] {
-  return [log.title, hoursToMinutes(log.duration), e.taskId, e.title, e.booked];
+): (string | number | null)[] {
+  return [log.title, hoursToMinutes(log.duration), e.taskId, e.title];
 }

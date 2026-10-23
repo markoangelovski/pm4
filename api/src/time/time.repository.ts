@@ -14,6 +14,7 @@ import {
 } from "drizzle-orm";
 import { DRIZZLE, type DrizzleDb } from "../database/drizzle.js";
 import {
+  bookings,
   projects,
   tasks,
   timeLogs,
@@ -30,19 +31,31 @@ export interface TimeLogValues {
   title: string | null;
   taskId: string | null;
   projectId: string | null;
-  /** Only the update path sets it (D5); `create` never books a log. */
-  bookingDate?: string | null;
   /** Only the update path sets it: a replaced link drops the retained task title. */
   deletedTaskTitle?: string | null;
   /** Only the update path sets it: a replaced link drops the retained project title. */
   deletedProjectTitle?: string | null;
 }
 
-/** The result of setting the booking date of several logs. */
-export type SetBookingResult =
-  | { status: "ok"; rows: TimeLogRow[] }
+/** One booking of a log. */
+export interface BookingValue {
+  date: string;
+  minutes: number;
+}
+
+/** The result of replacing the bookings of several logs. */
+export type SetBookingsResult =
+  | { status: "ok"; rows: BookingLogRow[] }
   | { status: "not-found" }
-  | { status: "not-bookable" };
+  | {
+      status: "invalid";
+      index: number;
+      message: "can't be booked" | "adds up to more than the log's duration";
+    };
+
+/** The result of updating a log. */
+export type UpdateLogResult =
+  { status: "ok" } | { status: "over-booked"; bookedMinutes: number };
 
 /** A day start to create together with a log. */
 export interface DayStart {
@@ -54,7 +67,6 @@ export interface DayStart {
 export interface TimeLogRow {
   id: string;
   workDate: string;
-  bookingDate: string | null;
   durationMinutes: number;
   excludeFromStats: boolean;
   text: string;
@@ -66,6 +78,9 @@ export interface TimeLogRow {
   taskTitle: string | null;
   projectTitle: string | null;
 }
+
+/** A log row with its bookings, by date ascending. */
+export type BookingLogRow = TimeLogRow & { bookings: BookingValue[] };
 
 /** One dashboard day: its workday start (if any) and the sums of its logs. */
 export interface ReportDayRow {
@@ -146,14 +161,36 @@ export class TimeRepository {
     return row ?? null;
   }
 
-  /** Sets the given columns (and the day start, when given) in one transaction. */
+  /**
+   * Sets the given columns (and the day start, when given) in one transaction.
+   * `keep`: refuses a duration below the booked minutes; `clear`: deletes the log's bookings (D5).
+   */
   async updateLog(
     userId: string,
     id: string,
     values: Partial<TimeLogValues>,
-    dayStart: DayStart | null
-  ): Promise<void> {
-    await this.db.transaction(async (tx) => {
+    dayStart: DayStart | null,
+    bookingsMode: "keep" | "clear"
+  ): Promise<UpdateLogResult> {
+    return this.db.transaction(async (tx) => {
+      await tx
+        .select({ id: timeLogs.id })
+        .from(timeLogs)
+        .where(and(eq(timeLogs.userId, userId), eq(timeLogs.id, id)))
+        .for("update");
+      if (bookingsMode === "keep" && values.durationMinutes !== undefined) {
+        const [row] = await tx
+          .select({
+            booked: sql<number>`coalesce(sum(${bookings.minutes}), 0)`.mapWith(
+              Number
+            )
+          })
+          .from(bookings)
+          .where(eq(bookings.timeLogId, id));
+        if (values.durationMinutes < row.booked) {
+          return { status: "over-booked", bookedMinutes: row.booked };
+        }
+      }
       if (dayStart) {
         await tx
           .insert(workdays)
@@ -170,6 +207,12 @@ export class TimeRepository {
           .set(values)
           .where(and(eq(timeLogs.userId, userId), eq(timeLogs.id, id)));
       }
+      if (bookingsMode === "clear") {
+        await tx
+          .delete(bookings)
+          .where(and(eq(bookings.userId, userId), eq(bookings.timeLogId, id)));
+      }
+      return { status: "ok" };
     });
   }
 
@@ -200,18 +243,31 @@ export class TimeRepository {
     userId: string,
     from: string,
     to: string
-  ): Promise<TimeLogRow[]> {
-    return this.selectRows(this.db)
+  ): Promise<BookingLogRow[]> {
+    const rows = await this.selectRows(this.db)
       .where(
         and(
           eq(timeLogs.userId, userId),
           or(
             and(gte(timeLogs.workDate, from), lte(timeLogs.workDate, to)),
-            and(gte(timeLogs.bookingDate, from), lte(timeLogs.bookingDate, to))
+            inArray(
+              timeLogs.id,
+              this.db
+                .select({ id: bookings.timeLogId })
+                .from(bookings)
+                .where(
+                  and(
+                    eq(bookings.userId, userId),
+                    gte(bookings.bookingDate, from),
+                    lte(bookings.bookingDate, to)
+                  )
+                )
+            )
           )
         )
       )
       .orderBy(asc(timeLogs.workDate), asc(timeLogs.id));
+    return this.withBookings(this.db, userId, rows);
   }
 
   /** API-TLOG-001: one page of a project's or task's logs (workDate desc, then id asc) and the totals over all of them. */
@@ -221,7 +277,7 @@ export class TimeRepository {
     page: number,
     pageSize: number
   ): Promise<{
-    rows: TimeLogRow[];
+    rows: BookingLogRow[];
     total: number;
     totalMinutes: number;
     bookedMinutes: number;
@@ -231,7 +287,7 @@ export class TimeRepository {
         ? eq(timeLogs.projectId, filter.projectId)
         : eq(timeLogs.taskId, filter.taskId);
     const where = and(eq(timeLogs.userId, userId), link);
-    const [rows, [totals]] = await Promise.all([
+    const [rawRows, [totals], [booked]] = await Promise.all([
       this.selectRows(this.db)
         .where(where)
         .orderBy(desc(timeLogs.workDate), asc(timeLogs.id))
@@ -243,64 +299,87 @@ export class TimeRepository {
           totalMinutes:
             sql<number>`coalesce(sum(${timeLogs.durationMinutes}), 0)`.mapWith(
               Number
-            ),
-          bookedMinutes:
-            sql<number>`coalesce(sum(${timeLogs.durationMinutes}) FILTER (WHERE ${timeLogs.bookingDate} IS NOT NULL), 0)`.mapWith(
-              Number
             )
         })
         .from(timeLogs)
+        .where(where),
+      this.db
+        .select({
+          bookedMinutes:
+            sql<number>`coalesce(sum(${bookings.minutes}), 0)`.mapWith(Number)
+        })
+        .from(bookings)
+        .innerJoin(timeLogs, eq(timeLogs.id, bookings.timeLogId))
         .where(where)
     ]);
+    const rows = await this.withBookings(this.db, userId, rawRows);
     return {
       rows,
       total: totals.total,
       totalMinutes: totals.totalMinutes,
-      bookedMinutes: totals.bookedMinutes
+      bookedMinutes: booked.bookedMinutes
     };
   }
 
   /**
-   * Sets (or clears, for `null`) the booking date of every listed log in one
-   * transaction (API-BOOK-002). Nothing changes unless every log is the caller's
-   * and, for a date, every log is bookable.
+   * Replaces the bookings of every listed log in one transaction (API-BOOK-002).
+   * Nothing changes unless every log is the caller's and every entry is valid.
    */
-  async setBookingDate(
+  async setBookings(
     userId: string,
-    ids: string[],
-    bookingDate: string | null
-  ): Promise<SetBookingResult> {
-    const unique = [...new Set(ids)];
+    entries: { logId: string; bookings: BookingValue[] }[]
+  ): Promise<SetBookingsResult> {
+    const ids = entries.map((e) => e.logId);
     return this.db.transaction(async (tx) => {
       const locked = await tx
         .select({
           id: timeLogs.id,
+          durationMinutes: timeLogs.durationMinutes,
           excludeFromStats: timeLogs.excludeFromStats,
           projectId: timeLogs.projectId,
           deletedProjectTitle: timeLogs.deletedProjectTitle
         })
         .from(timeLogs)
-        .where(and(eq(timeLogs.userId, userId), inArray(timeLogs.id, unique)))
+        .where(and(eq(timeLogs.userId, userId), inArray(timeLogs.id, ids)))
         .for("update");
-      if (locked.length < unique.length) return { status: "not-found" };
-      if (
-        bookingDate !== null &&
-        locked.some(
-          (row) =>
-            row.excludeFromStats ||
-            (row.projectId === null && row.deletedProjectTitle === null)
-        )
-      ) {
-        return { status: "not-bookable" };
+      if (locked.length < entries.length) return { status: "not-found" };
+      const byId = new Map(locked.map((row) => [row.id, row]));
+      for (const [index, entry] of entries.entries()) {
+        if (entry.bookings.length === 0) continue;
+        const log = byId.get(entry.logId)!;
+        if (
+          log.excludeFromStats ||
+          (log.projectId === null && log.deletedProjectTitle === null)
+        ) {
+          return { status: "invalid", index, message: "can't be booked" };
+        }
+        const sum = entry.bookings.reduce((n, b) => n + b.minutes, 0);
+        if (sum > log.durationMinutes) {
+          return {
+            status: "invalid",
+            index,
+            message: "adds up to more than the log's duration"
+          };
+        }
       }
       await tx
-        .update(timeLogs)
-        .set({ bookingDate })
-        .where(and(eq(timeLogs.userId, userId), inArray(timeLogs.id, unique)));
+        .delete(bookings)
+        .where(
+          and(eq(bookings.userId, userId), inArray(bookings.timeLogId, ids))
+        );
+      const values = entries.flatMap((e) =>
+        e.bookings.map((b) => ({
+          userId,
+          timeLogId: e.logId,
+          bookingDate: b.date,
+          minutes: b.minutes
+        }))
+      );
+      if (values.length > 0) await tx.insert(bookings).values(values);
       const rows = await this.selectRows(tx)
-        .where(and(eq(timeLogs.userId, userId), inArray(timeLogs.id, unique)))
+        .where(and(eq(timeLogs.userId, userId), inArray(timeLogs.id, ids)))
         .orderBy(asc(timeLogs.id));
-      return { status: "ok", rows };
+      return { status: "ok", rows: await this.withBookings(tx, userId, rows) };
     });
   }
 
@@ -351,9 +430,13 @@ export class TimeRepository {
     }>(sql`
       WITH l AS (
         SELECT work_date, SUM(duration_minutes)::int AS worked,
-               COALESCE(SUM(duration_minutes) FILTER (WHERE booking_date IS NOT NULL), 0)::int AS booked
-        FROM time_logs
-        WHERE user_id = ${userId} AND work_date BETWEEN ${from}::date AND ${to}::date
+               COALESCE(SUM(booked_minutes), 0)::int AS booked
+        FROM (
+          SELECT work_date, duration_minutes,
+                 (SELECT SUM(bk.minutes) FROM bookings bk WHERE bk.time_log_id = time_logs.id) AS booked_minutes
+          FROM time_logs
+          WHERE user_id = ${userId} AND work_date BETWEEN ${from}::date AND ${to}::date
+        ) per_log
         GROUP BY work_date
       ), w AS (
         SELECT work_date, start_minute FROM workdays
@@ -388,9 +471,10 @@ export class TimeRepository {
     }>(sql`
       SELECT g.kind, g.project_id, g.deleted_project_title, p.title AS project_title,
              SUM(g.duration_minutes)::int AS worked,
-             COALESCE(SUM(g.duration_minutes) FILTER (WHERE g.booking_date IS NOT NULL), 0)::int AS booked
+             COALESCE(SUM(g.booked_minutes), 0)::int AS booked
       FROM (
-        SELECT duration_minutes, booking_date,
+        SELECT duration_minutes,
+               (SELECT SUM(bk.minutes) FROM bookings bk WHERE bk.time_log_id = time_logs.id) AS booked_minutes,
                CASE WHEN exclude_from_stats THEN 'nonprod'
                     WHEN project_id IS NULL AND deleted_project_title IS NULL THEN 'unsorted'
                     ELSE 'project' END AS kind,
@@ -412,12 +496,44 @@ export class TimeRepository {
     }));
   }
 
+  /** The bookings of the given logs, by date ascending; [] for a log without any. */
+  private async withBookings(
+    db: Pick<DrizzleDb, "select">,
+    userId: string,
+    rows: TimeLogRow[]
+  ): Promise<BookingLogRow[]> {
+    if (rows.length === 0) return [];
+    const found = await db
+      .select({
+        timeLogId: bookings.timeLogId,
+        date: bookings.bookingDate,
+        minutes: bookings.minutes
+      })
+      .from(bookings)
+      .where(
+        and(
+          eq(bookings.userId, userId),
+          inArray(
+            bookings.timeLogId,
+            rows.map((r) => r.id)
+          )
+        )
+      )
+      .orderBy(asc(bookings.bookingDate));
+    const byLog = new Map<string, BookingValue[]>();
+    for (const b of found) {
+      const list = byLog.get(b.timeLogId) ?? [];
+      list.push({ date: b.date, minutes: b.minutes });
+      byLog.set(b.timeLogId, list);
+    }
+    return rows.map((row) => ({ ...row, bookings: byLog.get(row.id) ?? [] }));
+  }
+
   private selectRows(db: Pick<DrizzleDb, "select"> = this.db) {
     return db
       .select({
         id: timeLogs.id,
         workDate: timeLogs.workDate,
-        bookingDate: timeLogs.bookingDate,
         durationMinutes: timeLogs.durationMinutes,
         excludeFromStats: timeLogs.excludeFromStats,
         text: timeLogs.text,

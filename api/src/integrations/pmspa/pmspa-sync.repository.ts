@@ -3,6 +3,7 @@ import { and, asc, eq, inArray, or, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { DRIZZLE, type DrizzleDb } from "../../database/drizzle.js";
 import {
+  bookings,
   projects,
   tasks,
   timeLogs,
@@ -72,7 +73,7 @@ export class PmspaSyncRepository {
 
   /**
    * The caller's PM4 logs worked on one of `dates` or with one of `ids`, in entry order (API-INT-010, API-INT-008).
-   * Read like `TimeRepository.listDay`, with the booked flag and the task and project as the push reads them.
+   * Read like `TimeRepository.listDay`, with the booked minutes and the task and project as the push reads them.
    */
   async pm4Logs(
     userId: string,
@@ -87,7 +88,10 @@ export class PmspaSyncRepository {
       .select({
         id: timeLogs.id,
         workDate: timeLogs.workDate,
-        bookingDate: timeLogs.bookingDate,
+        bookedMinutes:
+          sql<number>`(SELECT coalesce(sum(b.minutes), 0) FROM ${bookings} b WHERE b.time_log_id = ${timeLogs.id})`.mapWith(
+            Number
+          ),
         durationMinutes: timeLogs.durationMinutes,
         excludeFromStats: timeLogs.excludeFromStats,
         text: timeLogs.text,
@@ -111,7 +115,7 @@ export class PmspaSyncRepository {
       title: row.title,
       durationMinutes: row.durationMinutes,
       excludeFromStats: row.excludeFromStats,
-      booked: row.bookingDate !== null,
+      bookedMinutes: row.bookedMinutes,
       task:
         row.taskId !== null && row.taskTitle !== null
           ? { id: row.taskId, title: row.taskTitle, deleted: false }

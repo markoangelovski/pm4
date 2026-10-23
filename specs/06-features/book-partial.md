@@ -74,7 +74,7 @@ moves from `proposed-types.ts` to the generated types.
 | api | `api/src/common/duration.ts` | C | T1 | `formatDuration`, moved from `pmspa-time-fields.ts` |
 | api | `api/src/time/bookings.service.spec.ts`, `api/src/time/time-logs.service.spec.ts` | M | T1 | Ordinary tests |
 | api | `api/src/integrations/pmspa/pmspa-time-fields.ts` | M | T1, T2 | T1: re-exports `formatDuration`; T2: tuples, `booked` |
-| api | `api/src/integrations/pmspa/pmspa-time-sync.service.ts`, `pmspa-time-preview.ts`, `pmspa-sync.repository.ts`, `pmspa-remote.ts` | M | T2 | |
+| api | `api/src/integrations/pmspa/pmspa-time-sync.service.ts`, `api/src/integrations/pmspa/pmspa-time-preview.ts`, `api/src/integrations/pmspa/pmspa-sync.repository.ts`, `api/src/integrations/pmspa/pmspa-remote.ts` | M | T2 | |
 | api | `api/src/integrations/pmspa/*.spec.ts` (not `*.ac.spec.ts`) | M | T2 | Ordinary tests: no `booked` |
 | api | `api/drizzle/0009_*.sql`, `api/drizzle/meta/0009_snapshot.json`, `api/drizzle/meta/_journal.json` | C/M | T4 | `npm run db:generate -- --name drop_booking_date`, then the data step prepended |
 | web | `web/features/bookings/days.ac.test.ts`, `web/features/bookings/api.ac.test.tsx`, `web/features/bookings/components/bookings-view.ac.test.tsx` | M | tests | Acceptance tests |
