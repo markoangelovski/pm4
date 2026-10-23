@@ -3,7 +3,7 @@ id: req-time-logs
 title: Time Capture (Workdays and Time Logs)
 status: review
 owner: Marko Angelovski
-last_updated: 2026-10-22
+last_updated: 2026-10-23
 related: [req-projects, req-tasks, req-reporting, api-endpoints, api-data-model, web-screens]
 ---
 
@@ -155,15 +155,17 @@ Anything else, or a value that isn't a multiple of 15 minutes (`20`, `0.3`, `0`)
 ### FR-TLOG-012: Logs on project and task pages
 **Priority:** Must
 **Statement:** The task page and the project page each have a **Logged time** section with the total hours logged
-(across all days), the booked part of it (logs with a booking date, FR-BOOK-004), and the logs, newest date first (entry
+(across all days), the booked part of it (the minutes of the logs' bookings, FR-BOOK-004), and the logs, newest date first (entry
 order within a day), 25 per page. A row shows the work date (a link that opens that day), the log text (OQ-135), on the
-project page the task, the booking date (if booked) and the duration.
+project page the task, its bookings (one line each, "6 Oct 2026 · 30m", then "30m unbooked" while part of it is left; "-" when it has none,
+OQ-214) and the duration.
 The **task** total counts the logs linked to the task. The **project** total counts the logs linked to the project
 directly **and** the logs of all its tasks (a log with a task always carries the task's project, so this is simply the project's logs).
 **Acceptance criteria:**
 - Given 1 h logged on project P directly and 30 min on a task of P, P's page shows 1 h 30 min and the task's page 30 min.
 - Given a task moved to another project, its logs count towards the new project from then on.
 - Given 1 h 30 min on P of which a 1 h log is booked, P's section shows the total 1 h 30 min and booked 1 h, and the booked row shows its booking date.
+- Given a 1 h log with 30 min booked to 6 October, then its row shows "6 Oct 2026 · 30m" and "30m unbooked", and the section's *Booked* counts 30 min.
 
 ### FR-TLOG-014: Logs keep deleted task/project names
 **Priority:** Must
@@ -210,8 +212,8 @@ statistics** badge.
 ### FR-TLOG-019: Delete day
 **Priority:** Must
 **Statement:** From the day view, after confirmation, the user deletes the viewed day: its workday start (FR-TLOG-009) and all
-its logs are deleted permanently, with their booking dates (FR-BOOK-004). Logs worked on other days and booked to that date
-keep their booking. A day with no start and no logs can't be deleted (OQ-152).
+its logs are deleted permanently, with their bookings (FR-BOOK-004). Logs worked on other days with a booking on that date
+keep it. A day with no start and no logs can't be deleted (OQ-152).
 **Acceptance criteria:**
 - Given a day with a start, two logs (one booked to that day) and a log of an earlier day booked to it, when the day is deleted,
   then the day has no start and no logs, and the earlier day's log is still booked to it.
@@ -255,3 +257,4 @@ None.
 - 2026-10-19: FR-TLOG-020 *Booking prompt*; "exports" removed from *Out of scope* (OQ-210). Back to `review` (feat-tlog-prompt).
 - 2026-10-19: Approved by the owner.
 - 2026-10-22: FR-TLOG-020: note lines are editable for the copy (OQ-211). Back to `review` (feat-tlog-prompt).
+- 2026-10-23: FR-TLOG-012 shows each booking of a log and its unbooked time; FR-TLOG-019 wording for bookings (OQ-214, feat-book-partial).

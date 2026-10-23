@@ -3,8 +3,8 @@ id: req-reporting
 title: Dashboard and Reporting
 status: approved
 owner: Marko Angelovski
-last_updated: 2026-10-14
-related: [req-time-logs, req-bookings, api-endpoints, web-screens, OQ-029, OQ-126, OQ-127, OQ-128, OQ-129, OQ-130]
+last_updated: 2026-10-23
+related: [req-time-logs, req-bookings, api-endpoints, web-screens, OQ-029, OQ-126, OQ-127, OQ-128, OQ-129, OQ-130, OQ-212]
 ---
 
 # Dashboard and Reporting
@@ -24,8 +24,8 @@ OQ-126); booked hours by booking date (that's the Bookings page, FR-BOOK-002).
   time zone (FR-AUTH-006). The range is kept in the URL (`?from=&to=`); absent, invalid or too long → **this month**.
 - **Worked**: the sum of the durations of the logs whose work date is in the range, the logs excluded from statistics
   included (they are logged time, FR-TLOG-018).
-- **Booked**: the part of *Worked* whose logs have a booking date, whatever that date is: a booked log counts on the day it
-  was worked (OQ-127). Only bookable logs can be booked (req-bookings §Model), so Unsorted and Non-prod hours are never booked.
+- **Booked**: the booked minutes of the logs in *Worked* (the sum of their bookings), whatever the bookings' dates: a booking counts on the
+  day its log was worked (OQ-127). A partly booked log adds only its booked part (OQ-212). Only bookable logs can be booked (req-bookings §Model), so Unsorted and Non-prod hours are never booked.
 - **Workday**: a date with a start time (FR-TLOG-009). **Target**: the range's workdays × the **current** daily target
   (FR-TLOG-017); the target has no history.
 - Hours are shown as `7h 30m` (`0h` for none), start times as `HH:mm`.
@@ -101,6 +101,7 @@ biggest row. Unsorted and Non-prod show no booked hours. No hours in the range �
 ## Acceptance criteria (cross-cutting)
 - Given a log on 2026-09-30 at 23:30 Zagreb time, its work date is 2026-09-30, and it counts in September's range.
 - Given a log worked on 30 September and booked to 1 October, then it counts as booked in September, not in October.
+- Given a 2 h log with 30 min booked to its work day and 1 h to the next day, then it adds 1 h 30 min booked to its work day.
 
 ## Open questions
 None.
@@ -111,3 +112,4 @@ None.
 - 2026-09-26: OQ-025 resolved: ranges use the profile time zone (FR-AUTH-006).
 - 2026-10-09: Rewritten from the owner's Dashboard screen: count tiles, workday chart, worked / target / booked, running
   totals, hours by project (OQ-126…OQ-130). The per-project line chart is dropped. Ready for review.
+- 2026-10-23: *Booked* sums the logs' booked minutes, so a partly booked log counts its booked part (feat-book-partial). Back to `review`.

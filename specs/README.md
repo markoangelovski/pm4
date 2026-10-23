@@ -23,14 +23,14 @@ Either way, fix the disagreement. Never ignore it.
 | Spec | File | Status |
 | --- | --- | --- |
 | Product vision | [00-product/vision.md](00-product/vision.md) | draft |
-| Scope and milestones | [00-product/scope.md](00-product/scope.md) | approved |
+| Scope and milestones | [00-product/scope.md](00-product/scope.md) | review |
 | Glossary | [00-product/glossary.md](00-product/glossary.md) | draft |
 | Requirements overview | [01-requirements/README.md](01-requirements/README.md) | draft |
 | Auth and accounts | [01-requirements/auth.md](01-requirements/auth.md) | draft |
 | Public landing page | [01-requirements/landing.md](01-requirements/landing.md) | approved |
 | Projects | [01-requirements/projects.md](01-requirements/projects.md) | approved |
 | Tasks | [01-requirements/tasks.md](01-requirements/tasks.md) | approved |
-| Time capture | [01-requirements/time-logs.md](01-requirements/time-logs.md) | approved |
+| Time capture | [01-requirements/time-logs.md](01-requirements/time-logs.md) | review |
 | Bookings | [01-requirements/bookings.md](01-requirements/bookings.md) | approved |
 | Dashboard and reporting | [01-requirements/reporting.md](01-requirements/reporting.md) | approved |
 | Integrations and connectors | [01-requirements/integrations.md](01-requirements/integrations.md) | review |

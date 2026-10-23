@@ -3,7 +3,7 @@ id: api-endpoints
 title: API Endpoints
 status: review
 owner: Marko Angelovski
-last_updated: 2026-10-18
+last_updated: 2026-10-23
 related: [api-conventions, api-data-model, req-auth, req-projects, req-tasks, req-time-logs, req-reporting, req-integrations]
 ---
 
@@ -59,7 +59,7 @@ defines its request, response and errors. Paths are relative to `/api/v1` unless
 | API-TLOG-006 | DELETE | `/time-logs/{id}` (immediate) | FR-TLOG-008 | specified |
 | API-TLOG-007 | — | (removed) | — | — |
 | API-BOOK-001 | GET | `/bookings?from=&to=` → `{items: BookingLog[]}` (logs worked in the range, and logs booked into it) | FR-BOOK-001/002/003 | specified |
-| API-BOOK-002 | PUT | `/bookings` `{logIds, bookingDate}` → `{items: BookingLog[]}` (book, re-date or remove, one or many logs) | FR-BOOK-004/005 | specified |
+| API-BOOK-002 | PUT | `/bookings` `{logs: [{logId, bookings}]}` → `{items: BookingLog[]}` (replaces the bookings of one or many logs) | FR-BOOK-004/005 | specified |
 | API-RPT-001 | GET | `/reports/dashboard?from=&to=` → `{days: ReportDay[], projects: ReportProject[]}` (worked and booked minutes per day and per project) | FR-RPT-002…006 | specified |
 | API-RPT-002 | — | (removed, OQ-129) | — | — |
 | API-INT-001 | GET | `/integrations/pmspa` → `PmspaConnection` | FR-INT-001, FR-INT-004, FR-INT-006 | specified |
@@ -336,7 +336,7 @@ The calendar marks the dates whose `totalMinutes` > 0.
 ### API-WD-004: Delete a day
 `DELETE /workdays/{date}` · Auth: bearer · Implements: FR-TLOG-019
 Deletes, in one statement, the caller's workday on `date` (its start) and all the caller's logs with that `workDate`; their
-`bookingDate` goes with them. Logs of other dates whose `bookingDate` is `date` keep it (OQ-152).
+bookings go with them (FK cascade). Logs of other dates with a booking dated `date` keep it (OQ-152).
 **204**
 **Errors:** 400 invalid date · 401 · 404 `not-found` when the caller has no workday and no logs on `date` (so also any future date)
 
@@ -346,7 +346,7 @@ Deletes, in one statement, the caller's workday on `date` (its start) and all th
 required"). `page`, `pageSize` as in *Lists* above (`q` isn't accepted).
 **200:** `{ items: BookingLog[], page, pageSize, total, totalMinutes, bookedMinutes }`: the caller's logs with that project (which includes the logs of its
 tasks) or that task, ordered by `workDate` descending, then entry order (`id` ascending). `totalMinutes` sums **all** matching logs, not only the page;
-`bookedMinutes` sums those with a `bookingDate`. An unknown or foreign id → `items: []`, `total: 0`, `totalMinutes: 0`, `bookedMinutes: 0`. A page past the
+`bookedMinutes` sums their bookings' `minutes`. An unknown or foreign id → `items: []`, `total: 0`, `totalMinutes: 0`, `bookedMinutes: 0`. A page past the
 end → `items: []` with the real totals. `BookingLog`: *Shared booking shapes* below.
 **Errors:** 400 validation · 401
 
@@ -359,9 +359,12 @@ end → `items: []` with the real totals. `BookingLog`: *Shared booking shapes* 
 ### API-TLOG-004: Update a time log
 `PATCH /time-logs/{id}` · Auth: bearer · Implements: FR-TLOG-006
 **Request body:** `{ workDate?, durationMinutes?, text?, title?, projectId?, taskId?, excludeFromStats?, dayStartMinute? }`; `workDate`, `durationMinutes`, `text` and `excludeFromStats` may not be `null`; `title: null` clears it.
-An update that leaves the log unbookable (excluded from statistics, or neither a project nor a task) also removes its booking (FR-BOOK-006); any other update keeps it.
+An update that leaves the log unbookable (excluded from statistics, or neither a project nor a task) also removes all its bookings (FR-BOOK-006); any other
+update keeps them. An update that leaves the log bookable with a `durationMinutes` below its booked minutes → `400`, field `durationMinutes`,
+"<booked> of this log is booked. Remove bookings first, or keep at least <booked>." (`<booked>` as the web's duration, e.g. `1h 30m`), and nothing
+changes (OQ-213). The check and the write run in one transaction that locks the log, as API-BOOK-002 does.
 **200:** `TimeLog`
-**Errors:** 400 validation · 401 · 404 `not-found`
+**Errors:** 400 validation (also the booked-time rule above) · 401 · 404 `not-found`
 
 ### API-TLOG-006: Delete a time log
 `DELETE /time-logs/{id}` · Auth: bearer · Implements: FR-TLOG-008
@@ -372,32 +375,39 @@ Deletes the row immediately. The workday stays.
 ### Shared booking shapes
 Used by API-BOOK-*. Implements [req-bookings](../01-requirements/bookings.md).
 
-- **`BookingLog`:** `TimeLog` plus `bookingDate: "YYYY-MM-DD" | null`. `TimeLog` and `Day` themselves don't carry the booking. Also the item of API-TLOG-001.
-- **Bookable:** a log with `excludeFromStats` false and a `project` (a deleted one too). Only bookable logs have a `bookingDate`.
+- **`Booking`:** `{ date: "YYYY-MM-DD", minutes: integer }`: part of a log's time booked to a date; `minutes` 15–1440, a multiple of 15 (OQ-212).
+- **`BookingLog`:** `TimeLog` plus `bookings: Booking[]`, by `date` ascending (`[]` = not booked). A log has at most one booking per date, and its
+  bookings' minutes add up to at most its `durationMinutes`. `TimeLog` and `Day` themselves don't carry bookings. Also the item of API-TLOG-001.
+- **Bookable:** a log with `excludeFromStats` false and a `project` (a deleted one too). Only bookable logs have bookings.
 
 ### API-BOOK-001: List a booking range
 `GET /bookings?from=&to=` · Auth: bearer · Implements: FR-BOOK-001/002/003
 **Query:** `from`, `to`: dates, `from` ≤ `to`, at most 366 days apart, else `400`.
-**200:** `{ items: BookingLog[] }`: the caller's logs whose `workDate` **or** `bookingDate` is in the range, ordered by `workDate`, then entry order
-(`id`). No pagination. A log worked before the range but booked into it is included; so is a log worked in the range but booked outside it.
+**200:** `{ items: BookingLog[] }`: the caller's logs whose `workDate` is in the range **or** that have a booking dated in the range, ordered by
+`workDate`, then entry order (`id`), each with all its bookings (also those outside the range). No pagination. A log worked before the range but
+booked into it is included; so is a log worked in the range but booked outside it.
 **Errors:** 400 validation · 401
 
-### API-BOOK-002: Set the booking date of logs
+### API-BOOK-002: Replace the bookings of logs
 `PUT /bookings` · Auth: bearer · Implements: FR-BOOK-004, FR-BOOK-005
-**Request body:** `{ logIds: uuid[], bookingDate: "YYYY-MM-DD" | null }`. `logIds`: 1–100 UUIDs (repeats allowed). `bookingDate`: a real date **not
-after today in the caller's time zone** (it may be before the logs' work dates), or `null` to remove the booking. Sets every listed log's booking date
-in one transaction, all or nothing.
-**200:** `{ items: BookingLog[] }`, the listed logs after the change (each once), in `id` order.
-**Errors:** 400 validation (`bookingDate` in the future or not a date; `logIds` empty, over 100 or not UUIDs; a non-null `bookingDate` for a log that
-isn't bookable → field `logIds`, "contains a log that can't be booked") · 401 · 404 `not-found` ("Time log not found.") when any id isn't the caller's
-log; nothing changes on any error.
+**Request body:** `{ logs: { logId: uuid, bookings: Booking[] }[] }`. `logs`: 1–100 entries; `bookings`: 0–96 entries (`[]` removes them all).
+Each listed log's bookings become exactly the given list, in one transaction, all or nothing; the client sends the whole list (book, **Book all**,
+edit and remove all send the log's new list). A booking's `date` is a real date **not after today in the caller's time zone** (it may be before the
+log's work date). Logs not listed are unchanged.
+**200:** `{ items: BookingLog[] }`, the listed logs after the change, in `id` order.
+**Errors:** 400 validation, fields by position (`i` = the entry in `logs`, `j` = the booking): shape errors as dot paths from the DTO
+(`logs`, `logs.<i>.logId`, `logs.<i>.bookings.<j>.date`, `logs.<i>.bookings.<j>.minutes`); `logs.<i>.bookings.<j>.date` "must not be after today";
+`logs.<i>.logId` "lists a log twice" for a repeated `logId`; `logs.<i>.bookings` "has two bookings on one date", "adds up to more than the log's
+duration", or "can't be booked" (non-empty for a log that isn't bookable) · 401 · 404 `not-found` ("Time log not found.") when any `logId` isn't the
+caller's log; nothing changes on any error.
 
 ### API-RPT-001: Dashboard report
 `GET /reports/dashboard?from=&to=` · Auth: bearer · Implements: FR-RPT-002…006 ([req-reporting](../01-requirements/reporting.md))
 **Query:** `from`, `to`: dates, `from` ≤ `to`, at most 366 days apart, else `400`. Future dates are allowed (they have nothing).
 **200:** `{ days: ReportDay[], projects: ReportProject[] }`, computed from the caller's workdays and logs whose date is in the range:
 - **`ReportDay`:** `{ workDate, startMinute: number | null, workedMinutes, bookedMinutes }`, one per date that has a workday or a log, ordered by
-  `workDate`. `workedMinutes` sums all of the date's logs (excluded ones too); `bookedMinutes` sums those with a booking date, whatever it is (OQ-127).
+  `workDate`. `workedMinutes` sums all of the date's logs (excluded ones too); `bookedMinutes` sums their bookings' minutes, whatever the bookings'
+  dates (OQ-127).
   `startMinute` is `null` for a date with logs but no workday.
 - **`ReportProject`:** `{ kind: "project" | "unsorted" | "nonprod", project: Ref | null, workedMinutes, bookedMinutes }`. A log excluded from statistics
   counts under `nonprod`; else a log without a project (and no retained project name) under `unsorted`; else under its project: one row per
@@ -432,7 +442,7 @@ PmspaColumn = "Upcoming" | "In Progress" | "Completed"
 PmspaProject = { id, title, done: boolean, taskCount: integer, link: PmspaRecordLink | null }
 PmspaTask = { id, projectId, title, column: PmspaColumn, link: PmspaRecordLink | null }
 PmspaLog = { id, title, durationMinutes: integer, linked: boolean }
-PmspaEvent = { id, title, task: { id, title, projectTitle } | null, booked: boolean, logs: PmspaLog[] }
+PmspaEvent = { id, title, task: { id, title, projectTitle } | null, logs: PmspaLog[] }   // no booked flag: bookings aren't synced (OQ-215, OQ-219)
 PmspaDay = { date: "YYYY-MM-DD", startMinute: integer | null, totalMinutes: integer,
              linkState: "linked" | "partly-linked" | "not-linked", events: PmspaEvent[] }
 PmspaDaySummary = { date: "YYYY-MM-DD", startMinute: integer | null, eventCount: integer }  // OQ-205
@@ -681,3 +691,5 @@ None.
 - 2026-10-18: OQ-204: API-INT-010/011/015/016 read only linked PMSPA records (*Linked-only reads*); `SyncPreviewItem.candidates`
   null on an unlinked sync or push row; API-INT-019 `POST /integrations/pmspa/candidates` (feat-int-budget). Still `review`.
 - 2026-10-18: `PmspaLink.pmspaCreatedAt` on API-INT-012, derived from the PMSPA ObjectId (OQ-207, feat-int-followups). Still `review`.
+- 2026-10-23: Partial bookings (feat-book-partial, OQ-212…OQ-219): `Booking`; `BookingLog.bookings` replaces `bookingDate`; API-BOOK-002 replaces each
+  listed log's bookings; API-TLOG-004 rejects a duration below the booked time; API-TLOG-001 and API-RPT-001 sum booked minutes; `PmspaEvent.booked` removed.

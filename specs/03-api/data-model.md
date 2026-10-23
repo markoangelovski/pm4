@@ -3,7 +3,7 @@ id: api-data-model
 title: Data Model
 status: draft
 owner: Marko Angelovski
-last_updated: 2026-10-18
+last_updated: 2026-10-23
 related: [api-conventions, req-integrations, prod-glossary, req-projects, req-tasks, req-time-logs, ADR-0008]
 ---
 
@@ -21,6 +21,7 @@ users 1──* projects 1──* tasks       (FK ON DELETE CASCADE)
 users 1──* workdays                   PK (user_id, work_date)
 users 1──* time_logs *──0..1 tasks    (FK ON DELETE SET NULL)
                      *──0..1 projects (FK ON DELETE SET NULL)
+time_logs 1──* bookings               PK (time_log_id, booking_date), FK ON DELETE CASCADE
 users 1──0..1 pmspa_connections       PK user_id (M6)
 projects 1──0..1 pmspa_project_links  PK project_id (FK ON DELETE CASCADE)
 tasks 1──0..1 pmspa_task_links        PK task_id (FK ON DELETE CASCADE)
@@ -132,7 +133,7 @@ One row per logged block of work (req-time-logs §Model).
 | Column | Type | Constraints |
 | --- | --- | --- |
 | work_date | date | not null, not in the future (checked by the service, in the user's zone) |
-| booking_date | date | null = not booked; not in the future (checked by the service); set only on a bookable log (FR-BOOK-004, OQ-123) |
+| booking_date | date | **Unused since feat-book-partial T1** (bookings live in `bookings`); still declared, never read or written, until T4 drops it with its index (OQ-216) |
 | duration_minutes | smallint | not null, 15–1440, a multiple of 15 |
 | exclude_from_stats | boolean | not null, default false (FR-TLOG-018) |
 | id | uuid | PK (v7) |
@@ -149,11 +150,27 @@ Invariants:
 - Project-only link: `task_id` null, `project_id` set. Unlinked (*unsorted*) logs: both null.
 - A project's logged time is `SUM(duration_minutes) WHERE project_id = …`, which covers its direct logs and its tasks' logs.
 - A day's logs are read in `id` order (entry order).
-- `booking_date` is set only while the log is bookable: `exclude_from_stats` false and a project (`project_id` or `deleted_project_title`). An update that makes the log unbookable sets it to null in the same `UPDATE` (FR-BOOK-006).
+- A log has bookings (*bookings* below) only while it is bookable: `exclude_from_stats` false and a project (`project_id` or `deleted_project_title`). An update that makes the log unbookable deletes its bookings in the same transaction (FR-BOOK-006).
+- `duration_minutes` is never below the sum of the log's bookings' `minutes` while it has any (API-TLOG-004, OQ-213).
 
 Indexes: `(user_id, work_date, id)` (day view, calendar marks), `(task_id) WHERE task_id IS NOT NULL`,
-`(project_id) WHERE project_id IS NOT NULL` (task/project sections and totals, and FK SET NULL on delete),
-`(user_id, booking_date) WHERE booking_date IS NOT NULL` (the Bookings range: logs booked into it from outside it, API-BOOK-001).
+`(project_id) WHERE project_id IS NOT NULL` (task/project sections and totals, and FK SET NULL on delete).
+`(user_id, booking_date) WHERE booking_date IS NOT NULL` stays until the column goes (feat-book-partial T4).
+
+### bookings
+Part of a log's time booked to a date (req-bookings §Model, OQ-212). One row per log and date.
+
+| Column | Type | Constraints |
+| --- | --- | --- |
+| booking_date | date | PK part; not in the future (checked by the service, in the user's zone); may be before the log's `work_date` (OQ-123) |
+| minutes | smallint | not null, 15–1440, a multiple of 15 (check `bookings_minutes`) |
+| time_log_id | uuid | PK part, FK → time_logs **ON DELETE CASCADE** |
+| user_id | uuid | not null, FK → users ON DELETE CASCADE; always the log's `user_id` |
+
+Invariants (kept by the service, inside a transaction that locks the log row `FOR UPDATE`): rows exist only for a bookable log; their `minutes`
+add up to at most the log's `duration_minutes`. Indexes: the PK (a log's bookings; the FK cascade), `(user_id, booking_date)` (the Bookings range:
+logs booked into it from outside it, API-BOOK-001). ~44 B of data per row (no stored totals: the booked time of a log, a day or a project is summed by
+queries).
 
 ### pmspa_connections
 One user's PMSPA connection (req-integrations FR-INT-002…005). Deleted on **Disconnect**; the links stay.
@@ -212,11 +229,12 @@ Row ≈ 24 B header + data + 4 B line pointer, plus index entries (~32–40 B pe
 
 | Table | ~Data/row | Indexes/row | ~Total/row |
 | --- | --- | --- | --- |
-| time_logs (avg text 80 chars, linked, booked) | 179 B | pkey + (user, date, id) + task + project + (user, booking date) ≈ 170 B | ~355 B |
+| time_logs (avg text 80 chars, linked) | 175 B | pkey + (user, date, id) + task + project ≈ 135 B | ~310 B |
+| bookings (one per booked log and date) | ~72 B | pkey + (user, date) ≈ 75 B | ~150 B |
 | pmspa_log_links | ~90 B | pkey + unique (user, account, PMSPA id) ≈ 90 B | ~180 B |
 
-A heavy user who switches often (20 logs/day, 250 days/yr) ≈ 5,000 logs ≈ **1.8 MB/yr**, or ~2.8 MB/yr
-with bloat and history overhead. **0.5 GB ≈ 180 user-years.** Syncing every log with PMSPA adds a log link per log (~0.9 MB/yr for the same user, ≈ 120
+A heavy user who switches often (20 logs/day, 250 days/yr) ≈ 5,000 logs, each booked once ≈ **2.3 MB/yr**, or ~2.9 MB/yr
+with bloat and history overhead. **0.5 GB ≈ 170 user-years.** Syncing every log with PMSPA adds a log link per log (~0.9 MB/yr for the same user, ≈ 125
 user-years with links). Dropping the legacy event level saves a
 row and ~4 index entries per block. Keys are UUIDv7 (16 B, OQ-027).
 
@@ -224,6 +242,10 @@ row and ~4 index entries per block. Keys are UUIDv7 (16 B, OQ-027).
 drizzle-kit generates SQL migrations into `api/drizzle/`, which are committed and reviewed. They run
 explicitly in CI against the direct URL (ADR-0008). They must be expand/contract compatible, because
 there's no staging.
+
+`time_logs.booking_date` → `bookings` (OQ-216), in two releases: `0008` creates `bookings` and copies each set `booking_date` as one booking of
+the log's whole `duration_minutes`; once that release is deployed, `0009` copies again the bookings the old API wrote in between (for logs with
+no `bookings` row yet), then drops the column and its index.
 
 ## Open questions
 None.
@@ -245,3 +267,4 @@ None.
 - 2026-10-17: The owner approved `pmspa_connections`, `pmspa_project_links`, `pmspa_task_links` and `pmspa_log_links` for feat-int-conn-api, feat-int-sync-api and feat-int-time-api.
 - 2026-10-18: PMSPA's rate limit per host lives in Redis, not in a table (OQ-200, feat-int-budget).
 - 2026-10-18: The PMSPA creation date of a linked record is derived from `pmspa_id`, not stored (OQ-207, feat-int-followups).
+- 2026-10-23: `bookings` replaces `time_logs.booking_date` (partial bookings, two-release migration; OQ-212, OQ-213, OQ-216; feat-book-partial).

@@ -3,7 +3,7 @@ id: prod-scope
 title: Scope and Milestones
 status: review
 owner: Marko Angelovski
-last_updated: 2026-10-15
+last_updated: 2026-10-23
 related: [prod-vision, req-overview, req-integrations]
 ---
 
@@ -19,7 +19,7 @@ Defines what is in and out of scope for the MVP, and the milestone order that `t
 - Tasks in a project (legacy fields and statuses): create, list/filter, view, edit, change status, move to another project, delete (permanent).
 - Time capture: workdays with a start time, and time logs (15-minute durations + required log text, with an optional title, project and task),
   shown in entry order or grouped by project or task, with pie and bar charts and a calendar of past days.
-- Bookings: a booking date on each log, and a page that lists a date range day by day with the hours worked and booked per project, to book logs one by one or per project.
+- Bookings: a log's time booked to one or more dates (all of it or part), and a page that lists a date range day by day with the hours worked and booked per project, to book logs (or part of them) one by one or per project.
 - Deleting is permanent. Time logs stay when their project or task is deleted, and keep its name.
 - Dashboard: project and task counts, and for a date range the workdays' start times, the hours worked against the daily target,
   the booked hours, running totals and the hours per project.
@@ -62,3 +62,4 @@ Each milestone corresponds to a folder in `tasks/`.
 - 2026-10-14: M6 Integrations: the PMSPA connector joins the scope (OQ-141). Back to `review`.
 - 2026-10-14: M7 Landing page: the landing page gets a complete redesign after M6 (OQ-151).
 - 2026-10-15: M6 wording follows the connector capabilities: import from PMSPA, push to PMSPA (req-integrations).
+- 2026-10-23: Bookings can cover part of a log, over several dates (feat-book-partial).

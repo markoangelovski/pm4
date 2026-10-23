@@ -3,8 +3,8 @@ id: req-integrations
 title: Integrations and connectors
 status: review
 owner: Marko Angelovski
-last_updated: 2026-10-18
-related: [prod-scope, sec, web-routing, web-screens, OQ-138, OQ-139, OQ-140, OQ-141, OQ-142, OQ-143, OQ-144, OQ-145, OQ-146, OQ-147, OQ-148, OQ-155, OQ-156, OQ-157, OQ-158, OQ-159, OQ-160, OQ-161, OQ-162, OQ-163, OQ-164, OQ-165, OQ-166, OQ-167, OQ-168, OQ-169, OQ-170, OQ-171, OQ-172, OQ-173, OQ-174, OQ-175, OQ-176, OQ-177, OQ-178, OQ-179, OQ-180, OQ-181, OQ-182, OQ-200, OQ-201, OQ-202, OQ-204, OQ-197, OQ-198, OQ-199, OQ-206, OQ-207, OQ-208, OQ-209]
+last_updated: 2026-10-23
+related: [prod-scope, sec, web-routing, web-screens, OQ-138, OQ-139, OQ-140, OQ-141, OQ-142, OQ-143, OQ-144, OQ-145, OQ-146, OQ-147, OQ-148, OQ-155, OQ-156, OQ-157, OQ-158, OQ-159, OQ-160, OQ-161, OQ-162, OQ-163, OQ-164, OQ-165, OQ-166, OQ-167, OQ-168, OQ-169, OQ-170, OQ-171, OQ-172, OQ-173, OQ-174, OQ-175, OQ-176, OQ-177, OQ-178, OQ-179, OQ-180, OQ-181, OQ-182, OQ-200, OQ-201, OQ-202, OQ-204, OQ-197, OQ-198, OQ-199, OQ-206, OQ-207, OQ-208, OQ-209, OQ-215, OQ-217, OQ-220]
 ---
 
 # Integrations and connectors
@@ -119,7 +119,7 @@ checks ran on a local copy only, so the deployed service may differ.
 | Note (rich text on a task, Editor.js) | list, get, create, update, delete | none | no | no |
 | Day (date + start hour) | read by range, by id; created by the first event | Workday | yes, with its events | yes, with the logs |
 | Event (a work item on a day, optional task, `booked` flag) with `logs[]` (title + hours) | read by day, by task; create, update, delete; logs add, update, delete | Time logs | yes | yes |
-| Booked flag on an event | update only | Booking (`booking_date`) | no (imported logs aren't booked) | yes |
+| Booked flag on an event | update only | none: bookings aren't synced (OQ-215) | no | no |
 
 Not every write was checked at runtime (project update and delete, task delete, log update and delete have no
 runtime evidence). They are verified against a local PMSPA test instance the owner runs on localhost when testing
@@ -165,7 +165,7 @@ starts (FR-INT-002 allows it in development).
 | `duration_minutes` (15-minute steps) | Log `duration` (hours, 0.25–24) | Hours = minutes ÷ 60. PMSPA only uses 0.25 h steps (owner); a value off that step fails its import with the reason |
 | `task_id` / `project_id` | Event `task` | Import: through the task's link (parents first); an event without a task imports as Unsorted |
 | A log moved to another task | The log moved to another event | Followed both ways through the log's link (OQ-162). **Import:** when a PMSPA event's task changed, its PM4 logs move to the new task's PM4 counterpart (their project follows; an unlinked new task is imported first). **Push:** when a PM4 log moved to another task, project or Unsorted, its PMSPA log leaves the old event and joins the event for its new task (or project, or Unsorted) and day, which is created if missing; an event left without logs is deleted. A log changed on both sides since the last sync: the action decides, a push writes PM4's version and an import PMSPA's, and the event row warns about it (OQ-180) |
-| `booking_date` (a date, or none) | Event `booked` (boolean) | Push: booked when every log of the event has a booking date. **Import: always not booked**; the user books in PM4 |
+| Bookings (FR-BOOK-*) | Event `booked` (boolean) | **Not synced** either way (OQ-215): a push never sets `booked`, an import never books a log, and `booked` isn't a compared field. The user books in PM4 |
 | `exclude_from_stats` | An event titled "nonprod" | **Push:** a day's logs excluded from statistics all go to one event "nonprod" without a task, whatever their task or project (their task isn't pushed as a parent for them). **Import:** the logs of an event titled "nonprod" (case and surrounding spaces ignored) are excluded from statistics and land in Unsorted; a PM4 log already linked to one that is excluded keeps its task, project and title, and the import updates only its text and duration (OQ-168) |
 
 ## Requirements
@@ -366,13 +366,17 @@ through its link (an unlinked task is imported first, with its project), an even
 "nonprod" as excluded from statistics (OQ-168). A log already imported is updated (text, duration, task) unless it is
 unchanged in PMSPA since the last sync. Imported logs are never booked. A log whose duration isn't a 0.25 h step fails
 with the reason; the event's other logs are imported. The same goes for a log outside 0.25…24 h or with a text over 1000
-characters (OQ-194); the preview warns about each such log on its event row (OQ-197).
+characters (OQ-194); the preview warns about each such log on its event row (OQ-197). A linked log that PMSPA has made shorter than
+its booked time in PM4 (FR-BOOK-006) isn't updated: the event row fails with "<booked> of a log is booked in PM4: remove bookings first, or keep
+at least <booked>." and the event's other logs are imported (OQ-220). The preview warns about each such log on its event row,
+when the row would import.
 **Acceptance criteria:**
 - Given a PMSPA project that isn't linked, when I select it and import, then a PM4 project is created and linked to it.
 - Given a PMSPA task whose project isn't linked, when I import the task, then its project is imported too.
 - Given an import of two records where PMSPA rejects one, then the other is imported and the failed one is listed with the reason.
 - Given a PMSPA project "Acme" and a PM4 project "Acme", when I import it with **Link to existing** → "Acme" and **Link only**, then no new PM4 project is created, the PM4 project is linked and neither side changes.
 - Given an imported event of task A whose task was changed to task B in PMSPA, when I import it again, then its PM4 logs are linked to B's PM4 counterpart (B is imported first if it isn't linked).
+- Given a linked 2 h log with 1 h 30 m booked in PM4 that PMSPA shortened to 1 h, when I open the import preview, then its event row warns that the log will fail; when I import, the log keeps 2 h and its bookings, and the event row fails with the reason.
 
 ### FR-INT-012: Sync with PMSPA and Push to PMSPA
 **Priority:** Must
@@ -388,7 +392,7 @@ confirms, and the result lists every record's outcome.
 - **Push a day:** the day's logs go to PMSPA as events (*Entity mapping → Time*), with any unlinked task as a parent
   (a project's logs without a task need no project in PMSPA). A linked log unchanged since the last push is skipped. A
   log moved to another task, project or Unsorted in PM4 leaves its old event and joins the new one; an event left without
-  logs is deleted (OQ-162). An event is booked when every one of its logs has a booking date. The button reads
+  logs is deleted (OQ-162). A push never changes an event's booked flag (OQ-215). The button reads
   "Push N records".
 **Acceptance criteria:**
 - Given no connection, then no PM4 screen shows Sync with PMSPA or Push to PMSPA.
@@ -491,3 +495,5 @@ None.
 - 2026-10-18: Follow-ups (feat-int-followups): FR-INT-003 token and account tied to the URL and email, re-login as another
   account → Invalid credentials (OQ-208, OQ-209); FR-INT-010 **Created in PMSPA** (OQ-207); FR-INT-011 preview warnings for
   every log the import rejects (OQ-197); FR-INT-014 no "Some records may have been written" after `pmspa-sync-running` (OQ-199); FR-INT-015 **Expand all** the cheaper way (OQ-206). Still `review`.
+- 2026-10-23: Bookings aren't synced with PMSPA in either direction (OQ-215): the push no longer sets an event's `booked`, and `booked` leaves the compared log fields; stored log fingerprints change once (OQ-217). FR-INT-011: an import never shortens a log below its
+  booked time, and the preview warns about such a log (OQ-220) (feat-book-partial).
