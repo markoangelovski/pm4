@@ -3,7 +3,7 @@ id: T-0092
 title: bookings table and migration 0008, the booking read model, PUT /bookings, the booked-time rule in PATCH /time-logs, booked minutes in lists and reports
 milestone: M4
 app: api
-status: ready
+status: done
 size: L
 tier: sonnet
 depends_on: []
@@ -24,11 +24,21 @@ ac_files:
 Work from the brief: `node scripts/pm4.mjs brief T-0092`. Verify with `node scripts/pm4.mjs check T-0092`.
 
 ## Implementation notes
-_Implementer: what changed, and anything the reviewer should look at._
+`bookings` table + migration 0008 (data step appended), booking read model, `PUT /bookings` (`setBookings`), booked-time rule in `updateLog` (BookedTimeException), booked minutes in `listLogs`/reports, `common/duration.ts`. Ordinary unit tests rewritten.
+
+pm4 check: FAIL. Lint, format, typecheck, build and openapi:export ok. Remaining failures are only PMSPA ACs owned by T2: `pmspa-time-fields.ac.spec.ts` AC-15 (tuples still carry booked) and `pmspa-time.ac.e2e-spec.ts` AC-6/14/15/16 (5 tests). All bookings, time-logs, logged-time, reports and delete-day e2e pass. AC-13 (manual migrate) not run.
+
+Orchestrator: re-ran `pm4 check T-0092`, same result. The failing tests are T2's (AC-14/15/16 per the spec's AC table). `pm4 check` didn't exclude them because those PMSPA tests' describe names carry `(feat-int-time-api)`, not `feat-book-partial`, so the pending-AC filter doesn't match. Accepted; they must pass in T-0093's check.
 
 ### Attempts
 | # | Tier | Result | Summary |
 | --- | --- | --- | --- |
+| 1 | sonnet | done (T1 scope) | check fails only on T2 PMSPA ACs |
 
 ## Review
-_Filled in by `review-feature`._
+**Verdict: approve** (Opus, 2026-10-23). Schema, migration 0008, repository (locks, check order, user scoping) and services match the spec.
+- Minor: `time-logs.service.spec.ts:424, 449` test names still say "→ bookingDate null"; they assert `mode() === "clear"` → rename "→ bookings cleared".
+- Minor (hardening, optional): `time.repository.ts:606-614` booked-sum in `updateLog` filters only on `time_log_id`; safe today (findLog 404s first, lock and UPDATE are user-scoped); could add `eq(bookings.userId, userId)`.
+- Process: `pm4 check` ran T2's PMSPA ACs (describe names carry `(feat-int-time-api)`): pm4 pending-AC filter gap, quick-lane candidate.
+
+Tier: sonnet was right.

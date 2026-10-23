@@ -267,16 +267,6 @@ describe("PmspaRemote days writes (feat-int-time-api)", () => {
     expect(sent(1).body).toMatchObject({ task: "t1" });
   });
 
-  it("updateEvent patches propName/propValue pairs", async () => {
-    const { remote, sent } = setup(reply(200, {}));
-    await remote.updateEvent(USER, "e1", { booked: true });
-    expect(sent(0)).toMatchObject({
-      method: "PATCH",
-      path: "/v1/days/event.update/e1",
-      body: [{ propName: "booked", propValue: true }]
-    });
-  });
-
   it("deleteEvent, createLog and updateLog hit their paths", async () => {
     const { remote, sent } = setup(
       reply(200, {}),

@@ -7,7 +7,7 @@ import { Test, TestingModule } from "@nestjs/testing";
 import { ProjectsService } from "../projects/projects.service.js";
 import { TasksService } from "../tasks/tasks.service.js";
 import { UsersRepository } from "../users/users.repository.js";
-import { TimeLogsService } from "./time-logs.service.js";
+import { BookedTimeException, TimeLogsService } from "./time-logs.service.js";
 import { TimeRepository } from "./time.repository.js";
 
 const ID = "0190a000-0000-7000-8000-000000000001";
@@ -88,7 +88,7 @@ describe("TimeLogsService", () => {
   it("update skips the future check when workDate is unchanged", async () => {
     const log = { id: ID, workDate: "2999-01-01" };
     repository.findLog.mockResolvedValue(log);
-    repository.updateLog.mockResolvedValue(undefined);
+    repository.updateLog.mockResolvedValue({ status: "ok" });
     await expect(
       service.update("u", ID, { workDate: "2999-01-01", text: "y" })
     ).resolves.toBeDefined();
@@ -96,8 +96,30 @@ describe("TimeLogsService", () => {
       "u",
       ID,
       { text: "y" },
-      null
+      null,
+      "keep"
     );
+  });
+
+  it("update throws BookedTimeException when shortened below booked time", async () => {
+    repository.findLog.mockResolvedValue({ id: ID, workDate: "2020-01-01" });
+    repository.updateLog.mockResolvedValue({
+      status: "over-booked",
+      bookedMinutes: 75
+    });
+    const error = await service
+      .update("u", ID, { durationMinutes: 60 })
+      .catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(BookedTimeException);
+    expect((error as BookedTimeException).getResponse()).toEqual({
+      errors: [
+        {
+          field: "durationMinutes",
+          message:
+            "1h 15m of this log is booked. Remove bookings first, or keep at least 1h 15m."
+        }
+      ]
+    });
   });
 
   it("update rejects a changed workDate after today", async () => {
@@ -117,11 +139,12 @@ describe("TimeLogsService", () => {
       taskId: null,
       projectId: PROJECT,
       deletedProjectTitle: null,
-      excludeFromStats: false,
-      bookingDate: "2020-01-02"
+      excludeFromStats: false
     };
     const values = () =>
       repository.updateLog.mock.calls[0][2] as Record<string, unknown>;
+    const mode = () => repository.updateLog.mock.calls[0][4] as string;
+    beforeEach(() => repository.updateLog.mockResolvedValue({ status: "ok" }));
 
     it("taskId and projectId both null → bookingDate null", async () => {
       repository.findLog.mockResolvedValue(booked);
@@ -130,9 +153,9 @@ describe("TimeLogsService", () => {
         taskId: null,
         projectId: null,
         deletedTaskTitle: null,
-        deletedProjectTitle: null,
-        bookingDate: null
+        deletedProjectTitle: null
       });
+      expect(mode()).toBe("clear");
     });
 
     it("a deleted-project log unlinked with projectId null → retained names and booking cleared", async () => {
@@ -147,15 +170,16 @@ describe("TimeLogsService", () => {
         taskId: null,
         projectId: null,
         deletedTaskTitle: null,
-        deletedProjectTitle: null,
-        bookingDate: null
+        deletedProjectTitle: null
       });
+      expect(mode()).toBe("clear");
     });
 
     it("excludeFromStats true → bookingDate null", async () => {
       repository.findLog.mockResolvedValue(booked);
       await service.update("u", ID, { excludeFromStats: true });
-      expect(values()).toEqual({ excludeFromStats: true, bookingDate: null });
+      expect(values()).toEqual({ excludeFromStats: true });
+      expect(mode()).toBe("clear");
     });
 
     it("a move to another project keeps the booking", async () => {

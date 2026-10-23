@@ -5,9 +5,9 @@ import createClient from "openapi-fetch";
 import type { components, paths } from "@/lib/api/schema";
 import type { TimeLog } from "@/proto/features/time/types";
 import type {
-  BookingLogResponseDto,
+  BookingLog,
   SetBookingsDto
-} from "@/proto/features/bookings/proposed-types";
+} from "@/proto/features/bookings/days";
 import type {
   PmspaCandidatesInputDto,
   PmspaImportDto,
@@ -225,7 +225,7 @@ function workdays(
 const isBookable = (l: TimeLog) => !l.excludeFromStats && l.project !== null;
 
 /** A log with its bookings (API-BOOK-001 / API-TLOG-001 items). */
-function withBooking(l: TimeLog): BookingLogResponseDto {
+function withBooking(l: TimeLog): BookingLog {
   const b = getMockState().bookings[l.id];
   return { ...l, bookings: isBookable(l) && b ? b : [] };
 }

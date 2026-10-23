@@ -1,7 +1,7 @@
 // In-memory data of the UI prototype (module state: resets on every reload). The mock client
 // (`./client.ts`) reads and changes it.
 import type { components } from "@/lib/api/schema";
-import type { BookingDto } from "@/proto/features/bookings/proposed-types";
+import type { BookingDto } from "@/proto/features/bookings/days";
 import type { TimeLog } from "@/proto/features/time/types";
 import { MOCK_USER, seedProjects, seedTasks, seedTime } from "./seed";
 

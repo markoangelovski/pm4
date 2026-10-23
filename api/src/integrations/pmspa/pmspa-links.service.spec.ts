@@ -93,7 +93,6 @@ describe("PmspaLinksService", () => {
           date: "2026-10-16",
           title: "Other",
           taskId: null,
-          booked: false,
           logs: [{ id: "0".repeat(24), title: "Lunch", duration: 1 }]
         },
         {
@@ -102,7 +101,6 @@ describe("PmspaLinksService", () => {
           date: "2026-10-16",
           title: "Anthropic",
           taskId: null,
-          booked: false,
           logs: [{ id: PMSPA_LOG, title: "Sprint planning", duration: 1 }]
         }
       ]

@@ -1,5 +1,9 @@
 import { Injectable } from "@nestjs/common";
-import { TimeLogsService, todayIn } from "../../time/time-logs.service.js";
+import {
+  BookedTimeException,
+  TimeLogsService,
+  todayIn
+} from "../../time/time-logs.service.js";
 import { WorkdaysService } from "../../time/workdays.service.js";
 import type { SyncPreviewItemDto, SyncResultItemDto } from "./dto/sync.dto.js";
 import { PmspaConnectionRepository } from "./pmspa-connection.repository.js";
@@ -19,6 +23,7 @@ import { PmspaSyncRepository } from "./pmspa-sync.repository.js";
 import { CANT_LINK, result, RowFailure, type Run } from "./pmspa-run.js";
 import { mappedGroup, type TimeSnapshot } from "./pmspa-time-preview.js";
 import {
+  formatDuration,
   groupDay,
   hoursToMinutes,
   isNonprod,
@@ -175,13 +180,20 @@ export class PmspaTimeSyncService {
         // OQ-169: a linked log keeps its title. OQ-168: a nonprod log already excluded keeps its task and project.
         const current = s.pm4Logs.find((l) => l.id === link.pm4Id);
         const keep = nonprod && current?.excludeFromStats === true;
-        pm4Id = (
-          await this.timeLogs.update(
-            userId,
-            link.pm4Id,
-            keep ? fields : { ...fields, ...placement }
-          )
-        ).id;
+        try {
+          pm4Id = (
+            await this.timeLogs.update(
+              userId,
+              link.pm4Id,
+              keep ? fields : { ...fields, ...placement }
+            )
+          ).id;
+        } catch (e) {
+          if (!(e instanceof BookedTimeException)) throw e;
+          firstFailure ??= `${formatDuration(e.bookedMinutes)} of a log is booked in PM4: remove bookings first, or keep at least ${formatDuration(e.bookedMinutes)}`;
+          failedLogs += 1;
+          continue;
+        }
       } else {
         pm4Id = (
           await this.timeLogs.create(userId, {
@@ -310,16 +322,11 @@ export class PmspaTimeSyncService {
         }
       }
     }
-    const booked = g.logs.every((l) => l.booked);
-    if (target && target.booked !== booked) {
-      await this.remote.updateEvent(userId, target.id, { booked });
-      for (const l of g.logs) written.add(l.id);
-    }
     for (const l of sent) written.add(l.id);
 
     // D3: re-read the day once, and link by position.
     const fresh = await this.remote.getDay(userId, date);
-    let event = find(fresh);
+    const event = find(fresh);
     if (!fresh || !event) throw new RowFailure(CANT_LINK);
     const count = sent.length;
     if (event.logs.length < count) throw new RowFailure(CANT_LINK);
@@ -327,11 +334,6 @@ export class PmspaTimeSyncService {
     event.logs
       .slice(event.logs.length - count)
       .forEach((log, i) => created.set(sent[i].id, log));
-    if (!target && booked) {
-      await this.remote.updateEvent(userId, event.id, { booked });
-      event = { ...event, booked };
-      for (const l of g.logs) written.add(l.id);
-    }
     const first = sent[0];
     const firstLog = first && created.get(first.id);
     if (!target && first && firstLog && firstLog.title !== text(first)) {

@@ -32,7 +32,6 @@ const event = (over: Partial<RemoteEvent> = {}): RemoteEvent => ({
   date: DATE,
   title: "Meetings",
   taskId: "rt1",
-  booked: false,
   logs: [{ id: "l1", title: "Standup", duration: 2 }],
   ...over
 });
@@ -66,7 +65,7 @@ const pm4Log = (over: Partial<Pm4DayLog> = {}): Pm4DayLog => ({
   title: "Standup",
   durationMinutes: 120,
   excludeFromStats: false,
-  booked: false,
+  bookedMinutes: 0,
   task: null,
   project: null,
   ...over
