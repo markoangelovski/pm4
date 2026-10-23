@@ -96,8 +96,8 @@ export interface TimeSeed {
   logs: TimeLog[];
   /** date → start minute of the workday. */
   starts: Record<string, number>;
-  /** logId → the date the log is booked to (Bookings). */
-  bookings: Record<string, string>;
+  /** logId → the log's bookings, by date (Bookings). */
+  bookings: Record<string, { date: string; minutes: number }[]>;
 }
 
 const todayStr = today(MOCK_TZ);
@@ -132,7 +132,20 @@ const seed = (
 };
 
 const recent: TimeSeed = {
-  bookings: {},
+  // Partial bookings (ids follow the order of `logs` below): split across two days, partly booked, fully booked.
+  bookings: {
+    l9: [{ date: todayStr, minutes: 45 }],
+    l14: [{ date: ago(1), minutes: 60 }],
+    l20: [
+      { date: ago(2), minutes: 120 },
+      { date: ago(1), minutes: 60 }
+    ],
+    l21: [{ date: ago(2), minutes: 135 }],
+    l22: [
+      { date: ago(5), minutes: 90 },
+      { date: ago(4), minutes: 90 }
+    ]
+  },
   starts: {
     [todayStr]: 8 * 60,
     [ago(1)]: 9 * 60,
@@ -309,7 +322,20 @@ function withHistory(s: TimeSeed): TimeSeed {
       logs.push(log);
       const bookChance = back > 14 ? 0.92 : back > 6 ? 0.55 : 0.1;
       if (!log.excludeFromStats && log.project && rand() < bookChance) {
-        bookings[log.id] = rand() < 0.1 ? ago(back - 1) : date;
+        const roll = rand();
+        const half = Math.floor(minutes / 30) * 15;
+        bookings[log.id] =
+          roll < 0.08
+            ? [{ date: ago(back - 1), minutes }]
+            : roll < 0.16 && half > 0
+              ? // Partly booked: half to the day, half to the next day (or left unbooked).
+                rand() < 0.5
+                ? [
+                    { date, minutes: half },
+                    { date: ago(back - 1), minutes: minutes - half }
+                  ]
+                : [{ date, minutes: half }]
+              : [{ date, minutes }];
       }
     }
   }

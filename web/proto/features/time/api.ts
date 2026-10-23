@@ -12,9 +12,9 @@ import { projectKeys } from "@/proto/features/projects/api";
 import { taskKeys } from "@/proto/features/tasks/api";
 import { apiClient } from "@/proto/mock/client";
 import { unwrap, unwrapVoid } from "@/lib/api/problem";
-import type { components } from "@/lib/api/schema";
 import { nowMinute } from "@/lib/time/clock";
 import type { Day, TimeLog, TimeLogInput } from "./types";
+import type { TimeLogListResponseDto } from "@/proto/features/bookings/proposed-types";
 
 export type {
   Day,
@@ -30,8 +30,8 @@ export interface WorkdayList {
   items: { workDate: string; startMinute: number; totalMinutes: number }[];
 }
 
-/** API-TLOG-001: one page of a project's or task's logs, with their booking dates and the totals. */
-export type TimeLogList = components["schemas"]["TimeLogListResponseDto"];
+/** API-TLOG-001: one page of a project's or task's logs, with their bookings and the totals. */
+export type TimeLogList = TimeLogListResponseDto;
 export type TimeLogFilter = { projectId: string } | { taskId: string };
 
 /** The Logged time section's page size (SCR-044). */

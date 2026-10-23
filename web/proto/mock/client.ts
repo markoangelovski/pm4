@@ -5,6 +5,10 @@ import createClient from "openapi-fetch";
 import type { components, paths } from "@/lib/api/schema";
 import type { TimeLog } from "@/proto/features/time/types";
 import type {
+  BookingLogResponseDto,
+  SetBookingsDto
+} from "@/proto/features/bookings/proposed-types";
+import type {
   PmspaCandidatesInputDto,
   PmspaImportDto,
   PmspaImportSelectionDto,
@@ -15,7 +19,7 @@ import type {
   PmspaSyncTargetDto,
   SavePmspaConnectionDto
 } from "@/proto/features/integrations/types";
-import { today } from "@/lib/time";
+import { formatDuration, today } from "@/lib/time";
 import { getMockState, mock, nextId } from "./store";
 import * as pmspa from "./pmspa";
 
@@ -220,11 +224,27 @@ function workdays(
 /** Only logs of a project (or task) that aren't excluded from statistics can be booked. */
 const isBookable = (l: TimeLog) => !l.excludeFromStats && l.project !== null;
 
-/** A log with its booking date (API-BOOK-001 / API-TLOG-001 items). */
-function withBooking(l: TimeLog) {
+/** A log with its bookings (API-BOOK-001 / API-TLOG-001 items). */
+function withBooking(l: TimeLog): BookingLogResponseDto {
   const b = getMockState().bookings[l.id];
-  return { ...l, bookingDate: isBookable(l) && b ? b : null };
+  return { ...l, bookings: isBookable(l) && b ? b : [] };
 }
+
+/** Minutes of the log booked to any date. */
+const bookedOf = (l: TimeLog) =>
+  withBooking(l).bookings.reduce((t, b) => t + b.minutes, 0);
+
+const validation = (field: string, message: string) =>
+  new Response(
+    JSON.stringify({
+      type: "https://pm4.angelovski.top/errors/validation",
+      title: "Validation failed",
+      status: 400,
+      detail: "Validation failed",
+      errors: [{ field, message }]
+    }),
+    { status: 400, headers: { "Content-Type": "application/problem+json" } }
+  );
 
 /** API-TLOG-001: one project's (its tasks' included) or one task's logs, newest date first. */
 function listLogs(q: URLSearchParams) {
@@ -253,7 +273,7 @@ function listLogs(q: URLSearchParams) {
   return json({
     ...paged(all, q),
     totalMinutes: sumMinutes(all),
-    bookedMinutes: sumMinutes(all.filter((l) => l.bookingDate !== null))
+    bookedMinutes: all.reduce((t, l) => t + bookedOf(l), 0)
   });
 }
 
@@ -289,10 +309,18 @@ function timeLogs(
   const old = s.logs.find((l) => l.id === id);
   if (!id || !old) return notFound();
   if (method === "PATCH") {
-    pmspa.touched("time-log", id);
     // API-TLOG-004: without projectId/taskId the link (or the deleted names) stays.
     const { project, task, ...fields } = toLog();
     const relink = "projectId" in body || "taskId" in body;
+    // Partial bookings: a log can't get shorter than its booked time (unless the change makes it unbookable).
+    const next = { ...old, ...fields, ...(relink ? { project, task } : {}) };
+    const booked = bookedOf(old);
+    if (isBookable(next) && next.durationMinutes < booked)
+      return validation(
+        "durationMinutes",
+        `${formatDuration(booked)} of this log is booked. Remove bookings first, or keep at least ${formatDuration(booked)}.`
+      );
+    pmspa.touched("time-log", id);
     mock.updateLog(id, {
       ...old,
       ...fields,
@@ -316,25 +344,34 @@ const byDateThenId = (a: TimeLog, b: TimeLog) =>
       ? -1
       : 1;
 
-/** API-BOOK-001 (GET) and API-BOOK-002 (PUT). */
+/** API-BOOK-001 (GET) and API-BOOK-002 (PUT: replaces each listed log's bookings). */
 function bookings(method: string, q: URLSearchParams, body: Body) {
   const s = getMockState();
   if (method === "PUT") {
-    const ids = [...new Set((body.logIds as string[] | undefined) ?? [])];
-    const date = (body.bookingDate as string | null | undefined) ?? null;
-    const logs = ids.map((i) => s.logs.find((l) => l.id === i));
+    const input = (body as unknown as SetBookingsDto).logs ?? [];
+    const logs = input.map((i) => s.logs.find((l) => l.id === i.logId));
     if (logs.some((l) => !l))
       return problem(404, "Not Found", "Time log not found.");
-    if (date !== null && date > today(s.me.timeZone))
-      return problem(400, "Bad Request", "bookingDate is in the future.");
-    if (date !== null && logs.some((l) => !isBookable(l!)))
-      return problem(
-        400,
-        "Bad Request",
-        "logIds contains a log that can't be booked."
-      );
-    if (date === null) ids.forEach((i) => mock.unbook(i));
-    else mock.bookMany(ids, date);
+    const todayStr = today(s.me.timeZone);
+    for (const [n, { bookings: list }] of input.entries()) {
+      const log = logs[n]!;
+      if (list.length && !isBookable(log))
+        return validation("logs", "logs contains a log that can't be booked.");
+      if (list.some((b) => b.date > todayStr))
+        return validation("logs", "A booking date is in the future.");
+      if (new Set(list.map((b) => b.date)).size !== list.length)
+        return validation("logs", "One booking per date and log.");
+      if (list.some((b) => b.minutes < 15 || b.minutes % 15 !== 0))
+        return validation("logs", "Booking times use 15-minute steps.");
+      if (list.reduce((t, b) => t + b.minutes, 0) > log.durationMinutes)
+        return validation("logs", "The bookings are longer than the log.");
+    }
+    mock.setBookings(
+      input.map((i) => ({
+        logId: i.logId,
+        bookings: [...i.bookings].sort((a, b) => a.date.localeCompare(b.date))
+      }))
+    );
     return json({
       items: logs
         .map((l) => withBooking(l!))
@@ -348,7 +385,7 @@ function bookings(method: string, q: URLSearchParams, body: Body) {
     .filter(
       (l) =>
         (l.workDate >= from && l.workDate <= to) ||
-        (l.bookingDate !== null && l.bookingDate >= from && l.bookingDate <= to)
+        l.bookings.some((b) => b.date >= from && b.date <= to)
     )
     .sort(byDateThenId);
   return json({ items });
@@ -373,7 +410,7 @@ function dashboard(q: URLSearchParams) {
       workDate,
       startMinute: s.starts[workDate] ?? null,
       workedMinutes: sumMinutes(own),
-      bookedMinutes: sumMinutes(own.filter((l) => l.bookingDate !== null))
+      bookedMinutes: own.reduce((t, l) => t + bookedOf(l), 0)
     };
   });
   type Row = {
@@ -400,8 +437,7 @@ function dashboard(q: URLSearchParams) {
       bookedMinutes: 0
     };
     row.workedMinutes += l.durationMinutes;
-    if (kind === "project" && l.bookingDate !== null)
-      row.bookedMinutes += l.durationMinutes;
+    if (kind === "project") row.bookedMinutes += bookedOf(l);
     rows.set(key, row);
   }
   const all = [...rows.values()];

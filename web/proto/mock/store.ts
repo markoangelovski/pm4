@@ -1,6 +1,7 @@
 // In-memory data of the UI prototype (module state: resets on every reload). The mock client
 // (`./client.ts`) reads and changes it.
 import type { components } from "@/lib/api/schema";
+import type { BookingDto } from "@/proto/features/bookings/proposed-types";
 import type { TimeLog } from "@/proto/features/time/types";
 import { MOCK_USER, seedProjects, seedTasks, seedTime } from "./seed";
 
@@ -23,8 +24,8 @@ export interface MockState {
   logs: TimeLog[];
   /** date → start minute of the workday. */
   starts: Record<string, number>;
-  /** logId → the date the log is booked to (Bookings). */
-  bookings: Record<string, string>;
+  /** logId → the log's bookings, by date (Bookings); absent = not booked. */
+  bookings: Record<string, BookingDto[]>;
   seq: number;
 }
 
@@ -107,7 +108,7 @@ export const mock = {
     });
     return log;
   },
-  /** A log that stops being bookable (excluded from statistics, or no project) loses its booking (OQ-124). */
+  /** A log that stops being bookable (excluded from statistics, or no project) loses its bookings (OQ-124). */
   updateLog(id: string, input: Omit<TimeLog, "id">, dayStart?: number) {
     const bookable = !input.excludeFromStats && input.project !== null;
     set({
@@ -136,15 +137,13 @@ export const mock = {
   setStart(date: string, minute: number) {
     set({ starts: { ...state.starts, [date]: minute } });
   },
-  bookMany(logIds: string[], date: string) {
-    set({
-      bookings: {
-        ...state.bookings,
-        ...Object.fromEntries(logIds.map((id) => [id, date]))
-      }
-    });
-  },
-  unbook(logId: string) {
-    set({ bookings: without(state.bookings, logId) });
+  /** Replaces each listed log's bookings ([] = unbooked). */
+  setBookings(logs: { logId: string; bookings: BookingDto[] }[]) {
+    let bookings = state.bookings;
+    for (const { logId, bookings: next } of logs)
+      bookings = next.length
+        ? { ...bookings, [logId]: next }
+        : without(bookings, logId);
+    set({ bookings });
   }
 };

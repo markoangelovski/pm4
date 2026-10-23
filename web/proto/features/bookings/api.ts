@@ -9,6 +9,7 @@ import { apiClient } from "@/proto/mock/client";
 import { unwrap } from "@/lib/api/problem";
 import { timeKeys } from "@/proto/features/time/api";
 import type { BookingLog } from "./days";
+import type { SetBookingsDto } from "./proposed-types";
 
 export type { BookingLog } from "./days";
 
@@ -32,27 +33,28 @@ export function useBookingRange(
           signal
         })
       );
-      return data.items as BookingLog[];
+      return data.items as unknown as BookingLog[];
     }
   });
 }
 
-/** API-BOOK-002: PUT /bookings, returns data.items; invalidates bookingKeys.all and timeKeys.logs(). */
+/**
+ * API-BOOK-002: PUT /bookings replaces each listed log's bookings (book, Book all, edit, remove), returns data.items;
+ * invalidates bookingKeys.all and timeKeys.logs().
+ */
 export function useSetBooking(): UseMutationResult<
   BookingLog[],
   Error,
-  { logIds: string[]; bookingDate: string | null }
+  SetBookingsDto
 > {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (input: {
-      logIds: string[];
-      bookingDate: string | null;
-    }) => {
+    mutationFn: async (input: SetBookingsDto) => {
       const data = unwrap(
-        await apiClient.PUT("/api/v1/bookings", { body: input })
+        // The generated body is still SetBookingDto until the API changes (proposed-types.ts).
+        await apiClient.PUT("/api/v1/bookings", { body: input as never })
       );
-      return data.items as BookingLog[];
+      return data.items as unknown as BookingLog[];
     },
     onSuccess: () =>
       Promise.all([

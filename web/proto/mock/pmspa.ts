@@ -1327,12 +1327,7 @@ export function importPreview(sel: PmspaImportSelectionDto): Item[] {
               : eLinks.every(Boolean) && !eLinks.some((l) => l!.pmspaChanged)
                 ? "Already imported"
                 : null,
-          warnings: [
-            ...warnings,
-            ...(e.booked
-              ? ["Booked in PMSPA: imported logs aren't booked."]
-              : [])
-          ]
+          warnings
         })
       );
     }
@@ -2035,8 +2030,8 @@ export function runPush(
           duration: l.durationMinutes / 60
         };
       });
-      const booked = g.logs.every((l) => Boolean(s.bookings[l.id]));
-      const updated = { ...event, booked, logs: [...event.logs, ...newLogs] };
+      // Bookings aren't synced with PMSPA: the event's booked flag stays as PMSPA has it.
+      const updated = { ...event, logs: [...event.logs, ...newLogs] };
       events = existing
         ? events.map((e) => (e.id === existing.id ? updated : e))
         : [...events, updated];

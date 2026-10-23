@@ -35,8 +35,19 @@ import { formatDuration, formatWorkDate } from "@/lib/time";
 import { routes } from "@/proto/lib/routes";
 import { cn } from "@/lib/utils";
 import { useSetBooking } from "../api";
-import type { BookingDay, BookingEntry, BookingGroup } from "../days";
-import { BookingCell, bookedTone } from "./booking-cell";
+import {
+  addBooking,
+  unbookedMinutes,
+  type BookingDay,
+  type BookingEntry,
+  type BookingGroup
+} from "../days";
+import {
+  BookingDateCell,
+  BookingDraftsProvider,
+  BookingTimeCell,
+  bookedTone
+} from "./booking-cell";
 
 /** A table row: one group of the day (a project, Unsorted or Non-prod) with its log rows as `subRows`, or one log row. */
 interface BookingRow {
@@ -51,7 +62,9 @@ const rowsOf = (day: BookingDay): BookingRow[] =>
     id: `${day.workDate}:${group.key}`,
     group,
     subRows: group.entries.map((entry) => ({
-      id: entry.incoming ? `${day.workDate}:in:${entry.log.id}` : entry.log.id,
+      id: entry.incoming
+        ? `${day.workDate}:in:${entry.log.id}`
+        : `${entry.log.id}:${entry.booking?.date ?? "rest"}`,
       group,
       entry
     }))
@@ -93,9 +106,10 @@ function Stat({
   );
 }
 
-/** A log's task: the task icon and an underlined link (deleted tasks are plain text). */
+/** A log's task: the task icon and an underlined link (deleted tasks are plain text). Only on the log's first row. */
 function LogTask({ row }: { row: BookingRow }) {
-  const task = row.entry?.log.task;
+  if (!row.entry?.first) return null;
+  const task = row.entry.log.task;
   if (!task) return <span className="text-muted-foreground">—</span>;
   return (
     <span className="flex items-center gap-1.5">
@@ -114,7 +128,7 @@ function LogTask({ row }: { row: BookingRow }) {
   );
 }
 
-/** Books every unbooked log of the project's day to that day (FR-BOOK-005). Null when there is nothing to book. */
+/** Books the unbooked time of each of the project's logs of the day to that day (FR-BOOK-005). Null when there is nothing to book. */
 function BookAllButton({
   group,
   workDate
@@ -123,14 +137,19 @@ function BookAllButton({
   workDate: string;
 }) {
   const set = useSetBooking();
-  if (group.kind !== "project" || !group.unbookedIds.length) return null;
+  if (group.kind !== "project" || !group.unbooked.length) return null;
   return (
     <Button
       className="shrink-0 cursor-pointer rounded-md!"
       disabled={set.isPending}
       onClick={() =>
         set.mutate(
-          { logIds: group.unbookedIds, bookingDate: workDate },
+          {
+            logs: group.unbooked.map((log) => ({
+              logId: log.id,
+              bookings: addBooking(log.bookings, workDate, unbookedMinutes(log))
+            }))
+          },
           { onError: () => toast.error("Couldn't save the booking.") }
         )
       }
@@ -190,7 +209,7 @@ function ProjectCell({ row }: { row: Row<BookingRow> }) {
 }
 
 /**
- * Six fixed columns, so widths never change. A collapsed project row spans Project + Tasks + Logs and keeps its
+ * Seven fixed columns, so widths never change. A collapsed project row spans Project + Tasks + Logs and keeps its
  * Booking date cell, so Book all stays in the same place whether the row is expanded or not.
  */
 const columns: ColumnDef<BookingRow>[] = [
@@ -208,7 +227,7 @@ const columns: ColumnDef<BookingRow>[] = [
     id: "logs",
     header: "Logs",
     cell: ({ row }) =>
-      row.original.entry ? (
+      row.original.entry?.first ? (
         <p className="truncate text-sm" title={row.original.entry.log.text}>
           {row.original.entry.log.text}
         </p>
@@ -247,18 +266,30 @@ const columns: ColumnDef<BookingRow>[] = [
           </span>
         );
       }
-      return <BookingCell log={entry.log} max={today} />;
+      return <BookingDateCell entry={entry} max={today} />;
+    }
+  },
+  {
+    id: "bookingTime",
+    header: "Booking time",
+    cell: ({ row }) => {
+      const { group, entry } = row.original;
+      if (!entry || group.kind !== "project") return null;
+      if (entry.incoming)
+        return <span className="tabular-nums">{hours(entry.minutes)}</span>;
+      return <BookingTimeCell entry={entry} />;
     }
   },
   {
     id: "worked",
     header: "Hours worked",
     meta: { align: "right" },
-    cell: ({ row }) => (
-      <span className="tabular-nums">
-        {hours((row.original.entry ?? row.original.group).worked)}
-      </span>
-    )
+    cell: ({ row }) =>
+      row.original.entry && !row.original.entry.first ? null : (
+        <span className="tabular-nums">
+          {hours((row.original.entry ?? row.original.group).worked)}
+        </span>
+      )
   },
   {
     id: "booked",
@@ -273,10 +304,10 @@ const columns: ColumnDef<BookingRow>[] = [
 ];
 
 /** Column widths (the `logs` column takes the rest). */
-const WIDTHS = ["18%", "16%", undefined, "20rem", "8rem", "8rem"];
+const WIDTHS = ["16%", "14%", undefined, "20rem", "8rem", "8rem", "8rem"];
 
 /** Headers left blank while every row is collapsed (kept as cells, so the column widths don't change). */
-const BLANK_WHEN_COLLAPSED = ["tasks", "logs", "booking"];
+const BLANK_WHEN_COLLAPSED = ["tasks", "logs", "booking", "bookingTime"];
 /** A collapsed project row keeps its Booking date cell (Book all). */
 const HIDDEN_IN_COLLAPSED_ROW = ["tasks", "logs"];
 
@@ -344,90 +375,96 @@ export function DaySection({
             hint="Booked current plus Booked from external: all hours booked to this day."
           />
         </div>
-        <div className="overflow-x-auto rounded-md border">
-          <Table>
-            <colgroup>
-              {WIDTHS.map((w, i) => (
-                <col key={i} style={{ width: w }} />
-              ))}
-            </colgroup>
-            <TableHeader>
-              {table.getHeaderGroups().map((group) => (
-                <TableRow key={group.id}>
-                  {group.headers.map((h) => {
-                    const blank =
-                      !anyOpen && BLANK_WHEN_COLLAPSED.includes(h.column.id);
-                    return (
-                      <TableHead
-                        key={h.id}
-                        className="px-4 font-semibold text-foreground"
-                      >
-                        {blank
-                          ? null
-                          : !anyOpen && h.column.id === "project"
-                            ? "Projects"
-                            : flexRender(
-                                h.column.columnDef.header,
-                                h.getContext()
-                              )}
-                      </TableHead>
-                    );
-                  })}
-                </TableRow>
-              ))}
-            </TableHeader>
-            <TableBody>
-              {table.getRowModel().rows.map((row) => {
-                const collapsed = row.depth === 0 && !row.getIsExpanded();
-                return (
-                  <TableRow
-                    key={row.id}
-                    className={cn(
-                      "transition-colors",
-                      row.depth === 0
-                        ? "cursor-pointer hover:bg-primary/10"
-                        : "bg-muted/30 hover:bg-muted/50"
-                    )}
-                    onClick={
-                      row.depth === 0
-                        ? (e) => {
-                            if (
-                              !(e.target as HTMLElement).closest(
-                                "a,button,input,[role=dialog]"
-                              )
-                            )
-                              row.toggleExpanded();
-                          }
-                        : undefined
-                    }
-                  >
-                    {row.getVisibleCells().map((cell) => {
-                      const id = cell.column.id;
-                      if (collapsed && HIDDEN_IN_COLLAPSED_ROW.includes(id))
-                        return null;
+        <BookingDraftsProvider>
+          <div className="overflow-x-auto rounded-md border">
+            <Table>
+              <colgroup>
+                {WIDTHS.map((w, i) => (
+                  <col key={i} style={{ width: w }} />
+                ))}
+              </colgroup>
+              <TableHeader>
+                {table.getHeaderGroups().map((group) => (
+                  <TableRow key={group.id}>
+                    {group.headers.map((h) => {
+                      const blank =
+                        !anyOpen && BLANK_WHEN_COLLAPSED.includes(h.column.id);
                       return (
-                        <TableCell
-                          key={cell.id}
-                          colSpan={collapsed && id === "project" ? 3 : 1}
-                          className={cn(
-                            "px-4",
-                            alignOf(cell.column.columnDef.meta) === "right" &&
-                              "whitespace-nowrap"
-                          )}
+                        <TableHead
+                          key={h.id}
+                          className="px-4 font-semibold text-foreground"
                         >
-                          {flexRender(
-                            cell.column.columnDef.cell,
-                            cell.getContext()
-                          )}
-                        </TableCell>
+                          {blank
+                            ? null
+                            : !anyOpen && h.column.id === "project"
+                              ? "Projects"
+                              : flexRender(
+                                  h.column.columnDef.header,
+                                  h.getContext()
+                                )}
+                        </TableHead>
                       );
                     })}
                   </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </div>
+                ))}
+              </TableHeader>
+              <TableBody>
+                {table.getRowModel().rows.map((row) => {
+                  const collapsed = row.depth === 0 && !row.getIsExpanded();
+                  return (
+                    <TableRow
+                      key={row.id}
+                      className={cn(
+                        "transition-colors",
+                        row.depth === 0
+                          ? "cursor-pointer hover:bg-primary/10"
+                          : "bg-muted/30 hover:bg-muted/50",
+                        // The rows of one log read as one block: a dashed line between them.
+                        row.original.entry &&
+                          !row.original.entry.last &&
+                          "border-dashed"
+                      )}
+                      onClick={
+                        row.depth === 0
+                          ? (e) => {
+                              if (
+                                !(e.target as HTMLElement).closest(
+                                  "a,button,input,[role=dialog]"
+                                )
+                              )
+                                row.toggleExpanded();
+                            }
+                          : undefined
+                      }
+                    >
+                      {row.getVisibleCells().map((cell) => {
+                        const id = cell.column.id;
+                        if (collapsed && HIDDEN_IN_COLLAPSED_ROW.includes(id))
+                          return null;
+                        return (
+                          <TableCell
+                            key={cell.id}
+                            colSpan={collapsed && id === "project" ? 3 : 1}
+                            className={cn(
+                              "px-4",
+                              alignOf(cell.column.columnDef.meta) === "right" &&
+                                "whitespace-nowrap"
+                            )}
+                          >
+                            {flexRender(
+                              cell.column.columnDef.cell,
+                              cell.getContext()
+                            )}
+                          </TableCell>
+                        );
+                      })}
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
+        </BookingDraftsProvider>
       </div>
     </section>
   );
