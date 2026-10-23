@@ -94,6 +94,6 @@
 | [T-0088](m6-integrations/T-0088-type-switch-in-the-prototype-then.md) | Type switch in the prototype, then the twins: Expand all, task list error line, commit failure line, created-in-PMSPA stamp, column and popover | M6 | web | S | done | T-0087 |
 | [T-0089](m4-time-logs/T-0089-the-prompt-item-and-dialog-the.md) | The Prompt item and dialog: the three prototype twins | M4 | web | S | done | — |
 | [T-0090](m4-time-logs/T-0090-fixed-header-and-footer-scrolling-body.md) | Fixed header and footer, scrolling body (D7): the confirmed prototype dialog's twin | M4 | web | S | done | T-0089 |
-| [T-0091](m4-time-logs/T-0091-editable-notes-d8-the-confirmed-prototype.md) | Editable notes (D8): the confirmed prototype's prompt.ts and dialog twins | M4 | web | S | ready | T-0090 |
+| [T-0091](m4-time-logs/T-0091-editable-notes-d8-the-confirmed-prototype.md) | Editable notes (D8): the confirmed prototype's prompt.ts and dialog twins | M4 | web | S | done | T-0090 |
 
 M0–M5 are done. M6 (Integrations) is in progress: feat-int-conn-api first, then int-sync-api, int-time-api and int-web (OQ-175).
