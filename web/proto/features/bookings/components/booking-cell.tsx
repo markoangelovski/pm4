@@ -17,6 +17,7 @@ import {
   type BookingDto,
   type BookingEntry
 } from "../days";
+import { DayLink, type BookingLinks } from "./day-link";
 
 /** Dark green when a log is booked to the day it was worked, dark yellow when booked to another day. */
 export const bookedTone = (sameDay: boolean) =>
@@ -92,14 +93,16 @@ function parseTime(
 
 /**
  * A bookable log row's Booking date cell (FR-BOOK-004): on the unbooked row, a date field and **Book**; on a booking,
- * the date with **Edit booking date** (date field, ✓ and ×) and **Remove booking**. Changes save at once.
+ * the date ("Booked to <date>" when it isn't the work date, a link to that day's "Worked on" row) with **Edit booking date** (date field, ✓ and ×) and **Remove booking**. Changes save at once.
  */
 export function BookingDateCell({
   entry,
-  max
+  max,
+  links
 }: {
   entry: BookingEntry;
   max: string;
+  links: BookingLinks;
 }) {
   const set = useSetBooking();
   const { draft, patch, reset } = useDraft(entry);
@@ -118,15 +121,36 @@ export function BookingDateCell({
   if (booking && !draft.editing) {
     return (
       <div className="flex items-center justify-between gap-2">
-        <span
-          className={cn(
-            "flex items-center gap-1.5 text-sm font-medium",
-            bookedTone(booking.date === log.workDate)
-          )}
-        >
-          <BookmarkCheck className="size-4 shrink-0" />
-          {formatWorkDate(booking.date)}
-        </span>
+        {booking.date === log.workDate ? (
+          <span
+            className={cn(
+              "flex items-center gap-1.5 text-sm font-medium",
+              bookedTone(true)
+            )}
+          >
+            <BookmarkCheck className="size-4 shrink-0" />
+            <span className="truncate">{formatWorkDate(booking.date)}</span>
+          </span>
+        ) : (
+          <DayLink
+            target={{
+              day: booking.date,
+              logId: log.id,
+              bookingDate: booking.date
+            }}
+            links={links}
+            className={cn(
+              "flex min-w-0 items-center gap-1.5 text-sm font-medium hover:opacity-80",
+              bookedTone(false)
+            )}
+            title="Go to the day the log is booked to"
+          >
+            <BookmarkCheck className="size-4 shrink-0" />
+            <span className="truncate underline underline-offset-2">
+              Booked to {formatWorkDate(booking.date)}
+            </span>
+          </DayLink>
+        )}
         <span className="flex shrink-0">
           <Button
             variant="ghost"

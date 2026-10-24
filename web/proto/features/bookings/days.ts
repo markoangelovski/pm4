@@ -1,6 +1,11 @@
 import { differenceInCalendarDays, format, isValid, parseISO } from "date-fns";
 import type { Ref } from "@/proto/features/time/types";
-import { formatWorkDate } from "@/lib/time";
+import { formatWorkDate, monthRange } from "@/lib/time";
+import {
+  RANGE_PRESETS,
+  presetRange,
+  type RangePreset
+} from "@/proto/features/dashboard/range";
 import type { components } from "@/lib/api/schema";
 
 type S = components["schemas"];
@@ -99,6 +104,10 @@ export interface BookingDay {
   groups: BookingGroup[];
 }
 
+/** A project's key: its id, or `deleted:<title>` for a deleted one (no id). */
+export const projectKey = (project: Ref) =>
+  project.id ?? `deleted:${project.title}`;
+
 /** Excluded → Non-prod, no project → Unsorted, else the project (a deleted one keyed by its title). */
 function groupKeyOf(
   log: BookingLog
@@ -107,7 +116,7 @@ function groupKeyOf(
     return { key: "nonprod", kind: "nonprod", project: null };
   if (!log.project) return { key: "unsorted", kind: "unsorted", project: null };
   return {
-    key: log.project.id ?? `deleted:${log.project.title}`,
+    key: projectKey(log.project),
     kind: "project",
     project: log.project
   };
@@ -227,6 +236,113 @@ export function bookingDays(
       if (b.date !== log.workDate && inRange(b.date)) dates.add(b.date);
   }
   return [...dates].sort().map((date) => bookingDay(date, logs, targetMinutes));
+}
+
+/** A log that shows on a day of the range: worked in it, or bookable with a booking in it. */
+const listedIn = (log: BookingLog, range: DateRange) => {
+  const inRange = (date: string) => date >= range.from && date <= range.to;
+  return (
+    inRange(log.workDate) ||
+    (isBookable(log) && log.bookings.some((b) => inRange(b.date)))
+  );
+};
+
+export interface ProjectOption {
+  key: string;
+  project: Ref;
+}
+
+/** The projects (live or deleted) of the logs listed in the range, by title: the Project filter's options. */
+export function projectOptions(
+  logs: BookingLog[],
+  range: DateRange
+): ProjectOption[] {
+  const options = new Map<string, ProjectOption>();
+  for (const log of logs)
+    if (log.project && listedIn(log, range))
+      options.set(projectKey(log.project), {
+        key: projectKey(log.project),
+        project: log.project
+      });
+  return [...options.values()].sort((a, b) =>
+    a.project.title.localeCompare(b.project.title)
+  );
+}
+
+/** The logs of one project (by projectKey); null → every log. */
+export function logsOfProject(
+  logs: BookingLog[],
+  key: string | null
+): BookingLog[] {
+  if (key === null) return logs;
+  return logs.filter((l) => l.project && projectKey(l.project) === key);
+}
+
+/** A Statistics preset (dashboard/range presetRange) with its end clipped to today: Bookings lists no future days. */
+export function bookingPresetRange(
+  preset: RangePreset,
+  today: string
+): DateRange {
+  const range = presetRange(preset, today);
+  return { from: range.from, to: range.to > today ? today : range.to };
+}
+
+/** The preset a range equals, or null for a custom range. */
+export function matchBookingPreset(
+  range: DateRange,
+  today: string
+): RangePreset | null {
+  return (
+    RANGE_PRESETS.find((p) => {
+      const r = bookingPresetRange(p, today);
+      return r.from === range.from && r.to === range.to;
+    }) ?? null
+  );
+}
+
+/** A listed day's section id (its anchor): `day-YYYY-MM-DD`. */
+export const dayAnchor = (date: string) => `day-${date}`;
+
+/**
+ * The key of a log row that shows the log's booking to `date` (its `data-booking`). Both ends of a booking to another
+ * day have one: the log's own row on the day it was worked, and the "Worked on" row on the day it is booked to.
+ */
+export const bookingRowId = (logId: string, date: string) => `${logId}:${date}`;
+
+/**
+ * Where a "Worked on" / "Booked to" link goes: `day` and, on it, the row of the log's booking to `bookingDate`.
+ * Worked on → the day the log was worked; Booked to → the day it is booked to (`day` = `bookingDate`).
+ */
+export interface BookingTarget {
+  day: string;
+  logId: string;
+  bookingDate: string;
+}
+
+/** `day-<day>.log-<logId>.to-<bookingDate>`: the URL hash of a "Worked on" / "Booked to" link. */
+export const targetAnchor = (t: BookingTarget) =>
+  `${dayAnchor(t.day)}.log-${t.logId}.to-${t.bookingDate}`;
+
+/** A hash (without `#`) → the day it points to and, for a "Worked on" / "Booked to" link, the booking row's key; null when it is neither. */
+export function parseAnchor(
+  hash: string
+): { day: string; row: string | null } | null {
+  const match =
+    /^day-(\d{4}-\d{2}-\d{2})(?:\.log-([^.]+)\.to-(\d{4}-\d{2}-\d{2}))?$/.exec(
+      hash
+    );
+  if (!match) return null;
+  const [, day, logId, bookingDate] = match;
+  return {
+    day,
+    row: logId && bookingDate ? bookingRowId(logId, bookingDate) : null
+  };
+}
+
+/** The month of `date`, its end clipped to today: the range a link to an unlisted day opens. */
+export function monthUpTo(date: string, today: string): DateRange {
+  const month = monthRange(date, "UTC");
+  return { from: month.from, to: month.to > today ? today : month.to };
 }
 
 /** { from: the 1st of today's month, to: today } */
