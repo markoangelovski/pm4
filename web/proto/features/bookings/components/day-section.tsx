@@ -349,7 +349,12 @@ export function DaySection({
       className="overflow-hidden rounded-lg bg-card"
     >
       <h2 className="flex items-baseline gap-2 bg-primary/10 px-4 py-3 text-lg font-semibold tracking-tight">
-        {format(parseISO(day.workDate), "EEEE, d MMMM yyyy")}
+        <Link
+          href={`${routes.app.time}?date=${day.workDate}`}
+          className="hover:text-primary hover:underline"
+        >
+          {format(parseISO(day.workDate), "EEEE, d MMMM yyyy")}
+        </Link>
         {isToday ? (
           <span className="text-xs font-normal text-primary">Today</span>
         ) : null}

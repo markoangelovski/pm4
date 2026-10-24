@@ -270,10 +270,21 @@ function listLogs(q: URLSearchParams) {
           : -1
     )
     .map(({ l }) => withBooking(l));
+  const days = [...new Set(all.map((l) => l.workDate))]
+    .sort()
+    .map((workDate) => {
+      const own = all.filter((l) => l.workDate === workDate);
+      return {
+        workDate,
+        workedMinutes: sumMinutes(own),
+        bookedMinutes: own.reduce((t, l) => t + bookedOf(l), 0)
+      };
+    });
   return json({
     ...paged(all, q),
     totalMinutes: sumMinutes(all),
-    bookedMinutes: all.reduce((t, l) => t + bookedOf(l), 0)
+    bookedMinutes: all.reduce((t, l) => t + bookedOf(l), 0),
+    days
   });
 }
 

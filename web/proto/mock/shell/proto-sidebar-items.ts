@@ -1,10 +1,10 @@
 import {
   ArrowLeft,
   CalendarCheck,
+  ChartColumn,
   Clock,
   FolderKanban,
   Globe,
-  House,
   ListTodo,
   Settings
 } from "lucide-react";
@@ -19,8 +19,8 @@ export const protoSidebarItems: MenuItem[] = [
     items: [
       {
         id: "dashboard",
-        name: "Default",
-        icon: House,
+        name: "Statistics",
+        icon: ChartColumn,
         url: routes.app.dashboard
       }
     ]

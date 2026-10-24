@@ -102,8 +102,8 @@ export function DayHeader({
       className={cn(
         "grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4",
         showToday
-          ? "lg:grid-cols-[1fr_1fr_1fr_minmax(11rem,0.7fr)_minmax(11rem,0.7fr)]"
-          : "lg:grid-cols-[1fr_1fr_1fr_minmax(11rem,0.7fr)]"
+          ? "xl:grid-cols-[1fr_1fr_1fr_minmax(15rem,0.9fr)_minmax(10rem,0.6fr)]"
+          : "xl:grid-cols-[1fr_1fr_1fr_minmax(15rem,0.9fr)]"
       )}
     >
       <Stat label="Start" prominent>
@@ -150,12 +150,17 @@ export function DayHeader({
       >
         {f.startPlusLogged ?? dash}
       </Stat>
-      <Card className="col-span-2 border rounded-md! sm:col-span-3 lg:col-span-1">
+      <Card className="col-span-2 border rounded-md! sm:col-span-3 xl:col-span-1">
         <CardContent className="flex h-full flex-col justify-center gap-3">
           <div className="flex items-baseline justify-between gap-2">
-            <span className="text-sm text-muted-foreground">% billable</span>
-            <span className="text-xl font-semibold tabular-nums">
-              {percent}%
+            <span className="shrink-0 whitespace-nowrap text-sm text-muted-foreground">
+              Billable (%)
+            </span>
+            <span className="whitespace-nowrap text-xl font-semibold tabular-nums">
+              {f.billable === 0 ? "0h" : formatDuration(f.billable)}{" "}
+              <span className="text-sm font-medium text-muted-foreground">
+                ({percent}%)
+              </span>
             </span>
           </div>
           <div className="flex items-baseline justify-between gap-2">
@@ -167,7 +172,7 @@ export function DayHeader({
         </CardContent>
       </Card>
       {showToday ? (
-        <Card className="col-span-2 border rounded-md! sm:col-span-3 lg:col-span-1">
+        <Card className="col-span-2 border rounded-md! sm:col-span-3 xl:col-span-1">
           <CardContent className="flex h-full flex-col justify-center gap-3">
             <div className="flex items-baseline justify-between gap-2">
               <span className="text-sm text-muted-foreground">Now</span>
