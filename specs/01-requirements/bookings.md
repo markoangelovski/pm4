@@ -3,8 +3,8 @@ id: req-bookings
 title: Bookings
 status: approved
 owner: Marko Angelovski
-last_updated: 2026-10-23
-related: [req-time-logs, api-endpoints, api-data-model, web-screens, OQ-122, OQ-123, OQ-124, OQ-125, OQ-212, OQ-213, OQ-214, OQ-215]
+last_updated: 2026-10-24
+related: [req-time-logs, api-endpoints, api-data-model, web-screens, OQ-122, OQ-123, OQ-124, OQ-125, OQ-212, OQ-213, OQ-214, OQ-215, OQ-225, OQ-226, OQ-227, OQ-228, OQ-229]
 ---
 
 # Bookings
@@ -35,13 +35,15 @@ bookings on the Logs day view.
 ### FR-BOOK-001: Bookings page and time range
 **Priority:** Must
 **Statement:** `/app/bookings` lists, oldest first, every date in the selected range that has logs, or that a booking of a log worked on another
-day is dated. The range is picked with a start and end date in one calendar (future dates disabled) and applied with **Submit**. It defaults to
+day is dated. The range is picked with a preset (the Statistics presets, each ending today at the latest), applied at once, or with a start and
+end date in one calendar (future dates disabled) applied with **Submit** (**Custom range** opens it, OQ-225). It defaults to
 the current month up to today and is kept in the URL (OQ-125). The heading names the month ("October 2026") when the range is within one month,
 else both dates. A range with no such dates shows an empty state.
 **Acceptance criteria:**
 - Given I open `/app/bookings` on 9 October 2026 without parameters, then the range is 1–9 October 2026 and the heading shows "October 2026".
 - Given a log worked on 30 September and booked to 1 October, and no logs worked on 1 October, then the range 1–9 October lists 1 October.
 - Given a range with no logs and no bookings, then "No logs in this range" is shown.
+- Given today is 9 October 2026, when I pick **Last month**, then the range is 1–30 September 2026; when I pick **This month**, it is 1–9 October.
 
 ### FR-BOOK-002: Day figures
 **Priority:** Must
@@ -57,7 +59,7 @@ that day), **Booked from external** (the minutes of other days' logs' bookings d
 **Priority:** Must
 **Statement:** Each date has one row per project with logs that day, biggest first by hours worked, then **Unsorted** and **Non-prod**. A row shows
 **Hours worked** (its logs of that day) and **Hours booked** (minutes booked **to that day**: its own logs' bookings dated that day plus other days' logs' bookings
-dated that day, OQ-122), so the rows add up to *Booked total*. A row expands to its logs. A log of the day has **one line per booking** (by date),
+dated that day, OQ-122), so the rows add up to *Booked total*. A row expands to its logs; **Expand all** / **Collapse all** does it for every row of the date (OQ-227). A log of the day has **one line per booking** (by date),
 then one line for its **unbooked** part while there is one; its task, text and hours worked show on its first line only. Each line shows its
 **Booking date**, its **Booking time** and its hours booked (the line's minutes when its booking is dated that day, else 0). A booking of a log of
 another day dated this one is one line under its project, with "Worked on <date>", 0 hours worked and the booking's minutes booked; it can only
@@ -102,6 +104,25 @@ project) (OQ-124), whatever its new duration. Deleting a log deletes its booking
 - Given a log with 1 h 30 min booked, when I save it with a duration of 1 h, then the dialog shows "1h 30m of this log is booked. Remove bookings first, or keep at least 1h 30m." on Duration and nothing changes.
 - Given a booked log, when I tick *Exclude from statistics* (also together with a shorter duration), then it has no bookings.
 
+
+### FR-BOOK-007: Project filter
+**Priority:** Must
+**Statement:** A **Project** filter lists **All projects**, then every project (deleted ones too) with logs worked in the range or bookings dated in
+it, by title. With a project picked, the page lists and counts only that project's logs: the days, their six figures (Overtime = that project's
+billable hours above the daily target) and their rows. The filter is kept in the URL (OQ-226).
+**Acceptance criteria:**
+- Given logs on Anthropic and Nvidia in the range, when I pick Anthropic, then only days with Anthropic logs or bookings are listed and their figures count Anthropic's logs only.
+- Given a URL whose project isn't among the range's projects, then all projects are shown.
+
+### FR-BOOK-008: Links between a booking's two days
+**Priority:** Must
+**Statement:** A log's booking to another day shows "Booked to <date>" on the day the log was worked, and "Worked on <date>" on the day it is booked
+to. Each links to the other: the page scrolls to that day, expands it and outlines the day and the booking's other row until the next click (OQ-228,
+OQ-229). A day outside the range opens its month, ending today at the latest, with the same project filter.
+**Acceptance criteria:**
+- Given a log of 6 October booked to 7 October, when I click "Booked to 7 Oct 2026", then 7 October expands and its "Worked on 6 Oct 2026" row is shown.
+- Given a log of 30 September booked to 1 October and the range October, when I click "Worked on 30 Sep 2026", then the range becomes 1–30 September.
+
 ## Open questions
 None.
 
@@ -109,3 +130,4 @@ None.
 - 2026-10-09: Created from the owner's Bookings screen (OQ-122…OQ-125).
 - 2026-10-23: Partial bookings (OQ-212…OQ-215): a log's time can be booked in parts to several dates, with a Booking time per line; Book all books
   the unbooked time; a duration can't drop below the booked time. Back to `review` (feat-book-partial, prototype `f3851c1`).
+- 2026-10-24: Range presets (OQ-225), FR-BOOK-007 Project filter (OQ-226), FR-BOOK-008 links between a booking's two days (OQ-228, OQ-229). Back to `review` (feat-book-web-nav, prototype `cf3052f`).

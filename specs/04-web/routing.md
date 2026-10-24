@@ -39,7 +39,7 @@ and the client reads `id` with `useSearchParams` (inside `<Suspense>`).
 | `/app/tasks?project=&status=&q=&sort=&page=` | SCR-030 Task list (all projects) | required |
 | `/app/task?id=` | SCR-031 Task detail (with its logged time) | required |
 | `/app/time?date=&view=project\|task\|sequential` | SCR-040 Day view (workday header, charts, logs, view switch, calendar); `view` absent = `project` | required |
-| `/app/bookings?from=&to=` | SCR-045 Bookings (per-day figures, project rows, booking dates); `from`/`to` absent or invalid = the current month up to today | required |
+| `/app/bookings?from=&to=&project=#day-…` | SCR-045 Bookings (per-day figures, project rows, booking dates); `from`/`to` absent or invalid = the current month up to today; `project` = a project id or `deleted:<title>`, absent or not among the range's projects = all (OQ-226); hash `day-YYYY-MM-DD` or `day-<day>.log-<logId>.to-<bookingDate>` = scroll to that day / booking row (OQ-228) | required |
 | `/app/user-profile` | SCR-051 Profile (Google identity, sign out of all devices) | required |
 | `/app/settings?tab=` | SCR-050 Settings (tabs; `tab` absent = `user`: daily target, time zone; `integrations`: SCR-052, FR-INT-001) | required |
 | `/app/connectors/pmspa?tab=projects\|time&week=` | SCR-060 PMSPA connector (FR-INT-007); `tab` absent = `projects`; `week` = any date of the week shown on the Time tab (Monday-based), absent = this week | required |
@@ -127,3 +127,4 @@ and the client reads `id` with `useSearchParams` (inside `<Suspense>`).
 - 2026-10-17: Approved by the owner.
 - 2026-10-24: The Dashboard section's link reads "Statistics" with the chart-column icon (prototype `f0601be`, feat-proto-sync-logged-chart). Back to `review`.
 - 2026-10-24: Approved by the owner.
+- 2026-10-24: `/app/bookings` `project` parameter and day hashes (OQ-226, OQ-228, feat-book-web-nav). Back to `review`.

@@ -57,3 +57,4 @@ A feature spec links to those. It doesn't copy them.
 | Booking prompt: the day's logs as a Slack prompt | [tlog-prompt.md](tlog-prompt.md) | M4 | review |
 | Partial bookings: a log's time booked in parts to several dates | [book-partial.md](book-partial.md) | M4 | approved |
 | Prototype sync: Logged time chart, billable hours, Statistics link and Bookings day links | [proto-sync-logged-chart.md](proto-sync-logged-chart.md) | M4 | approved |
+| Bookings navigation: range presets, project filter, Expand all, links between a booking's two days | [book-web-nav.md](book-web-nav.md) | M4 | approved |
