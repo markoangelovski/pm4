@@ -3,7 +3,7 @@ id: prod-scope
 title: Scope and Milestones
 status: review
 owner: Marko Angelovski
-last_updated: 2026-10-23
+last_updated: 2026-10-24
 related: [prod-vision, req-overview, req-integrations]
 ---
 
@@ -47,6 +47,7 @@ Each milestone corresponds to a folder in `tasks/`.
 | M5 | Reporting | Dashboard: counts, workday chart, worked / target / booked, running totals, hours by project | FR-RPT-* done |
 | M6 | Integrations | Settings → Integrations, the PMSPA connector (connection, status, sync) and its Connectors page (OQ-141) | FR-INT-* done |
 | M7 | Landing page | A complete redesign of the public landing page (OQ-151) | FR-LAND-* redesigned and done |
+| M8 | Notes | Notes and to-dos, linked to projects and tasks or General (OQ-230) | FR-NOTE-* done |
 
 ## Changelog
 - 2026-09-26: Initial scaffold.
@@ -63,3 +64,4 @@ Each milestone corresponds to a folder in `tasks/`.
 - 2026-10-14: M7 Landing page: the landing page gets a complete redesign after M6 (OQ-151).
 - 2026-10-15: M6 wording follows the connector capabilities: import from PMSPA, push to PMSPA (req-integrations).
 - 2026-10-23: Bookings can cover part of a log, over several dates (feat-book-partial).
+- 2026-10-24: M8 Notes: notes and to-dos (OQ-230).

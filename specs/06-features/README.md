@@ -58,3 +58,4 @@ A feature spec links to those. It doesn't copy them.
 | Partial bookings: a log's time booked in parts to several dates | [book-partial.md](book-partial.md) | M4 | approved |
 | Prototype sync: Logged time chart, billable hours, Statistics link and Bookings day links | [proto-sync-logged-chart.md](proto-sync-logged-chart.md) | M4 | approved |
 | Bookings navigation: range presets, project filter, Expand all, links between a booking's two days | [book-web-nav.md](book-web-nav.md) | M4 | approved |
+| Notes and to-dos: API, the Notes page, project and task cards, the New menu | [note-todos.md](note-todos.md) | M8 | approved |

@@ -3,7 +3,7 @@ id: api-data-model
 title: Data Model
 status: draft
 owner: Marko Angelovski
-last_updated: 2026-10-23
+last_updated: 2026-10-24
 related: [api-conventions, req-integrations, prod-glossary, req-projects, req-tasks, req-time-logs, ADR-0008]
 ---
 
@@ -21,6 +21,7 @@ users 1──* projects 1──* tasks       (FK ON DELETE CASCADE)
 users 1──* workdays                   PK (user_id, work_date)
 users 1──* time_logs *──0..1 tasks    (FK ON DELETE SET NULL)
                      *──0..1 projects (FK ON DELETE SET NULL)
+users 1──* notes, todos   *──0..1 tasks, projects (FK ON DELETE SET NULL, as time_logs)
 time_logs 1──* bookings               PK (time_log_id, booking_date), FK ON DELETE CASCADE
 users 1──0..1 pmspa_connections       PK user_id (M6)
 projects 1──0..1 pmspa_project_links  PK project_id (FK ON DELETE CASCADE)
@@ -33,7 +34,7 @@ Deletes are **permanent** (hard deletes). Every user-owned table references
 tasks, workdays, time logs, bookings, settings and integration connections); the API also removes the user's
 Redis sessions. A project or task of another user whose lead was the deleted user keeps the saved lead name
 (`project_lead_user_id ON DELETE SET NULL`, *Project lead* below). This is a data rule only: there's no account
-deletion in the UI or the API (req-auth). Deleting a project deletes its tasks (`tasks.project_id ON DELETE CASCADE`). Time logs are never
+deletion in the UI or the API (req-auth). Deleting a project deletes its tasks (`tasks.project_id ON DELETE CASCADE`). Time logs, notes and to-dos are never
 deleted with their task or project: they keep its name (*Retained names* below).
 
 ## Storage rules (apply to every table)
@@ -170,6 +171,45 @@ add up to at most the log's `duration_minutes`. Indexes: the PK (a log's booking
 logs booked into it from outside it, API-BOOK-001). ~44 B of data per row (no stored totals: the booked time of a log, a day or a project is summed by
 queries).
 
+### notes
+A Markdown note (req-notes, OQ-230, OQ-231).
+
+| Column | Type | Constraints |
+| --- | --- | --- |
+| created_at | timestamptz | not null, default `now()` |
+| updated_at | timestamptz | not null, default `now()`; set on every update |
+| id | uuid | PK (v7) |
+| user_id | uuid | not null, FK → users ON DELETE CASCADE |
+| project_id | uuid | null, FK → projects **ON DELETE SET NULL** |
+| task_id | uuid | null, FK → tasks **ON DELETE SET NULL** |
+| title | varchar(200) | null, trimmed, length ≥ 1 when set |
+| body | varchar(10000) | not null, trimmed, length ≥ 1 (Markdown, stored as written) |
+| deleted_project_title | varchar(200) | null, set only when the linked project is deleted |
+| deleted_task_title | varchar(200) | null, set only when the linked task is deleted |
+
+The link invariants of `time_logs` apply (a task implies its project; the service keeps `project_id` in step, including when the task moves).
+Indexes: `notes_user_updated (user_id, updated_at)` (the default list order), `notes_project (project_id) WHERE project_id IS NOT NULL`,
+`notes_task (task_id) WHERE task_id IS NOT NULL` (project and task cards, FK SET NULL on delete). Other sorts, the search and the date range
+filter the user's rows without an index (a user has hundreds of notes, not millions).
+
+### todos
+A to-do (req-notes, OQ-230, OQ-233).
+
+| Column | Type | Constraints |
+| --- | --- | --- |
+| done_at | timestamptz | null = open |
+| created_at | timestamptz | not null, default `now()` |
+| updated_at | timestamptz | not null, default `now()`; set when the text or the link changes, not by `done_at` |
+| id | uuid | PK (v7) |
+| user_id | uuid | not null, FK → users ON DELETE CASCADE |
+| project_id | uuid | null, FK → projects **ON DELETE SET NULL** |
+| task_id | uuid | null, FK → tasks **ON DELETE SET NULL** |
+| text | varchar(500) | not null, trimmed, length ≥ 1 |
+| deleted_project_title | varchar(200) | null, as `notes` |
+| deleted_task_title | varchar(200) | null, as `notes` |
+
+Link invariants as `notes`. Indexes: `todos_user (user_id)` (the whole list, no paging), `todos_project`, `todos_task` (partial, as `notes`).
+
 ### pmspa_connections
 One user's PMSPA connection (req-integrations FR-INT-002…005). Deleted on **Disconnect**; the links stay.
 
@@ -221,6 +261,8 @@ The fingerprint is the first 8 bytes of SHA-256 over the side's shared fields in
 - Read model: `task = task_id ? {id, title, deleted: false} : deleted_task_title ? {id: null, title: deleted_task_title, deleted: true} : null`
   (the same for `project`). The snapshot columns cost nothing until a delete happens.
 - Reports group deleted projects by `deleted_project_title` (OQ-029b).
+- `notes` and `todos` have the same columns and get the same `UPDATE`s, in the same transaction, next to the `time_logs` ones (OQ-230); a task
+  move sets their `project_id` as it does the logs'.
 
 ## Storage budget (estimate)
 Row ≈ 24 B header + data + 4 B line pointer, plus index entries (~32–40 B per uuid-based index entry).
@@ -229,6 +271,8 @@ Row ≈ 24 B header + data + 4 B line pointer, plus index entries (~32–40 B pe
 | --- | --- | --- | --- |
 | time_logs (avg text 80 chars, linked) | 175 B | pkey + (user, date, id) + task + project ≈ 135 B | ~310 B |
 | bookings (one per booked log and date) | ~72 B | pkey + (user, date) ≈ 75 B | ~150 B |
+| notes (avg title 40, body 800 chars) | ~900 B (a body over ~2 KB is compressed / TOASTed) | pkey + (user, updated) + project + task ≈ 135 B | ~1 KB |
+| todos (avg text 60 chars) | ~140 B | pkey + user + project + task ≈ 125 B | ~265 B |
 | pmspa_log_links | ~90 B | pkey + unique (user, account, PMSPA id) ≈ 90 B | ~180 B |
 
 A heavy user who switches often (20 logs/day, 250 days/yr) ≈ 5,000 logs, each booked once ≈ **2.3 MB/yr**, or ~2.9 MB/yr
@@ -243,6 +287,8 @@ there's no staging.
 
 `time_logs.booking_date` → `bookings` (OQ-216), in one release with no data step (prod had no bookings): `0008` creates `bookings`, `0009` drops
 the column and its index. This one isn't expand/contract compatible: an old API instance fails on the dropped column during the swap (accepted).
+
+`0010` creates `notes` and `todos` (expand only: nothing reads them before the release).
 
 ## Open questions
 None.
@@ -265,3 +311,5 @@ None.
 - 2026-10-18: PMSPA's rate limit per host lives in Redis, not in a table (OQ-200, feat-int-budget).
 - 2026-10-18: The PMSPA creation date of a linked record is derived from `pmspa_id`, not stored (OQ-207, feat-int-followups).
 - 2026-10-23: `bookings` replaces `time_logs.booking_date` (partial bookings, one release, no data copied; OQ-212, OQ-213, OQ-216; feat-book-partial).
+- 2026-10-24: `notes` and `todos` with retained names and migration `0010` (OQ-230, OQ-231, OQ-233, feat-note-todos).
+- 2026-10-24: The owner approved `notes`, `todos` and migration `0010` for feat-note-todos.

@@ -3,7 +3,7 @@ id: prod-glossary
 title: Glossary
 status: draft
 owner: Marko Angelovski
-last_updated: 2026-10-23
+last_updated: 2026-10-24
 related: [prod-vision, api-data-model]
 ---
 
@@ -23,6 +23,9 @@ Use these terms consistently in specs, code, UI copy and API names.
 | Workday | One calendar date for the user, with the time the user started working (15-minute steps), set with the date's first log. | `Workday`, `/workdays` | Day |
 | Time log (log) | One block of work on a work date: a duration and a **required** log text, plus an optional title, project and task. Shown in the order entered. | `TimeLog`, `/time-logs` | Event + Log (merged) |
 | Booking | Part of a log's time (15-minute steps) booked to a date in the user's external system. A log can have several, at most one per date, adding up to at most its duration; it is *booked* when it has one and *fully booked* when they cover its duration. Only logs with a project that aren't excluded from statistics can be booked. | `BookingLog.bookings`, `/bookings` | — |
+| Note | A Markdown text (optional title, body ≤ 10,000 characters), optionally linked to a project or task | `Note`, `/notes` | — |
+| To-do | A short item to do (≤ 500 characters), open or done, optionally linked to a project or task | `Todo`, `/todos` | — |
+| General | The notes and to-dos with no project or task | `unlinked=true`, `show=unlinked` | — |
 | Group-by-project / Group-by-task / Sequential view | The ways of showing a day's logs: grouped by project (the default) or by task, or in the order entered | `view=project\|task\|sequential` | — |
 | Unsorted | The group of logs without a project (project view) or without a task (task view) | — | — |
 | Log text | The required plain-text description on a log | `TimeLog.text` | `Log.title` |
@@ -61,3 +64,4 @@ Use these terms consistently in specs, code, UI copy and API names.
 - 2026-10-14: Added *Integration*, *Connection*, *Connector* and *PMSPA* (req-integrations).
 - 2026-10-15: Added *Link*, *Import*, *Push* and *Sync flag* (req-integrations).
 - 2026-10-23: *Booking* is part of a log's time on a date; a log can have several (feat-book-partial).
+- 2026-10-24: Note, To-do, General (OQ-230).

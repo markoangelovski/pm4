@@ -4,7 +4,7 @@ title: API Endpoints
 status: review
 owner: Marko Angelovski
 last_updated: 2026-10-24
-related: [api-conventions, api-data-model, req-auth, req-projects, req-tasks, req-time-logs, req-reporting, req-integrations]
+related: [api-conventions, api-data-model, req-auth, req-projects, req-tasks, req-time-logs, req-reporting, req-integrations, req-notes]
 ---
 
 # API Endpoints
@@ -61,6 +61,14 @@ defines its request, response and errors. Paths are relative to `/api/v1` unless
 | API-BOOK-001 | GET | `/bookings?from=&to=` → `{items: BookingLog[]}` (logs worked in the range, and logs booked into it) | FR-BOOK-001/002/003 | specified |
 | API-BOOK-002 | PUT | `/bookings` `{logs: [{logId, bookings}]}` → `{items: BookingLog[]}` (replaces the bookings of one or many logs) | FR-BOOK-004/005 | specified |
 | API-RPT-001 | GET | `/reports/dashboard?from=&to=` → `{days: ReportDay[], projects: ReportProject[]}` (worked and booked minutes per day and per project) | FR-RPT-002…006 | specified |
+| API-NOTE-001 | GET | `/notes?projectId=&taskId=&unlinked=&q=&sort=&from=&to=&page=&pageSize=` → `{items: Note[], page, pageSize, total}` | FR-NOTE-002/003/008 | specified |
+| API-NOTE-002 | POST | `/notes` `{title?, body, projectId?, taskId?}` | FR-NOTE-004 | specified |
+| API-NOTE-003 | PATCH | `/notes/{id}` | FR-NOTE-004 | specified |
+| API-NOTE-004 | DELETE | `/notes/{id}` | FR-NOTE-007 | specified |
+| API-TODO-001 | GET | `/todos?projectId=&taskId=&unlinked=&q=&sort=&from=&to=` → `{items: Todo[]}` (no paging) | FR-NOTE-001/002/005/008 | specified |
+| API-TODO-002 | POST | `/todos` `{text, done?, projectId?, taskId?}` | FR-NOTE-005 | specified |
+| API-TODO-003 | PATCH | `/todos/{id}` (also ticks off: `{done}`) | FR-NOTE-006 | specified |
+| API-TODO-004 | DELETE | `/todos/{id}` | FR-NOTE-007 | specified |
 | API-RPT-002 | — | (removed, OQ-129) | — | — |
 | API-INT-001 | GET | `/integrations/pmspa` → `PmspaConnection` | FR-INT-001, FR-INT-004, FR-INT-006 | specified |
 | API-INT-002 | PUT | `/integrations/pmspa` `{url, email, password?, confirmAccountSwitch?}` → `PmspaConnection` (saves, then checks) | FR-INT-002, FR-INT-003 | specified |
@@ -245,7 +253,7 @@ then lead-only matches; inside each group the `sort` order applies, then `id` de
 `DELETE /projects/{id}` · Auth: bearer · Implements: FR-PRJ-005
 Deletes the project and its tasks permanently. In the same transaction, first saves the project's title on the logs with
 that project, and each task's title on the logs of that task (data-model.md *Retained names*), then deletes the project; the
-cascade deletes its tasks and the FKs unlink the logs. The logs themselves stay (FR-TLOG-014).
+cascade deletes its tasks and the FKs unlink the logs. The logs themselves stay (FR-TLOG-014). Notes and to-dos keep the names the same way (req-notes).
 **204**
 **Errors:** 401 · 404 `not-found` (also when already deleted)
 
@@ -274,14 +282,14 @@ tasks without a due date come last in both `dueDate` directions (OQ-085).
 `PATCH /tasks/{id}` · Auth: bearer · Implements: FR-TSK-005, FR-TSK-006
 **Request body:** the create fields, all optional; `projectId`, `title` and `status` may not be `null`.
 A new `projectId` moves the task (it must be the caller's, else `404` `not-found`).
-Moving a task also sets the project of its time logs to the new project, in the same transaction (data-model.md *time_logs*).
+Moving a task also sets the project of its time logs, notes and to-dos to the new project, in the same transaction (data-model.md *time_logs*, *notes*).
 **200:** `Task`
 **Errors:** 400 validation · 401 · 404 `not-found`
 
 ### API-TSK-005: Delete task
 `DELETE /tasks/{id}` · Auth: bearer · Implements: FR-TSK-007
 Deletes the task permanently. In the same transaction, first saves its title on its logs (data-model.md *Retained names*),
-then deletes it; the FK unlinks the logs from the task, and they keep their project. The logs themselves stay (FR-TLOG-014).
+then deletes it; the FK unlinks the logs from the task, and they keep their project. The logs themselves stay (FR-TLOG-014). Notes and to-dos keep the name the same way (req-notes).
 **204**
 **Errors:** 401 · 404 `not-found` (also when already deleted)
 
@@ -419,6 +427,76 @@ caller's log; nothing changes on any error.
 
 Empty range → `{ days: [], projects: [] }`. The project and task counts of FR-RPT-002 come from API-PRJ-002 and API-TSK-002 (`total`).
 **Errors:** 400 validation · 401
+
+### Shared note and to-do shapes
+Used by API-NOTE-* and API-TODO-*. Implements [req-notes](../01-requirements/notes.md).
+
+- **`Note`** (`NoteResponseDto`): `{ id, title: string | null, body: string, project: Ref | null, task: Ref | null, createdAt, updatedAt }`.
+- **`Todo`** (`TodoResponseDto`): `{ id, text, doneAt: string | null, project: Ref | null, task: Ref | null, createdAt, updatedAt }`. `updatedAt`
+  changes with the text or the link only, never with `done` (OQ-233).
+- `Ref` as on `TimeLog` (a deleted project or task keeps its title with `id: null`, `deleted: true`; data-model.md *Retained names*). An item with a
+  task always has `project` (the task's project). Linked titles are read live (a renamed project shows its new title).
+- **Link input:** `projectId?: uuid | null`, `taskId?: uuid | null`, with exactly the rules of the time-capture *Link input* (a task fixes the
+  project, a different `projectId` → `400`; unknown or foreign → `404` "Task not found." / "Project not found."; on `PATCH` the link is replaced as a
+  unit when either field is present, which clears the retained names, and kept when both are absent).
+- **List filter** (both lists): `projectId` (the project's items, its tasks' included), `taskId` (one task's), or `unlinked=true` (General: no
+  project, live or deleted). At most one of them, else `400` (field `projectId`, "use at most one of projectId, taskId and unlinked"); none = every
+  item. An unknown or foreign id → no items. `unlinked` accepts `true` / `false`.
+- **Search, sort, range** (both lists): `q` (≤ 200, trimmed, empty = none) is a case-insensitive "contains" with wildcards literal, on the note's
+  title or body / the to-do's text. `sort` ∈ `updatedAt:desc` (default), `updatedAt:asc`, `createdAt:desc`, `createdAt:asc`; ties break on `id` in the
+  same direction. `from`, `to`: optional `YYYY-MM-DD` (each alone is allowed; `from` after `to` → `400`, field `from`, "must not be after to"),
+  inclusive, compared with the **sort's** instant as a date in the caller's stored time zone (OQ-232).
+- **Ids in paths:** not a UUID, missing or another user's → `404` `not-found`.
+
+### API-NOTE-001: List notes
+`GET /notes?projectId=&taskId=&unlinked=&q=&sort=&from=&to=&page=&pageSize=` · Auth: bearer · Implements: FR-NOTE-002, FR-NOTE-003, FR-NOTE-008
+Filter, search, sort and range as above; `page`, `pageSize` as in *Lists*.
+**200:** `{ items: Note[], page, pageSize, total }`
+**Errors:** 400 validation · 401
+
+### API-NOTE-002: Create a note
+`POST /notes` · Auth: bearer · Implements: FR-NOTE-004
+**Request body:** `{ title?: string(≤200) | null, body: string(1–10000), projectId?, taskId? }`. `title` and `body` are trimmed; an empty `title` is
+stored as `null`. `body` is stored as written (Markdown; the API doesn't parse it, OQ-231).
+**201:** `Note`
+**Errors:** 400 validation · 401 · 404 `not-found` (task or project)
+
+### API-NOTE-003: Update a note
+`PATCH /notes/{id}` · Auth: bearer · Implements: FR-NOTE-004
+**Request body:** as API-NOTE-002: `body` is required, `title` absent or `null` clears it; the link per *Link input*. Sets `updatedAt`.
+**200:** `Note`
+**Errors:** 400 validation · 401 · 404 `not-found`
+
+### API-NOTE-004: Delete a note
+`DELETE /notes/{id}` · Auth: bearer · Implements: FR-NOTE-007
+**204**
+**Errors:** 401 · 404 `not-found`
+
+### API-TODO-001: List to-dos
+`GET /todos?projectId=&taskId=&unlinked=&q=&sort=&from=&to=` · Auth: bearer · Implements: FR-NOTE-001, FR-NOTE-002, FR-NOTE-005, FR-NOTE-008
+Filter, search, sort and range as above; open and done alike, all of them (no paging; `page`, `pageSize` aren't accepted).
+**200:** `{ items: Todo[] }`
+**Errors:** 400 validation · 401
+
+### API-TODO-002: Create a to-do
+`POST /todos` · Auth: bearer · Implements: FR-NOTE-005
+**Request body:** `{ text: string(1–500), done?: boolean, projectId?, taskId? }` (`TodoInputDto`, shared with API-TODO-003: `text` is optional in the
+schema and required here, absent → `400` field `text`, "is required"). `text` trimmed. `done: true` creates it done (`doneAt` = now).
+**201:** `Todo`
+**Errors:** 400 validation · 401 · 404 `not-found` (task or project)
+
+### API-TODO-003: Update a to-do
+`PATCH /todos/{id}` · Auth: bearer · Implements: FR-NOTE-006
+**Request body:** `{ text?, done?, projectId?, taskId? }`; `text` and `done` may not be `null`. `done: true` sets `doneAt` to now unless it's already
+set; `done: false` clears it. `updatedAt` is set only when `text` differs from the saved text or a link field is present (OQ-233). An empty body
+changes nothing.
+**200:** `Todo`
+**Errors:** 400 validation · 401 · 404 `not-found`
+
+### API-TODO-004: Delete a to-do
+`DELETE /todos/{id}` · Auth: bearer · Implements: FR-NOTE-007
+**204**
+**Errors:** 401 · 404 `not-found`
 
 ### Shared PMSPA shapes
 The connector's endpoints (req-integrations). PMSPA ids are 24-hex ObjectId strings; PM4 ids are UUIDs.
@@ -696,3 +774,5 @@ None.
 - 2026-10-23: Partial bookings (feat-book-partial, OQ-212…OQ-219): `Booking`; `BookingLog.bookings` replaces `bookingDate`; API-BOOK-002 replaces each
   listed log's bookings; API-TLOG-004 rejects a duration below the booked time; API-TLOG-001 and API-RPT-001 sum booked minutes; `PmspaEvent.booked` removed.
 - 2026-10-24: API-TLOG-001 returns `days` (`LoggedDay[]`) for the Logged time chart (OQ-222, feat-proto-sync-logged-chart). Still `review`.
+- 2026-10-24: Notes and to-dos: API-NOTE-001…004, API-TODO-001…004, *Shared note and to-do shapes*; API-PRJ-005, API-TSK-004/005 keep and move their items (OQ-230…OQ-233, feat-note-todos). Still `review`.
+- 2026-10-24: The owner approved API-NOTE-001…004, API-TODO-001…004, *Shared note and to-do shapes*, API-PRJ-005 and API-TSK-004/005 (as updated) for feat-note-todos.

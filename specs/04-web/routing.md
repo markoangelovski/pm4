@@ -40,6 +40,7 @@ and the client reads `id` with `useSearchParams` (inside `<Suspense>`).
 | `/app/task?id=` | SCR-031 Task detail (with its logged time) | required |
 | `/app/time?date=&view=project\|task\|sequential` | SCR-040 Day view (workday header, charts, logs, view switch, calendar); `view` absent = `project` | required |
 | `/app/bookings?from=&to=&project=#day-…` | SCR-045 Bookings (per-day figures, project rows, booking dates); `from`/`to` absent or invalid = the current month up to today; `project` = a project id or `deleted:<title>`, absent or not among the range's projects = all (OQ-226); hash `day-YYYY-MM-DD` or `day-<day>.log-<logId>.to-<bookingDate>` = scroll to that day / booking row (OQ-228) | required |
+| `/app/notes?tab=notes\|todos&show=&q=&sort=&from=&to=&page=` | SCR-070 Notes (FR-NOTE-001/002); `tab` absent = `notes`; `show` = `unlinked` (General, the default), `all` or a project id (unknown = General); `sort` absent = `updatedAt:desc`; `from`/`to` absent = All time, invalid = this month; `page` only on the Notes tab. The toolbar state is shared by both tabs (OQ-232) | required |
 | `/app/user-profile` | SCR-051 Profile (Google identity, sign out of all devices) | required |
 | `/app/settings?tab=` | SCR-050 Settings (tabs; `tab` absent = `user`: daily target, time zone; `integrations`: SCR-052, FR-INT-001) | required |
 | `/app/connectors/pmspa?tab=projects\|time&week=` | SCR-060 PMSPA connector (FR-INT-007); `tab` absent = `projects`; `week` = any date of the week shown on the Time tab (Monday-based), absent = this week | required |
@@ -47,11 +48,11 @@ and the client reads `id` with `useSearchParams` (inside `<Suspense>`).
 
 ## Navigation
 - Sidebar (OQ-054), in sections with a heading (shown in capitals):
-  **Dashboard** → Statistics (`/app`, chart-column icon) · **Project management** → Projects, Tasks · **Time** → Logs (`/app/time`), Bookings (`/app/bookings`)
+  **Dashboard** → Statistics (`/app`, chart-column icon) · **Project management** → Projects, Tasks, Notes (`/app/notes`, notebook-pen icon) · **Time** → Logs (`/app/time`), Bookings (`/app/bookings`)
   · **Connectors** → PMSPA (`/app/connectors/pmspa`, globe icon), only while a PMSPA connection is saved (FR-INT-006).
   A fixed footer at the bottom of the sidebar (stays put while the nav scrolls) holds Settings.
   The app logo links to `/app`.
-- Header: a global **Log time** button (FR-TLOG-011), the theme toggle and the user's avatar. The avatar
+- Header: a **New ▾** menu (Note, To-do; FR-NOTE-009) and a global **Log time** button (FR-TLOG-011), the theme toggle and the user's avatar. The avatar
   opens the **user drawer** (SCR-005) with **Home** (`/app`), **Profile** (`/app/user-profile`) and **Sign out** (OQ-057, OQ-074).
 - Landing page (`/`, FR-LAND-001/002): public, outside the app shell and its auth guard. It has its own
   marketing header with the "Go to app" / "Login" button, not the sidebar.
@@ -128,3 +129,4 @@ and the client reads `id` with `useSearchParams` (inside `<Suspense>`).
 - 2026-10-24: The Dashboard section's link reads "Statistics" with the chart-column icon (prototype `f0601be`, feat-proto-sync-logged-chart). Back to `review`.
 - 2026-10-24: Approved by the owner.
 - 2026-10-24: `/app/bookings` `project` parameter and day hashes (OQ-226, OQ-228, feat-book-web-nav). Back to `review`.
+- 2026-10-24: `/app/notes` (SCR-070), the Notes sidebar item and the header New menu (OQ-232, OQ-234, feat-note-todos).
