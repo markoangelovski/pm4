@@ -64,6 +64,13 @@
       "when": 1792788761878,
       "tag": "0008_bookings",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1792791985081,
+      "tag": "0009_drop_booking_date",
+      "breakpoints": true
     }
   ]
 }
