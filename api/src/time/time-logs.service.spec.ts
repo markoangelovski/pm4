@@ -146,7 +146,7 @@ describe("TimeLogsService", () => {
     const mode = () => repository.updateLog.mock.calls[0][4] as string;
     beforeEach(() => repository.updateLog.mockResolvedValue({ status: "ok" }));
 
-    it("taskId and projectId both null → bookingDate null", async () => {
+    it("taskId and projectId both null → booking cleared", async () => {
       repository.findLog.mockResolvedValue(booked);
       await service.update("u", ID, { taskId: null, projectId: null });
       expect(values()).toEqual({
@@ -175,7 +175,7 @@ describe("TimeLogsService", () => {
       expect(mode()).toBe("clear");
     });
 
-    it("excludeFromStats true → bookingDate null", async () => {
+    it("excludeFromStats true → booking cleared", async () => {
       repository.findLog.mockResolvedValue(booked);
       await service.update("u", ID, { excludeFromStats: true });
       expect(values()).toEqual({ excludeFromStats: true });

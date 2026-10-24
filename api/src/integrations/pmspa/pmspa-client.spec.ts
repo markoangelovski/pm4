@@ -137,6 +137,26 @@ describe("PmspaClient", () => {
     expect(s.fake.callsTo("POST", "/v1/auth/login")).toHaveLength(1);
   });
 
+  it("request: a re-login does not cache when the connection's email changed meanwhile", async () => {
+    const row = await s.repo.find();
+    s.repo.find
+      .mockResolvedValueOnce(row)
+      .mockResolvedValueOnce({ ...row!, email: "other@pmspa.test" });
+    const res = await s.client.request(USER, who);
+    expect(res.status).toBe(200);
+    await expect(s.store.getToken(USER, OWNER)).resolves.toBeNull();
+    await expect(s.store.getAccount(USER, OWNER)).resolves.toBeNull();
+  });
+
+  it("request: a re-login does not cache when the connection was removed meanwhile", async () => {
+    const row = await s.repo.find();
+    s.repo.find.mockResolvedValueOnce(row).mockResolvedValueOnce(null);
+    const res = await s.client.request(USER, who);
+    expect(res.status).toBe(200);
+    await expect(s.store.getToken(USER, OWNER)).resolves.toBeNull();
+    await expect(s.store.getAccount(USER, OWNER)).resolves.toBeNull();
+  });
+
   it("request: logs in again once after a token error", async () => {
     await s.client.request(USER, who);
     s.fake.expireTokens();

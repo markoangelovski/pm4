@@ -135,8 +135,17 @@ export class PmspaClient {
         if (row.pmspaUserId !== null && check.account.id !== row.pmspaUserId) {
           return invalid();
         }
-        await this.store.setToken(userId, check.token, owner);
-        await this.store.setAccount(userId, check.account, owner);
+        // Cache only while the connection still has this request's URL and
+        // email (a Save may have replaced it meanwhile; OQ-221).
+        const now = await this.repo.find(userId);
+        if (
+          now !== null &&
+          now.url === owner.url &&
+          now.email === owner.email
+        ) {
+          await this.store.setToken(userId, check.token, owner);
+          await this.store.setAccount(userId, check.account, owner);
+        }
         return check.token;
       }
       if (check.status === "invalid-credentials") return invalid();
