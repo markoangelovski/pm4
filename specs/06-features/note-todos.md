@@ -34,8 +34,8 @@ pages (SCR-073) and the header **New ▾** menu, all from the confirmed prototyp
 `features/notes` domain, `/app/notes`, the Notes sidebar item, the header New menu, the cards on project and task detail, `RangePicker`'s `allowAll`.
 
 **Test step (main session, before T1):**
-- `api/`: from `api/`, `npx nest g module notes`, `npx nest g controller notes --no-spec`, `npx nest g controller todos --no-spec`,
-  `npx nest g service notes --no-spec`, `npx nest g service todos --no-spec`, `npx nest g service notes/item-link --flat --no-spec`; the DTOs and
+- `api/`: from `api/`, `npx nest g module notes`, `npx nest g controller notes --no-spec`, `npx nest g controller notes/todos --flat --no-spec`,
+  `npx nest g service notes --no-spec`, `npx nest g service notes/todos --flat --no-spec`, `npx nest g service notes/item-link --flat --no-spec`; the DTOs and
   controllers of *Interfaces → API*; service methods as typed stubs; `NotesModule` in `app.module.ts`; `npm run openapi:export`.
   `test/support/note-test-utils.ts` (`insertNote`, `insertTodo`: rows straight into Postgres with given timestamps).
 - `web/`: `npm run api:types`; `web/proto/features/notes/types.ts` and its twin `web/features/notes/types.ts` (*Interfaces → Web types*); every
@@ -152,10 +152,11 @@ unowned `id` → `404` `NotFoundException("Note not found.")` / `("To-do not fou
   `UsersRepository.findById` only when `from` or `to` is set.
 - Create: `ItemLinkService.resolve(userId, dto.taskId, dto.projectId, null)`; to-dos: `dto.text === undefined` → 400 field `text`, "is required";
   `done === true` → `doneAt = now()`.
-- Update: read the owned row (404), then the link only when `"taskId" in dto || "projectId" in dto` (`resolve(…, current)`), which also sets both
+- Update: read the owned row (404), then the link only when `dto.taskId !== undefined || dto.projectId !== undefined` (not `in`: with the ES2023 target every
+  declared DTO field is an own property; as `TimeLogsService.update`) (`resolve(…, current)`), which also sets both
   `deleted_*_title` to null. Notes: write `title` (`dto.title ?? null`), `body`, `updated_at = now()`. To-dos: `text` if given; `done` → `done_at`
   (`true`: `coalesce(done_at, now())`, `false`: null); `updated_at = now()` only when `text !== undefined && text !== row.text` or a link field
-  is present.
+  is present. An empty to-do body changes nothing (API-TODO-003): no UPDATE, `200` with the row unchanged.
 - Delete: `DELETE … WHERE user_id = $1 AND id = $2 RETURNING id`; none → 404.
 
 **Repository (T1 notes, T2 to-dos):** `select` with `LEFT JOIN projects ON projects.id = notes.project_id` and `LEFT JOIN tasks ON tasks.id =

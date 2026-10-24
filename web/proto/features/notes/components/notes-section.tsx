@@ -23,6 +23,8 @@ import { TodoRow } from "./todo-row";
 /** Notes shown at first on a card, and how many more each Show more adds. */
 const NOTES_FIRST = 3;
 const NOTES_MORE = 10;
+/** The most notes a card shows, however many Show more clicks. */
+const NOTES_MAX = 100;
 
 /**
  * The Notes and To-dos cards of a project's or task's page, side by side on wide screens. A project's cards include
@@ -102,13 +104,15 @@ function NotesCard({
                 <NoteItem key={n.id} note={n} timeZone={timeZone} hide={hide} />
               ))}
             </div>
-            {data.total > data.items.length ? (
+            {data.total > data.items.length && limit < NOTES_MAX ? (
               <Button
                 variant="ghost"
                 size="sm"
                 disabled={query.isFetching}
                 className="mt-1 w-full cursor-pointer"
-                onClick={() => setLimit((l) => l + NOTES_MORE)}
+                onClick={() =>
+                  setLimit((l) => Math.min(l + NOTES_MORE, NOTES_MAX))
+                }
               >
                 <ChevronDown data-icon="inline-start" />
                 Show more ({data.total - data.items.length})

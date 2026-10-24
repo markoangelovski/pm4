@@ -85,7 +85,7 @@ export class BookedTimeException extends BadRequestException {
 }
 
 /** A live link (`title` set), else the retained name of a deleted one (data-model.md *Retained names*). */
-function toRef(
+export function toRef(
   id: string | null,
   title: string | null,
   snapshot: string | null

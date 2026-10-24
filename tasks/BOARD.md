@@ -106,8 +106,8 @@
 | [T-0100](m4-time-logs/T-0100-web-from-the-prototype-the-logged.md) | Web from the prototype: the Logged time chart and tabs, LoggedDay and the prototype api.ts twin, the Logs header and pie dialog, Bookings day links, the Statistics link | M4 | web | M | done | T-0099 |
 | [T-0101](m4-time-logs/T-0101-bookings-from-the-prototype-presets-project.md) | Bookings from the prototype: presets, Project filter, Expand all, booking links (promote two files, copy five twins) | M4 | web | S | done | — |
 | [T-0102](m4-time-logs/T-0102-bookings-anchor-and-expand-all-heading.md) | Bookings: a crafted hash no longer crashes the page, and Expand all moves out of the day heading | M4 | web | S | done | — |
-| [T-0103](m8-notes/T-0103-notes-and-todos-tables-migration-0010.md) | notes and todos tables, migration 0010, the notes service and repository, ItemLinkService, retained names and task moves for both tables | M8 | api | M | ready | — |
-| [T-0104](m8-notes/T-0104-the-to-dos-service-and-repository.md) | The to-dos service and repository | M8 | api | S | blocked | T-0103 |
-| [T-0105](m8-notes/T-0105-the-web-twins-of-the-notes.md) | The web: twins of the notes domain, range picker, project and task detail; the page, route, sidebar item and header menu | M8 | web | M | ready | — |
+| [T-0103](m8-notes/T-0103-notes-and-todos-tables-migration-0010.md) | notes and todos tables, migration 0010, the notes service and repository, ItemLinkService, retained names and task moves for both tables | M8 | api | M | done | — |
+| [T-0104](m8-notes/T-0104-the-to-dos-service-and-repository.md) | The to-dos service and repository | M8 | api | S | done | T-0103 |
+| [T-0105](m8-notes/T-0105-the-web-twins-of-the-notes.md) | The web: twins of the notes domain, range picker, project and task detail; the page, route, sidebar item and header menu | M8 | web | M | done | — |
 
 M0–M6 are done. Later follow-ups are filed under the milestone they extend.

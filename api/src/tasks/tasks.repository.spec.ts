@@ -44,7 +44,7 @@ describe("TasksRepository", () => {
 });
 
 describe("TasksRepository.update", () => {
-  it("moves the task's time logs when the project changes", async () => {
+  it("moves the task's time logs, notes and to-dos when the project changes", async () => {
     const updates: string[] = [];
     const tx = {
       update: () => {
@@ -64,7 +64,12 @@ describe("TasksRepository.update", () => {
     const repository = module.get(TasksRepository);
 
     await repository.update("u", "t", { projectId: "p", title: "x" });
-    expect(updates).toEqual(["projectId,title,updatedAt", "projectId"]);
+    expect(updates).toEqual([
+      "projectId,title,updatedAt",
+      "projectId",
+      "projectId",
+      "projectId"
+    ]);
 
     updates.length = 0;
     await repository.update("u", "t", { title: "x" });

@@ -1,6 +1,7 @@
 "use client";
 
 import { PanelLeft } from "lucide-react";
+import { Suspense } from "react";
 import FullLogo from "../../shared/logo/full-logo";
 import Profile from "../../shared/header/profile";
 import LightDark from "../../shared/header/light-dark";
@@ -9,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { LogTimeButton } from "@/features/time/components/log-time-button";
+import { NewItemButton } from "@/features/notes/components/new-item-button";
 
 const Header = () => {
   const { toggleSidebar } = useSidebar();
@@ -40,6 +42,9 @@ const Header = () => {
           </div>
 
           <div className="flex sm:gap-2 gap-1 items-center">
+            <Suspense fallback={null}>
+              <NewItemButton />
+            </Suspense>
             <LogTimeButton />
             <LightDark />
             <Profile />
