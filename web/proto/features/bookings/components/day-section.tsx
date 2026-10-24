@@ -384,16 +384,18 @@ export function DaySection({
         focus?.outlined && "ring-2 ring-primary"
       )}
     >
-      <h2 className="flex items-baseline gap-2 bg-primary/10 px-4 py-3 text-lg font-semibold tracking-tight">
-        <Link
-          href={`${routes.app.time}?date=${day.workDate}`}
-          className="hover:text-primary hover:underline"
-        >
-          {format(parseISO(day.workDate), "EEEE, d MMMM yyyy")}
-        </Link>
-        {isToday ? (
-          <span className="text-xs font-normal text-primary">Today</span>
-        ) : null}
+      <div className="flex items-baseline gap-2 bg-primary/10 px-4 py-3">
+        <h2 className="flex items-baseline gap-2 text-lg font-semibold tracking-tight">
+          <Link
+            href={`${routes.app.time}?date=${day.workDate}`}
+            className="hover:text-primary hover:underline"
+          >
+            {format(parseISO(day.workDate), "EEEE, d MMMM yyyy")}
+          </Link>
+          {isToday ? (
+            <span className="text-xs font-normal text-primary">Today</span>
+          ) : null}
+        </h2>
         <Button
           variant="ghost"
           size="sm"
@@ -408,7 +410,7 @@ export function DaySection({
           )}
           {allOpen ? "Collapse all" : "Expand all"}
         </Button>
-      </h2>
+      </div>
       <div className="space-y-4 p-4">
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 xl:grid-cols-6">
           <Stat label="Logged" value={hours(day.logged)} />

@@ -105,5 +105,6 @@
 | [T-0099](m4-time-logs/T-0099-days-on-get-time-logs-api.md) | days on GET /time-logs (API-TLOG-001), openapi:export | M4 | api | S | done | — |
 | [T-0100](m4-time-logs/T-0100-web-from-the-prototype-the-logged.md) | Web from the prototype: the Logged time chart and tabs, LoggedDay and the prototype api.ts twin, the Logs header and pie dialog, Bookings day links, the Statistics link | M4 | web | M | done | T-0099 |
 | [T-0101](m4-time-logs/T-0101-bookings-from-the-prototype-presets-project.md) | Bookings from the prototype: presets, Project filter, Expand all, booking links (promote two files, copy five twins) | M4 | web | S | done | — |
+| [T-0102](m4-time-logs/T-0102-bookings-anchor-and-expand-all-heading.md) | Bookings: a crafted hash no longer crashes the page, and Expand all moves out of the day heading | M4 | web | S | done | — |
 
 M0–M6 are done. Later follow-ups are filed under the milestone they extend.

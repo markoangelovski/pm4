@@ -328,7 +328,7 @@ export function parseAnchor(
   hash: string
 ): { day: string; row: string | null } | null {
   const match =
-    /^day-(\d{4}-\d{2}-\d{2})(?:\.log-([^.]+)\.to-(\d{4}-\d{2}-\d{2}))?$/.exec(
+    /^day-(\d{4}-\d{2}-\d{2})(?:\.log-([\w-]+)\.to-(\d{4}-\d{2}-\d{2}))?$/.exec(
       hash
     );
   if (!match) return null;
