@@ -1,6 +1,6 @@
 # Task Board
 
-**Next free ID:** T-0106
+**Next free ID:** T-0107
 
 | ID | Title | Milestone | App | Size | Status | Depends on |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -109,5 +109,6 @@
 | [T-0103](m8-notes/T-0103-notes-and-todos-tables-migration-0010.md) | notes and todos tables, migration 0010, the notes service and repository, ItemLinkService, retained names and task moves for both tables | M8 | api | M | done | — |
 | [T-0104](m8-notes/T-0104-the-to-dos-service-and-repository.md) | The to-dos service and repository | M8 | api | S | done | T-0103 |
 | [T-0105](m8-notes/T-0105-the-web-twins-of-the-notes.md) | The web: twins of the notes domain, range picker, project and task detail; the page, route, sidebar item and header menu | M8 | web | M | done | — |
+| [T-0106](m0-foundation/T-0106-web-vitest-test-timeout.md) | Raise the web Vitest test timeout so the full suite stops timing out under load | M0 | web | S | ready | — |
 
 M0–M6 are done. Later follow-ups are filed under the milestone they extend.
