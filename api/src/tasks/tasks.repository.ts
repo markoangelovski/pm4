@@ -14,9 +14,11 @@ import { alias } from "drizzle-orm/pg-core";
 import { escapeLike } from "../common/sql/escape-like.js";
 import { DRIZZLE, type DrizzleDb } from "../database/drizzle.js";
 import {
+  notes,
   projects,
   tasks,
   timeLogs,
+  todos,
   users,
   type TaskStatus
 } from "../database/schema/index.js";
@@ -139,6 +141,12 @@ export class TasksRepository {
           .update(timeLogs)
           .set({ projectId: values.projectId })
           .where(and(eq(timeLogs.userId, userId), eq(timeLogs.taskId, id)));
+        for (const t of [notes, todos]) {
+          await tx
+            .update(t)
+            .set({ projectId: values.projectId })
+            .where(and(eq(t.userId, userId), eq(t.taskId, id)));
+        }
       }
     });
   }
@@ -159,6 +167,12 @@ export class TasksRepository {
         .update(timeLogs)
         .set({ deletedTaskTitle: task.title })
         .where(and(eq(timeLogs.userId, userId), eq(timeLogs.taskId, id)));
+      for (const t of [notes, todos]) {
+        await tx
+          .update(t)
+          .set({ deletedTaskTitle: task.title })
+          .where(and(eq(t.userId, userId), eq(t.taskId, id)));
+      }
       await tx
         .delete(tasks)
         .where(and(eq(tasks.userId, userId), eq(tasks.id, id)));

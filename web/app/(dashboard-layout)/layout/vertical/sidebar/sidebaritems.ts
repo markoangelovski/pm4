@@ -4,6 +4,7 @@ import {
   CalendarCheck,
   FolderKanban,
   ListTodo,
+  NotebookPen,
   Globe,
   Settings,
   type LucideIcon
@@ -29,7 +30,7 @@ export interface MenuItem {
 
 /**
  * PM4 navigation, grouped under headings (routing.md: Navigation):
- * Dashboard, Project management (Projects, Tasks) and Time (Logs, Bookings).
+ * Dashboard, Project management (Projects, Tasks, Notes) and Time (Logs, Bookings).
  * Settings lives in `footerItems`.
  */
 const SidebarContent: MenuItem[] = [
@@ -53,7 +54,13 @@ const SidebarContent: MenuItem[] = [
         icon: FolderKanban,
         url: routes.app.projects
       },
-      { id: "tasks", name: "Tasks", icon: ListTodo, url: routes.app.tasks }
+      { id: "tasks", name: "Tasks", icon: ListTodo, url: routes.app.tasks },
+      {
+        id: "notes",
+        name: "Notes",
+        icon: NotebookPen,
+        url: routes.app.notes
+      }
     ]
   },
   {

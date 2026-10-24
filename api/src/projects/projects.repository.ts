@@ -13,7 +13,14 @@ import {
 import { alias } from "drizzle-orm/pg-core";
 import { escapeLike } from "../common/sql/escape-like.js";
 import { DRIZZLE, type DrizzleDb } from "../database/drizzle.js";
-import { projects, tasks, timeLogs, users } from "../database/schema/index.js";
+import {
+  notes,
+  projects,
+  tasks,
+  timeLogs,
+  todos,
+  users
+} from "../database/schema/index.js";
 import type { LeadRow } from "../users/project-lead.service.js";
 import type { ProjectSort } from "./dto/list-projects-query.dto.js";
 
@@ -147,9 +154,39 @@ export class ProjectsRepository {
           )
         );
       await tx
+        .update(notes)
+        .set({ deletedTaskTitle: tasks.title })
+        .from(tasks)
+        .where(
+          and(
+            eq(notes.userId, userId),
+            eq(notes.taskId, tasks.id),
+            eq(tasks.projectId, id)
+          )
+        );
+      await tx
+        .update(todos)
+        .set({ deletedTaskTitle: tasks.title })
+        .from(tasks)
+        .where(
+          and(
+            eq(todos.userId, userId),
+            eq(todos.taskId, tasks.id),
+            eq(tasks.projectId, id)
+          )
+        );
+      await tx
         .update(timeLogs)
         .set({ deletedProjectTitle: project.title })
         .where(and(eq(timeLogs.userId, userId), eq(timeLogs.projectId, id)));
+      await tx
+        .update(notes)
+        .set({ deletedProjectTitle: project.title })
+        .where(and(eq(notes.userId, userId), eq(notes.projectId, id)));
+      await tx
+        .update(todos)
+        .set({ deletedProjectTitle: project.title })
+        .where(and(eq(todos.userId, userId), eq(todos.projectId, id)));
       await tx
         .delete(projects)
         .where(and(eq(projects.userId, userId), eq(projects.id, id)));

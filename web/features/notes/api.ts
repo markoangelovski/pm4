@@ -1,5 +1,13 @@
-/* eslint-disable @typescript-eslint/no-unused-vars -- stubs (feat-note-todos) */
-import type { UseMutationResult, UseQueryResult } from "@tanstack/react-query";
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+  type UseMutationResult,
+  type UseQueryResult
+} from "@tanstack/react-query";
+import { apiClient } from "@/lib/api/client";
+import { unwrap, unwrapVoid } from "@/lib/api/problem";
 import type {
   NoteDto,
   NoteFilterQuery,
@@ -43,24 +51,61 @@ export function useNotes(
   pageSize = NOTE_PAGE_SIZE,
   options: NoteListOptions = {}
 ): UseQueryResult<NoteList, Error> {
-  throw new Error("not implemented (feat-note-todos)");
+  return useQuery({
+    queryKey: noteKeys.noteList(filter, page, pageSize, options),
+    queryFn: async ({ signal }) =>
+      unwrap(
+        await apiClient.GET("/api/v1/notes", {
+          params: { query: { ...filter, ...options, page, pageSize } },
+          signal
+        })
+      ),
+    placeholderData: keepPreviousData
+  });
 }
 
 /** API-NOTE-002; invalidates noteKeys.notes(). */
 export function useCreateNote(): UseMutationResult<Note, Error, NoteInput> {
-  throw new Error("not implemented (feat-note-todos)");
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (body: NoteInput) =>
+      unwrap(await apiClient.POST("/api/v1/notes", { body })),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: noteKeys.notes() })
+  });
 }
 
 /** API-NOTE-003; sends projectId/taskId only when present in the input; invalidates noteKeys.notes(). */
 export function useUpdateNote(
   id: string
 ): UseMutationResult<Note, Error, NoteInput> {
-  throw new Error("not implemented (feat-note-todos)");
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (body: NoteInput) =>
+      unwrap(
+        await apiClient.PATCH("/api/v1/notes/{id}", {
+          params: { path: { id } },
+          body
+        })
+      ),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: noteKeys.notes() })
+  });
 }
 
 /** API-NOTE-004; invalidates noteKeys.notes(). */
 export function useDeleteNote(): UseMutationResult<void, Error, string> {
-  throw new Error("not implemented (feat-note-todos)");
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) =>
+      unwrapVoid(
+        await apiClient.DELETE("/api/v1/notes/{id}", {
+          params: { path: { id } }
+        })
+      ),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: noteKeys.notes() })
+  });
 }
 
 /** API-TODO-001: open and done, newest change first unless `options.sort` says otherwise (the list filters and groups them). */
@@ -68,12 +113,28 @@ export function useTodos(
   filter: NoteFilter,
   options: NoteListOptions = {}
 ): UseQueryResult<Todo[], Error> {
-  throw new Error("not implemented (feat-note-todos)");
+  return useQuery({
+    queryKey: noteKeys.todoList(filter, options),
+    queryFn: async ({ signal }) =>
+      unwrap(
+        await apiClient.GET("/api/v1/todos", {
+          params: { query: { ...filter, ...options } },
+          signal
+        })
+      ).items,
+    placeholderData: keepPreviousData
+  });
 }
 
 /** API-TODO-002; invalidates noteKeys.todos(). */
 export function useCreateTodo(): UseMutationResult<Todo, Error, TodoInput> {
-  throw new Error("not implemented (feat-note-todos)");
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (body: TodoInput) =>
+      unwrap(await apiClient.POST("/api/v1/todos", { body })),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: noteKeys.todos() })
+  });
 }
 
 /** API-TODO-003 (also ticks off: `{ done }`); invalidates noteKeys.todos(). */
@@ -82,10 +143,31 @@ export function useUpdateTodo(): UseMutationResult<
   Error,
   { id: string; input: TodoInput }
 > {
-  throw new Error("not implemented (feat-note-todos)");
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, input }: { id: string; input: TodoInput }) =>
+      unwrap(
+        await apiClient.PATCH("/api/v1/todos/{id}", {
+          params: { path: { id } },
+          body: input
+        })
+      ),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: noteKeys.todos() })
+  });
 }
 
 /** API-TODO-004; invalidates noteKeys.todos(). */
 export function useDeleteTodo(): UseMutationResult<void, Error, string> {
-  throw new Error("not implemented (feat-note-todos)");
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) =>
+      unwrapVoid(
+        await apiClient.DELETE("/api/v1/todos/{id}", {
+          params: { path: { id } }
+        })
+      ),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: noteKeys.todos() })
+  });
 }

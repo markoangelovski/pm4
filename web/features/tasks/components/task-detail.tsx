@@ -27,6 +27,7 @@ import { DueDateBadge } from "@/features/tasks/components/due-date-badge";
 import { TaskFormDialog } from "@/features/tasks/components/task-form-dialog";
 import { TaskStatusSelect } from "@/features/tasks/components/task-status-select";
 import { useTask, type Task } from "@/features/tasks/api";
+import { NotesSection } from "@/features/notes/components/notes-section";
 import { LoggedTimeSection } from "@/features/time/components/logged-time-section";
 import { formatDateTime } from "@/lib/time";
 import { isApiError } from "@/lib/api/problem";
@@ -243,6 +244,17 @@ function TaskView({
       </Card>
 
       <LoggedTimeSection taskId={task.id} />
+
+      <NotesSection
+        link={{
+          project: { id: task.project.id, title: task.project.title },
+          task: {
+            id: task.id,
+            title: task.title,
+            project: { id: task.project.id, title: task.project.title }
+          }
+        }}
+      />
     </>
   );
 }

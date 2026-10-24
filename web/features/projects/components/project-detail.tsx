@@ -22,6 +22,7 @@ import { ProjectTaskStats } from "@/features/projects/components/project-task-st
 import { PushToPmspaButton } from "@/features/integrations/components/push-button";
 import { PmspaCreatedStamp } from "@/features/integrations/components/pmspa-created-stamp";
 import { SyncFlag } from "@/features/integrations/components/sync-flag";
+import { NotesSection } from "@/features/notes/components/notes-section";
 import { LoggedTimeSection } from "@/features/time/components/logged-time-section";
 import { TasksList } from "@/features/tasks/components/tasks-list";
 import { useProject, type Project } from "@/features/projects/api";
@@ -235,6 +236,13 @@ function ProjectView({
       </div>
 
       <LoggedTimeSection projectId={project.id} />
+
+      <NotesSection
+        link={{
+          project: { id: project.id, title: project.title },
+          task: null
+        }}
+      />
 
       <TasksList project={{ id: project.id, title: project.title }} />
     </>

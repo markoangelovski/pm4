@@ -31,6 +31,7 @@ import {
 
 const iso = (d: Date) => format(d, "yyyy-MM-dd");
 const CUSTOM = "custom";
+const ALL_TIME = "all-time";
 const ITEMS = [
   ...RANGE_PRESETS.map((p) => ({
     value: p as string,
@@ -39,17 +40,34 @@ const ITEMS = [
   { value: CUSTOM, label: "Custom range" }
 ];
 
-/** The range control (SCR-010): a preset select (This month by default) and the range as a calendar popover; the calendar applies a custom range of at most 366 days (OQ-130). */
-export function RangePicker({
-  value,
-  today,
-  onChange
-}: {
-  value: DateRange;
-  today: string;
-  onChange: (range: DateRange) => void;
-}) {
-  const preset = matchPreset(value, today);
+/**
+ * The range control (SCR-010): a preset select (This month by default) and the range as a calendar popover; the
+ * calendar applies a custom range of at most 366 days (OQ-130). With `allowAll`, the select starts with All time
+ * (`value` null: no range, the calendar button reads "Any date").
+ */
+export function RangePicker(
+  props: { today: string } & (
+    | {
+        allowAll?: false;
+        value: DateRange;
+        onChange: (range: DateRange) => void;
+      }
+    | {
+        allowAll: true;
+        value: DateRange | null;
+        onChange: (range: DateRange | null) => void;
+      }
+  )
+) {
+  const { today, allowAll, value: range } = props;
+  const emit = (next: DateRange | null) => {
+    if (props.allowAll) props.onChange(next);
+    else if (next) props.onChange(next);
+  };
+  const items = allowAll
+    ? [{ value: ALL_TIME, label: "All time" }, ...ITEMS]
+    : ITEMS;
+  const preset = range ? matchPreset(range, today) : null;
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState<DayPickerRange | undefined>();
   const start = draft?.from ? iso(draft.from) : null;
@@ -58,25 +76,31 @@ export function RangePicker({
     start !== null && end !== null && isRangeTooLong({ from: start, to: end });
 
   const openCalendar = (o: boolean) => {
-    if (o) setDraft({ from: parseISO(value.from), to: parseISO(value.to) });
+    if (o)
+      setDraft(
+        range
+          ? { from: parseISO(range.from), to: parseISO(range.to) }
+          : undefined
+      );
     setOpen(o);
   };
 
   return (
     <div className="flex flex-wrap items-center gap-2">
       <Select
-        items={ITEMS}
-        value={preset ?? CUSTOM}
+        items={items}
+        value={range ? (preset ?? CUSTOM) : ALL_TIME}
         onValueChange={(v) => {
           if (v === CUSTOM) openCalendar(true);
-          else if (v) onChange(presetRange(v as RangePreset, today));
+          else if (v === ALL_TIME) emit(null);
+          else if (v) emit(presetRange(v as RangePreset, today));
         }}
       >
         <SelectTrigger aria-label="Time range" className="w-40 cursor-pointer">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
-          {ITEMS.map((i) => (
+          {items.map((i) => (
             <SelectItem
               key={i.value}
               value={i.value}
@@ -98,9 +122,15 @@ export function RangePicker({
           }
         >
           <CalendarIcon data-icon="inline-start" />
-          {formatWorkDate(value.from)}
-          <span className="text-muted-foreground">–</span>
-          {formatWorkDate(value.to)}
+          {range ? (
+            <>
+              {formatWorkDate(range.from)}
+              <span className="text-muted-foreground">–</span>
+              {formatWorkDate(range.to)}
+            </>
+          ) : (
+            <span className="text-muted-foreground">Any date</span>
+          )}
         </PopoverTrigger>
         <PopoverContent align="end" className="w-auto p-0">
           <Calendar
@@ -125,7 +155,7 @@ export function RangePicker({
               disabled={!start || tooLong}
               onClick={() => {
                 if (!start || !end || tooLong) return;
-                onChange({ from: start, to: end });
+                emit({ from: start, to: end });
                 setOpen(false);
               }}
             >
