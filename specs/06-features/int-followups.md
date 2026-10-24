@@ -3,10 +3,10 @@ id: feat-int-followups
 title: "PMSPA follow-ups: log limits in the preview, created-in-PMSPA dates, a token per connection, cheaper Expand all, error lines"
 status: approved
 owner: Marko Angelovski
-last_updated: 2026-10-18
+last_updated: 2026-10-24
 milestone: M6
 requirements: [FR-INT-003, FR-INT-007, FR-INT-008, FR-INT-010, FR-INT-011, FR-INT-014, FR-INT-015, SCR-021, SCR-030, SCR-031, SCR-060, SCR-061, SCR-062]
-related: [req-integrations, api-endpoints, web-screens, feat-int-conn-api, feat-int-time-api, feat-int-web, feat-int-budget, OQ-197, OQ-198, OQ-199, OQ-206, OQ-207, OQ-208, OQ-209]
+related: [req-integrations, api-endpoints, web-screens, feat-int-conn-api, feat-int-time-api, feat-int-web, feat-int-budget, OQ-197, OQ-198, OQ-199, OQ-206, OQ-207, OQ-208, OQ-209, OQ-221]
 prototype: b3d9093
 ---
 
@@ -26,7 +26,7 @@ prototype `b3d9093`; this spec lists the delta.
 | D1 | The import preview warns, in the event row, for each log the commit's `logFailure` will reject, in its order: off-step (as today), then outside 0.25…24 h, then a text over 1000 characters; each log once. No warning for a log with no text. | OQ-197 (owner, 2026-10-17); prototype `b3d9093` |
 | D2 | `PmspaLink.pmspaCreatedAt` (API-INT-012, every link type) = the creation second in the first 4 bytes of the link's `pmspa_id` (ObjectId), ISO 8601 UTC. No column, no migration, no PMSPA call. Checked against PMSPA's `createdAt` on 3 real projects (equal to the second). | OQ-207 (owner, 2026-10-18) |
 | D3 | Shown: the project and task header date line ("Created in PMSPA <d MMMM yyyy, HH:mm>"), a **Created in PMSPA** column on the task lists while a connection is saved ("—" when not linked), and in the sync-flag popover after the lead / column / event (", created in PMSPA on …"), for logs too. | Owner, prototype `b3d9093` |
-| D4 | The cached PMSPA token and account carry the connection's URL and email they were cached for; a read with another URL or email is a miss. `PmspaClient.request` writes the status only while the row still has the URL and email it read (a conditional update), and clears the cache on invalid credentials only when that write matched. No locking. | OQ-208 (owner, 2026-10-18: token, account and status) |
+| D4 | The cached PMSPA token and account carry the connection's URL and email they were cached for; a read with another URL or email is a miss. `PmspaClient.request` writes the status only while the row still has the URL and email it read (a conditional update), and clears the cache on invalid credentials only when that write matched. After a successful re-login it reads the row again and caches the token and account only while the row still has that URL and email (no row → nothing cached); the call itself goes on either way. No locking. | OQ-208 (owner, 2026-10-18: token, account and status); OQ-221 (owner, 2026-10-24: the re-check before caching) |
 | D5 | `request`'s re-login enforces feat-int-conn-api D8 as Test does: another account than the row's `pmspa_user_id` → status `invalid-credentials`, cache cleared, 409 `pmspa-invalid-credentials`, nothing cached. | OQ-209 (owner, 2026-10-18) |
 | D6 | **Expand all** on Projects & tasks (`useLoadAllPmspaTasks({ shown, all })`): per project (API-INT-006) costs `Σ max(1, ⌈taskCount/50⌉)` over the shown lists not cached and fresh; all tasks (API-INT-017) costs `max(1, ⌈Σ taskCount/50⌉)` over every project. Per project only when strictly cheaper; a tie reads all tasks and fills every project's list. Nothing is read when every shown list is fresh. Replaces feat-int-budget D4's Projects half. | OQ-206 (owner, 2026-10-18); prototype `b3d9093` |
 | D7 | The per-project task list error (`pmspa-projects-tab.tsx`) is `PmspaProblemLine` with the fallback "Couldn't read the tasks." (adds a row to feat-int-web *Error lines*). | OQ-198 (owner, 2026-10-18) |
@@ -147,7 +147,7 @@ async setStatusFor(userId: string, owner: PmspaOwner, status: PmspaStatus): Prom
 3. `invalid()`: `await setStatus("invalid-credentials")`; `if (!stale) await this.store.clear(userId)`; throw
    `pmspaProblems.invalidCredentials()`.
 4. `login()`, after `check.status === "connected"`: when `row.pmspaUserId !== null && check.account.id !== row.pmspaUserId`
-   → `return invalid()` (D5, nothing cached). Else `setToken(userId, check.token, owner)`, `setAccount(userId, check.account, owner)`.
+   → `return invalid()` (D5, nothing cached). Else, when `(await this.repo.find(userId))` still has `owner`'s URL and email (OQ-221), `setToken(userId, check.token, owner)`, `setAccount(userId, check.account, owner)`; otherwise neither. It returns `check.token` either way.
 5. `getToken(userId, owner)`.
 
 `PmspaConnectionService`: `save` caches with `{ url: dto.url, email: dto.email }`; `test` with the row's; `toDto` reads

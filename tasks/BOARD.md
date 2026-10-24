@@ -1,6 +1,6 @@
 # Task Board
 
-**Next free ID:** T-0097
+**Next free ID:** T-0099
 
 | ID | Title | Milestone | App | Size | Status | Depends on |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -99,6 +99,8 @@
 | [T-0093](m4-time-logs/T-0093-pmspa-without-the-booked-flag-the.md) | PMSPA without the booked flag; the import's booked-time failure and its preview warning | M4 | api | M | done | T-0092 |
 | [T-0094](m4-time-logs/T-0094-booking-hooks-the-twin-the-prototype.md) | Booking hooks (the twin), the prototype on the generated types, the mock import's booked-time warning and failure | M4 | web | S | done | T-0093 |
 | [T-0095](m4-time-logs/T-0095-drop-booking-date-migration-0009-after.md) | Drop booking_date (migration 0009) and the copy step from 0008, in the same release as T1–T3 (D2) | M4 | api | S | done | T-0094 |
-| [T-0096](m4-time-logs/T-0096-rename-two-booking-test-names.md) | Rename two time-logs service test names that still say "bookingDate null" | M4 | api | S | ready | — |
+| [T-0096](m4-time-logs/T-0096-rename-two-booking-test-names.md) | Rename two time-logs service test names that still say "bookingDate null" | M4 | api | S | review | — |
+| [T-0097](m6-integrations/T-0097-setstatusfor-miss-e2e-test.md) | An e2e test that setStatusFor misses once the connection's URL or email changed | M6 | api | S | ready | — |
+| [T-0098](m6-integrations/T-0098-recheck-owner-before-caching.md) | A re-login caches the token and account only while the connection still has the request's URL and email | M6 | api | S | ready | — |
 
 M0–M6 are done. Later follow-ups are filed under the milestone they extend.
