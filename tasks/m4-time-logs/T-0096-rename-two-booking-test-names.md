@@ -3,7 +3,7 @@ id: T-0096
 title: Rename two time-logs service test names that still say "bookingDate null"
 milestone: M4
 app: api
-status: review
+status: done
 size: S
 tier: haiku
 depends_on: []
