@@ -11,12 +11,41 @@ import {
   PopoverContent,
   PopoverTrigger
 } from "@/components/ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from "@/components/ui/select";
 import { formatWorkDate } from "@/lib/time";
-import { isRangeTooLong, type DateRange } from "../days";
+import {
+  PRESET_LABELS,
+  RANGE_PRESETS,
+  type RangePreset
+} from "@/features/dashboard/range";
+import {
+  bookingPresetRange,
+  isRangeTooLong,
+  matchBookingPreset,
+  type DateRange
+} from "../days";
 
 const iso = (d: Date) => format(d, "yyyy-MM-dd");
+const CUSTOM = "custom";
+const ITEMS = [
+  ...RANGE_PRESETS.map((p) => ({
+    value: p as string,
+    label: PRESET_LABELS[p]
+  })),
+  { value: CUSTOM, label: "Custom range" }
+];
 
-/** The range control (SCR-045): start and end in one two-month calendar popover, and Submit, which applies the range. Days after `max` are disabled; at most 366 days (OQ-130). */
+/**
+ * The range control (SCR-045): a preset select (the Statistics presets, ends clipped to `max`) that applies at once,
+ * then start and end in one two-month calendar popover, and Submit, which applies the range. Custom range opens the
+ * calendar. Days after `max` (today) are disabled; at most 366 days (OQ-130).
+ */
 export function RangeField({
   applied,
   max,
@@ -34,6 +63,7 @@ export function RangeField({
   const start = draft?.from ? iso(draft.from) : null;
   const end = draft?.to ? iso(draft.to) : start;
   const tooLong = start !== null && end !== null && isRangeTooLong(start, end);
+  const preset = matchBookingPreset(applied, max);
 
   return (
     <form
@@ -45,6 +75,32 @@ export function RangeField({
         onSubmit({ from: start, to: end });
       }}
     >
+      <Select
+        items={ITEMS}
+        value={preset ?? CUSTOM}
+        onValueChange={(v) => {
+          if (v === CUSTOM) setOpen(true);
+          else if (v) onSubmit(bookingPresetRange(v as RangePreset, max));
+        }}
+      >
+        <SelectTrigger
+          aria-label="Range preset"
+          className="w-40 cursor-pointer rounded-md!"
+        >
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {ITEMS.map((i) => (
+            <SelectItem
+              key={i.value}
+              value={i.value}
+              className="cursor-pointer"
+            >
+              {i.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger
           render={

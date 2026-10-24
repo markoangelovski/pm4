@@ -12,7 +12,13 @@ import {
   type ExpandedState,
   type Row
 } from "@tanstack/react-table";
-import { BookmarkCheck, ChevronRight, ListTodo } from "lucide-react";
+import {
+  BookmarkCheck,
+  ChevronRight,
+  ChevronsDownUp,
+  ChevronsUpDown,
+  ListTodo
+} from "lucide-react";
 import { toast } from "sonner";
 import {
   Tooltip,
@@ -37,6 +43,8 @@ import { cn } from "@/lib/utils";
 import { useSetBooking } from "../api";
 import {
   addBooking,
+  bookingRowId,
+  dayAnchor,
   unbookedMinutes,
   type BookingDay,
   type BookingEntry,
@@ -48,6 +56,7 @@ import {
   BookingTimeCell,
   bookedTone
 } from "./booking-cell";
+import { DayLink, type BookingLinks } from "./day-link";
 
 /** A table row: one group of the day (a project, Unsorted or Non-prod) with its log rows as `subRows`, or one log row. */
 interface BookingRow {
@@ -238,9 +247,10 @@ const columns: ColumnDef<BookingRow>[] = [
     header: "Booking date",
     cell: ({ row, table }) => {
       const { group, entry } = row.original;
-      const { today, workDate } = table.options.meta as {
+      const { today, workDate, links } = table.options.meta as {
         today: string;
         workDate: string;
+        links: BookingLinks;
       };
       if (!entry) return <BookAllButton group={group} workDate={workDate} />;
       if (group.kind === "nonprod") return null;
@@ -252,21 +262,27 @@ const columns: ColumnDef<BookingRow>[] = [
         );
       if (entry.incoming) {
         return (
-          <span
+          <DayLink
+            target={{
+              day: entry.log.workDate,
+              logId: entry.log.id,
+              bookingDate: workDate
+            }}
+            links={links}
             className={cn(
-              "flex items-center gap-1.5 text-sm font-medium",
+              "flex w-fit items-center gap-1.5 text-sm font-medium hover:opacity-80",
               bookedTone(false)
             )}
-            title="Edit this booking from the day the log was worked"
+            title="Go to the day the log was worked to edit this booking"
           >
             <BookmarkCheck className="size-4 shrink-0" />
-            <span className="truncate">
+            <span className="truncate underline underline-offset-2">
               Worked on {formatWorkDate(entry.log.workDate)}
             </span>
-          </span>
+          </DayLink>
         );
       }
-      return <BookingDateCell entry={entry} max={today} />;
+      return <BookingDateCell entry={entry} max={today} links={links} />;
     }
   },
   {
@@ -314,17 +330,32 @@ const HIDDEN_IN_COLLAPSED_ROW = ["tasks", "logs"];
 const alignOf = (meta: unknown) =>
   (meta as { align?: "right" } | undefined)?.align;
 
-/** One listed day of the Bookings range (SCR-045): the heading, six figure cards, then a row per group, expandable to its logs. */
+/** One listed day of the Bookings range (SCR-045), with the anchor `#day-YYYY-MM-DD`: the heading with Expand all / Collapse all, six figure cards, then a row per group, expandable to its logs. */
 export function DaySection({
   day,
   isToday,
-  today
+  today,
+  links,
+  focus
 }: {
   day: BookingDay;
   isToday: boolean;
   today: string;
+  links: BookingLinks;
+  /**
+   * Set when the URL's hash points to this day. With a `row` (a "Worked on" / "Booked to" link) the day expands; a new
+   * `key` expands it again. While `outlined` (until a click after the scroll), the day and the row's Booking date
+   * cell are outlined.
+   */
+  focus: { key: string; row: string | null; outlined: boolean } | null;
 }) {
   const [expanded, setExpanded] = useState<ExpandedState>({});
+  // Adjusting state while rendering (not in an effect): the rows exist when the page scrolls to them after commit.
+  const [focusKey, setFocusKey] = useState<string | null>(null);
+  if (focus?.row && focus.key !== focusKey) {
+    setFocusKey(focus.key);
+    setExpanded(true);
+  }
   const data = useMemo(() => rowsOf(day), [day]);
   const table = useReactTable({
     data,
@@ -334,7 +365,7 @@ export function DaySection({
     getRowId: (r) => r.id,
     getSubRows: (r) => r.subRows,
     getRowCanExpand: (r) => r.depth === 0,
-    meta: { today, workDate: day.workDate },
+    meta: { today, workDate: day.workDate, links },
     getCoreRowModel: getCoreRowModel(),
     getExpandedRowModel: getExpandedRowModel()
   });
@@ -342,11 +373,16 @@ export function DaySection({
   const anyOpen = table
     .getRowModel()
     .rows.some((r) => r.depth === 0 && r.getIsExpanded());
+  const allOpen = table.getIsAllRowsExpanded();
 
   return (
     <section
+      id={dayAnchor(day.workDate)}
       aria-label={day.workDate}
-      className="overflow-hidden rounded-lg bg-card"
+      className={cn(
+        "scroll-mt-20 overflow-hidden rounded-lg bg-card",
+        focus?.outlined && "ring-2 ring-primary"
+      )}
     >
       <h2 className="flex items-baseline gap-2 bg-primary/10 px-4 py-3 text-lg font-semibold tracking-tight">
         <Link
@@ -358,6 +394,20 @@ export function DaySection({
         {isToday ? (
           <span className="text-xs font-normal text-primary">Today</span>
         ) : null}
+        <Button
+          variant="ghost"
+          size="sm"
+          className="ml-auto cursor-pointer self-center rounded-md! font-normal"
+          aria-expanded={allOpen}
+          onClick={() => table.toggleAllRowsExpanded(!allOpen)}
+        >
+          {allOpen ? (
+            <ChevronsDownUp data-icon="inline-start" />
+          ) : (
+            <ChevronsUpDown data-icon="inline-start" />
+          )}
+          {allOpen ? "Collapse all" : "Expand all"}
+        </Button>
       </h2>
       <div className="space-y-4 p-4">
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 xl:grid-cols-6">
@@ -401,12 +451,10 @@ export function DaySection({
                         >
                           {blank
                             ? null
-                            : !anyOpen && h.column.id === "project"
-                              ? "Projects"
-                              : flexRender(
-                                  h.column.columnDef.header,
-                                  h.getContext()
-                                )}
+                            : flexRender(
+                                h.column.columnDef.header,
+                                h.getContext()
+                              )}
                         </TableHead>
                       );
                     })}
@@ -416,11 +464,17 @@ export function DaySection({
               <TableBody>
                 {table.getRowModel().rows.map((row) => {
                   const collapsed = row.depth === 0 && !row.getIsExpanded();
+                  const entry = row.original.entry;
+                  // Both ends of a booking carry its key: a "Worked on" / "Booked to" link finds its row by it.
+                  const rowId = entry?.booking
+                    ? bookingRowId(entry.log.id, entry.booking.date)
+                    : undefined;
                   return (
                     <TableRow
                       key={row.id}
+                      data-booking={rowId}
                       className={cn(
-                        "transition-colors",
+                        "scroll-mt-20 transition-colors",
                         row.depth === 0
                           ? "cursor-pointer hover:bg-primary/10"
                           : "bg-muted/30 hover:bg-muted/50",
@@ -453,7 +507,13 @@ export function DaySection({
                             className={cn(
                               "px-4",
                               alignOf(cell.column.columnDef.meta) === "right" &&
-                                "whitespace-nowrap"
+                                "whitespace-nowrap",
+                              // A "Worked on" link's booking: only its Booking date cell is outlined.
+                              id === "booking" &&
+                                rowId !== undefined &&
+                                rowId === focus?.row &&
+                                focus.outlined &&
+                                "outline-2 -outline-offset-2 outline-primary"
                             )}
                           >
                             {flexRender(
