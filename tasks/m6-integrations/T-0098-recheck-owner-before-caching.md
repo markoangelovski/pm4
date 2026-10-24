@@ -3,7 +3,7 @@ id: T-0098
 title: A re-login caches the token and account only while the connection still has the request's URL and email
 milestone: M6
 app: api
-status: review
+status: done
 size: S
 tier: sonnet
 depends_on: []
@@ -41,8 +41,8 @@ Don't touch `*.ac.*` files. `pmspa-client.ac.spec.ts`'s `find` fake returns the 
 expectations still hold.
 
 ## Acceptance criteria
-- [ ] The two new unit tests pass, and so do `pmspa-client.ac.spec.ts` and the e2e suite (`npm run test:e2e`).
-- [ ] With an unchanged row, a re-login still caches the token and account (the existing tests and AC-5).
+- [x] The two new unit tests pass, and so do `pmspa-client.ac.spec.ts` and the e2e suite (`npm run test:e2e`).
+- [x] With an unchanged row, a re-login still caches the token and account (the existing tests and AC-5).
 
 ---
 
@@ -55,4 +55,4 @@ login() re-reads the row and caches token/account only if url and email still ma
 | 1 | sonnet | pass | Re-check owner before caching; 2 unit tests |
 
 ## Review
-_The owner's review (quick lane), or `review-feature`'s verdict._
+Owner (quick lane, 2026-10-24): approved.

@@ -101,6 +101,6 @@
 | [T-0095](m4-time-logs/T-0095-drop-booking-date-migration-0009-after.md) | Drop booking_date (migration 0009) and the copy step from 0008, in the same release as T1–T3 (D2) | M4 | api | S | done | T-0094 |
 | [T-0096](m4-time-logs/T-0096-rename-two-booking-test-names.md) | Rename two time-logs service test names that still say "bookingDate null" | M4 | api | S | done | — |
 | [T-0097](m6-integrations/T-0097-setstatusfor-miss-e2e-test.md) | An e2e test that setStatusFor misses once the connection's URL or email changed | M6 | api | S | done | — |
-| [T-0098](m6-integrations/T-0098-recheck-owner-before-caching.md) | A re-login caches the token and account only while the connection still has the request's URL and email | M6 | api | S | review | — |
+| [T-0098](m6-integrations/T-0098-recheck-owner-before-caching.md) | A re-login caches the token and account only while the connection still has the request's URL and email | M6 | api | S | done | — |
 
 M0–M6 are done. Later follow-ups are filed under the milestone they extend.
