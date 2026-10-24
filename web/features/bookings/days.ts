@@ -2,6 +2,7 @@ import { differenceInCalendarDays, format, isValid, parseISO } from "date-fns";
 import type { Ref } from "@/features/time/types";
 import { formatWorkDate } from "@/lib/time";
 import type { components } from "@/lib/api/schema";
+import type { RangePreset } from "@/features/dashboard/range";
 
 type S = components["schemas"];
 /** A time log with its bookings (API-BOOK-001). */
@@ -267,4 +268,96 @@ export function rangeLabel(range: DateRange): string {
   return range.from.slice(0, 7) === range.to.slice(0, 7)
     ? format(parseISO(range.from), "MMMM yyyy")
     : `${formatWorkDate(range.from)} – ${formatWorkDate(range.to)}`;
+}
+
+/** A project's key: its id, or `deleted:<title>` for a deleted one (no id). */
+export const projectKey = (project: Ref): string => {
+  void project;
+  throw new Error("not implemented (feat-book-web-nav)");
+};
+
+export interface ProjectOption {
+  key: string;
+  project: Ref;
+}
+
+/** The projects (live or deleted) of the logs listed in the range, by title: the Project filter's options. */
+export function projectOptions(
+  logs: BookingLog[],
+  range: DateRange
+): ProjectOption[] {
+  void logs;
+  void range;
+  throw new Error("not implemented (feat-book-web-nav)");
+}
+
+/** The logs of one project (by projectKey); null → every log. */
+export function logsOfProject(
+  logs: BookingLog[],
+  key: string | null
+): BookingLog[] {
+  void logs;
+  void key;
+  throw new Error("not implemented (feat-book-web-nav)");
+}
+
+/** A Statistics preset (dashboard/range presetRange) with its end clipped to today: Bookings lists no future days. */
+export function bookingPresetRange(
+  preset: RangePreset,
+  today: string
+): DateRange {
+  void preset;
+  void today;
+  throw new Error("not implemented (feat-book-web-nav)");
+}
+
+/** The preset a range equals, or null for a custom range. */
+export function matchBookingPreset(
+  range: DateRange,
+  today: string
+): RangePreset | null {
+  void range;
+  void today;
+  throw new Error("not implemented (feat-book-web-nav)");
+}
+
+/** A listed day's section id (its anchor): `day-YYYY-MM-DD`. */
+export const dayAnchor = (date: string): string => {
+  void date;
+  throw new Error("not implemented (feat-book-web-nav)");
+};
+
+/** The key of a log row that shows the log's booking to `date` (its `data-booking`). */
+export const bookingRowId = (logId: string, date: string): string => {
+  void logId;
+  void date;
+  throw new Error("not implemented (feat-book-web-nav)");
+};
+
+/** Where a "Worked on" / "Booked to" link goes: `day` and, on it, the row of the log's booking to `bookingDate`. */
+export interface BookingTarget {
+  day: string;
+  logId: string;
+  bookingDate: string;
+}
+
+/** `day-<day>.log-<logId>.to-<bookingDate>`: the URL hash of a "Worked on" / "Booked to" link. */
+export const targetAnchor = (t: BookingTarget): string => {
+  void t;
+  throw new Error("not implemented (feat-book-web-nav)");
+};
+
+/** A hash (without `#`) → the day it points to and, for a "Worked on" / "Booked to" link, the booking row's key; null when it is neither. */
+export function parseAnchor(
+  hash: string
+): { day: string; row: string | null } | null {
+  void hash;
+  throw new Error("not implemented (feat-book-web-nav)");
+}
+
+/** The month of `date`, its end clipped to today: the range a link to an unlisted day opens. */
+export function monthUpTo(date: string, today: string): DateRange {
+  void date;
+  void today;
+  throw new Error("not implemented (feat-book-web-nav)");
 }

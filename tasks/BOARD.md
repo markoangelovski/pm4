@@ -1,6 +1,6 @@
 # Task Board
 
-**Next free ID:** T-0101
+**Next free ID:** T-0102
 
 | ID | Title | Milestone | App | Size | Status | Depends on |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -104,5 +104,6 @@
 | [T-0098](m6-integrations/T-0098-recheck-owner-before-caching.md) | A re-login caches the token and account only while the connection still has the request's URL and email | M6 | api | S | done | — |
 | [T-0099](m4-time-logs/T-0099-days-on-get-time-logs-api.md) | days on GET /time-logs (API-TLOG-001), openapi:export | M4 | api | S | done | — |
 | [T-0100](m4-time-logs/T-0100-web-from-the-prototype-the-logged.md) | Web from the prototype: the Logged time chart and tabs, LoggedDay and the prototype api.ts twin, the Logs header and pie dialog, Bookings day links, the Statistics link | M4 | web | M | done | T-0099 |
+| [T-0101](m4-time-logs/T-0101-bookings-from-the-prototype-presets-project.md) | Bookings from the prototype: presets, Project filter, Expand all, booking links (promote two files, copy five twins) | M4 | web | S | ready | — |
 
 M0–M6 are done. Later follow-ups are filed under the milestone they extend.

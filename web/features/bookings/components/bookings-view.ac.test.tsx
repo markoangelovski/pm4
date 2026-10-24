@@ -234,6 +234,46 @@ const clickDay = (iso: string) => {
 const lastPut = () =>
   (api.PUT.mock.lastCall?.[1] as { body: Record<string, unknown> }).body;
 
+/** Picks a Select option (Base UI listens to pointer and mouse events). */
+function pick(option: HTMLElement) {
+  fireEvent.pointerDown(option);
+  fireEvent.mouseDown(option);
+  fireEvent.pointerUp(option);
+  fireEvent.mouseUp(option);
+  fireEvent.click(option);
+}
+
+const combobox = (name: string) => screen.getByRole("combobox", { name });
+
+/** Opens a select and picks an entry. */
+async function choose(select: string, label: string) {
+  fireEvent.click(combobox(select));
+  pick(await screen.findByRole("option", { name: label }));
+}
+
+const optionNames = async (select: string) => {
+  fireEvent.click(combobox(select));
+  await screen.findAllByRole("option");
+  return screen.getAllByRole("option").map((o) => o.textContent?.trim());
+};
+
+/** The "Expand all" / "Collapse all" button of a day's heading. */
+const expandAll = (date: string) =>
+  within(section(date)).getByRole("button", {
+    name: /^(Expand|Collapse) all$/
+  });
+
+const oldSite = log({
+  id: "o",
+  workDate: "2026-10-02",
+  text: "Old site fixes",
+  project: ref(null, "Old site", true)
+});
+
+/** The elements scrollIntoView was called on, with its options. */
+const scrolls = (spy: ReturnType<typeof vi.fn>) =>
+  spy.mock.contexts.map((el, i) => ({ el, options: spy.mock.calls[i][0] }));
+
 describe("BookingsView (feat-book-web, feat-book-partial)", () => {
   beforeEach(() => {
     // "Now" is 2026-10-09 12:00 in Zagreb; only Date is faked, timers stay real.
@@ -308,7 +348,7 @@ describe("BookingsView (feat-book-web, feat-book-partial)", () => {
     await loaded();
     const sixth = "2026-10-06";
     expect(headers(sixth)).toEqual([
-      "Projects",
+      "Project",
       "",
       "",
       "",
@@ -377,7 +417,7 @@ describe("BookingsView (feat-book-web, feat-book-partial)", () => {
     ).toBeInTheDocument();
     expect(rowOf(sixth, "Internal planning")).toBeTruthy();
     expect(headers("2026-10-07")).toEqual([
-      "Projects",
+      "Project",
       "",
       "",
       "",
@@ -393,7 +433,7 @@ describe("BookingsView (feat-book-web, feat-book-partial)", () => {
     );
     await waitFor(() =>
       expect(headers(sixth)).toEqual([
-        "Projects",
+        "Project",
         "",
         "",
         "",
@@ -663,7 +703,7 @@ describe("BookingsView (feat-book-web, feat-book-partial)", () => {
       await screen.findByText("No logs in this range")
     ).toBeInTheDocument();
     expect(
-      screen.getByText("Pick another time range and submit.")
+      screen.getByText("Pick another time range or project.")
     ).toBeInTheDocument();
     empty.unmount();
 
@@ -697,6 +737,280 @@ describe("BookingsView (feat-book-web, feat-book-partial)", () => {
         expect(
           within(section(date)).getByRole("link", { name: title })
         ).toHaveAttribute("href", `/app/time?date=${date}`);
+      }
+    });
+  });
+
+  describe("navigation (feat-book-web-nav)", () => {
+    const scrollIntoView = vi.fn();
+    beforeEach(() => {
+      scrollIntoView.mockReset();
+      Element.prototype.scrollIntoView = scrollIntoView;
+    });
+    afterEach(() => {
+      window.history.replaceState(null, "", "/");
+    });
+
+    it("AC-4 FR-BOOK-001 SCR-045: the Range preset select — options, a preset applies at once, the default clears the URL, Custom range opens the calendar", async () => {
+      const first = renderView();
+      await loaded();
+      expect(combobox("Range preset")).toHaveTextContent("This month");
+      expect(await optionNames("Range preset")).toEqual([
+        "This month",
+        "Last month",
+        "Last 7 days",
+        "Last 30 days",
+        "Last 90 days",
+        "This year",
+        "Custom range"
+      ]);
+      pick(screen.getByRole("option", { name: "Last 7 days" }));
+      await waitFor(() =>
+        expect(lastParam(first.onUrlUpdate, "from")).toBe("2026-10-03")
+      );
+      expect(lastParam(first.onUrlUpdate, "to")).toBe("2026-10-09");
+      await waitFor(() =>
+        expect(requestedRanges()).toContain("2026-10-03..2026-10-09")
+      );
+      first.unmount();
+
+      const lastMonth = renderView("?from=2026-09-01&to=2026-09-30");
+      await waitFor(() =>
+        expect(combobox("Range preset")).toHaveTextContent("Last month")
+      );
+      await choose("Range preset", "This month");
+      await waitFor(() => expect(lastMonth.onUrlUpdate).toHaveBeenCalled());
+      expect(lastParam(lastMonth.onUrlUpdate, "from")).toBeNull();
+      expect(lastParam(lastMonth.onUrlUpdate, "to")).toBeNull();
+      lastMonth.unmount();
+
+      renderView("?from=2026-09-15&to=2026-10-09");
+      await loaded();
+      expect(combobox("Range preset")).toHaveTextContent("Custom range");
+      expect(dayCell("2026-10-09")).toBeNull();
+      await choose("Range preset", "Custom range");
+      await waitFor(() => expect(dayCell("2026-10-09")).toBeTruthy());
+    });
+
+    it("AC-5 FR-BOOK-007 SCR-045: the Project filter — options, a project in the URL lists and sums only its logs, an unknown one is All projects, a deleted one", async () => {
+      const first = renderView();
+      await loaded();
+      expect(combobox("Project")).toHaveTextContent("All projects");
+      expect(await optionNames("Project")).toEqual([
+        "All projects",
+        "Anthropic",
+        "Nvidia",
+        "PM Internal"
+      ]);
+      pick(screen.getByRole("option", { name: "Anthropic" }));
+      await waitFor(() =>
+        expect(lastParam(first.onUrlUpdate, "project")).toBe("p-anthropic")
+      );
+      await waitFor(() =>
+        expect(sectionDates()).toEqual(["2026-10-06", "2026-10-07"])
+      );
+      const seventh = "2026-10-07";
+      expect(card(seventh, "Logged")).toHaveTextContent("2h 15m");
+      expect(card(seventh, "Billable")).toHaveTextContent("2h 15m");
+      expect(card(seventh, "Overtime")).toHaveTextContent("0h");
+      expect(card(seventh, "Booked current")).toHaveTextContent("45m");
+      expect(card(seventh, "Booked from external")).toHaveTextContent("2h");
+      expect(card(seventh, "Booked total")).toHaveTextContent("2h 45m");
+      const sixth = "2026-10-06";
+      expect(card(sixth, "Logged")).toHaveTextContent("3h 30m");
+      expect(card(sixth, "Billable")).toHaveTextContent("2h");
+      expect(card(sixth, "Booked current")).toHaveTextContent("0h");
+      expect(card(sixth, "Booked from external")).toHaveTextContent("30m");
+      expect(card(sixth, "Booked total")).toHaveTextContent("30m");
+      first.unmount();
+
+      const unknown = renderView("?project=p-unknown");
+      await loaded();
+      expect(combobox("Project")).toHaveTextContent("All projects");
+      expect(sectionDates()).toEqual([
+        "2026-10-01",
+        "2026-10-06",
+        "2026-10-07"
+      ]);
+      unknown.unmount();
+
+      items = [...ownerLogs, oldSite];
+      renderView(`?project=${encodeURIComponent("deleted:Old site")}`);
+      await waitFor(() => expect(sectionDates()).toEqual(["2026-10-02"]));
+    });
+
+    it("AC-6 FR-BOOK-003 SCR-045: Expand all / Collapse all expands and collapses every group of that day only; the first header is Project", async () => {
+      renderView();
+      await loaded();
+      const sixth = "2026-10-06";
+      for (const date of ["2026-10-01", sixth, "2026-10-07"]) {
+        expect(expandAll(date)).toHaveTextContent("Expand all");
+        expect(expandAll(date)).toHaveAttribute("aria-expanded", "false");
+      }
+      expect(headers(sixth)[0]).toBe("Project");
+
+      fireEvent.click(expandAll(sixth));
+      await waitFor(() =>
+        expect(expandAll(sixth)).toHaveTextContent("Collapse all")
+      );
+      expect(expandAll(sixth)).toHaveAttribute("aria-expanded", "true");
+      const rows = groupRows(sixth);
+      expect(rows).toHaveLength(4);
+      for (const r of rows) {
+        expect(
+          within(r).getByRole("button", { name: "Collapse project" })
+        ).toHaveAttribute("aria-expanded", "true");
+      }
+      expect(headers(sixth)[0]).toBe("Project");
+      expect(expandAll("2026-10-07")).toHaveTextContent("Expand all");
+      for (const r of groupRows("2026-10-07")) {
+        expect(
+          within(r).getByRole("button", { name: "Expand project" })
+        ).toHaveAttribute("aria-expanded", "false");
+      }
+
+      fireEvent.click(expandAll(sixth));
+      await waitFor(() =>
+        expect(expandAll(sixth)).toHaveTextContent("Expand all")
+      );
+      expect(expandAll(sixth)).toHaveAttribute("aria-expanded", "false");
+      for (const r of groupRows(sixth)) {
+        expect(
+          within(r).getByRole("button", { name: "Expand project" })
+        ).toHaveAttribute("aria-expanded", "false");
+      }
+    });
+
+    it("AC-7 FR-BOOK-008 SCR-045: day anchors; Booked to and Worked on link to the other end of a booking, in the page or that day's month", async () => {
+      const first = renderView();
+      await loaded();
+      for (const date of ["2026-10-01", "2026-10-06", "2026-10-07"]) {
+        expect(section(date)).toHaveAttribute("id", `day-${date}`);
+      }
+
+      expand("2026-10-06", "Anthropic");
+      const rowA = await waitFor(() => rowOf("2026-10-06", "Anthropic sync"));
+      expect(
+        within(rowA).getByRole("link", { name: "Booked to 7 Oct 2026" })
+      ).toHaveAttribute("href", "#day-2026-10-07.log-a.to-2026-10-07");
+      expect(
+        within(rowA).getByRole("button", { name: "Edit booking" })
+      ).toBeInTheDocument();
+      expect(
+        within(rowA).getByRole("button", { name: "Remove booking" })
+      ).toBeInTheDocument();
+
+      expand("2026-10-07", "Nvidia");
+      const rowE = await waitFor(() => rowOf("2026-10-07", "Feature work"));
+      expect(rowE).toHaveTextContent("7 Oct 2026");
+      expect(
+        within(rowE).queryByRole("link", { name: /Oct 2026/ })
+      ).not.toBeInTheDocument();
+
+      expand("2026-10-07", "Anthropic");
+      const incomingA = await waitFor(() =>
+        rowOf("2026-10-07", "Anthropic sync")
+      );
+      expect(
+        within(incomingA).getByRole("link", { name: "Worked on 6 Oct 2026" })
+      ).toHaveAttribute("href", "#day-2026-10-06.log-a.to-2026-10-07");
+
+      expand("2026-10-01", "Nvidia");
+      const incomingG = await waitFor(() =>
+        rowOf("2026-10-01", "Nvidia planning")
+      );
+      expect(
+        within(incomingG).getByRole("link", { name: "Worked on 30 Sep 2026" })
+      ).toHaveAttribute(
+        "href",
+        "/app/bookings?from=2026-09-01&to=2026-09-30#day-2026-09-30.log-g.to-2026-10-01"
+      );
+      first.unmount();
+
+      renderView("?project=p-nvidia");
+      await waitFor(() =>
+        expect(sectionDates()).toEqual(["2026-10-01", "2026-10-07"])
+      );
+      expand("2026-10-01", "Nvidia");
+      const filteredG = await waitFor(() =>
+        rowOf("2026-10-01", "Nvidia planning")
+      );
+      expect(
+        within(filteredG).getByRole("link", { name: "Worked on 30 Sep 2026" })
+      ).toHaveAttribute(
+        "href",
+        "/app/bookings?from=2026-09-01&to=2026-09-30&project=p-nvidia#day-2026-09-30.log-g.to-2026-10-01"
+      );
+    });
+
+    it("AC-8 FR-BOOK-008: a link to a listed day changes only the hash, expands that day and scrolls to the booking's row", async () => {
+      const view = renderView();
+      await loaded();
+      expand("2026-10-06", "Anthropic");
+      const rowA = await waitFor(() => rowOf("2026-10-06", "Anthropic sync"));
+      const urlUpdates = view.onUrlUpdate.mock.calls.length;
+      fireEvent.click(
+        within(rowA).getByRole("link", { name: "Booked to 7 Oct 2026" })
+      );
+
+      expect(window.location.hash).toBe("#day-2026-10-07.log-a.to-2026-10-07");
+      const target = () =>
+        section("2026-10-07").querySelector('tr[data-booking="a:2026-10-07"]');
+      await waitFor(() =>
+        expect(scrolls(scrollIntoView)).toContainEqual({
+          el: target(),
+          options: { behavior: "smooth", block: "center" }
+        })
+      );
+      expect(target()).not.toBeNull();
+      const rows = groupRows("2026-10-07");
+      expect(rows).toHaveLength(2);
+      for (const r of rows) {
+        expect(
+          within(r).getByRole("button", { name: "Collapse project" })
+        ).toHaveAttribute("aria-expanded", "true");
+      }
+      expect(view.onUrlUpdate.mock.calls.length).toBe(urlUpdates);
+    });
+
+    it("AC-9 FR-BOOK-008: opened with a hash, the page expands that day and scrolls to the booking's row, or to the day", async () => {
+      window.history.replaceState(
+        null,
+        "",
+        "/app/bookings#day-2026-10-06.log-f.to-2026-10-06"
+      );
+      const first = renderView();
+      await loaded();
+      const rowF = () =>
+        section("2026-10-06").querySelector('tr[data-booking="f:2026-10-06"]');
+      await waitFor(() =>
+        expect(scrolls(scrollIntoView)).toContainEqual({
+          el: rowF(),
+          options: { behavior: "smooth", block: "center" }
+        })
+      );
+      expect(rowF()).not.toBeNull();
+      for (const r of groupRows("2026-10-06")) {
+        expect(
+          within(r).getByRole("button", { name: "Collapse project" })
+        ).toHaveAttribute("aria-expanded", "true");
+      }
+      first.unmount();
+
+      scrollIntoView.mockReset();
+      window.history.replaceState(null, "", "/app/bookings#day-2026-10-07");
+      renderView();
+      await loaded();
+      await waitFor(() =>
+        expect(scrolls(scrollIntoView)).toContainEqual({
+          el: section("2026-10-07"),
+          options: { behavior: "smooth", block: "start" }
+        })
+      );
+      for (const r of groupRows("2026-10-07")) {
+        expect(
+          within(r).getByRole("button", { name: "Expand project" })
+        ).toHaveAttribute("aria-expanded", "false");
       }
     });
   });

@@ -2,7 +2,14 @@ import { describe, expect, it } from "vitest";
 import type { Ref } from "@/features/time/types";
 import {
   bookingDays,
+  bookingPresetRange,
   defaultRange,
+  logsOfProject,
+  matchBookingPreset,
+  monthUpTo,
+  parseAnchor,
+  projectOptions,
+  targetAnchor,
   isBookable,
   parseRange,
   rangeLabel,
@@ -361,5 +368,89 @@ describe("Bookings day logic (feat-book-web, feat-book-partial)", () => {
     expect(rangeLabel({ from: "2026-09-01", to: "2026-10-09" })).toBe(
       "1 Sep 2026 – 9 Oct 2026"
     );
+  });
+});
+
+describe("Bookings navigation logic (feat-book-web-nav)", () => {
+  const today = "2026-10-09";
+  const oldSite = log({
+    id: "o",
+    workDate: "2026-10-02",
+    project: ref(null, "Old site", true)
+  });
+  const zeta = log({
+    id: "z",
+    workDate: "2026-09-20",
+    project: ref("p-zeta", "Zeta"),
+    bookings: [{ date: "2026-09-21", minutes: 60 }]
+  });
+
+  it("AC-1 FR-BOOK-001: bookingPresetRange cuts the Statistics presets at today; matchBookingPreset", () => {
+    expect(bookingPresetRange("this-month", today)).toEqual({
+      from: "2026-10-01",
+      to: "2026-10-09"
+    });
+    expect(bookingPresetRange("last-month", today)).toEqual({
+      from: "2026-09-01",
+      to: "2026-09-30"
+    });
+    expect(bookingPresetRange("last-7", today)).toEqual({
+      from: "2026-10-03",
+      to: "2026-10-09"
+    });
+    expect(bookingPresetRange("this-year", today)).toEqual({
+      from: "2026-01-01",
+      to: "2026-10-09"
+    });
+    expect(
+      matchBookingPreset({ from: "2026-10-01", to: "2026-10-09" }, today)
+    ).toBe("this-month");
+    expect(
+      matchBookingPreset({ from: "2026-09-15", to: "2026-10-09" }, today)
+    ).toBeNull();
+  });
+
+  it("AC-2 FR-BOOK-007: projectOptions lists the range's projects by title (a deleted one too); logsOfProject", () => {
+    const logs = [...ownerLogs, oldSite, zeta];
+    expect(projectOptions(logs, range).map((o) => o.key)).toEqual([
+      "p-anthropic",
+      "p-nvidia",
+      "deleted:Old site",
+      "p-pmi"
+    ]);
+    expect(logsOfProject(logs, null)).toEqual(logs);
+    expect(logsOfProject(logs, "p-anthropic").map((l) => l.id)).toEqual([
+      "a",
+      "d",
+      "f"
+    ]);
+    expect(logsOfProject(logs, "deleted:Old site")).toEqual([oldSite]);
+  });
+
+  it("AC-3 FR-BOOK-008: targetAnchor, parseAnchor and monthUpTo", () => {
+    const anchor = targetAnchor({
+      day: "2026-10-07",
+      logId: "a",
+      bookingDate: "2026-10-07"
+    });
+    expect(anchor).toBe("day-2026-10-07.log-a.to-2026-10-07");
+    expect(parseAnchor(anchor)).toEqual({
+      day: "2026-10-07",
+      row: "a:2026-10-07"
+    });
+    expect(parseAnchor("day-2026-10-06")).toEqual({
+      day: "2026-10-06",
+      row: null
+    });
+    expect(parseAnchor("")).toBeNull();
+    expect(parseAnchor("top")).toBeNull();
+    expect(monthUpTo("2026-09-30", today)).toEqual({
+      from: "2026-09-01",
+      to: "2026-09-30"
+    });
+    expect(monthUpTo("2026-10-03", today)).toEqual({
+      from: "2026-10-01",
+      to: "2026-10-09"
+    });
   });
 });
