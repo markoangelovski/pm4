@@ -3,7 +3,7 @@ id: api-endpoints
 title: API Endpoints
 status: review
 owner: Marko Angelovski
-last_updated: 2026-10-23
+last_updated: 2026-10-24
 related: [api-conventions, api-data-model, req-auth, req-projects, req-tasks, req-time-logs, req-reporting, req-integrations]
 ---
 
@@ -51,7 +51,7 @@ defines its request, response and errors. Paths are relative to `/api/v1` unless
 | API-WD-002 | PUT | `/workdays/{date}` `{startMinute}` | FR-TLOG-009 | specified |
 | API-WD-003 | GET | `/workdays/{date}` → `Day` (the start, the total and the day's logs in entry order) | FR-TLOG-001/002/003/009/015/016 | specified |
 | API-WD-004 | DELETE | `/workdays/{date}` (the day's start and its logs, with their bookings) | FR-TLOG-019 | specified |
-| API-TLOG-001 | GET | `/time-logs?projectId=&taskId=&page=&pageSize=` → logs of one project or task (`BookingLog`), with `totalMinutes` and `bookedMinutes` | FR-TLOG-012 | specified |
+| API-TLOG-001 | GET | `/time-logs?projectId=&taskId=&page=&pageSize=` → logs of one project or task (`BookingLog`), with `totalMinutes`, `bookedMinutes` and the minutes per date (`days`) | FR-TLOG-012 | specified |
 | API-TLOG-002 | POST | `/time-logs` `{workDate, durationMinutes, text, title?, projectId?, taskId?, dayStartMinute?}` | FR-TLOG-004/009 | specified |
 | API-TLOG-003 | — | (removed) | — | — |
 | API-TLOG-004 | PATCH | `/time-logs/{id}` | FR-TLOG-006 | specified |
@@ -344,10 +344,12 @@ bookings go with them (FK cascade). Logs of other dates with a booking dated `da
 `GET /time-logs?projectId=&taskId=&page=&pageSize=` · Auth: bearer · Implements: FR-TLOG-012
 **Query:** exactly one of `projectId`, `taskId` (a UUID), else `400` (both or neither: field `projectId`, "exactly one of projectId and taskId is
 required"). `page`, `pageSize` as in *Lists* above (`q` isn't accepted).
-**200:** `{ items: BookingLog[], page, pageSize, total, totalMinutes, bookedMinutes }`: the caller's logs with that project (which includes the logs of its
+**200:** `{ items: BookingLog[], page, pageSize, total, totalMinutes, bookedMinutes, days: LoggedDay[] }`: the caller's logs with that project (which includes the logs of its
 tasks) or that task, ordered by `workDate` descending, then entry order (`id` ascending). `totalMinutes` sums **all** matching logs, not only the page;
-`bookedMinutes` sums their bookings' `minutes`. An unknown or foreign id → `items: []`, `total: 0`, `totalMinutes: 0`, `bookedMinutes: 0`. A page past the
-end → `items: []` with the real totals. `BookingLog`: *Shared booking shapes* below.
+`bookedMinutes` sums their bookings' `minutes`. `days`: one `LoggedDay` = `{ workDate, workedMinutes, bookedMinutes }` per date with a matching log
+(**all** of them, not only the page's; excluded logs too), oldest first; `workedMinutes` sums that date's matching logs, `bookedMinutes` their bookings'
+`minutes` whatever the bookings' dates (as `ReportDay`, OQ-127), so the `days` add up to `totalMinutes` and `bookedMinutes` (OQ-222). An unknown or
+foreign id → `items: []`, `total: 0`, `totalMinutes: 0`, `bookedMinutes: 0`, `days: []`. A page past the end → `items: []` with the real totals and `days`. `BookingLog`: *Shared booking shapes* below.
 **Errors:** 400 validation · 401
 
 ### API-TLOG-002: Create a time log
@@ -693,3 +695,4 @@ None.
 - 2026-10-18: `PmspaLink.pmspaCreatedAt` on API-INT-012, derived from the PMSPA ObjectId (OQ-207, feat-int-followups). Still `review`.
 - 2026-10-23: Partial bookings (feat-book-partial, OQ-212…OQ-219): `Booking`; `BookingLog.bookings` replaces `bookingDate`; API-BOOK-002 replaces each
   listed log's bookings; API-TLOG-004 rejects a duration below the booked time; API-TLOG-001 and API-RPT-001 sum booked minutes; `PmspaEvent.booked` removed.
+- 2026-10-24: API-TLOG-001 returns `days` (`LoggedDay[]`) for the Logged time chart (OQ-222, feat-proto-sync-logged-chart). Still `review`.

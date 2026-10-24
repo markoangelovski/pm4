@@ -56,3 +56,4 @@ A feature spec links to those. It doesn't copy them.
 | PMSPA follow-ups: log limits in the preview, created-in-PMSPA dates, a token per connection, cheaper Expand all, error lines | [int-followups.md](int-followups.md) | M6 | approved |
 | Booking prompt: the day's logs as a Slack prompt | [tlog-prompt.md](tlog-prompt.md) | M4 | review |
 | Partial bookings: a log's time booked in parts to several dates | [book-partial.md](book-partial.md) | M4 | approved |
+| Prototype sync: Logged time chart, billable hours, Statistics link and Bookings day links | [proto-sync-logged-chart.md](proto-sync-logged-chart.md) | M4 | approved |

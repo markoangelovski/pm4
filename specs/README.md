@@ -47,7 +47,7 @@ Either way, fix the disagreement. Never ignore it.
 | Static export constraints | [04-web/static-export.md](04-web/static-export.md) | approved |
 | Template adaptation | [04-web/template-adaptation.md](04-web/template-adaptation.md) | approved |
 | Web conventions | [04-web/conventions.md](04-web/conventions.md) | approved |
-| Routing and navigation | [04-web/routing.md](04-web/routing.md) | review |
+| Routing and navigation | [04-web/routing.md](04-web/routing.md) | approved |
 | Screens | [04-web/screens.md](04-web/screens.md) | review |
 | UI prototype | [04-web/prototype.md](04-web/prototype.md) | approved |
 | Testing strategy | [05-quality/testing.md](05-quality/testing.md) | draft |

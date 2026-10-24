@@ -3,7 +3,7 @@ id: web-routing
 title: Routing and Navigation
 status: approved
 owner: Marko Angelovski
-last_updated: 2026-10-17
+last_updated: 2026-10-24
 related: [web-static-export, web-screens, web-prototype, req-landing, req-auth, feat-land-app-route-split, ADR-0012]
 ---
 
@@ -47,7 +47,7 @@ and the client reads `id` with `useSearchParams` (inside `<Suspense>`).
 
 ## Navigation
 - Sidebar (OQ-054), in sections with a heading (shown in capitals):
-  **Dashboard** → Default (`/app`) · **Project management** → Projects, Tasks · **Time** → Logs (`/app/time`), Bookings (`/app/bookings`)
+  **Dashboard** → Statistics (`/app`, chart-column icon) · **Project management** → Projects, Tasks · **Time** → Logs (`/app/time`), Bookings (`/app/bookings`)
   · **Connectors** → PMSPA (`/app/connectors/pmspa`, globe icon), only while a PMSPA connection is saved (FR-INT-006).
   A fixed footer at the bottom of the sidebar (stays put while the nav scrolls) holds Settings.
   The app logo links to `/app`.
@@ -125,3 +125,5 @@ and the client reads `id` with `useSearchParams` (inside `<Suspense>`).
 - 2026-10-11: Approved by the owner.
 - 2026-10-17: `/app/connectors/pmspa?tab=&week=` (SCR-060), `/app/settings?tab=integrations`, and the **Connectors** sidebar section (FR-INT-001, FR-INT-006, FR-INT-007). Back to `review` (feat-int-web).
 - 2026-10-17: Approved by the owner.
+- 2026-10-24: The Dashboard section's link reads "Statistics" with the chart-column icon (prototype `f0601be`, feat-proto-sync-logged-chart). Back to `review`.
+- 2026-10-24: Approved by the owner.
