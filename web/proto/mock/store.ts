@@ -3,7 +3,7 @@
 import type { components } from "@/lib/api/schema";
 import type { BookingDto } from "@/proto/features/bookings/days";
 import type { TimeLog } from "@/proto/features/time/types";
-import type { NoteDto, TodoDto } from "@/proto/features/notes/proposed-types";
+import type { NoteDto, TodoDto } from "@/proto/features/notes/types";
 import {
   MOCK_USER,
   seedNotes,

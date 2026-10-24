@@ -15,7 +15,7 @@ import { useProjects } from "@/proto/features/projects/api";
 import { useMe } from "@/proto/features/users/api";
 import { today as todayIn } from "@/lib/time";
 import { useTodos } from "../api";
-import { NOTE_SORTS } from "../proposed-types";
+import { NOTE_SORTS } from "../types";
 import { NO_LINK, type NoteLink } from "../schemas";
 import { ALL, UNLINKED } from "./notes-filter";
 import { NoteFormDialog } from "./note-form-dialog";

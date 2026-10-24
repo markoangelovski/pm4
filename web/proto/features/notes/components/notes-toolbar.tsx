@@ -17,7 +17,7 @@ import {
 import { RangePicker } from "@/proto/features/dashboard/components/range-picker";
 import type { DateRange } from "@/proto/features/dashboard/range";
 import { useDebouncedValue } from "@/lib/use-debounced-value";
-import type { NoteSort } from "../proposed-types";
+import type { NoteSort } from "../types";
 import { NotesFilter } from "./notes-filter";
 
 const SORT_ITEMS: { value: NoteSort; label: string }[] = [

@@ -2,12 +2,12 @@ import { describe, expect, it } from "vitest";
 import sidebaritems, { footerItems } from "./sidebaritems";
 
 describe("sidebaritems", () => {
-  it("has the sections, names and order from routing.md (feat-book-web AC-12)", () => {
+  it("has the sections, names and order from routing.md (feat-book-web AC-12, feat-note-todos AC-16)", () => {
     expect(
       sidebaritems.map((s) => [s.heading, s.items?.map((i) => i.name)])
     ).toEqual([
       ["Dashboard", ["Statistics"]],
-      ["Project management", ["Projects", "Tasks"]],
+      ["Project management", ["Projects", "Tasks", "Notes"]],
       ["Time", ["Logs", "Bookings"]]
     ]);
     expect(footerItems).toHaveLength(1);

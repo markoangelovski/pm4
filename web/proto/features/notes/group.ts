@@ -1,4 +1,4 @@
-import type { NoteRefDto } from "./proposed-types";
+import type { NoteRefDto } from "./types";
 import type { Todo } from "./api";
 import type { NoteLink } from "./schemas";
 

@@ -3,7 +3,7 @@ import { FolderKanban, ListTodo } from "lucide-react";
 import { DeletedName } from "@/proto/features/time/components/deleted-marker";
 import { routes } from "@/proto/lib/routes";
 import { cn } from "@/lib/utils";
-import type { NoteRefDto } from "../proposed-types";
+import type { NoteRefDto } from "../types";
 
 function RefLink({ ref_, href }: { ref_: NoteRefDto; href: string }) {
   if (!ref_.id || ref_.deleted) return <DeletedName title={ref_.title} />;

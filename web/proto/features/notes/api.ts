@@ -16,7 +16,7 @@ import type {
   NoteListQuery,
   TodoDto,
   TodoInputDto
-} from "./proposed-types";
+} from "./types";
 
 export type Note = NoteDto;
 export type NoteList = NoteListDto;

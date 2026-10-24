@@ -19,11 +19,7 @@ import type {
   PmspaSyncTargetDto,
   SavePmspaConnectionDto
 } from "@/proto/features/integrations/types";
-import type {
-  NoteDto,
-  NotesPaths,
-  TodoDto
-} from "@/proto/features/notes/proposed-types";
+import type { NoteDto, TodoDto } from "@/proto/features/notes/types";
 import { TZDate } from "@date-fns/tz";
 import { format } from "date-fns";
 import { formatDuration, today } from "@/lib/time";
@@ -719,7 +715,7 @@ function listItems<T extends Pick<NoteDto, "createdAt" | "updatedAt">>(
     );
 }
 
-/** `/notes` (proposed-types.ts): newest change first by default, paged. */
+/** `/notes` (API-NOTE-001…004): newest change first by default, paged. */
 function notes(
   method: string,
   id: string | undefined,
@@ -778,7 +774,7 @@ function notes(
   return json(withTitles(next));
 }
 
-/** `/todos` (proposed-types.ts): every match, newest change first by default, no paging. */
+/** `/todos` (API-TODO-001…004): every match, newest change first by default, no paging. */
 function todos(
   method: string,
   id: string | undefined,
@@ -931,7 +927,7 @@ async function mockFetch(request: Request): Promise<Response> {
 }
 
 /** Same surface as `apiClient` in `lib/api/client`; the base URL is never requested. */
-export const apiClient = createClient<paths & NotesPaths>({
+export const apiClient = createClient<paths>({
   baseUrl: "http://proto.localhost",
   fetch: mockFetch
 });

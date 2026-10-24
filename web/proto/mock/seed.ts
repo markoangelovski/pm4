@@ -4,7 +4,7 @@ import { addDays, format } from "date-fns";
 import type { components } from "@/lib/api/schema";
 import { today } from "@/lib/time";
 import type { ProjectRef, TaskRef, TimeLog } from "@/proto/features/time/types";
-import type { NoteDto, TodoDto } from "@/proto/features/notes/proposed-types";
+import type { NoteDto, TodoDto } from "@/proto/features/notes/types";
 
 type Me = components["schemas"]["MeResponseDto"];
 type Project = components["schemas"]["ProjectResponseDto"];
