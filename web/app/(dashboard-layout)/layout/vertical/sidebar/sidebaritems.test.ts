@@ -6,7 +6,7 @@ describe("sidebaritems", () => {
     expect(
       sidebaritems.map((s) => [s.heading, s.items?.map((i) => i.name)])
     ).toEqual([
-      ["Dashboard", ["Default"]],
+      ["Dashboard", ["Statistics"]],
       ["Project management", ["Projects", "Tasks"]],
       ["Time", ["Logs", "Bookings"]]
     ]);

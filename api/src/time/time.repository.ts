@@ -281,13 +281,14 @@ export class TimeRepository {
     total: number;
     totalMinutes: number;
     bookedMinutes: number;
+    days: { workDate: string; workedMinutes: number; bookedMinutes: number }[];
   }> {
     const link: SQL =
       "projectId" in filter
         ? eq(timeLogs.projectId, filter.projectId)
         : eq(timeLogs.taskId, filter.taskId);
     const where = and(eq(timeLogs.userId, userId), link);
-    const [rawRows, [totals], [booked]] = await Promise.all([
+    const [rawRows, [totals], [booked], dayRows] = await Promise.all([
       this.selectRows(this.db)
         .where(where)
         .orderBy(desc(timeLogs.workDate), asc(timeLogs.id))
@@ -310,14 +311,35 @@ export class TimeRepository {
         })
         .from(bookings)
         .innerJoin(timeLogs, eq(timeLogs.id, bookings.timeLogId))
-        .where(where)
+        .where(where),
+      this.db.execute<{
+        work_date: string;
+        worked: number;
+        booked: number;
+      }>(sql`
+        SELECT work_date::text AS work_date, SUM(duration_minutes)::int AS worked,
+               COALESCE(SUM(booked_minutes), 0)::int AS booked
+        FROM (
+          SELECT work_date, duration_minutes,
+                 (SELECT SUM(bk.minutes) FROM bookings bk WHERE bk.time_log_id = time_logs.id) AS booked_minutes
+          FROM time_logs
+          WHERE user_id = ${userId} AND ${"projectId" in filter ? sql`project_id = ${filter.projectId}` : sql`task_id = ${filter.taskId}`}
+        ) per_log
+        GROUP BY work_date
+        ORDER BY work_date
+      `)
     ]);
     const rows = await this.withBookings(this.db, userId, rawRows);
     return {
       rows,
       total: totals.total,
       totalMinutes: totals.totalMinutes,
-      bookedMinutes: booked.bookedMinutes
+      bookedMinutes: booked.bookedMinutes,
+      days: dayRows.rows.map((row) => ({
+        workDate: row.work_date,
+        workedMinutes: row.worked,
+        bookedMinutes: row.booked
+      }))
     };
   }
 

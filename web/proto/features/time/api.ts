@@ -12,8 +12,8 @@ import { projectKeys } from "@/proto/features/projects/api";
 import { taskKeys } from "@/proto/features/tasks/api";
 import { apiClient } from "@/proto/mock/client";
 import { unwrap, unwrapVoid } from "@/lib/api/problem";
+import type { components } from "@/lib/api/schema";
 import { nowMinute } from "@/lib/time/clock";
-import type { TimeLogListResponseDto } from "./proposed-types";
 import type { Day, TimeLog, TimeLogInput } from "./types";
 
 export type {
@@ -30,9 +30,12 @@ export interface WorkdayList {
   items: { workDate: string; startMinute: number; totalMinutes: number }[];
 }
 
-/** API-TLOG-001: one page of a project's or task's logs, with their booking dates, the totals and the minutes per date. */
-export type TimeLogList = TimeLogListResponseDto;
+/** API-TLOG-001: one page of a project's or task's logs, with their booking dates and the totals. */
+export type TimeLogList = components["schemas"]["TimeLogListResponseDto"];
 export type TimeLogFilter = { projectId: string } | { taskId: string };
+
+/** One date of API-TLOG-001 `days` (the Logged time chart). */
+export type LoggedDay = TimeLogList["days"][number];
 
 /** The Logged time section's page size (SCR-044). */
 export const TIME_LOG_PAGE_SIZE = 25;
@@ -62,8 +65,7 @@ export function useTimeLogs(
           params: { query: { ...filter, page, pageSize: TIME_LOG_PAGE_SIZE } },
           signal
         })
-        // `days` isn't in the generated schema until the API changes (proposed-types.ts).
-      ) as TimeLogListResponseDto,
+      ),
     placeholderData: keepPreviousData
   });
 }
