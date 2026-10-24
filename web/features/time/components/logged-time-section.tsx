@@ -1,6 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
+import { Clock } from "lucide-react";
 import { parseAsInteger, useQueryState } from "nuqs";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,10 +15,16 @@ import {
   TableRow
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatDuration, formatWorkDate } from "@/lib/time";
 import { routes } from "@/lib/routes";
 import { TIME_LOG_PAGE_SIZE, useTimeLogs, type TimeLogList } from "../api";
 import { DeletedName } from "./deleted-marker";
+import {
+  LOGGED_COLORS,
+  LoggedTimeChart,
+  LoggedTotals
+} from "./logged-time-chart";
 
 /**
  * A log's bookings, one per line ("6 Oct 2026 · 30m"), then "30m unbooked" while part of it is left;
@@ -46,7 +54,7 @@ function BookedDates({ log }: { log: TimeLogList["items"][number] }) {
   );
 }
 
-/** SCR-044: the logged time of one project (with a Task column) or one task. */
+/** SCR-044: the logged time of one project (with a Task column) or one task, as a chart or a table (like the dashboard's Workdays). */
 export function LoggedTimeSection({
   projectId,
   taskId
@@ -68,21 +76,41 @@ export function LoggedTimeSection({
     Math.ceil((data?.total ?? 0) / TIME_LOG_PAGE_SIZE)
   );
   const showTask = projectId !== undefined;
+  const [view, setView] = useState<"chart" | "table">("chart");
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between gap-2">
-        <CardTitle>Logged time</CardTitle>
-        {data ? (
-          <span className="text-sm font-medium tabular-nums text-muted-foreground">
-            Total worked: {formatDuration(data.totalMinutes)}
-            <span className="ml-4">
-              Booked: {formatDuration(data.bookedMinutes)}
-            </span>
-          </span>
-        ) : null}
+    <Card className={`gap-0! border rounded-md! py-0! ${LOGGED_COLORS}`}>
+      <CardHeader className="flex h-11 flex-row items-center justify-between border-b px-4 py-0!">
+        <CardTitle className="flex items-center gap-2 text-sm">
+          <Clock size={16} className="text-muted-foreground" /> Logged time
+        </CardTitle>
+        <Tabs
+          value={view}
+          onValueChange={(v) => setView(v as "chart" | "table")}
+        >
+          <TabsList className="h-8">
+            <TabsTrigger
+              value="chart"
+              className="cursor-pointer px-2.5 text-xs"
+            >
+              Chart
+            </TabsTrigger>
+            <TabsTrigger
+              value="table"
+              className="cursor-pointer px-2.5 text-xs"
+            >
+              Table
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
       </CardHeader>
-      <CardContent className="px-0">
+      <CardContent className="space-y-3 p-4">
+        {data && data.total > 0 ? (
+          <LoggedTotals
+            worked={data.totalMinutes}
+            booked={data.bookedMinutes}
+          />
+        ) : null}
         {logs.isError ? (
           <div className="flex flex-col items-center gap-3 py-6 text-sm text-muted-foreground">
             <p>Couldn&apos;t load the logs.</p>
@@ -96,7 +124,7 @@ export function LoggedTimeSection({
             </Button>
           </div>
         ) : !data ? (
-          <div className="space-y-2 px-6" aria-busy="true">
+          <div className="space-y-2" aria-busy="true">
             <Skeleton className="h-8 w-full" />
             <Skeleton className="h-8 w-full" />
             <Skeleton className="h-8 w-full" />
@@ -105,8 +133,10 @@ export function LoggedTimeSection({
           <p className="py-6 text-center text-sm text-muted-foreground">
             No time logged yet.
           </p>
+        ) : view === "chart" ? (
+          <LoggedTimeChart days={data.days} />
         ) : (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto rounded-md border">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -159,8 +189,8 @@ export function LoggedTimeSection({
             </Table>
           </div>
         )}
-        {pageCount > 1 ? (
-          <div className="flex items-center gap-2 pt-4 text-sm text-muted-foreground">
+        {view === "table" && pageCount > 1 ? (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <span>
               Page {page} of {pageCount}
             </span>

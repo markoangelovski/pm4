@@ -144,7 +144,7 @@ export class TimeLogsService {
         ]
       });
     }
-    const { rows, total, totalMinutes, bookedMinutes } =
+    const { rows, total, totalMinutes, bookedMinutes, days } =
       await this.timeRepository.listLogs(
         userId,
         filter,
@@ -158,7 +158,7 @@ export class TimeLogsService {
       total,
       totalMinutes,
       bookedMinutes,
-      days: [] // stub (feat-proto-sync-logged-chart)
+      days
     };
   }
 

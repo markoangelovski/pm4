@@ -108,14 +108,14 @@ function PieBody({
     <div
       className={
         large
-          ? "flex w-full flex-col items-center justify-center gap-8 lg:flex-row"
+          ? "flex min-h-0 w-full flex-1 flex-col items-center gap-6 lg:flex-row lg:justify-center lg:gap-8"
           : "space-y-4"
       }
     >
       <div
         className={
           large
-            ? "relative size-[min(65vh,36rem)] shrink-0"
+            ? "relative size-[min(45vh,calc(95vw-3rem))] shrink-0 lg:size-[min(65vh,36rem)]"
             : "relative mx-auto size-56 max-w-full"
         }
       >
@@ -150,7 +150,7 @@ function PieBody({
         </div>
       </div>
       <ul
-        className={`space-y-1.5 text-sm ${large ? "max-h-[65vh] min-w-0 flex-1 overflow-y-auto pr-2" : ""}`}
+        className={`space-y-1.5 text-sm ${large ? "min-h-0 w-full min-w-0 flex-1 overflow-y-auto pr-2 lg:max-h-[65vh] lg:w-auto lg:flex-1" : ""}`}
       >
         {slices.map((s) => (
           <li key={s.key} className="flex items-center gap-2">

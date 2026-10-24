@@ -1,5 +1,5 @@
 import {
-  House,
+  ChartColumn,
   Clock,
   CalendarCheck,
   FolderKanban,
@@ -38,8 +38,8 @@ const SidebarContent: MenuItem[] = [
     items: [
       {
         id: "dashboard",
-        name: "Default",
-        icon: House,
+        name: "Statistics",
+        icon: ChartColumn,
         url: routes.app.dashboard
       }
     ]

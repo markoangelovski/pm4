@@ -34,6 +34,9 @@ export interface WorkdayList {
 export type TimeLogList = components["schemas"]["TimeLogListResponseDto"];
 export type TimeLogFilter = { projectId: string } | { taskId: string };
 
+/** One date of API-TLOG-001 `days` (the Logged time chart). */
+export type LoggedDay = TimeLogList["days"][number];
+
 /** The Logged time section's page size (SCR-044). */
 export const TIME_LOG_PAGE_SIZE = 25;
 

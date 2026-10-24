@@ -15,7 +15,7 @@ import {
   type Bucket
 } from "@/proto/features/dashboard/stats";
 import { routes } from "@/proto/lib/routes";
-import type { LoggedDayDto } from "../proposed-types";
+import type { LoggedDay } from "../api";
 
 const CONFIG: ChartConfig = {
   booked: { label: "Booked", color: "var(--dash-booked)" },
@@ -30,7 +30,7 @@ export const LOGGED_COLORS =
   "dark:[--dash-worked:#3987e5] dark:[--dash-booked:#199e70]";
 
 /** Every date from the first to the last logged one, as the dashboard buckets them (by day up to 62 days, else by week). */
-export function loggedBuckets(days: LoggedDayDto[]) {
+export function loggedBuckets(days: LoggedDay[]) {
   if (!days.length) return { by: "day" as const, items: [] };
   const byDate = new Map(days.map((d) => [d.workDate, d]));
   const range = { from: days[0].workDate, to: days.at(-1)!.workDate };
@@ -72,7 +72,7 @@ function LoggedTooltip({ active, payload }: TipProps) {
 }
 
 /** SCR-044 Chart view: hours worked on the project or task (booked + not booked), over every date it was logged. */
-export function LoggedTimeChart({ days }: { days: LoggedDayDto[] }) {
+export function LoggedTimeChart({ days }: { days: LoggedDay[] }) {
   const router = useRouter();
   const { by, items } = loggedBuckets(days);
   const yTicks = hourTicks(Math.max(0, ...items.map((b) => b.worked)));
