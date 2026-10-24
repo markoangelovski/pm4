@@ -906,6 +906,23 @@ export interface components {
             text: string;
             excludeFromStats: boolean;
         };
+        LoggedDayDto: {
+            /**
+             * Format: date
+             * @example 2026-10-06
+             */
+            workDate: string;
+            /**
+             * @description Minutes of that date's matching logs (excluded ones too).
+             * @example 315
+             */
+            workedMinutes: number;
+            /**
+             * @description Booked minutes of those logs, whatever the bookings' dates.
+             * @example 120
+             */
+            bookedMinutes: number;
+        };
         TimeLogListResponseDto: {
             items: components["schemas"]["BookingLogResponseDto"][];
             page: number;
@@ -915,6 +932,8 @@ export interface components {
             totalMinutes: number;
             /** @description Booked minutes of the matching logs (the sum of their bookings). */
             bookedMinutes: number;
+            /** @description Every date with a matching log (not only this page's), oldest first. */
+            days: components["schemas"]["LoggedDayDto"][];
         };
         CreateTimeLogDto: {
             /**

@@ -213,7 +213,7 @@ const dayCell = (iso: string) =>
 
 const loaded = () => screen.findByText("Wednesday, 7 October 2026");
 
-describe("DayView (feat-tlog-web)", () => {
+describe("DayView (feat-tlog-web, feat-proto-sync-logged-chart)", () => {
   beforeAll(() => {
     // recharts' ResponsiveContainer needs it; jsdom has none.
     globalThis.ResizeObserver ??= class {
@@ -238,14 +238,15 @@ describe("DayView (feat-tlog-web)", () => {
     vi.useRealTimers();
   });
 
-  it("AC-15 FR-TLOG-009 SCR-040: the header figures for today, Unlogged when behind, no Now on a past date, the date in full", async () => {
+  it("AC-15 FR-TLOG-009 SCR-040: the header figures for today (Billable (%) is AC-6 of feat-proto-sync-logged-chart), Unlogged when behind, no Now on a past date, the date in full", async () => {
     const first = renderView();
     await loaded();
     expect(screen.getByRole("heading", { name: "Logs" })).toBeInTheDocument();
     await waitFor(() => expect(card("Start")).toHaveTextContent("08:00"));
     expect(card("Logged")).toHaveTextContent("3h 30m");
     expect(card("Start + logged")).toHaveTextContent("11:30");
-    expect(card("% billable")).toHaveTextContent("36%");
+    expect(card("Billable (%)")).toHaveTextContent("2h 30m (36%)");
+    expect(screen.queryByText("% billable")).not.toBeInTheDocument();
     expect(card("Overtime")).toHaveTextContent("0h");
     expect(card("Now")).toHaveTextContent("09:17");
     // 08:00 + 3h 30m is after 09:17 → nothing unlogged.

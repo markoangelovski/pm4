@@ -4723,6 +4723,31 @@
           "excludeFromStats"
         ]
       },
+      "LoggedDayDto": {
+        "type": "object",
+        "properties": {
+          "workDate": {
+            "type": "string",
+            "format": "date",
+            "example": "2026-10-06"
+          },
+          "workedMinutes": {
+            "type": "integer",
+            "description": "Minutes of that date's matching logs (excluded ones too).",
+            "example": 315
+          },
+          "bookedMinutes": {
+            "type": "integer",
+            "description": "Booked minutes of those logs, whatever the bookings' dates.",
+            "example": 120
+          }
+        },
+        "required": [
+          "workDate",
+          "workedMinutes",
+          "bookedMinutes"
+        ]
+      },
       "TimeLogListResponseDto": {
         "type": "object",
         "properties": {
@@ -4748,6 +4773,13 @@
           "bookedMinutes": {
             "type": "integer",
             "description": "Booked minutes of the matching logs (the sum of their bookings)."
+          },
+          "days": {
+            "description": "Every date with a matching log (not only this page's), oldest first.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LoggedDayDto"
+            }
           }
         },
         "required": [
@@ -4756,7 +4788,8 @@
           "pageSize",
           "total",
           "totalMinutes",
-          "bookedMinutes"
+          "bookedMinutes",
+          "days"
         ]
       },
       "CreateTimeLogDto": {

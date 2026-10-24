@@ -40,6 +40,12 @@ interface BookingLogBody extends TimeLogBody {
   bookings: BookingBody[];
 }
 
+interface LoggedDayBody {
+  workDate: string;
+  workedMinutes: number;
+  bookedMinutes: number;
+}
+
 interface ItemBody {
   id: string;
   loggedMinutes: number;
@@ -55,6 +61,7 @@ interface Body {
   total: number;
   totalMinutes: number;
   bookedMinutes: number;
+  days: LoggedDayBody[];
   errors?: { field: string; message: string }[];
 }
 
@@ -68,7 +75,7 @@ async function send(req: request.Test): Promise<Res> {
   return { status: response.status, body: response.body as Body };
 }
 
-describe("Logged time API (feat-proto-sync-web)", () => {
+describe("Logged time API (feat-proto-sync-web, feat-proto-sync-logged-chart)", () => {
   let app: NestExpressApplication;
 
   beforeAll(async () => {
@@ -141,6 +148,17 @@ describe("Logged time API (feat-proto-sync-web)", () => {
 
   /** The direct log's booking. */
   const BOOKED = [{ date: "2026-10-07", minutes: 60 }];
+
+  /** P's `days`: the booking counts on its log's work date, the excluded log counts. */
+  const DAYS_P: LoggedDayBody[] = [
+    { workDate: "2026-10-06", workedMinutes: 75, bookedMinutes: 60 },
+    { workDate: "2026-10-07", workedMinutes: 30, bookedMinutes: 0 }
+  ];
+
+  /** T1's `days`. */
+  const DAYS_T1: LoggedDayBody[] = [
+    { workDate: "2026-10-07", workedMinutes: 30, bookedMinutes: 0 }
+  ];
 
   const byId = (x: { id: string }, y: { id: string }) =>
     x.id < y.id ? -1 : x.id > y.id ? 1 : 0;
@@ -219,7 +237,8 @@ describe("Logged time API (feat-proto-sync-web)", () => {
       pageSize: 25,
       total: 3,
       totalMinutes: 105,
-      bookedMinutes: 60
+      bookedMinutes: 60,
+      days: DAYS_P
     });
   });
 
@@ -235,7 +254,8 @@ describe("Logged time API (feat-proto-sync-web)", () => {
       pageSize: 25,
       total: 1,
       totalMinutes: 30,
-      bookedMinutes: 0
+      bookedMinutes: 0,
+      days: DAYS_T1
     });
   });
 
@@ -252,7 +272,8 @@ describe("Logged time API (feat-proto-sync-web)", () => {
       pageSize: 2,
       total: 3,
       totalMinutes: 105,
-      bookedMinutes: 60
+      bookedMinutes: 60,
+      days: DAYS_P
     });
 
     const past = await as(a).get(`${url}&page=3`);
@@ -263,7 +284,8 @@ describe("Logged time API (feat-proto-sync-web)", () => {
       pageSize: 2,
       total: 3,
       totalMinutes: 105,
-      bookedMinutes: 60
+      bookedMinutes: 60,
+      days: DAYS_P
     });
   });
 
@@ -296,7 +318,8 @@ describe("Logged time API (feat-proto-sync-web)", () => {
       pageSize: 25,
       total: 0,
       totalMinutes: 0,
-      bookedMinutes: 0
+      bookedMinutes: 0,
+      days: []
     };
 
     for (const query of [
@@ -359,5 +382,58 @@ describe("Logged time API (feat-proto-sync-web)", () => {
     expect(moved.body.loggedMinutes).toBe(30);
     expect((await as(a).get(`/projects/${p.id}`)).body.loggedMinutes).toBe(75);
     expect((await as(a).get(`/projects/${q.id}`)).body.loggedMinutes).toBe(30);
+  });
+
+  describe("days (feat-proto-sync-logged-chart)", () => {
+    it("AC-1 API-TLOG-001: ?projectId → one day per date with a log, oldest first; a booking counts on its log's work date, excluded logs count", async () => {
+      const { a, projects } = await seed();
+
+      const response = await as(a).get(`/time-logs?projectId=${projects.p.id}`);
+
+      expect(response.status, JSON.stringify(response.body)).toBe(200);
+      expect(response.body.days).toEqual(DAYS_P);
+    });
+
+    it("AC-2 API-TLOG-001: ?taskId → only the task's days", async () => {
+      const { a, tasks } = await seed();
+
+      const response = await as(a).get(`/time-logs?taskId=${tasks.t1.id}`);
+
+      expect(response.status, JSON.stringify(response.body)).toBe(200);
+      expect(response.body.days).toEqual(DAYS_T1);
+    });
+
+    it("AC-3 API-TLOG-001: days cover every matching log, whatever the page (also past the end)", async () => {
+      const { a, projects } = await seed();
+      const url = `/time-logs?projectId=${projects.p.id}&pageSize=2`;
+
+      for (const page of [2, 3]) {
+        const response = await as(a).get(`${url}&page=${page}`);
+        expect(response.status, JSON.stringify(response.body)).toBe(200);
+        expect(response.body.days, `page ${page}`).toEqual(DAYS_P);
+      }
+    });
+
+    it("AC-4 API-TLOG-001: another user's or an unknown id → days []; another user's log never counts", async () => {
+      const { a, b, projects } = await seed();
+
+      for (const query of [
+        `?projectId=${projects.bProject.id}`,
+        `?projectId=${randomUUID()}`,
+        `?taskId=${randomUUID()}`
+      ]) {
+        const response = await as(a).get(`/time-logs${query}`);
+        expect(response.status, query).toBe(200);
+        expect(response.body.days, query).toEqual([]);
+      }
+
+      const own = await as(b).get(
+        `/time-logs?projectId=${projects.bProject.id}`
+      );
+      expect(own.status, JSON.stringify(own.body)).toBe(200);
+      expect(own.body.days).toEqual([
+        { workDate: "2026-10-06", workedMinutes: 45, bookedMinutes: 0 }
+      ]);
+    });
   });
 });

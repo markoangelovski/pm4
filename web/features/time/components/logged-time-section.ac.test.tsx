@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ComponentProps, ReactNode } from "react";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen, within } from "@testing-library/react";
@@ -9,6 +9,13 @@ import { LoggedTimeSection } from "./logged-time-section";
 
 const api = vi.hoisted(() => ({ GET: vi.fn() }));
 vi.mock("@/lib/api/client", () => ({ apiClient: api }));
+
+const nav = vi.hoisted(() => ({ push: vi.fn(), replace: vi.fn() }));
+vi.mock("next/navigation", () => ({
+  useRouter: () => nav,
+  usePathname: () => "/app/project",
+  useSearchParams: () => new URLSearchParams()
+}));
 
 // A plain anchor keeps the exact href (next.config isn't loaded in Vitest).
 vi.mock("next/link", () => ({
@@ -59,7 +66,11 @@ const projectLogs: TimeLogList = {
   pageSize: 25,
   total: 3,
   totalMinutes: 105,
-  bookedMinutes: 60
+  bookedMinutes: 60,
+  days: [
+    { workDate: "2026-10-06", workedMinutes: 75, bookedMinutes: 60 },
+    { workDate: "2026-10-07", workedMinutes: 30, bookedMinutes: 0 }
+  ]
 };
 
 const res = (status: number) => new Response(null, { status });
@@ -110,12 +121,29 @@ function renderSection(
 const headers = () =>
   screen.getAllByRole("columnheader").map((h) => h.textContent);
 
+/** A totals figure: its label, then its value (e.g. "Total worked" · "1h 45m"). */
+const figure = (label: string, value: string) =>
+  screen.getByText(wholeText(`${label}${value}`));
+
+/** Switches the section to its Table tab (the Chart tab is shown at first). */
+const showTable = () =>
+  fireEvent.click(screen.getByRole("tab", { name: "Table" }));
+
 /** An element whose whole text is `text` (a booking line spans nested elements). */
 const wholeText = (text: string) => (_: string, el: Element | null) =>
   el?.textContent === text &&
   Array.from(el.children).every((child) => child.textContent !== text);
 
-describe("LoggedTimeSection (feat-proto-sync-web, feat-book-partial)", () => {
+describe("LoggedTimeSection (feat-proto-sync-web, feat-book-partial, feat-proto-sync-logged-chart)", () => {
+  beforeAll(() => {
+    // recharts' ResponsiveContainer needs it; jsdom has none.
+    globalThis.ResizeObserver ??= class {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    };
+  });
+
   beforeEach(() => {
     api.GET.mockReset();
     routeGet();
@@ -125,10 +153,11 @@ describe("LoggedTimeSection (feat-proto-sync-web, feat-book-partial)", () => {
     listResult = () => ({ data: projectLogs, response: res(200) });
 
     renderSection({ projectId: "p1" });
+    showTable();
 
     expect(await screen.findByText("Weekly sync")).toBeInTheDocument();
-    expect(screen.getByText(/Total worked: 1h 45m/)).toBeInTheDocument();
-    expect(screen.getByText(/Booked: 1h$/)).toBeInTheDocument();
+    expect(figure("Total worked", "1h 45m")).toBeInTheDocument();
+    expect(figure("Booked", "1h")).toBeInTheDocument();
     expect(headers()).toEqual([
       "Date worked",
       "Log",
@@ -196,15 +225,20 @@ describe("LoggedTimeSection (feat-proto-sync-web, feat-book-partial)", () => {
         pageSize: 25,
         total: 3,
         totalMinutes: 435,
-        bookedMinutes: 315
+        bookedMinutes: 315,
+        days: [
+          { workDate: "2026-10-06", workedMinutes: 60, bookedMinutes: 0 },
+          { workDate: "2026-10-07", workedMinutes: 375, bookedMinutes: 315 }
+        ]
       },
       response: res(200)
     });
 
     renderSection({ projectId: "p1" });
+    showTable();
 
     expect(await screen.findByText("Planning")).toBeInTheDocument();
-    expect(screen.getByText(/Booked: 5h 15m$/)).toBeInTheDocument();
+    expect(figure("Booked", "5h 15m")).toBeInTheDocument();
     const [f, e, b] = screen
       .getAllByRole("row")
       .slice(1)
@@ -228,12 +262,16 @@ describe("LoggedTimeSection (feat-proto-sync-web, feat-book-partial)", () => {
         pageSize: 25,
         total: 30,
         totalMinutes: 1800,
-        bookedMinutes: 0
+        bookedMinutes: 0,
+        days: [
+          { workDate: "2026-10-06", workedMinutes: 1800, bookedMinutes: 0 }
+        ]
       },
       response: res(200)
     });
 
     const { onUrlUpdate, unmount } = renderSection({ taskId: "t1" });
+    showTable();
 
     expect(await screen.findByText("Log 0")).toBeInTheDocument();
     expect(headers()).toEqual([
@@ -264,7 +302,8 @@ describe("LoggedTimeSection (feat-proto-sync-web, feat-book-partial)", () => {
         pageSize: 25,
         total: 0,
         totalMinutes: 0,
-        bookedMinutes: 0
+        bookedMinutes: 0,
+        days: []
       },
       response: res(200)
     });
@@ -275,6 +314,7 @@ describe("LoggedTimeSection (feat-proto-sync-web, feat-book-partial)", () => {
     // A failed request, then Retry.
     listResult = () => ({ error: "Internal Server Error", response: res(500) });
     renderSection({ taskId: "t1" });
+    showTable();
     expect(
       await screen.findByText("Couldn't load the logs.", undefined, {
         timeout: 4000
@@ -285,5 +325,109 @@ describe("LoggedTimeSection (feat-proto-sync-web, feat-book-partial)", () => {
     fireEvent.click(screen.getByRole("button", { name: "Retry" }));
     expect(await screen.findByText("Weekly sync")).toBeInTheDocument();
     expect(listQueries().length).toBeGreaterThan(before);
+  });
+
+  describe("Chart (feat-proto-sync-logged-chart)", () => {
+    it("AC-5 FR-TLOG-012 SCR-044: Chart is selected at first with the totals, the legend by day and the hint; Table shows the table", async () => {
+      listResult = () => ({ data: projectLogs, response: res(200) });
+
+      renderSection({ projectId: "p1" });
+
+      expect(
+        await screen.findByText("57% booked · 45m still to book")
+      ).toBeInTheDocument();
+      expect(screen.getByRole("tab", { name: "Chart" })).toHaveAttribute(
+        "aria-selected",
+        "true"
+      );
+      expect(screen.queryByRole("table")).toBeNull();
+      expect(screen.queryByText("Weekly sync")).toBeNull();
+      expect(figure("Total worked", "1h 45m")).toBeInTheDocument();
+      expect(figure("Booked", "1h")).toBeInTheDocument();
+      expect(figure("Not booked", "45m")).toBeInTheDocument();
+      expect(screen.getByText("· by day")).toBeInTheDocument();
+      expect(
+        screen.getByText("Click a bar to open that day in Logs.")
+      ).toBeInTheDocument();
+
+      showTable();
+      expect(screen.getByRole("tab", { name: "Table" })).toHaveAttribute(
+        "aria-selected",
+        "true"
+      );
+      expect(screen.getByRole("table")).toBeInTheDocument();
+      expect(screen.getByText("Weekly sync")).toBeInTheDocument();
+    });
+
+    it("AC-5 FR-TLOG-012 SCR-044: all booked → Everything is booked; no logs → No time logged yet. and no totals", async () => {
+      listResult = () => ({
+        data: {
+          items: [item({ bookings: [{ date: "2026-10-07", minutes: 60 }] })],
+          page: 1,
+          pageSize: 25,
+          total: 1,
+          totalMinutes: 60,
+          bookedMinutes: 60,
+          days: [
+            { workDate: "2026-10-06", workedMinutes: 60, bookedMinutes: 60 }
+          ]
+        },
+        response: res(200)
+      });
+      const booked = renderSection({ projectId: "p1" });
+      expect(
+        await screen.findByText("Everything is booked")
+      ).toBeInTheDocument();
+      expect(screen.queryByText(/still to book/)).toBeNull();
+      booked.unmount();
+
+      listResult = () => ({
+        data: {
+          items: [],
+          page: 1,
+          pageSize: 25,
+          total: 0,
+          totalMinutes: 0,
+          bookedMinutes: 0,
+          days: []
+        },
+        response: res(200)
+      });
+      renderSection({ projectId: "p1" });
+      expect(
+        await screen.findByText("No time logged yet.")
+      ).toBeInTheDocument();
+      expect(screen.queryByText("Total worked")).toBeNull();
+      expect(screen.queryByText("Everything is booked")).toBeNull();
+    });
+
+    it("AC-5 FR-TLOG-012 SCR-044: days spanning 1 Oct – 15 Dec 2026 → the chart goes by week, without the hint", async () => {
+      listResult = () => ({
+        data: {
+          items: [
+            item({ id: "a", workDate: "2026-12-15" }),
+            item({ id: "b", workDate: "2026-10-01" })
+          ],
+          page: 1,
+          pageSize: 25,
+          total: 2,
+          totalMinutes: 120,
+          bookedMinutes: 0,
+          days: [
+            { workDate: "2026-10-01", workedMinutes: 60, bookedMinutes: 0 },
+            { workDate: "2026-12-15", workedMinutes: 60, bookedMinutes: 0 }
+          ]
+        },
+        response: res(200)
+      });
+
+      renderSection({ projectId: "p1" });
+
+      expect(await screen.findByText("· by week")).toBeInTheDocument();
+      expect(screen.queryByText("· by day")).toBeNull();
+      expect(
+        screen.queryByText("Click a bar to open that day in Logs.")
+      ).toBeNull();
+    });
   });
 });

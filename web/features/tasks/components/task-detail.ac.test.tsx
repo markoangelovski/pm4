@@ -291,7 +291,8 @@ describe("TaskDetail logged time (feat-proto-sync-web)", () => {
             pageSize: 25,
             total: 0,
             totalMinutes: 0,
-            bookedMinutes: 0
+            bookedMinutes: 0,
+            days: []
           },
           response: res(200)
         };

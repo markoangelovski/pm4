@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { ChartColumn } from "lucide-react";
 import SidebarContent, { footerItems, type MenuItem } from "./sidebaritems";
 
 const shape = (menu: MenuItem[]) =>
@@ -7,10 +8,10 @@ const shape = (menu: MenuItem[]) =>
     (section.items ?? []).map((item) => [item.id, item.name, item.url])
   ]);
 
-describe("Sidebar items (feat-shell-sidebar-sections)", () => {
+describe("Sidebar items (feat-shell-sidebar-sections, feat-proto-sync-logged-chart)", () => {
   it("AC-1 OQ-054 (feat-book-web AC-12): the default export is grouped into Dashboard, Project management and Time; Time lists Logs, then Bookings", () => {
     expect(shape(SidebarContent)).toEqual([
-      ["Dashboard", [["dashboard", "Default", "/app"]]],
+      ["Dashboard", [["dashboard", "Statistics", "/app"]]],
       [
         "Project management",
         [
@@ -50,5 +51,13 @@ describe("Sidebar items (feat-shell-sidebar-sections)", () => {
         "/app/settings"
       ].sort()
     );
+  });
+
+  it("AC-8 SCR-010: the Dashboard section holds Statistics → /app with the ChartColumn icon", () => {
+    const dashboard = SidebarContent.find((s) => s.heading === "Dashboard");
+    expect(dashboard?.items?.map((i) => [i.id, i.name, i.url])).toEqual([
+      ["dashboard", "Statistics", "/app"]
+    ]);
+    expect(dashboard?.items?.[0].icon).toBe(ChartColumn);
   });
 });

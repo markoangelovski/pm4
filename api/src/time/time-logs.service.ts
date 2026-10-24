@@ -157,7 +157,8 @@ export class TimeLogsService {
       pageSize: query.pageSize,
       total,
       totalMinutes,
-      bookedMinutes
+      bookedMinutes,
+      days: [] // stub (feat-proto-sync-logged-chart)
     };
   }
 

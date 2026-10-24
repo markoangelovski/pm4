@@ -29,13 +29,13 @@ afterEach(() => {
   nav.state = "expanded";
 });
 
-describe("NavCollapse sections (feat-shell-sidebar-sections)", () => {
-  it("AC-4 OQ-054: expanded, the default export shows the three headings and the four links", () => {
+describe("NavCollapse sections (feat-shell-sidebar-sections, feat-proto-sync-logged-chart)", () => {
+  it("AC-4 OQ-054 (feat-proto-sync-logged-chart AC-8): expanded, the default export shows the three headings and the four links", () => {
     render(<NavCollapse menu={SidebarContent} />);
     for (const heading of ["Dashboard", "Project management", "Time"]) {
       expect(screen.getByText(heading)).toBeInTheDocument();
     }
-    for (const name of ["Default", "Projects", "Tasks", "Logs"]) {
+    for (const name of ["Statistics", "Projects", "Tasks", "Logs"]) {
       expect(screen.getByRole("link", { name })).toBeInTheDocument();
     }
   });

@@ -71,7 +71,8 @@ const list = (page: number, text: string): TimeLogList => ({
   pageSize: 25,
   total: 30,
   totalMinutes: 900,
-  bookedMinutes: 60
+  bookedMinutes: 60,
+  days: [{ workDate: "2026-10-07", workedMinutes: 900, bookedMinutes: 60 }]
 });
 
 const res = (status: number) => new Response(null, { status });

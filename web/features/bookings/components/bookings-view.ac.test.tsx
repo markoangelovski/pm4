@@ -681,4 +681,23 @@ describe("BookingsView (feat-book-web, feat-book-partial)", () => {
     fireEvent.click(screen.getByRole("button", { name: "Retry" }));
     await loaded();
   });
+
+  describe("day links (feat-proto-sync-logged-chart)", () => {
+    it("AC-7 FR-BOOK-001 SCR-045: each day title links to that day in Logs, with the date in full", async () => {
+      renderView();
+      await loaded();
+
+      const titles = {
+        "2026-10-01": "Thursday, 1 October 2026",
+        "2026-10-06": "Tuesday, 6 October 2026",
+        "2026-10-07": "Wednesday, 7 October 2026"
+      };
+      expect(sectionDates()).toEqual(Object.keys(titles));
+      for (const [date, title] of Object.entries(titles)) {
+        expect(
+          within(section(date)).getByRole("link", { name: title })
+        ).toHaveAttribute("href", `/app/time?date=${date}`);
+      }
+    });
+  });
 });
