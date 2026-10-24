@@ -3,7 +3,7 @@ id: T-0098
 title: A re-login caches the token and account only while the connection still has the request's URL and email
 milestone: M6
 app: api
-status: ready
+status: review
 size: S
 tier: sonnet
 depends_on: []
@@ -47,11 +47,12 @@ expectations still hold.
 ---
 
 ## Implementation notes
-_Implementer: what changed, and anything the reviewer should look at._
+login() re-reads the row and caches token/account only if url and email still match; returns the token either way. Two unit tests added. `pm4 check T-0098`: PASS (lint, format, typecheck, test, e2e, build all ok).
 
 ### Attempts
 | # | Tier | Result | Summary |
 | --- | --- | --- | --- |
+| 1 | sonnet | pass | Re-check owner before caching; 2 unit tests |
 
 ## Review
 _The owner's review (quick lane), or `review-feature`'s verdict._

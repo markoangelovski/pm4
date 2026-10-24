@@ -3,7 +3,7 @@ id: T-0097
 title: An e2e test that setStatusFor misses once the connection's URL or email changed
 milestone: M6
 app: api
-status: ready
+status: done
 size: S
 tier: haiku
 depends_on: []
@@ -43,9 +43,16 @@ New ordinary (not `*.ac.*`) e2e file `api/test/pmspa-connection-repository.e2e-s
 ## Implementation notes
 _Implementer: what changed, and anything the reviewer should look at._
 
+- Added `api/test/pmspa-connection-repository.e2e-spec.ts`: three tests for `setStatusFor` (match, email changed,
+  URL changed). Setup mirrors the AC file (fake PMSPA providers, `createTestApp`, `deleteTestUsers`,
+  `closeTestClients`); `connect` saves through the PUT endpoint, and the row is read with a direct SQL query.
+- No production code changed. Used `wait(20)` so `last_checked_at` can advance in the match test.
+- `pm4 check T-0097`: PASS (scope ok; api lint, format:check, typecheck, test, test:e2e, build all ok).
+
 ### Attempts
 | # | Tier | Result | Summary |
 | --- | --- | --- | --- |
+| 1 | haiku | PASS | New e2e file with 3 tests; file run 3/3 green; `pm4 check` PASS |
 
 ## Review
 _The owner's review (quick lane), or `review-feature`'s verdict._
