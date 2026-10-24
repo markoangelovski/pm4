@@ -6,6 +6,7 @@ import {
   FolderKanban,
   Globe,
   ListTodo,
+  NotebookPen,
   Settings
 } from "lucide-react";
 import { routes as realRoutes } from "@/lib/routes";
@@ -34,7 +35,8 @@ export const protoSidebarItems: MenuItem[] = [
         icon: FolderKanban,
         url: routes.app.projects
       },
-      { id: "tasks", name: "Tasks", icon: ListTodo, url: routes.app.tasks }
+      { id: "tasks", name: "Tasks", icon: ListTodo, url: routes.app.tasks },
+      { id: "notes", name: "Notes", icon: NotebookPen, url: routes.app.notes }
     ]
   },
   {

@@ -8,7 +8,9 @@ import { useSidebar } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
+import { Suspense } from "react";
 import { LogTimeButton } from "@/proto/features/time/components/log-time-button";
+import { NewItemButton } from "@/proto/features/notes/components/new-item-button";
 
 const Header = () => {
   const { toggleSidebar } = useSidebar();
@@ -40,6 +42,9 @@ const Header = () => {
           </div>
 
           <div className="flex sm:gap-2 gap-1 items-center">
+            <Suspense fallback={null}>
+              <NewItemButton />
+            </Suspense>
             <LogTimeButton />
             <LightDark />
             <Profile />

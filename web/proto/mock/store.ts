@@ -3,7 +3,15 @@
 import type { components } from "@/lib/api/schema";
 import type { BookingDto } from "@/proto/features/bookings/days";
 import type { TimeLog } from "@/proto/features/time/types";
-import { MOCK_USER, seedProjects, seedTasks, seedTime } from "./seed";
+import type { NoteDto, TodoDto } from "@/proto/features/notes/proposed-types";
+import {
+  MOCK_USER,
+  seedNotes,
+  seedProjects,
+  seedTasks,
+  seedTime,
+  seedTodos
+} from "./seed";
 
 /**
  * Runtime marker of prototype code. Every mock hook reaches this module, so a prototype file that leaks
@@ -26,6 +34,8 @@ export interface MockState {
   starts: Record<string, number>;
   /** logId → the log's bookings, by date (Bookings); absent = not booked. */
   bookings: Record<string, BookingDto[]>;
+  notes: NoteDto[];
+  todos: TodoDto[];
   seq: number;
 }
 
@@ -35,6 +45,8 @@ let state: MockState = {
   projects: seedProjects(),
   tasks: seedTasks(),
   ...seedTime(),
+  notes: seedNotes(),
+  todos: seedTodos(),
   seq: 10000
 };
 
@@ -56,6 +68,20 @@ const gone = (ref: NonNullable<TimeLog["project"]>) => ({
   title: ref.title,
   deleted: true
 });
+
+/** Notes and to-dos keep a deleted project's or task's name, like logs. */
+function unlinked<T extends Pick<TimeLog, "project" | "task">>(
+  items: T[],
+  projectId: string | null,
+  taskIds: Set<string>
+): T[] {
+  return items.map((i) => ({
+    ...i,
+    project:
+      projectId && i.project?.id === projectId ? gone(i.project) : i.project,
+    task: i.task?.id && taskIds.has(i.task.id) ? gone(i.task) : i.task
+  }));
+}
 
 const without = <T>(m: Record<string, T>, key: string) =>
   Object.fromEntries(Object.entries(m).filter(([k]) => k !== key));
@@ -88,7 +114,9 @@ export const mock = {
         ...l,
         project: l.project?.id === id ? gone(l.project) : l.project,
         task: l.task?.id && taskIds.has(l.task.id) ? gone(l.task) : l.task
-      }))
+      })),
+      notes: unlinked(state.notes, id, taskIds),
+      todos: unlinked(state.todos, id, taskIds)
     });
   },
   /** Deletes the task; its logs keep its name and stay linked to its project. */
@@ -97,7 +125,9 @@ export const mock = {
       tasks: state.tasks.filter((t) => t.id !== id),
       logs: state.logs.map((l) =>
         l.task?.id === id ? { ...l, task: gone(l.task) } : l
-      )
+      ),
+      notes: unlinked(state.notes, null, new Set([id])),
+      todos: unlinked(state.todos, null, new Set([id]))
     });
   },
   addLog(input: Omit<TimeLog, "id">, dayStart?: number): TimeLog {
@@ -133,6 +163,12 @@ export const mock = {
         Object.entries(state.bookings).filter(([id]) => !gone.has(id))
       )
     });
+  },
+  setNotes(notes: NoteDto[]) {
+    set({ notes });
+  },
+  setTodos(todos: TodoDto[]) {
+    set({ todos });
   },
   setStart(date: string, minute: number) {
     set({ starts: { ...state.starts, [date]: minute } });

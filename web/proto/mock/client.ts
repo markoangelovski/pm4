@@ -19,6 +19,13 @@ import type {
   PmspaSyncTargetDto,
   SavePmspaConnectionDto
 } from "@/proto/features/integrations/types";
+import type {
+  NoteDto,
+  NotesPaths,
+  TodoDto
+} from "@/proto/features/notes/proposed-types";
+import { TZDate } from "@date-fns/tz";
+import { format } from "date-fns";
 import { formatDuration, today } from "@/lib/time";
 import { getMockState, mock, nextId } from "./store";
 import * as pmspa from "./pmspa";
@@ -629,12 +636,214 @@ function handle(
       return integrations(method, [id, ...rest], q, body);
     case "reports":
       return id === "dashboard" ? dashboard(q) : notFound();
+    case "notes":
+      return notes(method, id, q, body);
+    case "todos":
+      return todos(method, id, q, body);
   }
   return problem(
     501,
     "Not mocked",
     `${method} ${path} is not mocked in the prototype`
   );
+}
+
+/** A note's or to-do's links, with the live titles (the API joins them); a task brings its project. */
+function linksOf(body: Body, old?: Pick<NoteDto, "project" | "task">) {
+  if (old && !("projectId" in body) && !("taskId" in body))
+    return { project: old.project, task: old.task };
+  const s = getMockState();
+  const task = s.tasks.find((t) => t.id === body.taskId);
+  const project = task
+    ? s.projects.find((p) => p.id === task.project.id)
+    : s.projects.find((p) => p.id === body.projectId);
+  if (body.taskId && !task) return null;
+  if (body.projectId && !project) return null;
+  return {
+    project: project
+      ? { id: project.id, title: project.title, deleted: false }
+      : null,
+    task: task ? { id: task.id, title: task.title, deleted: false } : null
+  };
+}
+
+/** Live titles of linked projects and tasks (a rename shows at once, as with the API's join). */
+function withTitles<T extends Pick<NoteDto, "project" | "task">>(item: T): T {
+  const s = getMockState();
+  const live = (
+    ref: NoteDto["project"],
+    list: { id: string; title: string }[]
+  ) =>
+    ref?.id
+      ? { ...ref, title: list.find((x) => x.id === ref.id)?.title ?? ref.title }
+      : ref;
+  return {
+    ...item,
+    project: live(item.project, s.projects),
+    task: live(item.task, s.tasks)
+  };
+}
+
+/** API-NOTE-001: `projectId` also matches its tasks' items (they carry the project); `unlinked` keeps items without one. */
+const matches = (item: Pick<NoteDto, "project" | "task">, q: URLSearchParams) =>
+  (q.get("unlinked") !== "true" || (!item.project && !item.task)) &&
+  (!q.get("projectId") || item.project?.id === q.get("projectId")) &&
+  (!q.get("taskId") || item.task?.id === q.get("taskId"));
+
+/** GET /notes' and /todos' `q` (in `textOf`), `sort` and `from`/`to` (NoteListQuery, TodoListQuery). */
+function listItems<T extends Pick<NoteDto, "createdAt" | "updatedAt">>(
+  items: T[],
+  q: URLSearchParams,
+  textOf: (item: T) => string
+) {
+  const [field, dir] = (q.get("sort") ?? "updatedAt:desc").split(":") as [
+    "updatedAt" | "createdAt",
+    "asc" | "desc"
+  ];
+  const tz = getMockState().me.timeZone;
+  const day = (iso: string) => format(new TZDate(iso, tz), "yyyy-MM-dd");
+  const from = q.get("from");
+  const to = q.get("to");
+  const text = q.get("q")?.trim().toLowerCase() ?? "";
+  return items
+    .filter(
+      (n) =>
+        (!from || day(n[field]) >= from) &&
+        (!to || day(n[field]) <= to) &&
+        (!text || textOf(n).toLowerCase().includes(text))
+    )
+    .sort((a, b) =>
+      dir === "asc"
+        ? a[field].localeCompare(b[field])
+        : b[field].localeCompare(a[field])
+    );
+}
+
+/** `/notes` (proposed-types.ts): newest change first by default, paged. */
+function notes(
+  method: string,
+  id: string | undefined,
+  q: URLSearchParams,
+  body: Body
+) {
+  const all = getMockState().notes;
+  const title =
+    typeof body.title === "string" ? body.title.trim() || null : null;
+  const text = String(body.body ?? "").trim();
+  if (method !== "GET" && method !== "DELETE") {
+    if (!text) return validation("body", "Write something in the note.");
+    if (text.length > 10000)
+      return validation("body", "Keep the note under 10,000 characters.");
+  }
+  if (!id) {
+    if (method === "POST") {
+      const links = linksOf(body);
+      if (!links)
+        return problem(404, "Not Found", "Project or task not found.");
+      const at = new Date().toISOString();
+      const note: NoteDto = {
+        id: nextId("n"),
+        title,
+        body: text,
+        ...links,
+        createdAt: at,
+        updatedAt: at
+      };
+      mock.setNotes([...all, note]);
+      return json(note, 201);
+    }
+    const items = listItems(
+      all.filter((n) => matches(n, q)),
+      q,
+      (n) => `${n.title ?? ""}\n${n.body}`
+    ).map(withTitles);
+    return json(paged(items, q));
+  }
+  const old = all.find((n) => n.id === id);
+  if (!old) return notFound();
+  if (method === "DELETE") {
+    mock.setNotes(all.filter((n) => n.id !== id));
+    return noContent();
+  }
+  const links = linksOf(body, old);
+  if (!links) return problem(404, "Not Found", "Project or task not found.");
+  const next: NoteDto = {
+    ...old,
+    title,
+    body: text,
+    ...links,
+    updatedAt: new Date().toISOString()
+  };
+  mock.setNotes(all.map((n) => (n.id === id ? next : n)));
+  return json(withTitles(next));
+}
+
+/** `/todos` (proposed-types.ts): every match, newest change first by default, no paging. */
+function todos(
+  method: string,
+  id: string | undefined,
+  q: URLSearchParams,
+  body: Body
+) {
+  const all = getMockState().todos;
+  const text = typeof body.text === "string" ? body.text.trim() : undefined;
+  if (text !== undefined && !text)
+    return validation("text", "Describe the to-do.");
+  if (text && text.length > 500)
+    return validation("text", "Keep the to-do under 500 characters.");
+  if (!id) {
+    if (method === "POST") {
+      if (!text) return validation("text", "Describe the to-do.");
+      const links = linksOf(body);
+      if (!links)
+        return problem(404, "Not Found", "Project or task not found.");
+      const at = new Date().toISOString();
+      const todo: TodoDto = {
+        id: nextId("td"),
+        text,
+        doneAt: null,
+        ...links,
+        createdAt: at,
+        updatedAt: at
+      };
+      mock.setTodos([...all, todo]);
+      return json(todo, 201);
+    }
+    return json({
+      items: listItems(
+        all.filter((t) => matches(t, q)),
+        q,
+        (t) => t.text
+      ).map(withTitles)
+    });
+  }
+  const old = all.find((t) => t.id === id);
+  if (!old) return notFound();
+  if (method === "DELETE") {
+    mock.setTodos(all.filter((t) => t.id !== id));
+    return noContent();
+  }
+  const links = linksOf(body, old);
+  if (!links) return problem(404, "Not Found", "Project or task not found.");
+  // Ticking off alone isn't an edit.
+  const edited =
+    (text !== undefined && text !== old.text) ||
+    "projectId" in body ||
+    "taskId" in body;
+  const next: TodoDto = {
+    ...old,
+    ...links,
+    text: text ?? old.text,
+    updatedAt: edited ? new Date().toISOString() : old.updatedAt,
+    doneAt:
+      body.done === undefined
+        ? old.doneAt
+        : body.done
+          ? (old.doneAt ?? new Date().toISOString())
+          : null
+  };
+  mock.setTodos(all.map((t) => (t.id === id ? next : t)));
+  return json(withTitles(next));
 }
 
 /** Calls that make PM4's API call PMSPA (the connection reads and the flags' link lists don't). */
@@ -722,7 +931,7 @@ async function mockFetch(request: Request): Promise<Response> {
 }
 
 /** Same surface as `apiClient` in `lib/api/client`; the base URL is never requested. */
-export const apiClient = createClient<paths>({
+export const apiClient = createClient<paths & NotesPaths>({
   baseUrl: "http://proto.localhost",
   fetch: mockFetch
 });

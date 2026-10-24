@@ -4,6 +4,7 @@ import { addDays, format } from "date-fns";
 import type { components } from "@/lib/api/schema";
 import { today } from "@/lib/time";
 import type { ProjectRef, TaskRef, TimeLog } from "@/proto/features/time/types";
+import type { NoteDto, TodoDto } from "@/proto/features/notes/proposed-types";
 
 type Me = components["schemas"]["MeResponseDto"];
 type Project = components["schemas"]["ProjectResponseDto"];
@@ -343,3 +344,163 @@ function withHistory(s: TimeSeed): TimeSeed {
 }
 
 export const seedTime = (): TimeSeed => withHistory(recent);
+
+/** An instant `days` days and `hours` hours before now (notes and to-dos). */
+const before = (days: number, hours = 0) =>
+  new Date(Date.now() - (days * 24 + hours) * 3_600_000).toISOString();
+/** The links of a note or to-do: a task (and its project), a project, or none. */
+const linkTo = (task?: string, project?: string) => {
+  const t = MOCK_TASKS.find((x) => x.id === task);
+  const p = t ? t.project : MOCK_PROJECTS.find((x) => x.id === project);
+  return { project: p ? ref(p) : null, task: t ? taskRef(t) : null };
+};
+
+const RELEASE_NOTE = `## Before the release
+
+- [x] Freeze the feature branch
+- [x] Run the full regression suite
+- [ ] Update the **changelog**
+- [ ] Tell support about the new *export* option
+
+## Rollback
+
+1. Revert the deploy in the pipeline
+2. Restore the database snapshot
+3. Post in the release channel
+
+> Releases go out on Tuesdays only.
+
+Release command: \`npm run release -- --tag next\``;
+
+const API_NOTE = `### API integration
+
+The partner API answers **429** after 100 requests per 15 minutes, so the client keeps its own budget.
+
+| Endpoint | Paged | Notes |
+| --- | --- | --- |
+| \`/orders\` | yes | max 50 per page |
+| \`/customers\` | yes | sort by \`updatedAt\` |
+| \`/days\` | no | by date range |
+
+\`\`\`ts
+const res = await client.GET("/orders", { params: { query: { skip, limit: 50 } } });
+\`\`\`
+
+Open points:
+
+- Do they send \`Retry-After\` on every 429?
+- Time zone of \`dueDate\` is unknown, so we send epoch milliseconds.
+
+See the [API docs](https://example.com/docs) for the full list. Long notes are clamped in lists and open in full with **Show more**: this paragraph is here to make the note long enough. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.`;
+
+/** Notes: untitled, unlinked, Markdown-rich, long, on a task, on a project, on a deleted project. */
+export const seedNotes = (): NoteDto[] => [
+  {
+    id: "n1",
+    title: null,
+    body: "Call the accountant about the **Q4 invoices** before Friday.",
+    ...linkTo(),
+    createdAt: before(0, 2),
+    updatedAt: before(0, 2)
+  },
+  {
+    id: "n6",
+    title: "Reading list",
+    body: "- *Shape Up*, Ryan Singer\n- *The Mythical Man-Month*, Fred Brooks\n- [Postgres docs on indexes](https://www.postgresql.org/docs/current/indexes.html)",
+    ...linkTo(),
+    createdAt: before(4),
+    updatedAt: before(2)
+  },
+  {
+    id: "n7",
+    title: "Ideas for next quarter",
+    body: "1. Weekly review on Fridays\n2. Fewer meetings on Tuesdays\n3. Try time-boxing the support inbox",
+    ...linkTo(),
+    createdAt: before(15),
+    updatedAt: before(15)
+  },
+  {
+    id: "n2",
+    title: "Release checklist",
+    body: RELEASE_NOTE,
+    ...linkTo(undefined, "p-anthropic"),
+    createdAt: before(6),
+    updatedAt: before(1)
+  },
+  {
+    id: "n3",
+    title: "API integration notes",
+    body: API_NOTE,
+    ...linkTo("t-nvidia-dev"),
+    createdAt: before(12),
+    updatedAt: before(3)
+  },
+  {
+    id: "n4",
+    title: "Test accounts",
+    body: "Staging users are in the shared vault, entry *QA staging*.\nReset them every Monday.",
+    ...linkTo("t-tesla-qa"),
+    createdAt: before(20),
+    updatedAt: before(20)
+  },
+  {
+    id: "n5",
+    title: "Old website handover",
+    body: "DNS moved to the new provider. Nothing else left.",
+    project: deletedRef("Old Website"),
+    task: null,
+    createdAt: before(40),
+    updatedAt: before(40)
+  }
+];
+
+const todo = (
+  id: string,
+  text: string,
+  link: ReturnType<typeof linkTo>,
+  age: number,
+  doneAgo: number | null = null
+): TodoDto => ({
+  id,
+  text,
+  doneAt: doneAgo === null ? null : before(doneAgo),
+  ...link,
+  createdAt: before(age),
+  updatedAt: before(age)
+});
+
+/** To-dos: general, on projects, on tasks, done, long, on a deleted task. */
+export const seedTodos = (): TodoDto[] => [
+  todo("td1", "Renew the domain", linkTo(), 9),
+  todo("td2", "Book the team lunch", linkTo(), 8, 2),
+  {
+    ...todo(
+      "td3",
+      "Send the weekly report",
+      linkTo(undefined, "p-anthropic"),
+      7
+    ),
+    updatedAt: before(1)
+  },
+  todo(
+    "td4",
+    "Prepare the demo for Thursday",
+    linkTo(undefined, "p-anthropic"),
+    5
+  ),
+  todo("td5", "Update the roadmap", linkTo("t-anthropic-pm"), 6),
+  todo("td6", "Review the budget", linkTo("t-anthropic-pm"), 10, 1),
+  todo(
+    "td7",
+    "Fix the flaky checkout test in CI: it fails about once in ten runs on the payment step, probably a race between the mock server and the first request",
+    linkTo("t-nvidia-dev"),
+    4
+  ),
+  todo("td8", "Ask for API keys for staging", linkTo("t-nvidia-dev"), 3),
+  todo("td9", "Write the test plan", linkTo("t-tesla-qa"), 2),
+  {
+    ...todo("td10", "Close the audit findings", linkTo(), 30),
+    project: ref(MOCK_PROJECTS.find((p) => p.id === "p-anthropic")!),
+    task: deletedRef("Security audit")
+  }
+];
