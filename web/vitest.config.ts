@@ -12,6 +12,8 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     globals: true,
-    setupFiles: ["./vitest.setup.ts"]
+    setupFiles: ["./vitest.setup.ts"],
+    // The full suite runs many jsdom files in parallel; 5 s (the default) times out under load.
+    testTimeout: 15_000
   }
 });

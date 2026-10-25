@@ -3,7 +3,7 @@ id: T-0106
 title: Raise the web Vitest test timeout so the full suite stops timing out under load
 milestone: M0
 app: web
-status: ready
+status: done
 size: S
 tier: haiku
 depends_on: []
@@ -39,11 +39,20 @@ fix is suite-wide, not per test.
 ---
 
 ## Implementation notes
-_Implementer: what changed, and anything the reviewer should look at._
+Done inline by the main session (one line, file already in context; task-routing.md#lanes).
+- `web/vitest.config.ts`: `testTimeout: 15_000` with the comment from *Change*; nothing else.
+- 8 full `npm test` runs (7 by hand + the check's): **no timeout in any**. Runs 4 and 5 passed in a row (253/253), and so did the check's run.
+- Separate, pre-existing flake (not a timeout, not this task): `features/integrations/budget.ac.test.tsx` AC-14 line 363,
+  `waitFor(() => expect(connectionReads()).toHaveLength(2))` sometimes sees 1. It fails with the file alone too
+  (2/10, 1/20 at 15 s; 3/20 with `--testTimeout=5000`, so the new timeout doesn't cause it). The main checkout's install
+  passed 32/32 (same vitest, react-query, testing-library, jsdom, react versions). Proposal: a quick-lane task to find
+  the race (owner decision; the AC file is hashed, so a test fix goes through the test writer).
+- `pm4 check T-0106`: PASS (scope ok; lint, format, typecheck, test, build ok; twins 116 equal).
 
 ### Attempts
 | # | Tier | Result | Summary |
 | --- | --- | --- | --- |
+| 1 | opus (main session) | PASS | Inline: suite-wide `testTimeout` |
 
 ## Review
-_The owner's review (quick lane), or `review-feature`'s verdict._
+Owner approved (quick lane), 2026-10-25.
