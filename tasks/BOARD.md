@@ -1,6 +1,6 @@
 # Task Board
 
-**Next free ID:** T-0109
+**Next free ID:** T-0114
 
 | ID | Title | Milestone | App | Size | Status | Depends on |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -115,5 +115,7 @@
 | [T-0109](m0-foundation/T-0109-web-pm4-logo-and-favicons.md) | Replace the template logo and favicon with the PM4 mark, add the icon set | M0 | web | S | done | — |
 | [T-0110](m0-foundation/T-0110-api-favicon.md) | Serve the PM4 favicon from the API and use it in the Swagger UI | M0 | api | S | done | T-0109 |
 | [T-0111](m0-foundation/T-0111-web-animated-logo-loading.md) | Show the animated PM4 logo instead of the spinner while the session is checked | M0 | web | S | done | T-0109 |
+| [T-0112](m0-foundation/T-0112-manifest-theme-colour-the-service-worker.md) | Manifest, theme colour, the service worker, the build script that writes out/sw.js, and its registration | M0 | web | M | ready | — |
+| [T-0113](m0-foundation/T-0113-offline-banner-promote-it-mount-it.md) | Offline banner: promote it, mount it in the app shell, and add it with the online retry to AuthGuard's unavailable screen | M0 | web | S | blocked | T-0112 |
 
 M0–M6 are done. Later follow-ups are filed under the milestone they extend.
