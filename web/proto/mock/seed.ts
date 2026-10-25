@@ -40,7 +40,8 @@ export const MOCK_PROJECTS: ProjectRef[] = [
   { id: "p-internal", title: "PM Internal" },
   { id: "p-anthropic", title: "Anthropic" },
   { id: "p-nvidia", title: "Nvidia" },
-  { id: "p-tesla", title: "Tesla" }
+  { id: "p-tesla", title: "Tesla" },
+  { id: "p-website", title: "Website relaunch" }
 ];
 const proj = (id: string) => MOCK_PROJECTS.find((p) => p.id === id)!;
 export const MOCK_TASKS: TaskRef[] = [
@@ -78,8 +79,8 @@ export const seedProjects = (): Project[] =>
     updatedAt: now
   }));
 
-export const seedTasks = (): Task[] =>
-  MOCK_TASKS.map((t, i) => ({
+export const seedTasks = (): Task[] => [
+  ...MOCK_TASKS.map((t, i): Task => ({
     id: t.id,
     title: t.title,
     description: null,
@@ -91,6 +92,28 @@ export const seedTasks = (): Task[] =>
     loggedMinutes: 0,
     createdAt: now,
     updatedAt: now
+  })),
+  ...websiteTasks()
+];
+
+/** A project with more tasks than its row in the projects list shows (25), with a long title among them. */
+const websiteTasks = (): Task[] =>
+  Array.from({ length: 40 }, (_, i) => ({
+    id: `t-website-${i + 1}`,
+    title:
+      i === 0
+        ? "Migrate every legacy landing page to the new layout and redirect the old URLs without losing search ranking"
+        : `Website page ${i + 1}`,
+    description: null,
+    externalLink: null,
+    projectLead: i % 4 ? lead : null,
+    status: STATUSES[i % 3],
+    dueDate: i % 5 ? null : format(addDays(new Date(), i - 10), "yyyy-MM-dd"),
+    project: { id: "p-website", title: "Website relaunch", deleted: false },
+    loggedMinutes: 0,
+    createdAt: now,
+    // Newest first in the list: page 1 is updated last.
+    updatedAt: new Date(Date.now() - i * 3_600_000).toISOString()
   }));
 
 export interface TimeSeed {

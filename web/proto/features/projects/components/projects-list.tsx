@@ -1,15 +1,20 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import {
   parseAsInteger,
   parseAsString,
   parseAsStringLiteral,
   useQueryStates
 } from "nuqs";
-import { FolderKanban, Plus, SearchIcon, SearchX } from "lucide-react";
+import {
+  ChevronRight,
+  FolderKanban,
+  Plus,
+  SearchIcon,
+  SearchX
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
@@ -53,6 +58,7 @@ import {
 import { ProjectFormDialog } from "@/proto/features/projects/components/project-form-dialog";
 import { SyncFlag } from "@/proto/features/integrations/components/sync-flag";
 import { ProjectIcon } from "@/proto/features/projects/components/project-icon";
+import { ProjectTaskRows } from "@/proto/features/projects/components/project-task-rows";
 import { ProjectLeadLabel } from "@/proto/features/users/components/project-lead-label";
 import { TaskStatusBadges } from "@/proto/features/projects/components/task-status-badges";
 import {
@@ -61,6 +67,7 @@ import {
   type ProjectSort
 } from "@/proto/features/projects/api";
 import { completionPercent } from "@/proto/features/projects/stats";
+import { cn } from "@/lib/utils";
 import { useMe } from "@/proto/features/users/api";
 import { formatShortDate } from "@/lib/time";
 import { LoggedTotal } from "@/proto/features/time/components/logged-total";
@@ -79,9 +86,8 @@ const SORT_ITEMS = PROJECT_SORTS.map((value) => ({
   label: SORT_LABELS[value]
 }));
 
-/** SCR-020: the projects list. URL: `?q=&sort=&page=`. */
+/** SCR-020: the projects list. URL: `?q=&sort=&page=`. A project with tasks opens to list them below it. */
 export function ProjectsList() {
-  const router = useRouter();
   const { data: me } = useMe();
   const [{ q, sort, page }, setParams] = useQueryStates(
     {
@@ -108,6 +114,14 @@ export function ProjectsList() {
   }, [debounced]);
 
   const [creating, setCreating] = useState(false);
+  const [open, setOpen] = useState<Set<string>>(new Set());
+  const toggleOpen = (id: string) =>
+    setOpen((o) => {
+      const next = new Set(o);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
 
   const query = useProjects({
     q,
@@ -216,16 +230,17 @@ export function ProjectsList() {
           )
         ) : (
           <div className="overflow-x-auto">
-            <Table>
+            {/* Fixed column widths, so opening a project's tasks doesn't move the columns. */}
+            <Table className="min-w-5xl table-fixed">
               <TableHeader>
                 <TableRow>
                   <TableHead className="pl-4">Title</TableHead>
-                  <TableHead>Project lead</TableHead>
-                  <TableHead>Tasks</TableHead>
-                  <TableHead>Completed</TableHead>
-                  <TableHead>Logged</TableHead>
-                  <TableHead>Created</TableHead>
-                  <TableHead className="pr-4">Updated</TableHead>
+                  <TableHead className="w-48">Project lead</TableHead>
+                  <TableHead className="w-32">Tasks</TableHead>
+                  <TableHead className="w-44">Completed</TableHead>
+                  <TableHead className="w-24">Logged</TableHead>
+                  <TableHead className="w-28">Created</TableHead>
+                  <TableHead className="w-28 pr-4">Updated</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -234,6 +249,7 @@ export function ProjectsList() {
                       <TableRow key={i}>
                         <TableCell className="pl-4">
                           <div className="flex items-center gap-2.5">
+                            <Skeleton className="size-6 rounded-md" />
                             <Skeleton className="size-6 rounded-md" />
                             <Skeleton className="h-4 w-48" />
                           </div>
@@ -261,66 +277,98 @@ export function ProjectsList() {
                   : items.map((project) => {
                       const percent = completionPercent(project.taskCounts);
                       const href = `${routes.app.project}?id=${project.id}`;
+                      const expandable =
+                        project.taskCounts.upcoming +
+                          project.taskCounts.inProgress >
+                        0;
+                      const isOpen = expandable && open.has(project.id);
                       return (
-                        <TableRow
-                          key={project.id}
-                          className="cursor-pointer"
-                          onClick={(e) => {
-                            // The title link navigates itself (and keeps keyboard and
-                            // new-tab access); don't hijack a text selection.
-                            if ((e.target as HTMLElement).closest("a")) return;
-                            if (window.getSelection()?.toString()) return;
-                            router.push(href);
-                          }}
-                        >
-                          <TableCell className="max-w-80 pl-4">
-                            <div className="flex items-center gap-2.5">
-                              <ProjectIcon project={project} />
-                              <Link
-                                href={href}
-                                className="min-w-0 truncate font-medium hover:text-primary hover:underline"
-                              >
-                                {project.title}
-                              </Link>
-                              <SyncFlag type="project" id={project.id} />
-                            </div>
-                          </TableCell>
-                          <TableCell className="whitespace-nowrap">
-                            <ProjectLeadLabel lead={project.projectLead} />
-                          </TableCell>
-                          <TableCell>
-                            <TaskStatusBadges counts={project.taskCounts} />
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex min-w-36 items-center gap-3">
-                              <Progress
-                                value={percent}
-                                aria-label="Completed"
-                                className="w-24"
-                              />
-                              <span className="text-xs tabular-nums text-muted-foreground">
-                                {percent} %
-                              </span>
-                            </div>
-                          </TableCell>
-                          <TableCell className="whitespace-nowrap">
-                            <LoggedTotal minutes={project.loggedMinutes} />
-                          </TableCell>
-                          <TableCell className="whitespace-nowrap">
-                            {me ? (
-                              formatShortDate(project.createdAt, me.timeZone)
-                            ) : (
-                              <span className="text-muted-foreground">—</span>
-                            )}
-                          </TableCell>
-                          <TableCell className="whitespace-nowrap pr-4">
-                            {me ? (
-                              formatShortDate(project.updatedAt, me.timeZone)
-                            ) : (
-                              <span className="text-muted-foreground">—</span>
-                            )}
-                          </TableCell>
-                        </TableRow>
+                        <Fragment key={project.id}>
+                          <TableRow
+                            className={cn(expandable && "cursor-pointer")}
+                            onClick={(e) => {
+                              // The title link and the chevron act on their own; don't
+                              // hijack a text selection.
+                              if (!expandable) return;
+                              if (
+                                (e.target as HTMLElement).closest("a, button")
+                              )
+                                return;
+                              if (window.getSelection()?.toString()) return;
+                              toggleOpen(project.id);
+                            }}
+                          >
+                            <TableCell className="pl-4">
+                              <div className="flex items-center gap-2.5">
+                                <Button
+                                  variant="ghost"
+                                  size="icon-xs"
+                                  aria-label={`${isOpen ? "Hide" : "Show"} the tasks of ${project.title}`}
+                                  aria-expanded={isOpen}
+                                  className={cn(
+                                    "shrink-0 cursor-pointer text-muted-foreground",
+                                    !expandable && "invisible"
+                                  )}
+                                  disabled={!expandable}
+                                  onClick={() => toggleOpen(project.id)}
+                                >
+                                  <ChevronRight
+                                    className={cn(
+                                      "transition-transform",
+                                      isOpen && "rotate-90"
+                                    )}
+                                  />
+                                </Button>
+                                <ProjectIcon project={project} />
+                                <Link
+                                  href={href}
+                                  className="min-w-0 truncate font-medium hover:text-primary hover:underline"
+                                >
+                                  {project.title}
+                                </Link>
+                                <SyncFlag type="project" id={project.id} />
+                              </div>
+                            </TableCell>
+                            <TableCell className="truncate">
+                              <ProjectLeadLabel lead={project.projectLead} />
+                            </TableCell>
+                            <TableCell>
+                              <TaskStatusBadges counts={project.taskCounts} />
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex min-w-36 items-center gap-3">
+                                <Progress
+                                  value={percent}
+                                  aria-label="Completed"
+                                  className="w-24"
+                                />
+                                <span className="text-xs tabular-nums text-muted-foreground">
+                                  {percent} %
+                                </span>
+                              </div>
+                            </TableCell>
+                            <TableCell className="whitespace-nowrap">
+                              <LoggedTotal minutes={project.loggedMinutes} />
+                            </TableCell>
+                            <TableCell className="whitespace-nowrap">
+                              {me ? (
+                                formatShortDate(project.createdAt, me.timeZone)
+                              ) : (
+                                <span className="text-muted-foreground">—</span>
+                              )}
+                            </TableCell>
+                            <TableCell className="whitespace-nowrap pr-4">
+                              {me ? (
+                                formatShortDate(project.updatedAt, me.timeZone)
+                              ) : (
+                                <span className="text-muted-foreground">—</span>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                          {isOpen ? (
+                            <ProjectTaskRows projectId={project.id} />
+                          ) : null}
+                        </Fragment>
                       );
                     })}
               </TableBody>
