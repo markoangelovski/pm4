@@ -3,7 +3,7 @@ id: prod-scope
 title: Scope and Milestones
 status: review
 owner: Marko Angelovski
-last_updated: 2026-10-24
+last_updated: 2026-10-25
 related: [prod-vision, req-overview, req-integrations]
 ---
 
@@ -14,6 +14,7 @@ Defines what is in and out of scope for the MVP, and the milestone order that `t
 
 ## In scope (MVP)
 - A public landing page at the site root `/` describing what PM4 can do, with a header button: "Go to app" when signed in, "Login" when not. The app itself lives under `/app` (OQ-047).
+- Installable web app (PWA): a manifest and a service worker that keeps the whole web build in the browser, so the app opens offline. Data still needs the network: offline, the shell shows a banner, and nothing is read or saved (OQ-237).
 - Sign in with Google. Accounts are created on first sign-in, restricted by an optional email allow-list (OQ-022). Sign out, and sign out of all devices. Profile with time zone.
 - Projects: create, list, view, edit, delete (permanent; its tasks go with it). Task statistics per project. Project lead as a PM4 user or a free-text name (informational only, OQ-076).
 - Tasks in a project (legacy fields and statuses): create, list/filter, view, edit, change status, move to another project, delete (permanent).
@@ -29,7 +30,7 @@ Defines what is in and out of scope for the MVP, and the milestone order that `t
 - Sharing, teams, roles (single user per account). A project lead who is a PM4 user gets no access.
 - Invoicing, billing rates, CSV/PDF export.
 - Integrations other than the PMSPA connector (M6). The external link is just a URL.
-- Native mobile apps, offline mode, notifications/email.
+- Native mobile apps, offline data (reading or saving while offline, OQ-237), push notifications, email.
 - i18n (English only).
 - Staging/preview environments (production only).
 - File storage (R2 reserved for the future).
@@ -65,3 +66,4 @@ Each milestone corresponds to a folder in `tasks/`.
 - 2026-10-15: M6 wording follows the connector capabilities: import from PMSPA, push to PMSPA (req-integrations).
 - 2026-10-23: Bookings can cover part of a log, over several dates (feat-book-partial).
 - 2026-10-24: M8 Notes: notes and to-dos (OQ-230).
+- 2026-10-25: Installable PWA with the app shell offline; offline data stays out of scope (OQ-237, feat-shell-pwa).

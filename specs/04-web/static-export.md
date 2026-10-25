@@ -3,7 +3,7 @@ id: web-static-export
 title: Static Export Constraints
 status: approved
 owner: Marko Angelovski
-last_updated: 2026-10-11
+last_updated: 2026-10-25
 related: [ADR-0001, ADR-0012, web-template, web-routing, web-prototype, arch-deployment]
 ---
 
@@ -58,6 +58,20 @@ redirect target is the slash-free form from `web/lib/routes.ts`.
   switch (feat-land-app-route-split, AC-15). If it redirects to `/x/` instead, the owner decides the fix
   (the fallback is `trailingSlash: true`).
 
+## Installable app and service worker (OQ-237)
+- `app/manifest.ts` (Next file convention, `force-static`) emits `/manifest.webmanifest`; `app/layout.tsx` sets the
+  theme colour through `viewport`.
+- The service worker is `/sw.js` at the site root (scope `/`). It isn't in `public/`: `postbuild` writes
+  `out/sw.js` from `web/sw/service-worker.js`, prefixed with the build's file list and a content hash, so every
+  deploy that changes a file changes `sw.js` and the browser installs the new worker.
+- It precaches every file of `out/` (the `.html` pages, `_next/static/**`, the RSC `.txt` files, icons, fonts), never
+  the API (another origin). Pages and other same-origin files come from the network first and from the cache when
+  the network fails; `/_next/static/**` (content-hashed) comes from the cache first.
+- Updates are silent (OQ-238): a new worker activates at once and drops the old build's cache; open pages keep the
+  JS they loaded, and the next load serves the new build.
+- Registered only in a production build (`NODE_ENV=production`); the dev server, and so the prototype, never
+  register it.
+
 ## Not available (do not use)
 | Feature | Why | Use instead |
 | --- | --- | --- |
@@ -109,3 +123,5 @@ user-specific is fetched at build time.
 - 2026-10-02: Known risk widened from `/app` to every page (Next writes route data into `out/<route>/`), found at T-0008.
 - 2026-10-11: Prototype routes are dev-only page extensions; the build checks that no prototype code ships (ADR-0012). Back to `review`.
 - 2026-10-11: Approved by the owner.
+- 2026-10-25: Installable app and service worker (OQ-237, OQ-238, feat-shell-pwa). Back to `review`.
+- 2026-10-25: Approved by the owner.

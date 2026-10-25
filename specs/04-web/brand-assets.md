@@ -14,9 +14,10 @@ Records the PM4 logo as SVG code and how to rebuild every icon file from it. The
 renders, so the SVG below is the only source anyone needs to change the logo.
 
 ## Scope
-- **In:** the mark, its variants, every icon file in `web/` and `api/`, and how to regenerate them.
-- **Out:** a wordmark (the UI sets "PM4" as text, SCR-004), a web app manifest and splash screens (not decided:
-  offline mode is out of scope, `00-product/scope.md`), and social preview images.
+- **In:** the mark, its variants, every icon file in `web/` and `api/`, the icons the web app manifest lists, and
+  how to regenerate them.
+- **Out:** a wordmark (the UI sets "PM4" as text, SCR-004), custom splash screens (the platforms draw them from the
+  manifest's icon and `background_color`), and social preview images. The manifest itself: `static-export.md`.
 
 ## The mark
 Concept C, "Stack" (chosen by the owner on 2026-10-25, T-0109): three staggered bars on a near-black tile, like
@@ -57,9 +58,9 @@ Every variant comes from the source by removing or changing one part.
 | `web/app/icon.svg` | adaptive | vector | Next file convention: emits `<link rel="icon" type="image/svg+xml">` |
 | `web/app/favicon.ico` | edged | 16, 32, 48 | Next file convention. One ICO, three PNG entries |
 | `web/app/apple-icon.png` | bleed | 180 | Next file convention: emits `apple-touch-icon`. Opaque (iOS fills transparency with black) |
-| `web/public/icons/icon-192.png` | plain | 192 | For a future manifest (`purpose: "any"`) |
-| `web/public/icons/icon-512.png` | plain | 512 | For a future manifest (`purpose: "any"`) |
-| `web/public/icons/icon-maskable-512.png` | maskable | 512 | For a future manifest (`purpose: "maskable"`) |
+| `web/public/icons/icon-192.png` | plain | 192 | `app/manifest.ts` (`purpose: "any"`) |
+| `web/public/icons/icon-512.png` | plain | 512 | `app/manifest.ts` (`purpose: "any"`) |
+| `web/public/icons/icon-maskable-512.png` | maskable | 512 | `app/manifest.ts` (`purpose: "maskable"`) |
 | `api/src/assets/favicon.ico` | edged | 16, 32, 48 | Byte-identical to `web/app/favicon.ico`. Served at `/favicon.ico` (`03-api/conventions.md#openapi`) |
 
 ## Rebuild recipe
@@ -102,7 +103,7 @@ Next), from a throwaway script **outside the repo**: don't add a script, npm com
 5. Check the result:
    - Look at the 16 and 32 px renders zoomed in (nearest-neighbour), on white and on `#0a0a0a`.
    - In `web/`: `npm test` (`full-logo.ac.test.tsx`) and `npm run build`. `out/index.html` must link
-     `favicon.ico`, `icon.svg` and `apple-icon.png`.
+     `favicon.ico`, `icon.svg`, `apple-icon.png` and `manifest.webmanifest`.
    - In `api/`: `npm run build` must put `dist/src/assets/favicon.ico` next to `dist/src/app.setup.js`, and
      `test/favicon.e2e-spec.ts` must pass.
 
@@ -111,3 +112,4 @@ Next), from a throwaway script **outside the repo**: don't add a script, npm com
 
 ## Changelog
 - 2026-10-25: Initial version: the Stack mark, its variants, the icon files and the rebuild recipe (T-0109, T-0110).
+- 2026-10-25: The app icons are now listed by the web app manifest (feat-shell-pwa).
