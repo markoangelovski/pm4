@@ -66,6 +66,9 @@ describe("AuthGuard offline (feat-shell-pwa)", () => {
     expect(screen.getByRole("status")).toHaveTextContent(OFFLINE);
     expect(session.getAccessToken).toHaveBeenCalledTimes(1);
 
+    // Let the guard's effects run (its `online` listener) before the network returns.
+    await act(() => new Promise((resolve) => setTimeout(resolve, 0)));
+
     session.getAccessToken.mockResolvedValueOnce("token");
     act(() => {
       setOnline(true);

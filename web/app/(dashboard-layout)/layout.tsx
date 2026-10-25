@@ -7,6 +7,7 @@ import { AppSidebar } from "./layout/vertical/sidebar/app-sidebar";
 import { AuthGuard } from "@/features/auth/components/auth-guard";
 import { cn } from "@/lib/utils";
 import RouteErrorBoundary from "@/app/components/shared/route-error-boundary";
+import { OfflineBanner } from "@/features/system/components/offline-banner";
 
 export default function Layout({
   children
@@ -22,6 +23,7 @@ export default function Layout({
         <AppSidebar />
         <SidebarInset className="outline outline-border m-2 rounded-none! overflow-hidden">
           <Header />
+          <OfflineBanner />
           <div className="flex flex-1 flex-col gap-4 p-4">
             <div className={cn("w-full mx-auto", "container")}>
               <div className=" min-h-[calc(100vh-140px)]">

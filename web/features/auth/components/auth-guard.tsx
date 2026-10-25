@@ -12,6 +12,7 @@ import {
   onSessionEnded
 } from "@/lib/auth/session";
 import { clearRefreshToken } from "@/lib/auth/token-store";
+import { OfflineBanner } from "@/features/system/components/offline-banner";
 
 type GuardState = "checking" | "ready" | "unavailable";
 
@@ -56,6 +57,14 @@ export function AuthGuard({
     };
   }, [state, queryClient, router]);
 
+  // Back online while unreachable: check the session again without waiting for Retry.
+  useEffect(() => {
+    if (state !== "unavailable") return;
+    const onOnline = () => setState("checking");
+    window.addEventListener("online", onOnline);
+    return () => window.removeEventListener("online", onOnline);
+  }, [state]);
+
   useEffect(
     () =>
       onSessionEnded(() => {
@@ -72,9 +81,12 @@ export function AuthGuard({
   if (state === "ready") return <>{children}</>;
   if (state === "unavailable") {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-3">
-        <p>Can&apos;t reach PM4 right now.</p>
-        <Button onClick={() => setState("checking")}>Retry</Button>
+      <div className="flex min-h-screen flex-col">
+        <OfflineBanner />
+        <div className="flex flex-1 flex-col items-center justify-center gap-3">
+          <p>Can&apos;t reach PM4 right now.</p>
+          <Button onClick={() => setState("checking")}>Retry</Button>
+        </div>
       </div>
     );
   }

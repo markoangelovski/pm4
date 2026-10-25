@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "postbuild": "test ! -e out/proto && test ! -e out/proto.html && ! grep -rqF pm4-proto-only out",
+    "postbuild": "test ! -e out/proto && test ! -e out/proto.html && ! grep -rqF pm4-proto-only out && node scripts/build-sw.mts",
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
