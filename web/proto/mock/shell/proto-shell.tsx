@@ -5,6 +5,7 @@ import RouteErrorBoundary from "@/app/components/shared/route-error-boundary";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import Footer from "./footer";
 import Header from "./header";
+import { LogTimeButton } from "@/proto/features/time/components/log-time-button";
 import { OfflineBanner } from "@/proto/features/system/components/offline-banner";
 import { PmspaMockSwitch } from "./pmspa-mock-switch";
 import { ProtoSidebar } from "./proto-sidebar";
@@ -37,6 +38,7 @@ export function ProtoShell({ children }: { children: React.ReactNode }) {
           </div>
         </div>
       </SidebarInset>
+      <LogTimeButton />
     </SidebarProvider>
   );
 }
