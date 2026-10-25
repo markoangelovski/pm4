@@ -17,6 +17,7 @@ const TAP_SLOP = 6;
  * FR-TLOG-011: the floating Log time button, bottom-right on every screen. Opens the dialog for today.
  * A left-to-right swipe slides it off screen and leaves a small handle at the edge; a right-to-left swipe
  * on the handle (or a tap) slides it back.
+ * A tap, click, Enter or Space opens the dialog (on the tab: shows the button).
  */
 export function LogTimeButton() {
   const [open, setOpen] = useState(false);
@@ -24,17 +25,29 @@ export function LogTimeButton() {
   // Live drag offset in px (positive = towards the right edge); null when not dragging.
   const [drag, setDrag] = useState<number | null>(null);
   const start = useRef<{ x: number; moved: boolean } | null>(null);
+  // True when the last press moved past TAP_SLOP, so the click that ends a swipe is ignored.
+  const swiped = useRef(false);
+  /** Runs `action` for a tap, a mouse click or a key press, not for the click that ends a swipe. */
+  const onTap = (action: () => void) => () => {
+    if (swiped.current) {
+      swiped.current = false;
+      return;
+    }
+    action();
+  };
   const { data: me } = useMe();
 
   const onPointerDown = (e: PointerEvent<HTMLElement>) => {
-    e.currentTarget.setPointerCapture(e.pointerId);
+    e.currentTarget.setPointerCapture?.(e.pointerId);
+    swiped.current = false;
     start.current = { x: e.clientX, moved: false };
   };
   const onPointerMove = (e: PointerEvent<HTMLElement>) => {
     if (!start.current) return;
     const dx = e.clientX - start.current.x;
     if (Math.abs(dx) > TAP_SLOP) start.current.moved = true;
-    if (start.current.moved) setDrag(hidden ? Math.min(0, dx) : Math.max(0, dx));
+    if (start.current.moved)
+      setDrag(hidden ? Math.min(0, dx) : Math.max(0, dx));
   };
   const onPointerUp = (e: PointerEvent<HTMLElement>) => {
     if (!start.current) return;
@@ -42,9 +55,10 @@ export function LogTimeButton() {
     const moved = start.current.moved;
     start.current = null;
     setDrag(null);
-    if (!hidden && moved && dx > SWIPE_DISTANCE) setHidden(true);
-    else if (hidden && (!moved || dx < -SWIPE_DISTANCE)) setHidden(false);
-    else if (!hidden && !moved) setOpen(true);
+    swiped.current = moved;
+    if (!moved) return;
+    if (!hidden && dx > SWIPE_DISTANCE) setHidden(true);
+    else if (hidden && dx < -SWIPE_DISTANCE) setHidden(false);
   };
   const onPointerCancel = () => {
     start.current = null;
@@ -69,12 +83,7 @@ export function LogTimeButton() {
             ? "translateX(calc(100% + 1.5rem))"
             : `translateX(${drag ?? 0}px)`
         }}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            setOpen(true);
-          }
-        }}
+        onClick={onTap(() => setOpen(true))}
         {...(hidden ? {} : swipe)}
       >
         <Clock className="size-8" />
@@ -89,16 +98,9 @@ export function LogTimeButton() {
           drag === null && "transition-transform duration-300 ease-out"
         )}
         style={{
-          transform: hidden
-            ? `translateX(${drag ?? 0}px)`
-            : "translateX(100%)"
+          transform: hidden ? `translateX(${drag ?? 0}px)` : "translateX(100%)"
         }}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            setHidden(false);
-          }
-        }}
+        onClick={onTap(() => setHidden(false))}
         {...(hidden ? swipe : {})}
       >
         <ChevronLeft className="size-4" />

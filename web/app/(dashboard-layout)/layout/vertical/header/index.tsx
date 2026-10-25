@@ -9,7 +9,6 @@ import { useSidebar } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
-import { LogTimeButton } from "@/features/time/components/log-time-button";
 import { NewItemButton } from "@/features/notes/components/new-item-button";
 
 const Header = () => {
@@ -45,7 +44,6 @@ const Header = () => {
             <Suspense fallback={null}>
               <NewItemButton />
             </Suspense>
-            <LogTimeButton />
             <LightDark />
             <Profile />
           </div>

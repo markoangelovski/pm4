@@ -105,8 +105,7 @@ function press(el: HTMLElement, from: number, to: number) {
   fireEvent.click(el);
 }
 
-const dialogHeading = () =>
-  screen.queryByRole("heading", { name: "Log time" });
+const dialogHeading = () => screen.queryByRole("heading", { name: "Log time" });
 
 describe("LogTimeButton (feat-shell-new-menu)", () => {
   beforeEach(() => {

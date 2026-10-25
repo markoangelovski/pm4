@@ -8,6 +8,7 @@ import { AuthGuard } from "@/features/auth/components/auth-guard";
 import { cn } from "@/lib/utils";
 import RouteErrorBoundary from "@/app/components/shared/route-error-boundary";
 import { OfflineBanner } from "@/features/system/components/offline-banner";
+import { LogTimeButton } from "@/features/time/components/log-time-button";
 
 export default function Layout({
   children
@@ -37,6 +38,7 @@ export default function Layout({
             </div>
           </div>
         </SidebarInset>
+        <LogTimeButton />
       </SidebarProvider>
     </AuthGuard>
   );
