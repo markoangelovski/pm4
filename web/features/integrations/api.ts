@@ -1,8 +1,6 @@
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import {
   hashKey,
-  useIsFetching,
-  useIsMutating,
   useMutation,
   useQuery,
   useQueryClient,
@@ -93,17 +91,32 @@ export function usePmspaConnection(): UseQueryResult<PmspaConnection> {
  */
 export function useRefreshPmspaRateLimit(): void {
   const queryClient = useQueryClient();
-  const busy =
-    useIsFetching({ queryKey: integrationKeys.remote() }) + useIsMutating();
-  const wasBusy = useRef(false);
   useEffect(() => {
-    if (wasBusy.current && busy === 0)
-      void queryClient.invalidateQueries({
-        queryKey: integrationKeys.connection(),
-        exact: true
-      });
-    wasBusy.current = busy > 0;
-  }, [busy, queryClient]);
+    // Cache listeners run synchronously, so a call that starts and settles between two renders is still seen.
+    const count = () =>
+      queryClient.isFetching({ queryKey: integrationKeys.remote() }) +
+      queryClient.isMutating();
+    let wasBusy = count() > 0;
+    const onEvent = () => {
+      const busy = count() > 0;
+      const settled = wasBusy && !busy;
+      // Set before invalidating: the invalidation emits cache events synchronously.
+      wasBusy = busy;
+      if (settled)
+        void queryClient.invalidateQueries({
+          queryKey: integrationKeys.connection(),
+          exact: true
+        });
+    };
+    const unsubscribeQueries = queryClient.getQueryCache().subscribe(onEvent);
+    const unsubscribeMutations = queryClient
+      .getMutationCache()
+      .subscribe(onEvent);
+    return () => {
+      unsubscribeQueries();
+      unsubscribeMutations();
+    };
+  }, [queryClient]);
 }
 
 /** API-INT-002. A 409 `pmspa-account-switch` asks for confirmation (FR-INT-002); the caller resends with it. */

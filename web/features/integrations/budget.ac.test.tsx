@@ -354,7 +354,8 @@ describe("PmspaRateLimit and ProfileIntegrations (feat-int-budget)", () => {
         queryFn: () => pending
       });
     });
-    await act(async () => {});
+    // TanStack Query notifies observers on a setTimeout(0), not a microtask.
+    await act(() => new Promise((resolve) => setTimeout(resolve, 0)));
     expect(connectionReads()).toHaveLength(1);
     await act(async () => {
       answer([]);
