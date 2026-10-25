@@ -50,6 +50,7 @@ Either way, fix the disagreement. Never ignore it.
 | Routing and navigation | [04-web/routing.md](04-web/routing.md) | approved |
 | Screens | [04-web/screens.md](04-web/screens.md) | review |
 | UI prototype | [04-web/prototype.md](04-web/prototype.md) | approved |
+| Brand assets (logo, favicons, icons) | [04-web/brand-assets.md](04-web/brand-assets.md) | review |
 | Testing strategy | [05-quality/testing.md](05-quality/testing.md) | draft |
 | Code style | [05-quality/code-style.md](05-quality/code-style.md) | draft |
 | Definition of Done | [05-quality/definition-of-done.md](05-quality/definition-of-done.md) | review |
