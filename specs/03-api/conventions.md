@@ -3,7 +3,7 @@ id: api-conventions
 title: API Conventions
 status: approved
 owner: Marko Angelovski
-last_updated: 2026-10-14
+last_updated: 2026-10-25
 related: [api-endpoints, api-data-model, sec, ADR-0010]
 ---
 
@@ -100,6 +100,8 @@ RFC 9457 Problem Details (`application/problem+json`):
 
 ## OpenAPI
 - `@nestjs/swagger` + the CLI plugin. `/docs` is served when `NODE_ENV !== production`.
+- `/favicon.ico` (the PM4 icon, `src/assets/`, copied to `dist/` by `nest-cli.json` `assets`) is served as a static file
+  outside `/api/v1` in every environment, and the Swagger UI uses it (T-0110).
 - `npm run openapi:export` writes `api/openapi.json` (committed). CI fails if it's stale (ADR-0010).
 - Every operation documents its error responses with `@ApiProblemResponses(...statuses)`
   (`api/src/common/decorators/api-problem-responses/`): the statuses on its *Errors* line in endpoints.md,
@@ -122,3 +124,4 @@ RFC 9457 Problem Details (`application/problem+json`):
 - 2026-10-02: Approved by the owner.
 - 2026-10-03: OpenAPI: error responses documented with `@ApiProblemResponses` (OQ-094…OQ-097). Back to `review` (feat-api-error-docs).
 - 2026-10-03: Approved by the owner.
+- 2026-10-25: `/favicon.ico` served as a static file; the Swagger UI uses it (T-0110).

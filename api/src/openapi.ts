@@ -24,5 +24,7 @@ export function setupSwagger(
   app: INestApplication,
   document: OpenAPIObject
 ): void {
-  SwaggerModule.setup("docs", app, document);
+  SwaggerModule.setup("docs", app, document, {
+    customfavIcon: "/favicon.ico"
+  });
 }

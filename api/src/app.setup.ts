@@ -1,3 +1,4 @@
+import { join } from "node:path";
 import { BadRequestException, ValidationPipe } from "@nestjs/common";
 import { NestExpressApplication } from "@nestjs/platform-express";
 import helmet from "helmet";
@@ -15,6 +16,13 @@ export function configureApp(app: NestExpressApplication): void {
   app.setGlobalPrefix("api/v1", { exclude: ["health"] });
 
   app.use(helmet());
+
+  // `/favicon.ico` for browsers and the Swagger UI. src/assets is copied next to
+  // the compiled app.setup.js (nest-cli.json `assets`), so this resolves in both.
+  app.useStaticAssets(join(import.meta.dirname, "assets"), {
+    index: false,
+    maxAge: "7d"
+  });
   app.useBodyParser("json", { limit: "100kb" });
 
   app.enableCors({
