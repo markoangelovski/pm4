@@ -12,6 +12,7 @@ import { NuqsTestingAdapter } from "nuqs/adapters/testing";
 import { createQueryClient } from "@/lib/query-client";
 import type { Me } from "@/features/users/api";
 import type { Project, ProjectList } from "@/features/projects/api";
+import type { Task, TaskList } from "@/features/tasks/api";
 import { ProjectsList } from "./projects-list";
 
 const api = vi.hoisted(() => ({ GET: vi.fn(), POST: vi.fn() }));
@@ -70,8 +71,11 @@ const page = (items: Project[], total = items.length, n = 1): ProjectList => ({
 
 const res = (status: number) => new Response(null, { status });
 
-/** GET router: /me → me; /projects → `listResult` (a function of the query). */
+/** GET router: /me → me; /projects → `listResult`, /tasks → `tasksResult` (functions of the query). */
 let listResult: (query: Record<string, unknown>) => unknown;
+let tasksResult: (query: Record<string, unknown>) => unknown = () => {
+  throw new Error("unexpected GET /api/v1/tasks");
+};
 function routeGet() {
   api.GET.mockImplementation(
     async (
@@ -81,17 +85,21 @@ function routeGet() {
       if (path === "/api/v1/me") return { data: me, response: res(200) };
       if (path === "/api/v1/projects")
         return listResult(init?.params?.query ?? {});
+      if (path === "/api/v1/tasks")
+        return tasksResult(init?.params?.query ?? {});
       throw new Error(`unexpected GET ${path}`);
     }
   );
 }
-const listQueries = () =>
+const queriesOf = (target: string) =>
   api.GET.mock.calls
-    .filter(([path]) => path === "/api/v1/projects")
+    .filter(([path]) => path === target)
     .map(
       ([, init]) =>
         (init as { params: { query: Record<string, unknown> } }).params.query
     );
+const listQueries = () => queriesOf("/api/v1/projects");
+const taskQueries = () => queriesOf("/api/v1/tasks");
 
 /** Base UI's select acts on the pointer sequence, not on a bare click. */
 function pick(option: HTMLElement) {
@@ -122,7 +130,7 @@ describe("ProjectsList (feat-prj-web)", () => {
     routeGet();
   });
 
-  it("AC-11 FR-PRJ-002 SCR-020: rows, row click, empty, no match and error states", async () => {
+  it("AC-11 FR-PRJ-002 SCR-020: rows, empty, no match and error states", async () => {
     listResult = () => ({ data: page([website]), response: res(200) });
     const view = renderList();
 
@@ -134,9 +142,6 @@ describe("ProjectsList (feat-prj-web)", () => {
     expect(within(row).getByTitle("In progress")).toHaveTextContent("1");
     expect(within(row).getByTitle("Completed")).toHaveTextContent("1");
     expect(within(row).getByText("25 %")).toBeInTheDocument();
-
-    fireEvent.click(within(row).getByText("Bob Builder"));
-    expect(nav.push).toHaveBeenCalledWith("/app/project?id=p1");
     view.unmount();
 
     listResult = () => ({ data: page([]), response: res(200) });
@@ -262,5 +267,196 @@ describe("ProjectsList logged time (feat-proto-sync-web)", () => {
       .closest("tr")!;
     expect(cellUnder(logged, "Logged")).toHaveTextContent("1h 45m");
     expect(cellUnder(none, "Logged")).toHaveTextContent("—");
+  });
+});
+
+const task = (n: number, over: Partial<Task> = {}): Task => ({
+  id: `t${n}`,
+  title: `Task ${n}`,
+  description: null,
+  externalLink: null,
+  projectLead: { kind: "text", user: null, name: `Lead ${n}` },
+  status: "upcoming",
+  dueDate: null,
+  loggedMinutes: 0,
+  project: { id: "p1", title: "Website", deleted: false },
+  createdAt: "2026-10-04T08:00:00.000Z",
+  updatedAt: "2026-10-04T08:00:00.000Z",
+  ...over
+});
+
+const taskPage = (items: Task[], total = items.length): TaskList => ({
+  items,
+  total,
+  page: 1,
+  pageSize: 25
+});
+
+describe("ProjectsList task rows (feat-prj-task-rows)", () => {
+  beforeEach(() => {
+    Object.values(api).forEach((fn) => fn.mockReset());
+    nav.push.mockReset();
+    nav.replace.mockReset();
+    routeGet();
+    listResult = () => ({ data: page([website]), response: res(200) });
+    tasksResult = () => ({
+      data: taskPage([
+        task(1),
+        task(2, { status: "in-progress", projectLead: null })
+      ]),
+      response: res(200)
+    });
+  });
+
+  it("AC-1 FR-PRJ-002 SCR-020: the chevron reads the open tasks on first expand and toggles the task rows", async () => {
+    renderList();
+    await screen.findByRole("link", { name: "Website" });
+    expect(taskQueries()).toHaveLength(0);
+
+    const show = screen.getByRole("button", {
+      name: "Show the tasks of Website"
+    });
+    expect(show).toHaveAttribute("aria-expanded", "false");
+
+    fireEvent.click(show);
+    expect(
+      await screen.findByRole("link", { name: "Task 1" })
+    ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Task 2" })).toBeInTheDocument();
+    expect(taskQueries()).toEqual([
+      {
+        projectId: "p1",
+        status: ["upcoming", "in-progress"],
+        sort: "updatedAt:desc",
+        page: 1,
+        pageSize: 25
+      }
+    ]);
+    const hide = screen.getByRole("button", {
+      name: "Hide the tasks of Website"
+    });
+    expect(hide).toHaveAttribute("aria-expanded", "true");
+
+    fireEvent.click(hide);
+    expect(
+      screen.queryByRole("link", { name: "Task 1" })
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Show the tasks of Website" })
+    ).toHaveAttribute("aria-expanded", "false");
+  });
+
+  it("AC-2 FR-PRJ-002 SCR-020: a click elsewhere on the row opens and closes it; the title still links to the project", async () => {
+    renderList();
+    const link = await screen.findByRole("link", { name: "Website" });
+    expect(link).toHaveAttribute("href", "/app/project?id=p1");
+    const row = link.closest("tr")!;
+
+    fireEvent.click(within(row).getByText("Bob Builder"));
+    expect(
+      await screen.findByRole("link", { name: "Task 1" })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Hide the tasks of Website" })
+    ).toHaveAttribute("aria-expanded", "true");
+
+    fireEvent.click(within(row).getByText("Bob Builder"));
+    expect(
+      screen.queryByRole("link", { name: "Task 1" })
+    ).not.toBeInTheDocument();
+    expect(nav.push).not.toHaveBeenCalled();
+  });
+
+  it("AC-3 FR-PRJ-002 SCR-020: a task row shows the title link, the lead and the status as text", async () => {
+    renderList();
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Show the tasks of Website" })
+    );
+
+    const first = await screen.findByRole("link", { name: "Task 1" });
+    expect(first).toHaveAttribute("href", "/app/task?id=t1");
+    const row1 = first.closest("tr")!;
+    expect(within(row1).getByText("Lead 1")).toBeInTheDocument();
+    expect(within(row1).getByText("Upcoming")).toBeInTheDocument();
+    expect(within(row1).queryByRole("combobox")).not.toBeInTheDocument();
+
+    const second = screen.getByRole("link", { name: "Task 2" });
+    expect(second).toHaveAttribute("href", "/app/task?id=t2");
+    const row2 = second.closest("tr")!;
+    expect(within(row2).getByText("In progress")).toBeInTheDocument();
+    expect(within(row2).queryByRole("combobox")).not.toBeInTheDocument();
+  });
+
+  it("AC-4 FR-PRJ-002 SCR-020: more than 25 open tasks → Show all N open tasks", async () => {
+    const many = Array.from({ length: 25 }, (_, i) => task(i + 1));
+    tasksResult = () => ({ data: taskPage(many, 30), response: res(200) });
+    const view = renderList();
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Show the tasks of Website" })
+    );
+    expect(
+      await screen.findByRole("link", { name: "Show all 30 open tasks" })
+    ).toHaveAttribute("href", "/app/project?id=p1&status=upcoming,in-progress");
+    view.unmount();
+
+    tasksResult = () => ({ data: taskPage(many), response: res(200) });
+    renderList();
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Show the tasks of Website" })
+    );
+    expect(
+      await screen.findByRole("link", { name: "Task 25" })
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("link", { name: /^Show all/ })
+    ).not.toBeInTheDocument();
+  });
+
+  it("AC-5 FR-PRJ-002 SCR-020: a project without open tasks doesn't open", async () => {
+    listResult = () => ({
+      data: page([
+        {
+          ...website,
+          taskCounts: { upcoming: 0, inProgress: 0, completed: 3, total: 3 }
+        }
+      ]),
+      response: res(200)
+    });
+    renderList();
+    const row = (await screen.findByRole("link", { name: "Website" })).closest(
+      "tr"
+    )!;
+    expect(
+      screen.getByRole("button", { name: "Show the tasks of Website" })
+    ).toBeDisabled();
+
+    fireEvent.click(within(row).getByText("Bob Builder"));
+    await new Promise((r) => setTimeout(r, 50));
+    expect(taskQueries()).toHaveLength(0);
+    expect(screen.getAllByRole("row")).toHaveLength(2);
+  });
+
+  it("AC-6 FR-PRJ-002 SCR-020: a failed tasks request shows an error with Retry", async () => {
+    tasksResult = () => ({
+      error: "Internal Server Error",
+      response: res(500)
+    });
+    renderList();
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Show the tasks of Website" })
+    );
+    expect(
+      await screen.findByText("Couldn't load the tasks.", undefined, {
+        timeout: 4000
+      })
+    ).toBeInTheDocument();
+
+    const before = taskQueries().length;
+    tasksResult = () => ({ data: taskPage([task(1)]), response: res(200) });
+    fireEvent.click(screen.getByRole("button", { name: "Retry" }));
+    expect(
+      await screen.findByRole("link", { name: "Task 1" })
+    ).toBeInTheDocument();
+    expect(taskQueries().length).toBeGreaterThan(before);
   });
 });
