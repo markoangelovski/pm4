@@ -8,7 +8,7 @@ type DocumentWithViewTransition = Document & {
 };
 
 const LightDark = () => {
-  const { theme: activeMode, setTheme: setActiveMode } = useTheme();
+  const { resolvedTheme: activeMode, setTheme: setActiveMode } = useTheme();
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {

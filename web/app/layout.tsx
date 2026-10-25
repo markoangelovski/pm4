@@ -45,8 +45,8 @@ export default function RootLayout({
       <body className={`${geist.className}`}>
         <ThemeProvider
           attribute="class"
-          defaultTheme="light"
-          enableSystem={false}
+          defaultTheme="system"
+          enableSystem
         >
           <QueryProvider>
             <NuqsAdapter>{children}</NuqsAdapter>
