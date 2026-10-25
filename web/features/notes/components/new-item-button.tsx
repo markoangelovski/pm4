@@ -2,27 +2,45 @@
 
 import { useState } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
-import { ChevronDown, ListChecks, NotebookPen, Plus } from "lucide-react";
+import {
+  ChevronDown,
+  Clock,
+  FolderKanban,
+  ListChecks,
+  ListTodo,
+  NotebookPen,
+  Plus
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 import { useProject } from "@/features/projects/api";
 import { useTask } from "@/features/tasks/api";
+import { ProjectFormDialog } from "@/features/projects/components/project-form-dialog";
+import { TaskFormDialog } from "@/features/tasks/components/task-form-dialog";
+import { LogFormDialog } from "@/features/time/components/log-form-dialog";
+import { useMe } from "@/features/users/api";
+import { today } from "@/lib/time";
 import { routes } from "@/lib/routes";
 import { NO_LINK, type NoteLink } from "../schemas";
 import { NoteFormDialog } from "./note-form-dialog";
 import { TodoFormDialog } from "./todo-form-dialog";
 
+type NewItem = "project" | "task" | "note" | "todo" | "log";
+
 /**
- * The header's New button: a menu with Note and To-do. On a project's or task's page the new item starts linked to it.
+ * The header's New button: a menu with Project, Task, Note, To-do and Log.
+ * On a project's or task's page a new task, note or to-do starts linked to it.
  * Reads `?id=`, so the header renders it inside a Suspense boundary.
  */
 export function NewItemButton() {
-  const [open, setOpen] = useState<"note" | "todo" | null>(null);
+  const [open, setOpen] = useState<NewItem | null>(null);
+  const { data: me } = useMe();
   const pathname = usePathname();
   const id = useSearchParams().get("id") ?? "";
   const onTask = pathname === routes.app.task && id !== "";
@@ -70,6 +88,19 @@ export function NewItemButton() {
         <DropdownMenuContent align="end">
           <DropdownMenuItem
             className="cursor-pointer"
+            onClick={() => setOpen("project")}
+          >
+            <FolderKanban /> Project
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            className="cursor-pointer"
+            onClick={() => setOpen("task")}
+          >
+            <ListTodo /> Task
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            className="cursor-pointer"
             onClick={() => setOpen("note")}
           >
             <NotebookPen /> Note
@@ -80,8 +111,24 @@ export function NewItemButton() {
           >
             <ListChecks /> To-do
           </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            className="cursor-pointer"
+            onClick={() => setOpen("log")}
+          >
+            <Clock /> Log
+          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+      <ProjectFormDialog
+        open={open === "project"}
+        onOpenChange={(o) => setOpen(o ? "project" : null)}
+      />
+      <TaskFormDialog
+        open={open === "task"}
+        onOpenChange={(o) => setOpen(o ? "task" : null)}
+        defaultProject={preset.project ?? undefined}
+      />
       <NoteFormDialog
         open={open === "note"}
         onOpenChange={(o) => setOpen(o ? "note" : null)}
@@ -91,6 +138,11 @@ export function NewItemButton() {
         open={open === "todo"}
         onOpenChange={(o) => setOpen(o ? "todo" : null)}
         preset={preset}
+      />
+      <LogFormDialog
+        open={open === "log"}
+        onOpenChange={(o) => setOpen(o ? "log" : null)}
+        defaultDate={today(me?.timeZone ?? "UTC")}
       />
     </>
   );
