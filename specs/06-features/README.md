@@ -59,3 +59,4 @@ A feature spec links to those. It doesn't copy them.
 | Prototype sync: Logged time chart, billable hours, Statistics link and Bookings day links | [proto-sync-logged-chart.md](proto-sync-logged-chart.md) | M4 | approved |
 | Bookings navigation: range presets, project filter, Expand all, links between a booking's two days | [book-web-nav.md](book-web-nav.md) | M4 | approved |
 | Notes and to-dos: API, the Notes page, project and task cards, the New menu | [note-todos.md](note-todos.md) | M8 | approved |
+| Projects list: expandable task rows | [prj-task-rows.md](prj-task-rows.md) | M2 | approved |

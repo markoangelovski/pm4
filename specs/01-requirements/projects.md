@@ -3,7 +3,7 @@ id: req-projects
 title: Projects
 status: approved
 owner: Marko Angelovski
-last_updated: 2026-10-14
+last_updated: 2026-10-25
 related: [req-tasks, req-time-logs, api-endpoints, api-data-model, sec]
 ---
 
@@ -82,7 +82,7 @@ and a project lead (suggested: the signed-in user).
 **Priority:** Must
 **Statement:** A paginated list of the user's projects. Each row shows the title, the
 project lead, the task counts per status, a small completed-percentage bar (OQ-083), the logged time
-(the project's total, FR-TLOG-012; OQ-132) and the created and updated dates (OQ-100). Can be searched by title or project lead name, with title matches listed
+(the project's total, FR-TLOG-012; OQ-132) and the created and updated dates (OQ-100). A project with open tasks opens to list up to 25 of its upcoming and in-progress tasks, most recently updated first (OQ-236). Can be searched by title or project lead name, with title matches listed
 first (OQ-099, OQ-102), and sorted by title, created date or updated date (default: updated, descending).
 **Acceptance criteria:**
 - Given a project with 2 upcoming, 1 in-progress and 1 completed task, its row shows 2 / 1 / 1 and 25 %.
@@ -92,6 +92,7 @@ first (OQ-099, OQ-102), and sorted by title, created date or updated date (defau
 - Given I search "ana", projects whose title matches come before projects that match only by lead name; each group keeps the selected sort (OQ-099).
 - Given a user lead, the search matches the user's current name, never their email (OQ-102).
 - Given a project created on 3 Oct 2026 and updated on 4 Oct 2026 (in my time zone), its row shows "3 Oct 2026" and "4 Oct 2026" (OQ-100).
+- Given a project with 30 open tasks, opening its row lists the 25 most recently updated and a link "Show all 30 open tasks" to the project page filtered to Upcoming and In progress; a project with only completed tasks doesn't open (OQ-236).
 
 ### FR-PRJ-003: View project
 **Priority:** Must
@@ -160,3 +161,5 @@ None.
 - 2026-10-09: Approved by the owner.
 - 2026-10-11: FR-PRJ-002: the list shows each project's logged time (OQ-132, feat-proto-sync-web). Back to `review`.
 - 2026-10-11: Approved by the owner.
+- 2026-10-25: FR-PRJ-002: project rows open to list their open tasks (OQ-236, feat-prj-task-rows). Back to `review`.
+- 2026-10-25: Approved by the owner.
