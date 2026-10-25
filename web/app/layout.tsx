@@ -1,11 +1,12 @@
 import React from "react";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist } from "next/font/google";
 
 import "./globals.css";
 import { ThemeProvider } from "@/components/Themeprovider";
 import { QueryProvider } from "@/lib/query-client";
 import { Toaster } from "@/components/ui/sonner";
+import { ServiceWorkerRegistration } from "@/features/system/components/service-worker-registration";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
 
 const geist = Geist({
@@ -23,7 +24,15 @@ export const metadata: Metadata = {
   robots: {
     index: false,
     follow: false
-  }
+  },
+  appleWebApp: { capable: true, title: "PM4", statusBarStyle: "default" }
+};
+
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+    { media: "(prefers-color-scheme: dark)", color: "#0a0a0a" }
+  ]
 };
 
 export default function RootLayout({
@@ -43,6 +52,7 @@ export default function RootLayout({
       className="style-lyra"
     >
       <body className={`${geist.className}`}>
+        <ServiceWorkerRegistration />
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <QueryProvider>
             <NuqsAdapter>{children}</NuqsAdapter>

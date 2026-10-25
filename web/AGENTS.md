@@ -26,7 +26,7 @@ stays.
 | --- | --- |
 | `npm ci` | Install (use this in CI; `npm install` locally) |
 | `npm run dev` | Dev server (`next dev`) |
-| `npm run build` | Production build → `out/` (static export) |
+| `npm run build` | Production build → `out/` (static export); `postbuild` checks no prototype trace and writes `out/sw.js` |
 | `npm run lint` | ESLint |
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm test` / `npm run test:watch` | Vitest (unit + component tests) |
@@ -38,7 +38,8 @@ Node version: see `.nvmrc` (24).
 
 ```
 app/
-  layout.tsx                    # root layout: metadata (noindex), ThemeProvider, QueryProvider
+  layout.tsx                    # root layout: metadata (noindex), viewport/theme colour, ServiceWorkerRegistration, ThemeProvider, QueryProvider
+  manifest.ts                    # web app manifest (force-static → out/manifest.webmanifest)
   page.tsx                       # public landing page `/` (SCR-003), own header, no sidebar
   auth/sign-in/  auth/callback/  # outside the authenticated shell
   proto/                         # prototype routes /proto/app/**: layout.dev.tsx + app/<route>/page.dev.tsx (dev only)
@@ -65,6 +66,8 @@ features/<domain>/               # data-driven work per conventions.md: api.ts (
                                   # schemas.ts (zod), components/. First one: features/system/
                                   # (API version query + VersionBadge); features/auth/ (AuthGuard,
                                   # AuthCallback, SignInState, useSignOut); add domains as implemented
+sw/service-worker.js             # service worker source (precaches the whole export; data stays online-only)
+scripts/build-sw.mts             # postbuild: writes out/sw.js with the precache list and build version
 proto/                           # UI prototype, mirroring this tree (proto/features/<domain>/…, proto/lib/routes.ts);
                                   # proto/features/<domain>/api.ts = mock hooks; proto/mock/ = session, store, seed, shell
 ```
