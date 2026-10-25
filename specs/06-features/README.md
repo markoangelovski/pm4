@@ -61,3 +61,4 @@ A feature spec links to those. It doesn't copy them.
 | Notes and to-dos: API, the Notes page, project and task cards, the New menu | [note-todos.md](note-todos.md) | M8 | approved |
 | Projects list: expandable task rows | [prj-task-rows.md](prj-task-rows.md) | M2 | approved |
 | Installable web app (PWA): the app shell offline and an offline banner | [shell-pwa.md](shell-pwa.md) | M0 | approved |
+| New menu with project, task and log; floating Log time button | [shell-new-menu.md](shell-new-menu.md) | M0 | approved |

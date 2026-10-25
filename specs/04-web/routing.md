@@ -3,7 +3,7 @@ id: web-routing
 title: Routing and Navigation
 status: approved
 owner: Marko Angelovski
-last_updated: 2026-10-24
+last_updated: 2026-10-25
 related: [web-static-export, web-screens, web-prototype, req-landing, req-auth, feat-land-app-route-split, ADR-0012]
 ---
 
@@ -52,7 +52,8 @@ and the client reads `id` with `useSearchParams` (inside `<Suspense>`).
   · **Connectors** → PMSPA (`/app/connectors/pmspa`, globe icon), only while a PMSPA connection is saved (FR-INT-006).
   A fixed footer at the bottom of the sidebar (stays put while the nav scrolls) holds Settings.
   The app logo links to `/app`.
-- Header: a **New ▾** menu (Note, To-do; FR-NOTE-009) and a global **Log time** button (FR-TLOG-011), the theme toggle and the user's avatar. The avatar
+- Header: a **New ▾** menu (Project, Task, Note, To-do, Log; FR-NOTE-009), the theme toggle and the user's avatar. A floating **Log time**
+  button sits at the bottom right of every app screen (FR-TLOG-011). The avatar
   opens the **user drawer** (SCR-005) with **Home** (`/app`), **Profile** (`/app/user-profile`) and **Sign out** (OQ-057, OQ-074).
 - Landing page (`/`, FR-LAND-001/002): public, outside the app shell and its auth guard. It has its own
   marketing header with the "Go to app" / "Login" button, not the sidebar.
@@ -130,3 +131,5 @@ and the client reads `id` with `useSearchParams` (inside `<Suspense>`).
 - 2026-10-24: Approved by the owner.
 - 2026-10-24: `/app/bookings` `project` parameter and day hashes (OQ-226, OQ-228, feat-book-web-nav). Back to `review`.
 - 2026-10-24: `/app/notes` (SCR-070), the Notes sidebar item and the header New menu (OQ-232, OQ-234, feat-note-todos).
+- 2026-10-25: The New menu gains Project, Task and Log; Log time moves from the header to a floating button (OQ-241, OQ-242, feat-shell-new-menu). Back to `review`.
+- 2026-10-25: Approved by the owner.

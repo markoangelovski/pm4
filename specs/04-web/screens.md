@@ -67,7 +67,9 @@ prototype `b3d9093`): SCR-021 and SCR-031 at the end of the dimmed dates line ("
 SCR-030 (and SCR-021's task table) as a **Created in PMSPA** column before **Updated** (`d MMM yyyy`, `—` when not linked),
 and SCR-062's popover after the lead, column or event (", created in PMSPA on …").
 
-**New menu** (header, every `/app/**` screen, FR-NOTE-009): **New ▾** (Note, To-do) before **Log time**; on SCR-021 / SCR-031 the new item starts linked to that project or task. UI: prototype `new-item-button.tsx`.
+**New menu** (header, every `/app/**` screen, FR-NOTE-009, OQ-241): **New ▾** with **Project** (SCR-022), **Task** (SCR-032) | **Note**, **To-do** | **Log** (SCR-041, today, no link). On SCR-021 / SCR-031 a new task starts in that project, and a new note or to-do starts linked to that project or task. UI: prototype `fc49830`, `new-item-button.tsx`.
+
+**Log time button** (every `/app/**` screen, FR-TLOG-011, OQ-242): a floating round icon-only button (clock) at the bottom right, opening SCR-041 for today. Swiping it left to right (touch or mouse drag) slides it off screen and leaves a small **‹** tab at the right edge; tapping the tab, or swiping it right to left, brings the button back. The hidden state is not remembered. UI: prototype `fc49830`, `log-time-button.tsx`.
 
 **Project icon** (SCR-020, SCR-021): a rounded square with a two-colour gradient computed from the project id, so it is stable and nothing is stored (owner, 2026-10-03).
 
@@ -127,3 +129,5 @@ OQ-029
 - 2026-10-25: SCR-004 uses the PM4 logo (concept C, "Stack") instead of the template's icon (T-0109).
 - 2026-10-25: SCR-002 and the app shell's session check show the animated PM4 logo instead of a spinner (T-0111).
 - 2026-10-25: Added SCR-006 offline banner (OQ-237, OQ-239, feat-shell-pwa).
+- 2026-10-25: The New menu gains Project, Task and Log; the floating Log time button replaces the header one (prototype `fc49830`, OQ-241, OQ-242, feat-shell-new-menu).
+- 2026-10-25: The owner approved the New menu and Log time button sections for feat-shell-new-menu.

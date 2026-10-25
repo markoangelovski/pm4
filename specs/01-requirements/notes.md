@@ -3,7 +3,7 @@ id: req-notes
 title: Notes and to-dos
 status: approved
 owner: Marko Angelovski
-last_updated: 2026-10-24
+last_updated: 2026-10-25
 related: [req-projects, req-tasks, req-time-logs, req-integrations, api-endpoints, api-data-model, web-screens, OQ-230, OQ-231, OQ-232, OQ-233, OQ-234, OQ-235]
 ---
 
@@ -91,8 +91,8 @@ card shows the open ones with an add box. New items from these cards are linked 
 
 ### FR-NOTE-009: New menu
 **Priority:** Must
-**Statement:** The header has a **New ▾** menu (Note, To-do) beside **Log time**. On a project's or task's page the new item starts linked to it;
-elsewhere it starts General.
+**Statement:** The header has a **New ▾** menu: Project, Task, Note, To-do and Log (OQ-241). On a project's or task's page a new task starts
+in that project and a new note or to-do starts linked to it; elsewhere a note or to-do starts General. A new log is for today, with no link.
 
 ## Open questions
 None. OQ-230…OQ-235 are resolved.
@@ -100,3 +100,5 @@ None. OQ-230…OQ-235 are resolved.
 ## Changelog
 - 2026-10-24: Initial version from the owner's decisions and prototype (OQ-230…OQ-235). Ready for review.
 - 2026-10-24: Approved by the owner for feat-note-todos.
+- 2026-10-25: FR-NOTE-009: the New menu also creates projects, tasks and logs (OQ-241, feat-shell-new-menu). Back to `review`.
+- 2026-10-25: Approved by the owner.

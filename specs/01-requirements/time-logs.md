@@ -3,7 +3,7 @@ id: req-time-logs
 title: Time Capture (Workdays and Time Logs)
 status: review
 owner: Marko Angelovski
-last_updated: 2026-10-23
+last_updated: 2026-10-25
 related: [req-projects, req-tasks, req-reporting, api-endpoints, api-data-model, web-screens]
 ---
 
@@ -150,7 +150,9 @@ Anything else, or a value that isn't a multiple of 15 minutes (`20`, `0.3`, `0`)
 
 ### FR-TLOG-011: Quick log from anywhere
 **Priority:** Should
-**Statement:** A global **Log time** button in the header opens the add-log form from any screen (date: today).
+**Statement:** A floating, round **Log time** button at the bottom right of every app screen opens the add-log form (date: today).
+A left-to-right swipe moves it off screen behind a small edge tab; tapping or swiping the tab back shows it again. Hidden is not
+remembered: each page load shows the button (OQ-242). The header's **New ▾** menu also has **Log** (FR-NOTE-009).
 
 ### FR-TLOG-012: Logs on project and task pages
 **Priority:** Must
@@ -258,3 +260,5 @@ None.
 - 2026-10-19: Approved by the owner.
 - 2026-10-22: FR-TLOG-020: note lines are editable for the copy (OQ-211). Back to `review` (feat-tlog-prompt).
 - 2026-10-23: FR-TLOG-012 shows each booking of a log and its unbooked time; FR-TLOG-019 wording for bookings (OQ-214, feat-book-partial).
+- 2026-10-25: FR-TLOG-011: the header button becomes a floating button that swipes away (OQ-242, feat-shell-new-menu).
+- 2026-10-25: The owner approved FR-TLOG-011 for feat-shell-new-menu.
