@@ -5,6 +5,7 @@ import RouteErrorBoundary from "@/app/components/shared/route-error-boundary";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import Footer from "./footer";
 import Header from "./header";
+import { OfflineBanner } from "@/proto/features/system/components/offline-banner";
 import { PmspaMockSwitch } from "./pmspa-mock-switch";
 import { ProtoSidebar } from "./proto-sidebar";
 
@@ -18,6 +19,7 @@ export function ProtoShell({ children }: { children: React.ReactNode }) {
       <ProtoSidebar />
       <SidebarInset className="outline outline-border m-2 rounded-none! overflow-hidden">
         <Header />
+        <OfflineBanner />
         <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 px-4 py-1 text-center text-xs dark:text-amber-400">
           <span>UI prototype: mock data in memory, reset on every reload.</span>
           <PmspaMockSwitch />
