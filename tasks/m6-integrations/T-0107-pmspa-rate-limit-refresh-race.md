@@ -3,7 +3,7 @@ id: T-0107
 title: The PMSPA rate-limit refresh no longer misses a PMSPA call that settles between two renders (AC-14 flake)
 milestone: M6
 app: web
-status: ready
+status: done
 size: S
 tier: sonnet
 depends_on: []
@@ -54,11 +54,18 @@ Time box: confirm the cause quickly (e.g. log `busy` per render in a failing run
 ---
 
 ## Implementation notes
-_Implementer: what changed, and anything the reviewer should look at._
+Main session (test step): cause confirmed, TanStack Query 5.104's `notifyManager` schedules with `setTimeout(0)`. AC-14's wait
+after `fetchQuery` is now `await act(() => new Promise((resolve) => setTimeout(resolve, 0)))` with a one-line comment; every
+assertion kept. `budget.ac.test.tsx`'s sha256 updated in T-0085.
+
+`useRefreshPmspaRateLimit` (real and proto twin) now subscribes to the query and mutation caches in a `useEffect` and recomputes `queryClient.isFetching({queryKey: remote}) + isMutating()` on every event; it invalidates `connection` (exact) on a > 0 to 0 edge. `useIsFetching`/`useIsMutating`/`useRef` imports dropped. Look at: `wasBusy` is updated *before* `invalidateQueries`, because the invalidation emits cache events synchronously and re-enters the listener (first version recursed to a stack overflow).
+
+AC-14: 20/20 runs pass. `pm4 check T-0107`: PASS (scope, lint, format, typecheck, test, build, twins 116 equal).
 
 ### Attempts
 | # | Tier | Result | Summary |
 | --- | --- | --- | --- |
+| 1 | sonnet | pass | Cache-subscription hook in both twins; fixed re-entrancy by setting `wasBusy` before invalidating |
 
 ## Review
-_The owner's review (quick lane), or `review-feature`'s verdict._
+Owner approved (quick lane), 2026-10-25.
