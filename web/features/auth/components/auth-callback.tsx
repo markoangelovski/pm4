@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Spinner } from "@/components/ui/spinner";
+import { LoadingMark } from "./loading-mark";
 import {
   RETURN_TO_PARAM,
   postSignInPath,
@@ -44,8 +44,11 @@ export function AuthCallback(): React.JSX.Element {
   }, [code, returnTo, router]);
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-3">
-      <Spinner className="size-8" />
+    <div
+      role="status"
+      className="flex min-h-screen flex-col items-center justify-center gap-3"
+    >
+      <LoadingMark />
       <p className="text-sm text-muted-foreground">Signing in…</p>
     </div>
   );

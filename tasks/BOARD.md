@@ -114,5 +114,6 @@
 | [T-0108](m2-projects/T-0108-promote-project-task-rows-tsx-apply.md) | Promote project-task-rows.tsx, apply the prototype diff to projects-list.tsx | M2 | web | S | done | — |
 | [T-0109](m0-foundation/T-0109-web-pm4-logo-and-favicons.md) | Replace the template logo and favicon with the PM4 mark, add the icon set | M0 | web | S | done | — |
 | [T-0110](m0-foundation/T-0110-api-favicon.md) | Serve the PM4 favicon from the API and use it in the Swagger UI | M0 | api | S | done | T-0109 |
+| [T-0111](m0-foundation/T-0111-web-animated-logo-loading.md) | Show the animated PM4 logo instead of the spinner while the session is checked | M0 | web | S | done | T-0109 |
 
 M0–M6 are done. Later follow-ups are filed under the milestone they extend.

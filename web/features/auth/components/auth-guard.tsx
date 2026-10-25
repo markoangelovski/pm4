@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Spinner } from "@/components/ui/spinner";
+import { LoadingMark } from "./loading-mark";
 import { landingHref } from "@/lib/auth/return-to";
 import {
   SessionUnavailableError,
@@ -84,7 +84,7 @@ export function AuthGuard({
       aria-label="Loading"
       className="flex min-h-screen items-center justify-center"
     >
-      <Spinner className="size-8" />
+      <LoadingMark />
     </div>
   );
 }
