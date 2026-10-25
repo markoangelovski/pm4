@@ -35,6 +35,10 @@ export function LogTimeButton() {
     }
     action();
   };
+  // A key press is never the end of a swipe: Enter and Space click after keydown, so clear the flag first.
+  const onKeyDown = () => {
+    swiped.current = false;
+  };
   const { data: me } = useMe();
 
   const onPointerDown = (e: PointerEvent<HTMLElement>) => {
@@ -84,6 +88,7 @@ export function LogTimeButton() {
             : `translateX(${drag ?? 0}px)`
         }}
         onClick={onTap(() => setOpen(true))}
+        onKeyDown={onKeyDown}
         {...(hidden ? {} : swipe)}
       >
         <Clock className="size-8" />
@@ -101,6 +106,7 @@ export function LogTimeButton() {
           transform: hidden ? `translateX(${drag ?? 0}px)` : "translateX(100%)"
         }}
         onClick={onTap(() => setHidden(false))}
+        onKeyDown={onKeyDown}
         {...(hidden ? swipe : {})}
       >
         <ChevronLeft className="size-4" />
