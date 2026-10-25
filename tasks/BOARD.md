@@ -1,6 +1,6 @@
 # Task Board
 
-**Next free ID:** T-0114
+**Next free ID:** T-0115
 
 | ID | Title | Milestone | App | Size | Status | Depends on |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -117,5 +117,6 @@
 | [T-0111](m0-foundation/T-0111-web-animated-logo-loading.md) | Show the animated PM4 logo instead of the spinner while the session is checked | M0 | web | S | done | T-0109 |
 | [T-0112](m0-foundation/T-0112-manifest-theme-colour-the-service-worker.md) | Manifest, theme colour, the service worker, the build script that writes out/sw.js, and its registration | M0 | web | M | done | — |
 | [T-0113](m0-foundation/T-0113-offline-banner-promote-it-mount-it.md) | Offline banner: promote it, mount it in the app shell, and add it with the online retry to AuthGuard's unavailable screen | M0 | web | S | done | T-0112 |
+| [T-0114](m0-foundation/T-0114-new-menu-with-project-task-and.md) | New menu with Project, Task and Log; floating swipeable Log time button in the layout | M0 | web | S | ready | — |
 
 M0–M6 are done. Later follow-ups are filed under the milestone they extend.
