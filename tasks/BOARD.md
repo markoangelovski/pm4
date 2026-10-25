@@ -112,5 +112,7 @@
 | [T-0106](m0-foundation/T-0106-web-vitest-test-timeout.md) | Raise the web Vitest test timeout so the full suite stops timing out under load | M0 | web | S | done | — |
 | [T-0107](m6-integrations/T-0107-pmspa-rate-limit-refresh-race.md) | The PMSPA rate-limit refresh no longer misses a PMSPA call that settles between two renders (AC-14 flake) | M6 | web | S | done | — |
 | [T-0108](m2-projects/T-0108-promote-project-task-rows-tsx-apply.md) | Promote project-task-rows.tsx, apply the prototype diff to projects-list.tsx | M2 | web | S | done | — |
+| [T-0109](m0-foundation/T-0109-web-pm4-logo-and-favicons.md) | Replace the template logo and favicon with the PM4 mark, add the icon set | M0 | web | S | done | — |
+| [T-0110](m0-foundation/T-0110-api-favicon.md) | Serve the PM4 favicon from the API and use it in the Swagger UI | M0 | api | S | done | T-0109 |
 
 M0–M6 are done. Later follow-ups are filed under the milestone they extend.
