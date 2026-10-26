@@ -40,6 +40,7 @@ const project = (id: string, title: string): Project => ({
   externalLink: null,
   projectLead: null,
   taskCounts: { upcoming: 0, inProgress: 0, completed: 0, total: 0 },
+  services: [],
   loggedMinutes: 0,
   createdAt: "2026-10-01T08:00:00.000Z",
   updatedAt: "2026-10-01T08:00:00.000Z"
@@ -51,6 +52,7 @@ const website: ProjectRef = { id: "p1", title: "Website" };
 const task: Task = {
   id: "t1",
   project: { id: "p1", title: "Website", deleted: false },
+  service: null,
   title: "Write the docs",
   description: "First the API.",
   externalLink: null,
@@ -147,7 +149,7 @@ describe("TaskFormDialog (feat-tsk-web)", () => {
     vi.useRealTimers();
   });
 
-  it("AC-6 FR-TSK-001 SCR-032: create from a project → its defaults, POST, toast, closes, stays on the page", async () => {
+  it("AC-6 FR-TSK-001 SCR-032 (+ AC-18 feat-prj-services): create from a project → its defaults, POST, toast, closes, stays on the page", async () => {
     api.POST.mockResolvedValueOnce({
       data: { ...task, id: "t9", title: "Write the docs" },
       response: res(201)
@@ -177,6 +179,7 @@ describe("TaskFormDialog (feat-tsk-web)", () => {
           externalLink: null,
           projectLeadUserId: me.id,
           projectLeadName: null,
+          serviceId: null,
           status: "upcoming",
           dueDate: null
         }
@@ -186,7 +189,7 @@ describe("TaskFormDialog (feat-tsk-web)", () => {
     expect(push).not.toHaveBeenCalled();
   });
 
-  it("AC-7 FR-TSK-001 FR-TSK-005 SCR-032: project required, due date pick and clear, move by picking a project, API errors", async () => {
+  it("AC-7 FR-TSK-001 FR-TSK-005 SCR-032 (+ AC-18 feat-prj-services): project required, due date pick and clear, move by picking a project, API errors", async () => {
     // No project → a field error and no request.
     const create = renderDialog({});
     change("Title", "Write the docs");
@@ -251,6 +254,7 @@ describe("TaskFormDialog (feat-tsk-web)", () => {
           externalLink: null,
           projectLeadUserId: null,
           projectLeadName: "Bob",
+          serviceId: null,
           status: "in-progress",
           dueDate: null
         }

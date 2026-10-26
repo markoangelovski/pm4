@@ -34,6 +34,7 @@ vi.mock("sonner", () => ({ toast }));
 const task = (over: Partial<Task> = {}): Task => ({
   id: "t1",
   project: { id: "p1", title: "Website", deleted: false },
+  service: null,
   title: "Write the docs",
   description: null,
   externalLink: null,
@@ -53,6 +54,7 @@ const input: TaskInput = {
   externalLink: null,
   projectLeadUserId: null,
   projectLeadName: null,
+  serviceId: null,
   status: "upcoming",
   dueDate: null
 };

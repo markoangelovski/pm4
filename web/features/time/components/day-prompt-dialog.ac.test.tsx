@@ -92,8 +92,10 @@ function routeGet() {
     if (!(key in links)) throw new Error(`unexpected GET ${key}`);
     if (pending.has(key)) return new Promise(() => {});
     const title = id === "p1" ? "A" : id === "p2" ? "B" : "X";
+    // Task X is linked to the service QA (feat-prj-services).
+    const service = id === "t1" ? { id: "s1", name: "QA" } : undefined;
     return Promise.resolve({
-      data: { id, title, externalLink: links[key] },
+      data: { id, title, externalLink: links[key], service },
       response: res(200)
     });
   });
@@ -127,13 +129,13 @@ const markdownA =
   P1 +
   ")\n**Task:** X (" +
   T1 +
-  ")\n**Date:** Tuesday, 6 October 2026\n**Note:**\n- one\n- two";
+  ")\n**Service:** QA\n**Date:** Tuesday, 6 October 2026\n**Note:**\n- one\n- two";
 const markdownB =
   "**Project:** B (" +
   P2 +
-  ")\n**Task:** —\n**Date:** Tuesday, 6 October 2026\n**Note:**\n- three";
+  ")\n**Task:** —\n**Service:** —\n**Date:** Tuesday, 6 October 2026\n**Note:**\n- three";
 const markdownOld =
-  "**Project:** Old\n**Task:** —\n**Date:** Tuesday, 6 October 2026\n**Note:**\n- four";
+  "**Project:** Old\n**Task:** —\n**Service:** —\n**Date:** Tuesday, 6 October 2026\n**Note:**\n- four";
 
 describe("Prompt dialog (feat-tlog-prompt)", () => {
   beforeEach(() => {
@@ -181,7 +183,7 @@ describe("Prompt dialog (feat-tlog-prompt)", () => {
     expect(api.GET).toHaveBeenCalledTimes(3);
   });
 
-  it("AC-8 FR-TLOG-020: Copy to clipboard copies the section with its links, shows Copied for 2 s", async () => {
+  it("AC-8 FR-TLOG-020 (+ AC-21 feat-prj-services): Copy to clipboard copies the section with its links, shows Copied for 2 s", async () => {
     openDialog();
     await screen.findByRole("link", { name: T1 });
     const card = section("A");
@@ -205,7 +207,7 @@ describe("Prompt dialog (feat-tlog-prompt)", () => {
     ).toBeInTheDocument();
   }, 10000);
 
-  it("AC-9 FR-TLOG-020: Copy all copies every section with the cached links, leaving out a link not loaded yet", async () => {
+  it("AC-9 FR-TLOG-020 (+ AC-21 feat-prj-services): Copy all copies every section with the cached links, leaving out a link not loaded yet", async () => {
     pending = new Set(["/api/v1/projects/{id}:p2"]);
     openDialog();
     await screen.findByRole("link", { name: T1 });
@@ -251,5 +253,28 @@ describe("Prompt dialog (feat-tlog-prompt)", () => {
     ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Copy all" })).toBeDisabled();
     expect(api.GET).not.toHaveBeenCalled();
+  });
+});
+
+describe("Prompt dialog: Service line (feat-prj-services)", () => {
+  beforeEach(() => {
+    Object.values(api).forEach((fn) => fn.mockReset());
+    pending = new Set();
+    routeGet();
+  });
+
+  it("AC-21 FR-TLOG-020: each card shows Service: with its task's service, — without a task or service", async () => {
+    openDialog();
+    await screen.findByRole("link", { name: T1 });
+    /** The value after the "Service:" term of the card at `index` (A·X, B, Old). */
+    const serviceOf = (index: number) => {
+      const card = screen.getByRole("dialog").querySelectorAll("section")[
+        index
+      ] as HTMLElement;
+      return within(card).getByText("Service:").nextElementSibling?.textContent;
+    };
+    await waitFor(() => expect(serviceOf(0)).toBe("QA"));
+    expect(serviceOf(1)).toBe("—");
+    expect(serviceOf(2)).toBe("—");
   });
 });

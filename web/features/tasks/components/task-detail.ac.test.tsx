@@ -55,6 +55,7 @@ const me: Me = {
 const docs: Task = {
   id: "t1",
   project: { id: "p1", title: "Website", deleted: false },
+  service: null,
   title: "Write the docs",
   description: "Line one\nLine two",
   externalLink: "https://example.com/spec",

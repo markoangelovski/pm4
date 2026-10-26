@@ -57,6 +57,7 @@ const website: Project = {
   externalLink: null,
   projectLead: { kind: "text", user: null, name: "Bob Builder" },
   taskCounts: { upcoming: 2, inProgress: 1, completed: 1, total: 4 },
+  services: [],
   loggedMinutes: 0,
   createdAt: "2026-10-03T08:00:00.000Z",
   updatedAt: "2026-10-03T08:00:00.000Z"
@@ -280,6 +281,7 @@ const task = (n: number, over: Partial<Task> = {}): Task => ({
   dueDate: null,
   loggedMinutes: 0,
   project: { id: "p1", title: "Website", deleted: false },
+  service: null,
   createdAt: "2026-10-04T08:00:00.000Z",
   updatedAt: "2026-10-04T08:00:00.000Z",
   ...over

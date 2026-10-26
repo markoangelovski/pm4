@@ -63,6 +63,7 @@ describe("TasksService", () => {
     await expect(service.get("user-1", ID)).resolves.toEqual({
       id: ID,
       project: { id: PROJECT_ID, title: "Web", deleted: false },
+      service: null,
       title: "Fix",
       description: null,
       externalLink: null,

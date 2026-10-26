@@ -64,6 +64,17 @@ export class CreateTaskDto {
   @MaxLength(100)
   projectLeadName?: string | null;
 
+  /** One of the project's services (FR-TSK-009); absent or `null` = none. */
+  @ApiProperty({
+    type: String,
+    format: "uuid",
+    nullable: true,
+    required: false
+  })
+  @IsOptional()
+  @IsUUID()
+  serviceId?: string | null;
+
   /** Status of the task; absent defaults to `upcoming`. `null` → 400. */
   @ApiProperty({ enum: TASK_STATUSES, enumName: "TaskStatus", required: false })
   @ValidateIf((o: CreateTaskDto) => o.status !== undefined)

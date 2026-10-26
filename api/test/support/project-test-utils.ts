@@ -105,3 +105,35 @@ export async function setUserDisplayName(
     displayName
   ]);
 }
+
+export interface ServiceDbRow {
+  id: string;
+  user_id: string;
+  project_id: string;
+  name: string;
+}
+
+/** A `project_services` row (feat-prj-services). */
+export async function insertService(
+  userId: string,
+  projectId: string,
+  name: string
+): Promise<ServiceDbRow> {
+  const result = await testDb().query<ServiceDbRow>(
+    `INSERT INTO project_services (user_id, project_id, name)
+     VALUES ($1, $2, $3) RETURNING *`,
+    [userId, projectId, name]
+  );
+  return result.rows[0];
+}
+
+/** Links a task to a service directly, leaving its `updated_at` as it was. */
+export async function setTaskService(
+  taskId: string,
+  serviceId: string | null
+): Promise<void> {
+  await testDb().query("UPDATE tasks SET service_id = $2 WHERE id = $1", [
+    taskId,
+    serviceId
+  ]);
+}

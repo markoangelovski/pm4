@@ -34,6 +34,8 @@ export interface ProjectInput {
   externalLink: string | null;
   projectLeadUserId: string | null;
   projectLeadName: string | null;
+  /** Stub (feat-prj-services): optional until T3 makes it required. */
+  services?: string[];
 }
 
 export const projectKeys = {
@@ -42,7 +44,8 @@ export const projectKeys = {
   list: (params: ProjectListParams) =>
     [...projectKeys.lists(), params] as const,
   details: () => [...projectKeys.all, "detail"] as const,
-  detail: (id: string) => [...projectKeys.details(), id] as const
+  detail: (id: string) => [...projectKeys.details(), id] as const,
+  serviceNames: () => [...projectKeys.all, "service-names"] as const
 };
 
 /** Task queries live under this key (feat-tsk-web); deleting a project deletes its tasks. */
@@ -89,6 +92,16 @@ export function useProject(
     // The app default is one retry; a missing or deleted project won't appear on a retry.
     retry: (failureCount, error) => !isApiError(error, 404) && failureCount < 1,
     enabled
+  });
+}
+
+/** API-PRJ-006: the service names on the user's projects (the Services field's suggestions). */
+export function useServiceNames(): UseQueryResult<string[]> {
+  return useQuery({
+    queryKey: projectKeys.serviceNames(),
+    queryFn: (): Promise<string[]> => {
+      throw new Error("not implemented (feat-prj-services)");
+    }
   });
 }
 

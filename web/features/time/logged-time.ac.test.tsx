@@ -54,6 +54,7 @@ const input: TimeLogInput = {
 const task: Task = {
   id: "t1",
   project: { id: "p1", title: "Anthropic", deleted: false },
+  service: null,
   title: "Meetings",
   description: null,
   externalLink: null,

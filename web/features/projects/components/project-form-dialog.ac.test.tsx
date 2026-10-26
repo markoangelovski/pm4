@@ -39,6 +39,7 @@ const project: Project = {
   externalLink: "https://example.com/board",
   projectLead: { kind: "text", user: null, name: "Bob" },
   taskCounts: { upcoming: 0, inProgress: 0, completed: 0, total: 0 },
+  services: [],
   loggedMinutes: 0,
   createdAt: "2026-10-03T08:00:00.000Z",
   updatedAt: "2026-10-03T08:00:00.000Z"
@@ -123,7 +124,8 @@ describe("ProjectFormDialog: create (feat-prj-web)", () => {
           description: null,
           externalLink: null,
           projectLeadUserId: me.id,
-          projectLeadName: null
+          projectLeadName: null,
+          services: []
         }
       })
     );
@@ -175,7 +177,8 @@ describe("ProjectFormDialog: edit (feat-prj-web)", () => {
           description: "The new site",
           externalLink: "https://example.com/board",
           projectLeadUserId: null,
-          projectLeadName: null
+          projectLeadName: null,
+          services: []
         }
       })
     );

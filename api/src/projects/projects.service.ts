@@ -7,6 +7,7 @@ import {
   ProjectListResponseDto,
   ProjectResponseDto
 } from "./dto/project-response.dto.js";
+import { ServiceNamesResponseDto } from "./dto/project-service.dto.js";
 import { UpdateProjectDto } from "./dto/update-project.dto.js";
 import {
   type ProjectRow,
@@ -78,6 +79,12 @@ export class ProjectsService {
     }
   }
 
+  /** Every service name on the caller's projects (API-PRJ-006). */
+  serviceNames(userId: string): Promise<ServiceNamesResponseDto> {
+    void userId;
+    throw new Error("not implemented (feat-prj-services)");
+  }
+
   /**
    * The caller's project by id (shared with feat-tsk-api). A non-UUID or
    * missing id → `404 not-found` (D11).
@@ -100,6 +107,7 @@ export class ProjectsService {
       description: row.description,
       externalLink: row.externalLink,
       projectLead: this.projectLeadService.toDto(row),
+      services: [],
       taskCounts: {
         upcoming,
         inProgress,

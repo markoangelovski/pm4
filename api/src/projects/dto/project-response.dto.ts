@@ -1,5 +1,6 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { ProjectLeadDto } from "../../users/dto/project-lead.dto.js";
+import { ProjectServiceDto } from "./project-service.dto.js";
 
 /** Counts over the project's tasks that aren't individually deleted. */
 export class TaskCountsDto {
@@ -24,6 +25,9 @@ export class ProjectResponseDto {
   externalLink: string | null;
   @ApiProperty({ type: ProjectLeadDto, nullable: true })
   projectLead: ProjectLeadDto | null;
+  /** By name A–Z ignoring case, then id. */
+  @ApiProperty({ type: [ProjectServiceDto] })
+  services: ProjectServiceDto[];
   taskCounts: TaskCountsDto;
   /** Minutes of all the project's logs, computed (OQ-132). */
   @ApiProperty({ type: "integer" })

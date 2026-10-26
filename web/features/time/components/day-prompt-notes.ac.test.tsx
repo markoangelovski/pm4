@@ -88,8 +88,10 @@ function routeGet() {
     const key = `${path}:${id}`;
     if (!(key in links)) throw new Error(`unexpected GET ${key}`);
     const title = id === "p1" ? "A" : id === "p2" ? "B" : "X";
+    // Task X is linked to the service QA (feat-prj-services).
+    const service = id === "t1" ? { id: "s1", name: "QA" } : undefined;
     return Promise.resolve({
-      data: { id, title, externalLink: links[key] },
+      data: { id, title, externalLink: links[key], service },
       response: res(200)
     });
   });
@@ -122,10 +124,10 @@ const section = (project: keyof typeof cards) =>
 const date = "Tuesday, 6 October 2026";
 const head = "Book my time accordingly:\n\n";
 const markdownA = (notes: string[]) =>
-  `**Project:** A (${P1})\n**Task:** X (${T1})\n**Date:** ${date}\n**Note:**` +
+  `**Project:** A (${P1})\n**Task:** X (${T1})\n**Service:** QA\n**Date:** ${date}\n**Note:**` +
   notes.map((n) => `\n- ${n}`).join("");
-const markdownB = `**Project:** B (${P2})\n**Task:** —\n**Date:** ${date}\n**Note:**\n- three`;
-const markdownOld = `**Project:** Old\n**Task:** —\n**Date:** ${date}\n**Note:**\n- four`;
+const markdownB = `**Project:** B (${P2})\n**Task:** —\n**Service:** —\n**Date:** ${date}\n**Note:**\n- three`;
+const markdownOld = `**Project:** Old\n**Task:** —\n**Service:** —\n**Date:** ${date}\n**Note:**\n- four`;
 
 describe("Prompt dialog: editable notes (feat-tlog-prompt D8)", () => {
   beforeEach(() => {
@@ -137,7 +139,7 @@ describe("Prompt dialog: editable notes (feat-tlog-prompt D8)", () => {
     toast.error.mockReset();
   });
 
-  it("AC-14 FR-TLOG-020: promptMarkdown puts each note on one line and leaves out empty ones", () => {
+  it("AC-14 FR-TLOG-020 (+ AC-22 feat-prj-services): promptMarkdown puts each note on one line and leaves out empty ones", () => {
     const s: PromptSection = {
       key: "p1:none",
       project: { id: "p1", title: "A" },
@@ -146,7 +148,7 @@ describe("Prompt dialog: editable notes (feat-tlog-prompt D8)", () => {
       notes: ["a\n  b ", "  ", "c"]
     };
     expect(promptMarkdown([{ section: s, links: {} }])).toBe(
-      `${head}**Project:** A\n**Task:** —\n**Date:** ${date}\n**Note:**\n- a b\n- c`
+      `${head}**Project:** A\n**Task:** —\n**Service:** —\n**Date:** ${date}\n**Note:**\n- a b\n- c`
     );
   });
 
@@ -173,7 +175,7 @@ describe("Prompt dialog: editable notes (feat-tlog-prompt D8)", () => {
     ).toHaveLength(4);
   });
 
-  it("AC-16 FR-TLOG-020: the copies use the edited notes; a cleared note is left out", async () => {
+  it("AC-16 FR-TLOG-020 (+ AC-22 feat-prj-services): the copies use the edited notes; a cleared note is left out", async () => {
     openDialog();
     await linksLoaded();
     const cardA = section("A");

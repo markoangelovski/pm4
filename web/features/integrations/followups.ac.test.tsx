@@ -125,6 +125,7 @@ const pmspaTask = (id: string, projectId: string): S["PmspaTaskDto"] => ({
 const task = (over: Partial<Task>): Task => ({
   id: "t1",
   project: { id: "p1", title: "Website", deleted: false },
+  service: null,
   title: "Write the docs",
   description: null,
   externalLink: null,

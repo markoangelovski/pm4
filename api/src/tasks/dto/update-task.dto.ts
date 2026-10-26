@@ -69,6 +69,17 @@ export class UpdateTaskDto {
   @MaxLength(100)
   projectLeadName?: string | null;
 
+  /** One of the task's project's services (after a move, the new project's), or `null`; absent = unchanged, except that a move clears it (OQ-247). */
+  @ApiProperty({
+    type: String,
+    format: "uuid",
+    nullable: true,
+    required: false
+  })
+  @IsOptional()
+  @IsUUID()
+  serviceId?: string | null;
+
   /** Status of the task; not `null`. */
   @ApiProperty({ enum: TASK_STATUSES, enumName: "TaskStatus", required: false })
   @ValidateIf((o: UpdateTaskDto) => o.status !== undefined)

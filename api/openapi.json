@@ -651,6 +651,53 @@
         ]
       }
     },
+    "/api/v1/projects/service-names": {
+      "get": {
+        "operationId": "ProjectsController_serviceNames",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServiceNamesResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid or expired credentials.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Every service name on the caller's projects (API-PRJ-006).",
+        "tags": [
+          "Projects"
+        ]
+      }
+    },
     "/api/v1/projects/{id}": {
       "get": {
         "operationId": "ProjectsController_get",
@@ -4770,6 +4817,16 @@
             "description": "A free-text lead name, ≤ 100 chars; empty after trimming → `null`.",
             "maxLength": 100
           },
+          "services": {
+            "description": "The project's service names (OQ-243, OQ-244): each 1–50 chars after trimming, at most 20, unique ignoring case; absent = none.",
+            "maxItems": 20,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 50,
+              "minLength": 1
+            }
+          },
           "title": {
             "type": "string",
             "description": "1–200 chars after trimming.",
@@ -4832,6 +4889,27 @@
           "name"
         ]
       },
+      "ProjectServiceDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "taskCount": {
+            "type": "integer",
+            "description": "The project's tasks linked to it, computed."
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "taskCount",
+          "name"
+        ]
+      },
       "TaskCountsDto": {
         "type": "object",
         "properties": {
@@ -4876,6 +4954,13 @@
               }
             ]
           },
+          "services": {
+            "description": "By name A–Z ignoring case, then id.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProjectServiceDto"
+            }
+          },
           "loggedMinutes": {
             "type": "integer",
             "description": "Minutes of all the project's logs, computed (OQ-132)."
@@ -4902,6 +4987,7 @@
           "description",
           "externalLink",
           "projectLead",
+          "services",
           "loggedMinutes",
           "id",
           "title",
@@ -4933,6 +5019,20 @@
           "page",
           "pageSize",
           "total",
+          "items"
+        ]
+      },
+      "ServiceNamesResponseDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
           "items"
         ]
       },
@@ -4969,6 +5069,16 @@
             "nullable": true,
             "description": "A free-text lead name, ≤ 100 chars; empty after trimming → `null`.",
             "maxLength": 100
+          },
+          "services": {
+            "description": "The project's service names (OQ-243, OQ-244): each 1–50 chars after trimming, at most 20, unique ignoring case; replaces the project's services (a name kept ignoring case keeps its service); absent = unchanged.",
+            "maxItems": 20,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 50,
+              "minLength": 1
+            }
           }
         }
       },
@@ -5009,6 +5119,12 @@
             "description": "A free-text lead name, ≤ 100 chars; empty after trimming → `null`.",
             "maxLength": 100
           },
+          "serviceId": {
+            "type": "string",
+            "nullable": true,
+            "description": "One of the project's services (FR-TSK-009); absent or `null` = none.",
+            "format": "uuid"
+          },
           "status": {
             "description": "Status of the task; absent defaults to `upcoming`. `null` → 400.",
             "allOf": [
@@ -5040,6 +5156,22 @@
           "title"
         ]
       },
+      "ServiceRefDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ]
+      },
       "RefDto": {
         "type": "object",
         "properties": {
@@ -5063,6 +5195,15 @@
       "TaskResponseDto": {
         "type": "object",
         "properties": {
+          "service": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ServiceRefDto"
+              }
+            ]
+          },
           "description": {
             "type": "string",
             "nullable": true
@@ -5115,6 +5256,7 @@
           }
         },
         "required": [
+          "service",
           "description",
           "externalLink",
           "projectLead",
@@ -5192,6 +5334,12 @@
             "nullable": true,
             "description": "A free-text lead name, ≤ 100 chars; empty after trimming → `null`.",
             "maxLength": 100
+          },
+          "serviceId": {
+            "type": "string",
+            "nullable": true,
+            "description": "One of the task's project's services (after a move, the new project's), or `null`; absent = unchanged, except that a move clears it (OQ-247).",
+            "format": "uuid"
           },
           "status": {
             "description": "Status of the task; not `null`.",

@@ -113,6 +113,7 @@ export class TasksService {
         title: row.projectTitle,
         deleted: false
       },
+      service: null,
       title: row.title,
       description: row.description,
       externalLink: row.externalLink,

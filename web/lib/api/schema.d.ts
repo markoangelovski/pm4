@@ -173,6 +173,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/service-names": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Every service name on the caller's projects (API-PRJ-006). */
+        get: operations["ProjectsController_serviceNames"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects/{id}": {
         parameters: {
             query?: never;
@@ -770,6 +787,8 @@ export interface components {
             projectLeadUserId?: string | null;
             /** @description A free-text lead name, ≤ 100 chars; empty after trimming → `null`. */
             projectLeadName?: string | null;
+            /** @description The project's service names (OQ-243, OQ-244): each 1–50 chars after trimming, at most 20, unique ignoring case; absent = none. */
+            services?: string[];
             /** @description 1–200 chars after trimming. */
             title: string;
         };
@@ -786,6 +805,13 @@ export interface components {
             /** @description `user.displayName` for a user lead, else the saved text name. */
             name: string;
         };
+        ProjectServiceDto: {
+            /** Format: uuid */
+            id: string;
+            /** @description The project's tasks linked to it, computed. */
+            taskCount: number;
+            name: string;
+        };
         TaskCountsDto: {
             upcoming: number;
             inProgress: number;
@@ -797,6 +823,8 @@ export interface components {
             description: string | null;
             externalLink: string | null;
             projectLead: components["schemas"]["ProjectLeadDto"] | null;
+            /** @description By name A–Z ignoring case, then id. */
+            services: components["schemas"]["ProjectServiceDto"][];
             /** @description Minutes of all the project's logs, computed (OQ-132). */
             loggedMinutes: number;
             id: string;
@@ -812,6 +840,9 @@ export interface components {
             pageSize: number;
             total: number;
             items: components["schemas"]["ProjectResponseDto"][];
+        };
+        ServiceNamesResponseDto: {
+            items: string[];
         };
         UpdateProjectDto: {
             /** @description 1–200 chars after trimming; not `null`. */
@@ -830,6 +861,8 @@ export interface components {
             projectLeadUserId?: string | null;
             /** @description A free-text lead name, ≤ 100 chars; empty after trimming → `null`. */
             projectLeadName?: string | null;
+            /** @description The project's service names (OQ-243, OQ-244): each 1–50 chars after trimming, at most 20, unique ignoring case; replaces the project's services (a name kept ignoring case keeps its service); absent = unchanged. */
+            services?: string[];
         };
         /**
          * @description Status of the task; absent defaults to `upcoming`. `null` → 400.
@@ -851,6 +884,11 @@ export interface components {
             projectLeadUserId?: string | null;
             /** @description A free-text lead name, ≤ 100 chars; empty after trimming → `null`. */
             projectLeadName?: string | null;
+            /**
+             * Format: uuid
+             * @description One of the project's services (FR-TSK-009); absent or `null` = none.
+             */
+            serviceId?: string | null;
             /** @description Status of the task; absent defaults to `upcoming`. `null` → 400. */
             status?: components["schemas"]["TaskStatus"];
             /** @description Work date in `YYYY-MM-DD`; empty after trimming → `null`. */
@@ -863,12 +901,18 @@ export interface components {
             /** @description 1–200 chars after trimming. */
             title: string;
         };
+        ServiceRefDto: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+        };
         RefDto: {
             id: string | null;
             title: string;
             deleted: boolean;
         };
         TaskResponseDto: {
+            service: components["schemas"]["ServiceRefDto"] | null;
             description: string | null;
             externalLink: string | null;
             projectLead: components["schemas"]["ProjectLeadDto"] | null;
@@ -913,6 +957,11 @@ export interface components {
             projectLeadUserId?: string | null;
             /** @description A free-text lead name, ≤ 100 chars; empty after trimming → `null`. */
             projectLeadName?: string | null;
+            /**
+             * Format: uuid
+             * @description One of the task's project's services (after a move, the new project's), or `null`; absent = unchanged, except that a move clears it (OQ-247).
+             */
+            serviceId?: string | null;
             /** @description Status of the task; not `null`. */
             status?: components["schemas"]["TaskStatus"];
             /** @description Work date in `YYYY-MM-DD`; empty after trimming → `null`. */
@@ -1916,6 +1965,43 @@ export interface operations {
                 };
                 content: {
                     "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Missing, invalid or expired credentials. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Unexpected error. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+        };
+    };
+    ProjectsController_serviceNames: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServiceNamesResponseDto"];
                 };
             };
             /** @description Missing, invalid or expired credentials. */

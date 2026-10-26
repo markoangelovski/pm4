@@ -61,6 +61,7 @@ const website: Project = {
     name: me.displayName
   },
   taskCounts: { upcoming: 3, inProgress: 1, completed: 4, total: 8 },
+  services: [],
   loggedMinutes: 0,
   createdAt: "2026-10-03T08:00:00.000Z",
   updatedAt: "2026-10-03T08:00:00.000Z"

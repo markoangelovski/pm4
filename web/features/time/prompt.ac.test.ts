@@ -83,7 +83,7 @@ describe("prompt (feat-tlog-prompt)", () => {
     ).toEqual([]);
   });
 
-  it("AC-5 FR-TLOG-020: the markdown: the heading once, links after the names, '—' for none, a blank line between sections", () => {
+  it("AC-5 FR-TLOG-020 (+ AC-20 feat-prj-services): the markdown: the heading once, links after the names, '—' for none, a blank line between sections", () => {
     const [first, second] = promptSections("2026-10-06", [
       log({ id: "l1", text: "one", project: a, task: x }),
       log({ id: "l2", text: "two", project: a, task: x }),
@@ -99,8 +99,29 @@ describe("prompt (feat-tlog-prompt)", () => {
       ])
     ).toBe(
       "Book my time accordingly:\n\n" +
-        "**Project:** A (https://p)\n**Task:** X (https://t)\n**Date:** Tuesday, 6 October 2026\n**Note:**\n- one\n- two\n\n" +
-        "**Project:** B\n**Task:** —\n**Date:** Tuesday, 6 October 2026\n**Note:**\n- three"
+        "**Project:** A (https://p)\n**Task:** X (https://t)\n**Service:** —\n**Date:** Tuesday, 6 October 2026\n**Note:**\n- one\n- two\n\n" +
+        "**Project:** B\n**Task:** —\n**Service:** —\n**Date:** Tuesday, 6 October 2026\n**Note:**\n- three"
+    );
+  });
+});
+
+describe("prompt: Service line (feat-prj-services)", () => {
+  it("AC-20 FR-TLOG-020: the Service line follows the Task line; — when the service is absent or null", () => {
+    const [first, second, third] = promptSections("2026-10-06", [
+      log({ id: "l1", text: "one", project: a, task: x }),
+      log({ id: "l2", text: "two", project: b }),
+      log({ id: "l3", text: "three", project: a })
+    ]);
+    const entries = [
+      { section: first, links: {}, service: "QA" },
+      { section: second, links: {}, service: null },
+      { section: third, links: {} }
+    ];
+    expect(promptMarkdown(entries)).toBe(
+      "Book my time accordingly:\n\n" +
+        `**Project:** A\n**Task:** X\n**Service:** QA\n**Date:** ${date}\n**Note:**\n- one\n\n` +
+        `**Project:** B\n**Task:** —\n**Service:** —\n**Date:** ${date}\n**Note:**\n- two\n\n` +
+        `**Project:** A\n**Task:** —\n**Service:** —\n**Date:** ${date}\n**Note:**\n- three`
     );
   });
 });

@@ -51,6 +51,7 @@ const website: Project = {
   externalLink: null,
   projectLead: { kind: "text", user: null, name: "Bob Builder" },
   taskCounts: { upcoming: 0, inProgress: 0, completed: 0, total: 0 },
+  services: [],
   loggedMinutes: 0,
   createdAt: "2026-10-02T22:30:00.000Z",
   updatedAt: "2026-10-04T12:05:00.000Z"

@@ -1,6 +1,6 @@
 # Task Board
 
-**Next free ID:** T-0116
+**Next free ID:** T-0120
 
 | ID | Title | Milestone | App | Size | Status | Depends on |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -119,5 +119,9 @@
 | [T-0113](m0-foundation/T-0113-offline-banner-promote-it-mount-it.md) | Offline banner: promote it, mount it in the app shell, and add it with the online retry to AuthGuard's unavailable screen | M0 | web | S | done | T-0112 |
 | [T-0114](m0-foundation/T-0114-new-menu-with-project-task-and.md) | New menu with Project, Task and Log; floating swipeable Log time button in the layout | M0 | web | S | done | — |
 | [T-0115](m0-foundation/T-0115-log-time-button-key-after-swipe.md) | Log time button: a key press after a touch swipe is never swallowed | M0 | web | S | done | — |
+| [T-0116](m2-projects/T-0116-project-services-table-and-migration-services.md) | project_services table and migration; services on API-PRJ-001…004 (replace in one locked transaction) and API-PRJ-006 | M2 | api | M | ready | — |
+| [T-0117](m2-projects/T-0117-serviceid-service-on-api-tsk-001.md) | serviceId / service on API-TSK-001…004, cleared on a move | M2 | api | S | blocked | T-0116 |
+| [T-0118](m2-projects/T-0118-prototype-off-proposed-types-for-projects.md) | Prototype off proposed-types for projects, useServiceNames + mock route; project dialog and detail twins, promote services-field.tsx | M2 | web | S | blocked | T-0116 |
+| [T-0119](m2-projects/T-0119-task-dialog-and-detail-twins-promote.md) | Task dialog and detail twins, promote service-select.tsx, Prompt twins; proposed-types.ts removed | M2 | web | S | blocked | T-0117, T-0118 |
 
 M0–M6 are done. Later follow-ups are filed under the milestone they extend.

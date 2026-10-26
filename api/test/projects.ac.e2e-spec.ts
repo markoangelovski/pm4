@@ -36,6 +36,7 @@ interface ProjectBody {
   description: string | null;
   externalLink: string | null;
   projectLead: LeadBody | null;
+  services: { id: string; name: string; taskCount: number }[];
   taskCounts: Record<string, number>;
   loggedMinutes: number;
   createdAt: string;
@@ -123,6 +124,7 @@ describe("Projects API (feat-prj-api)", () => {
       description: null,
       externalLink: null,
       projectLead: null,
+      services: [],
       taskCounts: { upcoming: 0, inProgress: 0, completed: 0, total: 0 },
       loggedMinutes: 0,
       createdAt: response.body.createdAt,

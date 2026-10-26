@@ -1,13 +1,21 @@
 import {
+  ArrayMaxSize,
+  IsArray,
   IsOptional,
   IsString,
   IsUrl,
   IsUUID,
   Length,
-  MaxLength
+  MaxLength,
+  Validate
 } from "class-validator";
 import { ApiProperty } from "@nestjs/swagger";
-import { Trim, TrimToNull } from "../../common/validation/transforms.js";
+import {
+  Trim,
+  TrimEach,
+  TrimToNull
+} from "../../common/validation/transforms.js";
+import { UniqueIgnoringCase } from "../../common/validation/unique-ignoring-case.js";
 
 /** `POST /projects` body (API-PRJ-001). */
 export class CreateProjectDto {
@@ -51,4 +59,15 @@ export class CreateProjectDto {
   @IsString()
   @MaxLength(100)
   projectLeadName?: string | null;
+
+  /** The project's service names (OQ-243, OQ-244): each 1–50 chars after trimming, at most 20, unique ignoring case; absent = none. */
+  @ApiProperty({ type: [String], required: false, maxItems: 20 })
+  @IsOptional()
+  @TrimEach()
+  @IsArray()
+  @ArrayMaxSize(20)
+  @IsString({ each: true })
+  @Length(1, 50, { each: true })
+  @Validate(UniqueIgnoringCase)
+  services?: string[];
 }

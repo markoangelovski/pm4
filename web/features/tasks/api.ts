@@ -49,6 +49,8 @@ export interface TaskInput {
   externalLink: string | null;
   projectLeadUserId: string | null;
   projectLeadName: string | null;
+  /** Stub (feat-prj-services): optional until T4 makes it required. */
+  serviceId?: string | null;
   status: TaskStatus;
   dueDate: string | null;
 }

@@ -34,6 +34,7 @@ interface LeadBody {
 interface TaskBody {
   id: string;
   project: { id: string | null; title: string; deleted: boolean };
+  service: { id: string; name: string } | null;
   title: string;
   description: string | null;
   externalLink: string | null;
@@ -184,6 +185,7 @@ describe("Tasks API (feat-tsk-api)", () => {
     expect(response.body).toEqual({
       id: response.body.id,
       project: { id: p.id, title: "Website", deleted: false },
+      service: null,
       title: "Fix",
       description: null,
       externalLink: null,

@@ -1,5 +1,6 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { RefDto } from "../../common/dto/ref.dto.js";
+import { ServiceRefDto } from "../../projects/dto/project-service.dto.js";
 import { ProjectLeadDto } from "../../users/dto/project-lead.dto.js";
 import type { TaskStatus } from "../../database/schema/index.js";
 import { TASK_STATUSES } from "./create-task.dto.js";
@@ -9,6 +10,9 @@ export class TaskResponseDto {
   id: string;
 
   project: RefDto;
+
+  @ApiProperty({ type: ServiceRefDto, nullable: true })
+  service: ServiceRefDto | null;
 
   title: string;
 

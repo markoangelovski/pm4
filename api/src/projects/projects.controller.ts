@@ -23,9 +23,10 @@ import {
   ProjectResponseDto
 } from "./dto/project-response.dto.js";
 import { UpdateProjectDto } from "./dto/update-project.dto.js";
+import { ServiceNamesResponseDto } from "./dto/project-service.dto.js";
 import { ProjectsService } from "./projects.service.js";
 
-/** `/api/v1/projects` (API-PRJ-001…005). */
+/** `/api/v1/projects` (API-PRJ-001…006). */
 @ApiBearerAuth("bearer")
 @Controller("projects")
 export class ProjectsController {
@@ -49,6 +50,15 @@ export class ProjectsController {
     @Query() query: ListProjectsQueryDto
   ): Promise<ProjectListResponseDto> {
     return this.projectsService.list(user.id, query);
+  }
+
+  /** Every service name on the caller's projects (API-PRJ-006). */
+  @Get("service-names")
+  @ApiProblemResponses(401)
+  serviceNames(
+    @CurrentUser() user: AuthUser
+  ): Promise<ServiceNamesResponseDto> {
+    return this.projectsService.serviceNames(user.id);
   }
 
   /** One project (API-PRJ-003). */

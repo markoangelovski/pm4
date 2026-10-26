@@ -28,6 +28,7 @@ const project: Project = {
   externalLink: null,
   projectLead: null,
   taskCounts: { upcoming: 0, inProgress: 0, completed: 0, total: 0 },
+  services: [],
   loggedMinutes: 0,
   createdAt: "2026-10-03T08:00:00.000Z",
   updatedAt: "2026-10-03T08:00:00.000Z"
@@ -38,7 +39,8 @@ const input: ProjectInput = {
   description: null,
   externalLink: null,
   projectLeadUserId: null,
-  projectLeadName: null
+  projectLeadName: null,
+  services: []
 };
 
 const listKey = projectKeys.list({
