@@ -190,7 +190,12 @@ export class ProjectsRepository {
           await tx
             .update(projectServices)
             .set({ name })
-            .where(eq(projectServices.id, existing.id));
+            .where(
+              and(
+                eq(projectServices.userId, userId),
+                eq(projectServices.id, existing.id)
+              )
+            );
         }
       }
       if (added.length > 0) {
@@ -212,8 +217,10 @@ export class ProjectsRepository {
         id: projectServices.id,
         projectId: projectServices.projectId,
         name: projectServices.name,
+        // Drizzle drops the table name from a column in a subquery, so the outer column is written by hand:
+        // keep project_services unaliased in this query.
         taskCount:
-          sql<number>`(SELECT count(*) FROM ${tasks} WHERE ${tasks.serviceId} = project_services.id)`.mapWith(
+          sql<number>`(SELECT count(*) FROM ${tasks} WHERE ${tasks.userId} = ${userId} AND ${tasks.serviceId} = project_services.id)`.mapWith(
             Number
           )
       })
