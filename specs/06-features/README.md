@@ -62,3 +62,4 @@ A feature spec links to those. It doesn't copy them.
 | Projects list: expandable task rows | [prj-task-rows.md](prj-task-rows.md) | M2 | approved |
 | Installable web app (PWA): the app shell offline and an offline banner | [shell-pwa.md](shell-pwa.md) | M0 | approved |
 | New menu with project, task and log; floating Log time button | [shell-new-menu.md](shell-new-menu.md) | M0 | approved |
+| Project services: a project's services, a task's service, the Prompt's Service line | [prj-services.md](prj-services.md) | M2 | approved |

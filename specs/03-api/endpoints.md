@@ -3,7 +3,7 @@ id: api-endpoints
 title: API Endpoints
 status: review
 owner: Marko Angelovski
-last_updated: 2026-10-24
+last_updated: 2026-10-26
 related: [api-conventions, api-data-model, req-auth, req-projects, req-tasks, req-time-logs, req-reporting, req-integrations, req-notes]
 ---
 
@@ -42,6 +42,7 @@ defines its request, response and errors. Paths are relative to `/api/v1` unless
 | API-PRJ-003 | GET | `/projects/{id}` | FR-PRJ-003, FR-PRJ-008 | specified |
 | API-PRJ-004 | PATCH | `/projects/{id}` | FR-PRJ-004 | specified |
 | API-PRJ-005 | DELETE | `/projects/{id}` (with its tasks) | FR-PRJ-005 | specified |
+| API-PRJ-006 | GET | `/projects/service-names` → `{items: string[]}` (the Services field's suggestions) | FR-PRJ-009 | specified |
 | API-TSK-001 | POST | `/tasks` | FR-TSK-001 | specified |
 | API-TSK-002 | GET | `/tasks?projectId=&status=&q=&sort=&page=&pageSize=` | FR-TSK-002/003, picker | specified |
 | API-TSK-003 | GET | `/tasks/{id}` | FR-TSK-004 | specified |
@@ -200,9 +201,22 @@ Used by API-USR-003, API-PRJ-* and API-TSK-*. Implements the field tables in
   in the query and never stored (data-model.md *time_logs*). A project's covers every log with that project, so its tasks' logs as
   well; a task's covers the logs linked to it. `0` when there are none. It equals
   API-TLOG-001's `totalMinutes` for the same project or task.
+- **`ProjectService`** (FR-PRJ-009): `{ id, name, taskCount }`. `taskCount`: the caller's tasks linked to it, computed.
+- **`ServiceRef`** (FR-TSK-009): `{ id, name }`.
+- **Services input** (OQ-243, OQ-244), `services?: string[]` on API-PRJ-001/004: the project's **whole** list of names. Each is
+  trimmed and must then be 1–50 chars; at most 20; no two equal ignoring case (message "services must not repeat a name
+  (ignoring case)"). Any of these, or a non-string item, → `400` on field `services`. On `POST`, absent means `[]`. On `PATCH`, absent leaves the services alone; present
+  replaces them: a name equal (ignoring case) to a current service keeps that service (same `id`, its tasks stay linked) and saves the
+  sent spelling; a new name adds a service; a current service whose name is missing is deleted, and its tasks lose it
+  (`service: null`; their `updatedAt` doesn't change). All in one transaction with the project's other fields.
+- **`serviceId`** (FR-TSK-009, OQ-247), `serviceId?: uuid | null` on API-TSK-001/004: one of the task's project's services, or `null`
+  for none. A UUID that isn't a service of that project (another project's, another user's, or unknown) → `400` on field `serviceId`
+  ("must be one of the project's services"); not a UUID → `400`. On `POST`, absent means `null`. On `PATCH`, the project is the new
+  `projectId` when the task moves, else its current one; absent leaves the service alone, except that a move to another project clears it.
 - **`Project`:** `{ id, title, description: string | null, externalLink: string | null, projectLead: ProjectLead | null,
-  taskCounts: TaskCounts, loggedMinutes, createdAt, updatedAt }` (instants ISO 8601 UTC).
-- **`Task`:** `{ id, project: Ref, title, description: string | null, externalLink: string | null,
+  services: ProjectService[], taskCounts: TaskCounts, loggedMinutes, createdAt, updatedAt }` (instants ISO 8601 UTC). `services` by
+  name A–Z ignoring case, then `id`; `[]` for none.
+- **`Task`:** `{ id, project: Ref, service: ServiceRef | null, title, description: string | null, externalLink: string | null,
   projectLead: ProjectLead | null, status: "upcoming" | "in-progress" | "completed", dueDate: string | null,
   loggedMinutes, createdAt, updatedAt }`. `Ref` = `{ id, title, deleted }` (conventions.md *Responses*), `deleted: false` here.
 - **Ids in paths:** a value that isn't a UUID → `404` `…/errors/not-found` (never `400`, never a database error).
@@ -223,8 +237,8 @@ This is the only endpoint that returns other users' emails (security.md *Authori
 
 ### API-PRJ-001: Create project
 `POST /projects` · Auth: bearer · Implements: FR-PRJ-001, FR-PRJ-006
-**Request body:** `{ title: string(1–200), description?: string(≤2000) | null, externalLink?: string(≤500) | null, projectLeadUserId?: uuid | null, projectLeadName?: string(≤100) | null }`
-**201:** `Project` (zero `taskCounts`)
+**Request body:** `{ title: string(1–200), description?: string(≤2000) | null, externalLink?: string(≤500) | null, projectLeadUserId?: uuid | null, projectLeadName?: string(≤100) | null, services?: string[] }` (*Services input*)
+**201:** `Project` (zero `taskCounts`, each service's `taskCount` 0)
 **Errors:** 400 validation · 401
 
 ### API-PRJ-002: List projects
@@ -245,7 +259,8 @@ then lead-only matches; inside each group the `sort` order applies, then `id` de
 
 ### API-PRJ-004: Update project
 `PATCH /projects/{id}` · Auth: bearer · Implements: FR-PRJ-004
-**Request body:** the create fields, all optional; `title` may not be `null`. An empty body is valid (only `updatedAt` changes).
+**Request body:** the create fields, all optional; `title` and `services` may not be `null`. An empty body is valid (only `updatedAt` changes).
+`services` replaces the project's services (*Services input*).
 **200:** `Project`
 **Errors:** 400 validation · 401 · 404 `not-found`
 
@@ -257,10 +272,18 @@ cascade deletes its tasks and the FKs unlink the logs. The logs themselves stay 
 **204**
 **Errors:** 401 · 404 `not-found` (also when already deleted)
 
+### API-PRJ-006: List service names
+`GET /projects/service-names` · Auth: bearer · Implements: FR-PRJ-009 (OQ-246)
+**200:** `{ items: string[] }`: every service name on the caller's projects, once per name ignoring case (the spelling that sorts
+first by `name`), ordered A–Z ignoring case. `[]` when there are none. No paging (at most 20 per project).
+Declared before `GET /projects/{id}`, so `service-names` never reaches it as an id.
+**Errors:** 401
+
 ### API-TSK-001: Create task
 `POST /tasks` · Auth: bearer · Implements: FR-TSK-001
 **Request body:** `{ projectId: uuid, title: string(1–200), description?: string(≤2000) | null, externalLink?: string(≤500) | null,
-projectLeadUserId?: uuid | null, projectLeadName?: string(≤100) | null, status?: TaskStatus (default "upcoming"), dueDate?: date | null }`
+projectLeadUserId?: uuid | null, projectLeadName?: string(≤100) | null, serviceId?: uuid | null, status?: TaskStatus (default "upcoming"), dueDate?: date | null }`
+(`serviceId`: *Shared project and task shapes*)
 **201:** `Task`
 **Errors:** 400 validation · 401 · 404 `not-found` when `projectId` is missing or another user's
 
@@ -281,7 +304,8 @@ tasks without a due date come last in both `dueDate` directions (OQ-085).
 ### API-TSK-004: Update task
 `PATCH /tasks/{id}` · Auth: bearer · Implements: FR-TSK-005, FR-TSK-006
 **Request body:** the create fields, all optional; `projectId`, `title` and `status` may not be `null`.
-A new `projectId` moves the task (it must be the caller's, else `404` `not-found`).
+A new `projectId` moves the task (it must be the caller's, else `404` `not-found`). The move clears the task's service unless
+`serviceId` names one of the new project's services (OQ-247).
 Moving a task also sets the project of its time logs, notes and to-dos to the new project, in the same transaction (data-model.md *time_logs*, *notes*).
 **200:** `Task`
 **Errors:** 400 validation · 401 · 404 `not-found`
@@ -776,3 +800,5 @@ None.
 - 2026-10-24: API-TLOG-001 returns `days` (`LoggedDay[]`) for the Logged time chart (OQ-222, feat-proto-sync-logged-chart). Still `review`.
 - 2026-10-24: Notes and to-dos: API-NOTE-001…004, API-TODO-001…004, *Shared note and to-do shapes*; API-PRJ-005, API-TSK-004/005 keep and move their items (OQ-230…OQ-233, feat-note-todos). Still `review`.
 - 2026-10-24: The owner approved API-NOTE-001…004, API-TODO-001…004, *Shared note and to-do shapes*, API-PRJ-005 and API-TSK-004/005 (as updated) for feat-note-todos.
+- 2026-10-26: Project services (FR-PRJ-009, FR-TSK-009, OQ-243…OQ-247, feat-prj-services): `ProjectService`, `ServiceRef`, *Services input*, `serviceId`; `Project.services`, `Task.service`; API-PRJ-006. Still `review`.
+- 2026-10-26: The owner approved *Shared project and task shapes*, API-PRJ-001/004/006 and API-TSK-001/004 (as updated) for feat-prj-services.

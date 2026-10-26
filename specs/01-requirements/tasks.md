@@ -3,7 +3,7 @@ id: req-tasks
 title: Tasks
 status: approved
 owner: Marko Angelovski
-last_updated: 2026-10-14
+last_updated: 2026-10-26
 related: [req-projects, req-time-logs, api-endpoints]
 ---
 
@@ -27,6 +27,7 @@ Logged time on the task page: FR-TLOG-012.
 | externalLink | no | A valid `http(s)` URL, ≤ 500 chars (legacy `jiraLink`) |
 | projectLead | no (OQ-028) | A PM4 user **or** a free-text name (≤ 100 chars), never both. Same rules as projects: [Project lead](projects.md#project-lead), FR-PRJ-006/007. Suggested on create: the signed-in user (OQ-078). |
 | status | yes | `upcoming` \| `in-progress` \| `completed`, default `upcoming` |
+| service | no | One of the task's project's services (FR-PRJ-009), or none. Moving the task to another project clears it unless one of the new project's services is chosen (OQ-247). |
 | dueDate | no (OQ-028) | Calendar date `YYYY-MM-DD` in the user's calendar. No default. |
 
 ## Status workflow
@@ -126,6 +127,17 @@ tasks without a due date show no indicator (legacy `DueDateCircle`).
 - Given today is 2026-10-03 in my zone: a task due 2026-10-02 is overdue; due 2026-10-03 or 2026-10-04 is due soon; due 2026-10-05 has no indicator.
 - Given a completed task due yesterday, then no indicator is shown.
 
+### FR-TSK-009: Task service
+**Priority:** Should
+**Statement:** When creating or editing a task, the user can pick one of its project's services, or none (OQ-243). The task
+view shows it. Lists show no service and can't filter by it.
+**Acceptance criteria:**
+- Given a project with services "QA" and "Design", when I create a task in it, then **Service** offers **No service**, "Design" and "QA", and starts at **No service**.
+- Given a project without services, then **Service** is disabled.
+- Given I change the task's project in the dialog, then **Service** goes back to **No service**.
+- Given a task with the service "QA", when I open its page, then **Service** in *Details* shows "QA"; with none, `—`.
+- Given the project's "QA" is removed, then the task shows no service.
+
 ## Open questions
 None.
 
@@ -142,3 +154,5 @@ None.
 - 2026-10-09: Approved by the owner.
 - 2026-10-11: FR-TSK-002 (and so FR-TSK-003): the lists show each task's logged time (OQ-132, feat-proto-sync-web). Back to `review`.
 - 2026-10-11: Approved by the owner.
+- 2026-10-26: FR-TSK-009 *Task service* and the `service` field (OQ-243, OQ-247, feat-prj-services). Back to `review`.
+- 2026-10-26: Approved by the owner.

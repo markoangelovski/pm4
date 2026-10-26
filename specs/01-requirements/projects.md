@@ -3,7 +3,7 @@ id: req-projects
 title: Projects
 status: approved
 owner: Marko Angelovski
-last_updated: 2026-10-25
+last_updated: 2026-10-26
 related: [req-tasks, req-time-logs, api-endpoints, api-data-model, sec]
 ---
 
@@ -27,6 +27,7 @@ Logged time on the project page: FR-TLOG-012.
 | description | no | ≤ 2000 chars, plain text |
 | externalLink | no | A valid `http(s)` URL, ≤ 500 chars (OQ-079) |
 | projectLead | no | A PM4 user **or** a free-text name (≤ 100 chars, trimmed), never both. See [Project lead](#project-lead). |
+| services | no | A list of service names: each 1–50 chars, trimmed; at most 20; unique within the project ignoring case (FR-PRJ-009, OQ-244). |
 
 Derived (computed by the API, never stored): task counts per status (upcoming / in-progress /
 completed), the total task count and the completed percentage, all over the project's tasks.
@@ -143,6 +144,21 @@ is a separate section (FR-TLOG-012).
 - The percentage is rounded to a whole number (OQ-085).
 - The statistics don't change when the status filter of the task list changes.
 
+### FR-PRJ-009: Project services
+**Priority:** Should
+**Statement:** A project has a list of **services** it offers (e.g. "Backend development"), free names the user adds and
+removes when creating or editing the project. While typing a name, the names used on the user's other projects are
+suggested (OQ-246). Each task of the project can be linked to one of them (FR-TSK-009). Removing a service that tasks use
+warns, while editing, how many tasks use it; saving clears it from those tasks, which keep everything else (OQ-243, OQ-245).
+The project view lists the services. Limits: OQ-244.
+**Acceptance criteria:**
+- Given a project with services "QA" and "Design", when I open its page, then **Services** in *Details* shows both; with none, `—`.
+- Given another project has the service "Backend development", when I type "back" in **Services**, then "Backend development" is suggested.
+- Given "QA" is already a service of the project, when I add "qa", then nothing is added.
+- Given 2 tasks use "QA", when I remove "QA" in the edit dialog, then "2 tasks use “QA”. They'll have no service." shows; when I save, those tasks have no service.
+- Given 20 services, then a 21st can't be saved ("Add at most 20 services.").
+- Renaming a service only by changing its case (e.g. "qa" → "QA") keeps its tasks; any other new name is a new service.
+
 ## Open questions
 None.
 
@@ -163,3 +179,5 @@ None.
 - 2026-10-11: Approved by the owner.
 - 2026-10-25: FR-PRJ-002: project rows open to list their open tasks (OQ-236, feat-prj-task-rows). Back to `review`.
 - 2026-10-25: Approved by the owner.
+- 2026-10-26: FR-PRJ-009 *Project services* and the `services` field (OQ-243…OQ-246, feat-prj-services). Back to `review`.
+- 2026-10-26: Approved by the owner.

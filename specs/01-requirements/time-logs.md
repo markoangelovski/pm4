@@ -3,7 +3,7 @@ id: req-time-logs
 title: Time Capture (Workdays and Time Logs)
 status: review
 owner: Marko Angelovski
-last_updated: 2026-10-25
+last_updated: 2026-10-26
 related: [req-projects, req-tasks, req-reporting, api-endpoints, api-data-model, web-screens]
 ---
 
@@ -224,7 +224,8 @@ keep it. A day with no start and no logs can't be deleted (OQ-152).
 ### FR-TLOG-020: Booking prompt
 **Priority:** Should
 **Statement:** From the day view, the user opens the viewed day's logs as a booking prompt, to paste into Slack: one section
-per project + task, in the order they first appear, each with the project, the task, the date and one note line per log, and
+per project + task, in the order they first appear, each with the project, the task, the task's service (FR-TSK-009, OQ-243), the date
+and one note line per log, and
 copies one section or all of them as markdown. Excluded logs (FR-TLOG-018) are left out. A project or task with an external
 link shows it after its name (OQ-210). Before copying, the user can edit each note line; the edits change only
 what is copied, not the logs, and are discarded when the prompt closes (OQ-211).
@@ -232,6 +233,8 @@ what is copied, not the logs, and are discarded when the prompt closes (OQ-211).
 - Given a day with two logs on project A / task X, one on project B without a task and one excluded log, then the prompt has
   two sections, A · X with two note lines and B with "—" as the task, and **Copy all** copies "Book my time accordingly:" once
   followed by both sections.
+- Given task X has the service "QA", then its section shows and copies **Service:** QA after **Task**; a section without a task, or
+  whose task has no service, shows "—".
 - Given a day with no logs, then **Prompt** is disabled.
 - Given a note line edited in the prompt, when its section or all sections are copied, then the copy has the edited line;
   when the prompt is closed and opened again, the line shows the log's text, and the log is unchanged.
@@ -262,3 +265,5 @@ None.
 - 2026-10-23: FR-TLOG-012 shows each booking of a log and its unbooked time; FR-TLOG-019 wording for bookings (OQ-214, feat-book-partial).
 - 2026-10-25: FR-TLOG-011: the header button becomes a floating button that swipes away (OQ-242, feat-shell-new-menu).
 - 2026-10-25: The owner approved FR-TLOG-011 for feat-shell-new-menu.
+- 2026-10-26: FR-TLOG-020: each section has the task's service (OQ-243, feat-prj-services). Still `review`.
+- 2026-10-26: The owner approved FR-TLOG-020 (as updated) for feat-prj-services.

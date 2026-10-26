@@ -3,7 +3,7 @@ id: api-data-model
 title: Data Model
 status: draft
 owner: Marko Angelovski
-last_updated: 2026-10-24
+last_updated: 2026-10-26
 related: [api-conventions, req-integrations, prod-glossary, req-projects, req-tasks, req-time-logs, ADR-0008]
 ---
 
@@ -18,6 +18,7 @@ because the database has a fixed storage quota: **0.5 GB** on the Neon free tier
 ```
 users 1──* user_identities            (provider, subject) → user
 users 1──* projects 1──* tasks       (FK ON DELETE CASCADE)
+projects 1──* project_services 1──* tasks.service_id (services: FK ON DELETE CASCADE; tasks: ON DELETE SET NULL)
 users 1──* workdays                   PK (user_id, work_date)
 users 1──* time_logs *──0..1 tasks    (FK ON DELETE SET NULL)
                      *──0..1 projects (FK ON DELETE SET NULL)
@@ -114,9 +115,27 @@ The lead user may be any registered user, not only the owner (security.md *Autho
 | description | varchar(2000) | null |
 | external_link | varchar(500) | null, http(s) URL |
 | project_lead | varchar(100) | null (as projects) |
+| service_id | uuid | null, FK → project_services ON DELETE SET NULL. Always one of the task's own project's services (checked by the API; a move to another project clears it unless the request names one of the new project's, OQ-247) |
 
-Indexes: `(project_id)` (project task list and counts, and the cascade when a project is deleted), `(user_id, status)` (cross-project list).
-`updated_at` changes on every edit, including a status change (OQ-087) and a move to another project.
+Indexes: `(project_id)` (project task list and counts, and the cascade when a project is deleted), `(user_id, status)` (cross-project list),
+`tasks_service_id_idx (service_id) WHERE service_id IS NOT NULL` (the SET NULL when a service is removed, and a service's task count).
+`updated_at` changes on every edit, including a status change (OQ-087) and a move to another project. Removing a service clears
+`service_id` through the FK without touching the tasks' `updated_at`.
+
+### project_services
+A service a project offers (FR-PRJ-009, OQ-243, OQ-244). The project's list is replaced as a whole by API-PRJ-001/004.
+
+| Column | Type | Constraints |
+| --- | --- | --- |
+| id | uuid | PK, default `uuidv7()` |
+| user_id | uuid | not null, FK → users ON DELETE CASCADE (the project's user) |
+| project_id | uuid | not null, FK → projects ON DELETE CASCADE |
+| name | varchar(50) | not null, trimmed, 1–50 chars |
+
+Indexes: unique `project_services_project_name (project_id, lower(name))`: one name per project ignoring case, the project's
+services, and the cascade when a project is deleted. No `(user_id)` index: API-PRJ-006 reads the caller's projects through
+`projects_user_id_idx`, and the users FK action practically never runs (as `project_lead_user_id`). At most 20 rows per project
+(the API checks it). ~80 B per row with its index entry.
 
 ### workdays
 | Column | Type | Constraints |
@@ -290,6 +309,8 @@ the column and its index. This one isn't expand/contract compatible: an old API 
 
 `0010` creates `notes` and `todos` (expand only: nothing reads them before the release).
 
+`0011` creates `project_services` and adds the nullable `tasks.service_id` with its FK and partial index (expand only).
+
 ## Open questions
 None.
 
@@ -313,3 +334,5 @@ None.
 - 2026-10-23: `bookings` replaces `time_logs.booking_date` (partial bookings, one release, no data copied; OQ-212, OQ-213, OQ-216; feat-book-partial).
 - 2026-10-24: `notes` and `todos` with retained names and migration `0010` (OQ-230, OQ-231, OQ-233, feat-note-todos).
 - 2026-10-24: The owner approved `notes`, `todos` and migration `0010` for feat-note-todos.
+- 2026-10-26: `project_services` and `tasks.service_id` (FR-PRJ-009, FR-TSK-009, OQ-243, OQ-244, OQ-247; feat-prj-services).
+- 2026-10-26: The owner approved `project_services` and `tasks.service_id` for feat-prj-services.
