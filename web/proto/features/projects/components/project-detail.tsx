@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useQueryState } from "nuqs";
 import { ArrowLeft, ExternalLink, FolderX, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Empty,
@@ -226,6 +227,19 @@ function ProjectView({
             </DetailRow>
             <DetailRow label="Project lead">
               <ProjectLeadLabel lead={project.projectLead} />
+            </DetailRow>
+            <DetailRow label="Services">
+              {project.services.length ? (
+                <div className="flex flex-wrap gap-1">
+                  {project.services.map((s) => (
+                    <Badge key={s.id} variant="secondary">
+                      {s.name}
+                    </Badge>
+                  ))}
+                </div>
+              ) : (
+                <span className="text-muted-foreground">—</span>
+              )}
             </DetailRow>
           </CardContent>
         </Card>

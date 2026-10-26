@@ -36,8 +36,8 @@ import type { TimeLog } from "@/proto/features/time/types";
 import { MOCK_TZ } from "./seed";
 import { getMockState, mock, nextId } from "./store";
 
-type Project = components["schemas"]["ProjectResponseDto"];
-type Task = components["schemas"]["TaskResponseDto"];
+import type { Project } from "@/proto/features/projects/api";
+import type { Task } from "@/proto/features/tasks/api";
 type Status = components["schemas"]["TaskStatus"];
 
 interface RemoteProject {
@@ -1575,6 +1575,7 @@ function createPair(
         now
       ),
       id: nextId("p-new"),
+      services: [],
       createdAt: now
     };
     mock.setProjects([...s.projects, created]);
@@ -1586,6 +1587,7 @@ function createPair(
       ...s.tasks[0],
       ...fields,
       id: nextId("t-new"),
+      service: null,
       createdAt: now
     };
     mock.setTasks([...s.tasks, created]);

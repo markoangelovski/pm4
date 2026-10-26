@@ -19,9 +19,10 @@ import {
  */
 export const PROTO_MARKER = "pm4-proto-only";
 
+import type { Project } from "@/proto/features/projects/api";
+import type { Task } from "@/proto/features/tasks/api";
+
 type Me = components["schemas"]["MeResponseDto"];
-type Project = components["schemas"]["ProjectResponseDto"];
-type Task = components["schemas"]["TaskResponseDto"];
 
 export interface MockState {
   /** Keeps PROTO_MARKER in the bundle wherever the store is. */

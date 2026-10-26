@@ -29,8 +29,9 @@ import * as pmspa from "./pmspa";
 /** Every mock response waits this long, so loading states show. */
 export const MOCK_LATENCY_MS = 150;
 
-type Project = components["schemas"]["ProjectResponseDto"];
-type Task = components["schemas"]["TaskResponseDto"];
+import type { Project, ProjectService } from "@/proto/features/projects/api";
+import type { Task } from "@/proto/features/tasks/api";
+
 type Status = components["schemas"]["TaskStatus"];
 type Body = Record<string, unknown>;
 
@@ -62,13 +63,20 @@ function paged<T>(items: T[], q: URLSearchParams) {
 const sumMinutes = (logs: TimeLog[]) =>
   logs.reduce((t, l) => t + l.durationMinutes, 0);
 
-/** API-PRJ-002/003: the task counts and the logged minutes (the project's logs, its tasks' included). */
+/** API-PRJ-002/003: the task counts and the logged minutes (the project's logs, its tasks' included), and each
+ *  service's task count, by name. */
 function withCounts(p: Project) {
   const s = getMockState();
   const own = s.tasks.filter((t) => t.project.id === p.id);
   const n = (st: Status) => own.filter((t) => t.status === st).length;
   return {
     ...p,
+    services: p.services
+      .map((sv) => ({
+        ...sv,
+        taskCount: own.filter((t) => t.service?.id === sv.id).length
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name)),
     loggedMinutes: sumMinutes(s.logs.filter((l) => l.project?.id === p.id)),
     taskCounts: {
       upcoming: n("upcoming"),
@@ -90,6 +98,35 @@ function dayOf(date: string) {
   };
 }
 
+const nameKey = (name: string) => name.trim().toLocaleLowerCase();
+
+/** The project's services after a save of `names`: a kept name keeps its id (case-insensitive), a new one gets one.
+ *  Tasks of a dropped service lose it. */
+function savedServices(
+  projectId: string,
+  old: ProjectService[],
+  names: unknown
+): ProjectService[] {
+  if (!Array.isArray(names)) return old;
+  const next: ProjectService[] = [];
+  for (const raw of names as string[]) {
+    const name = raw.trim();
+    if (!name || next.some((sv) => nameKey(sv.name) === nameKey(name)))
+      continue;
+    const kept = old.find((sv) => nameKey(sv.name) === nameKey(name));
+    next.push(kept ?? { id: nextId("s-new"), name, taskCount: 0 });
+  }
+  const ids = new Set(next.map((sv) => sv.id));
+  mock.setTasks(
+    getMockState().tasks.map((t) =>
+      t.project.id === projectId && t.service && !ids.has(t.service.id)
+        ? { ...t, service: null }
+        : t
+    )
+  );
+  return next;
+}
+
 function projects(
   method: string,
   id: string | undefined,
@@ -99,11 +136,13 @@ function projects(
   const all = getMockState().projects;
   if (!id) {
     if (method === "POST") {
+      const newId = nextId("p-new");
       const p = {
         ...all[0],
         ...body,
-        id: nextId("p-new"),
-        projectLead: all[0].projectLead
+        id: newId,
+        projectLead: all[0].projectLead,
+        services: savedServices(newId, [], body.services)
       } as Project;
       mock.setProjects([...all, p]);
       return json(withCounts(p), 201);
@@ -129,11 +168,22 @@ function projects(
   }
   if (method === "PATCH") {
     pmspa.touched("project", id);
-    const next = { ...p, ...body } as Project;
+    const next = {
+      ...p,
+      ...body,
+      services: savedServices(id, p.services, body.services)
+    } as Project;
     mock.setProjects(all.map((x) => (x.id === id ? next : x)));
     return json(withCounts(next));
   }
   return json(withCounts(p));
+}
+
+/** A task's service from its body's `serviceId`: null for none, undefined when it isn't one of the project's. */
+function serviceOf(project: Project | undefined, serviceId: unknown) {
+  if (serviceId === null || serviceId === undefined) return null;
+  const sv = project?.services.find((x) => x.id === serviceId);
+  return sv ? { id: sv.id, name: sv.name } : undefined;
 }
 
 /** API-TSK-002/003: the task plus its logged minutes. */
@@ -154,11 +204,15 @@ function tasks(
   if (!id) {
     if (method === "POST") {
       const project = ps.find((p) => p.id === body.projectId) ?? ps[0];
+      const service = serviceOf(project, body.serviceId);
+      if (service === undefined)
+        return validation("serviceId", "Choose one of the project's services.");
       const t = {
         ...all[0],
         ...body,
         id: nextId("t-new"),
-        project: { id: project.id, title: project.title, deleted: false }
+        project: { id: project.id, title: project.title, deleted: false },
+        service
       } as Task;
       mock.setTasks([...all, t]);
       return json(withLogged(t), 201);
@@ -181,8 +235,13 @@ function tasks(
     return noContent();
   }
   if (method === "PATCH") {
+    const project = ps.find((p) => p.id === (body.projectId ?? t.project.id));
+    const service =
+      "serviceId" in body ? serviceOf(project, body.serviceId) : t.service;
+    if (service === undefined)
+      return validation("serviceId", "Choose one of the project's services.");
     pmspa.touched("task", id);
-    const next = { ...t, ...body } as Task;
+    const next = { ...t, ...body, service } as Task;
     mock.setTasks(all.map((x) => (x.id === id ? next : x)));
     return json(withLogged(next));
   }

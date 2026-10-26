@@ -212,6 +212,13 @@ function TaskView({
               <span className="truncate">{task.project.title}</span>
             </Link>
           </DetailRow>
+          <DetailRow label="Service">
+            {task.service ? (
+              task.service.name
+            ) : (
+              <span className="text-muted-foreground">—</span>
+            )}
+          </DetailRow>
           <DetailRow label="Due date">
             <DueDateBadge dueDate={task.dueDate} status={task.status} />
           </DetailRow>

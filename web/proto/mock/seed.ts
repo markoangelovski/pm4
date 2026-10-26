@@ -6,9 +6,10 @@ import { today } from "@/lib/time";
 import type { ProjectRef, TaskRef, TimeLog } from "@/proto/features/time/types";
 import type { NoteDto, TodoDto } from "@/proto/features/notes/types";
 
+import type { Project } from "@/proto/features/projects/api";
+import type { Task } from "@/proto/features/tasks/api";
+
 type Me = components["schemas"]["MeResponseDto"];
-type Project = components["schemas"]["ProjectResponseDto"];
-type Task = components["schemas"]["TaskResponseDto"];
 type Status = components["schemas"]["TaskStatus"];
 
 export const MOCK_TZ = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -65,6 +66,41 @@ const TASK_LINKS: Record<string, string> = {
 
 const STATUSES: Status[] = ["upcoming", "in-progress", "completed"];
 
+/** Each project's services (task counts are computed by the mock client). PM Internal has none. */
+const PROJECT_SERVICES: Record<string, string[]> = {
+  "p-anthropic": [
+    "Project Management",
+    "Backend development",
+    "Product design"
+  ],
+  "p-nvidia": [
+    "Project Management",
+    "Backend development",
+    "Quality assurance"
+  ],
+  "p-tesla": ["Project Management", "Quality assurance"],
+  "p-website": [
+    "Product design",
+    "Frontend development",
+    "Content",
+    "Search engine optimisation and analytics reporting"
+  ]
+};
+const serviceId = (projectId: string, name: string) =>
+  `s-${projectId.slice(2)}-${PROJECT_SERVICES[projectId].indexOf(name) + 1}`;
+const service = (projectId: string, name: string) => ({
+  id: serviceId(projectId, name),
+  name
+});
+/** The seeded tasks' services; a task left out has none. */
+const TASK_SERVICES: Record<string, string> = {
+  "t-anthropic-pm": "Project Management",
+  "t-nvidia-pm": "Project Management",
+  "t-nvidia-dev": "Backend development",
+  "t-tesla-meet": "Project Management",
+  "t-tesla-qa": "Quality assurance"
+};
+
 /** The API shapes of the projects and tasks above (task counts and logged minutes are computed by the mock client). */
 export const seedProjects = (): Project[] =>
   MOCK_PROJECTS.map((p) => ({
@@ -73,6 +109,10 @@ export const seedProjects = (): Project[] =>
     description: null,
     externalLink: PROJECT_LINKS[p.id] ?? null,
     projectLead: lead,
+    services: (PROJECT_SERVICES[p.id] ?? []).map((name) => ({
+      ...service(p.id, name),
+      taskCount: 0
+    })),
     taskCounts: { upcoming: 0, inProgress: 0, completed: 0, total: 0 },
     loggedMinutes: 0,
     createdAt: now,
@@ -89,6 +129,9 @@ export const seedTasks = (): Task[] => [
     status: STATUSES[i % 3],
     dueDate: i % 2 ? format(addDays(new Date(), i), "yyyy-MM-dd") : null,
     project: { id: t.project.id, title: t.project.title, deleted: false },
+    service: TASK_SERVICES[t.id]
+      ? service(t.project.id, TASK_SERVICES[t.id])
+      : null,
     loggedMinutes: 0,
     createdAt: now,
     updatedAt: now
@@ -110,6 +153,16 @@ const websiteTasks = (): Task[] =>
     status: STATUSES[i % 3],
     dueDate: i % 5 ? null : format(addDays(new Date(), i - 10), "yyyy-MM-dd"),
     project: { id: "p-website", title: "Website relaunch", deleted: false },
+    // Every fifth task has none; the rest take the project's services in turn.
+    service:
+      i % 5 === 4
+        ? null
+        : service(
+            "p-website",
+            PROJECT_SERVICES["p-website"][
+              i % PROJECT_SERVICES["p-website"].length
+            ]
+          ),
     loggedMinutes: 0,
     createdAt: now,
     // Newest first in the list: page 1 is updated last.

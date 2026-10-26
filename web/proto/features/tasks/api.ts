@@ -13,12 +13,16 @@ import { TASK_STATUSES, type TaskStatus } from "@/proto/features/tasks/status";
 import { apiClient } from "@/proto/mock/client";
 import { isApiError, unwrap, unwrapVoid } from "@/lib/api/problem";
 import type { components } from "@/lib/api/schema";
+import type {
+  TaskServiceFields,
+  TaskServiceInput
+} from "@/proto/features/projects/proposed-types";
 
 type TaskResponse = components["schemas"]["TaskResponseDto"];
 /** D14: a task's project always exists (deleting a project deletes its tasks), so its `Ref.id` is never null (endpoints.md *Task*). */
 export type Task = Omit<TaskResponse, "project"> & {
   project: { id: string; title: string; deleted: boolean };
-};
+} & TaskServiceFields;
 export type TaskList = Omit<
   components["schemas"]["TaskListResponseDto"],
   "items"
@@ -42,7 +46,7 @@ export interface TaskListParams {
   pageSize: number;
 }
 
-export interface TaskInput {
+export interface TaskInput extends TaskServiceInput {
   projectId: string;
   title: string;
   description: string | null;

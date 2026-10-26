@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { Project, ProjectInput } from "@/proto/features/projects/api";
 import type { Me } from "@/proto/features/users/api";
+import { SERVICE_NAME_MAX, SERVICES_MAX } from "./proposed-types";
 import {
   fromProjectLead,
   isHttpUrl,
@@ -31,7 +32,15 @@ export const projectFormSchema = z.object({
     .refine(
       (v) => v?.kind !== "text" || v.name.trim().length <= LEAD_NAME_MAX,
       "Use at most 100 characters."
+    ),
+  /** Names, trimmed and unique (case-insensitive) as the services field adds them. */
+  services: z
+    .array(
+      z
+        .string()
+        .max(SERVICE_NAME_MAX, `Use at most ${SERVICE_NAME_MAX} characters.`)
     )
+    .max(SERVICES_MAX, `Add at most ${SERVICES_MAX} services.`)
 });
 
 export type ProjectFormValues = z.input<typeof projectFormSchema>;
@@ -46,10 +55,17 @@ export function projectFormDefaults(
       title: project.title,
       description: project.description ?? "",
       externalLink: project.externalLink ?? "",
-      lead: fromProjectLead(project.projectLead)
+      lead: fromProjectLead(project.projectLead),
+      services: project.services.map((s) => s.name)
     };
   }
-  return { title: "", description: "", externalLink: "", lead: leadFromMe(me) };
+  return {
+    title: "",
+    description: "",
+    externalLink: "",
+    lead: leadFromMe(me),
+    services: []
+  };
 }
 
 /** Form values → the API body: "" → null; the lead via leadToInput. */
@@ -60,15 +76,22 @@ export function toProjectInput(values: ProjectFormValues): ProjectInput {
     title,
     description: values.description.trim() === "" ? null : values.description,
     externalLink: externalLink === "" ? null : externalLink,
-    ...leadToInput(values.lead)
+    ...leadToInput(values.lead),
+    services: values.services
   };
 }
 
-/** API error field → form field. */
-export const PROJECT_FIELD_MAP = {
+/** API error field → form field, for the fields projects and tasks share. */
+export const SHARED_FIELD_MAP = {
   title: "title",
   description: "description",
   externalLink: "externalLink",
   projectLeadUserId: "lead",
   projectLeadName: "lead"
+} as const;
+
+/** API error field → form field. */
+export const PROJECT_FIELD_MAP = {
+  ...SHARED_FIELD_MAP,
+  services: "services"
 } as const;
