@@ -14,8 +14,8 @@ import {
   ComboboxValue,
   useComboboxAnchor
 } from "@/components/ui/combobox";
-import { useProjects } from "@/proto/features/projects/api";
-import { SERVICE_NAME_MAX } from "@/proto/features/projects/proposed-types";
+import { useServiceNames } from "@/proto/features/projects/api";
+import { SERVICE_NAME_MAX } from "@/proto/features/projects/schemas";
 
 /** A name to pick; `create` marks the "Add "<text>"" option for a name not listed yet. */
 interface ServiceOption {
@@ -26,21 +26,6 @@ interface ServiceOption {
 const key = (name: string) => name.trim().toLocaleLowerCase();
 const same = (a: ServiceOption, b: ServiceOption) =>
   key(a.name) === key(b.name);
-
-/** Every service name used on the user's projects, by name, without repeats (case-insensitive). */
-function useServiceSuggestions(): string[] {
-  const { data } = useProjects({
-    q: "",
-    sort: "title:asc",
-    page: 1,
-    pageSize: 100
-  });
-  const names = new Map<string, string>();
-  for (const p of data?.items ?? [])
-    for (const s of p.services)
-      if (!names.has(key(s.name))) names.set(key(s.name), s.name);
-  return [...names.values()].sort((a, b) => a.localeCompare(b));
-}
 
 /**
  * SCR-022's Services: the project's service names as chips. Typing filters the names used on other projects;
@@ -60,7 +45,7 @@ export function ServicesField({
   "aria-describedby"?: string;
 }) {
   const anchor = useComboboxAnchor();
-  const suggestions = useServiceSuggestions();
+  const suggestions = useServiceNames().data ?? [];
   const [text, setText] = useState("");
   const typed = text.trim().slice(0, SERVICE_NAME_MAX);
   const selected: ServiceOption[] = value.map((name) => ({ name }));

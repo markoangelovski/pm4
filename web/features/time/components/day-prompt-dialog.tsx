@@ -83,24 +83,28 @@ function PromptContent({ day }: { day: Day }) {
       ...prev,
       [section.key]: section.notes.map((n, j) => (j === i ? text : n))
     }));
-  // Each card fetches its project and task, so their links are in the cache by the time Copy all is clicked.
+  // Each card fetches its project and task, so their links and the task's service are in the cache by the time
+  // Copy all is clicked.
   const handleCopyAll = () =>
     copy(
       promptMarkdown(
-        sections.map((section) => ({
-          section,
-          links: {
-            project: section.project?.id
-              ? queryClient.getQueryData<Project>(
-                  projectKeys.detail(section.project.id)
-                )?.externalLink
-              : null,
-            task: section.task?.id
-              ? queryClient.getQueryData<Task>(taskKeys.detail(section.task.id))
-                  ?.externalLink
-              : null
-          }
-        }))
+        sections.map((section) => {
+          const task = section.task?.id
+            ? queryClient.getQueryData<Task>(taskKeys.detail(section.task.id))
+            : undefined;
+          return {
+            section,
+            links: {
+              project: section.project?.id
+                ? queryClient.getQueryData<Project>(
+                    projectKeys.detail(section.project.id)
+                  )?.externalLink
+                : null,
+              task: task?.externalLink
+            },
+            service: task?.service?.name
+          };
+        })
       )
     );
   return (
@@ -188,7 +192,8 @@ function PromptCard({
     task: task.data?.externalLink
   };
   const [copied, copy] = useCopy();
-  const handleCopy = () => copy(promptMarkdown([{ section, links }]));
+  const service = task.data?.service?.name;
+  const handleCopy = () => copy(promptMarkdown([{ section, links, service }]));
   return (
     <section className="flex flex-col gap-2 rounded-md border p-3">
       <p>Book my time accordingly:</p>
@@ -201,6 +206,8 @@ function PromptCard({
         <dd className="min-w-0 break-words">
           <RefLink item={section.task} link={links.task} />
         </dd>
+        <dt className="font-medium">Service:</dt>
+        <dd className="min-w-0 break-words">{service ?? "—"}</dd>
         <dt className="font-medium">Date:</dt>
         <dd>{section.date}</dd>
         <dt className="font-medium">Note:</dt>

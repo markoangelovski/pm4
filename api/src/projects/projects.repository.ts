@@ -6,6 +6,7 @@ import {
   desc,
   eq,
   ilike,
+  inArray,
   or,
   sql,
   type SQL
@@ -16,6 +17,7 @@ import { DRIZZLE, type DrizzleDb } from "../database/drizzle.js";
 import {
   notes,
   projects,
+  projectServices,
   tasks,
   timeLogs,
   todos,
@@ -31,6 +33,14 @@ export interface ProjectValues {
   externalLink: string | null;
   projectLeadUserId: string | null;
   projectLead: string | null;
+}
+
+/** A project service with the number of the project's tasks linked to it. */
+export interface ProjectServiceRow {
+  id: string;
+  projectId: string;
+  name: string;
+  taskCount: number;
 }
 
 /** A project with its lead user's current name/avatar and its live task counts. */
@@ -62,12 +72,25 @@ const ORDER_BY: Record<ProjectSort, SQL[]> = {
 export class ProjectsRepository {
   constructor(@Inject(DRIZZLE) private readonly db: DrizzleDb) {}
 
-  async insert(userId: string, values: ProjectValues): Promise<string> {
-    const [row] = await this.db
-      .insert(projects)
-      .values({ ...values, userId })
-      .returning({ id: projects.id });
-    return row.id;
+  async insert(
+    userId: string,
+    values: ProjectValues,
+    services: string[]
+  ): Promise<string> {
+    return this.db.transaction(async (tx) => {
+      const [row] = await tx
+        .insert(projects)
+        .values({ ...values, userId })
+        .returning({ id: projects.id });
+      if (services.length > 0) {
+        await tx
+          .insert(projectServices)
+          .values(
+            services.map((name) => ({ userId, projectId: row.id, name }))
+          );
+      }
+      return row.id;
+    });
   }
 
   /** The caller's project. */
@@ -112,16 +135,132 @@ export class ProjectsRepository {
     return { rows: rows.map(toRow), total };
   }
 
-  /** Sets the given columns and `updatedAt = now()`. */
+  /**
+   * Sets the given columns and `updatedAt = now()`; with `services`, replaces
+   * the project's services in the same locked transaction (a name kept
+   * ignoring case keeps its row).
+   */
   async update(
     userId: string,
     id: string,
-    values: Partial<ProjectValues>
+    values: Partial<ProjectValues>,
+    services?: string[]
   ): Promise<void> {
-    await this.db
-      .update(projects)
-      .set({ ...values, updatedAt: sql`now()` })
-      .where(and(eq(projects.userId, userId), eq(projects.id, id)));
+    await this.db.transaction(async (tx) => {
+      await tx
+        .select({ id: projects.id })
+        .from(projects)
+        .where(and(eq(projects.userId, userId), eq(projects.id, id)))
+        .for("update");
+      await tx
+        .update(projects)
+        .set({ ...values, updatedAt: sql`now()` })
+        .where(and(eq(projects.userId, userId), eq(projects.id, id)));
+      if (services === undefined) return;
+      const current = await tx
+        .select({ id: projectServices.id, name: projectServices.name })
+        .from(projectServices)
+        .where(
+          and(
+            eq(projectServices.userId, userId),
+            eq(projectServices.projectId, id)
+          )
+        );
+      const sent = new Set(services.map((n) => n.toLowerCase()));
+      const gone = current
+        .filter((c) => !sent.has(c.name.toLowerCase()))
+        .map((c) => c.id);
+      if (gone.length > 0) {
+        await tx
+          .delete(projectServices)
+          .where(
+            and(
+              eq(projectServices.userId, userId),
+              inArray(projectServices.id, gone)
+            )
+          );
+      }
+      const added: string[] = [];
+      for (const name of services) {
+        const existing = current.find(
+          (c) => c.name.toLowerCase() === name.toLowerCase()
+        );
+        if (!existing) added.push(name);
+        else if (existing.name !== name) {
+          await tx
+            .update(projectServices)
+            .set({ name })
+            .where(eq(projectServices.id, existing.id));
+        }
+      }
+      if (added.length > 0) {
+        await tx
+          .insert(projectServices)
+          .values(added.map((name) => ({ userId, projectId: id, name })));
+      }
+    });
+  }
+
+  /** The services of the given projects (the caller's), with task counts. */
+  async servicesOf(
+    userId: string,
+    projectIds: string[]
+  ): Promise<ProjectServiceRow[]> {
+    if (projectIds.length === 0) return [];
+    return this.db
+      .select({
+        id: projectServices.id,
+        projectId: projectServices.projectId,
+        name: projectServices.name,
+        taskCount:
+          sql<number>`(SELECT count(*) FROM ${tasks} WHERE ${tasks.serviceId} = project_services.id)`.mapWith(
+            Number
+          )
+      })
+      .from(projectServices)
+      .where(
+        and(
+          eq(projectServices.userId, userId),
+          inArray(projectServices.projectId, projectIds)
+        )
+      )
+      .orderBy(
+        asc(sql`lower(${projectServices.name})`),
+        asc(projectServices.id)
+      );
+  }
+
+  /** API-PRJ-006: every service name on the caller's projects, once ignoring case. */
+  async serviceNames(userId: string): Promise<string[]> {
+    const rows = await this.db
+      .selectDistinctOn([sql`lower(${projectServices.name})`], {
+        name: projectServices.name
+      })
+      .from(projectServices)
+      .innerJoin(projects, eq(projects.id, projectServices.projectId))
+      .where(eq(projects.userId, userId))
+      .orderBy(sql`lower(${projectServices.name})`, projectServices.name);
+    return rows.map((r) => r.name);
+  }
+
+  /** Whether `serviceId` is a service of the caller's project `projectId`. */
+  async hasService(
+    userId: string,
+    projectId: string,
+    serviceId: string
+  ): Promise<boolean> {
+    const rows = await this.db
+      .select({ one: sql<number>`1` })
+      .from(projectServices)
+      .where(
+        and(
+          eq(projectServices.userId, userId),
+          eq(projectServices.projectId, projectId),
+          eq(projectServices.id, serviceId)
+        )
+      )
+      .limit(1);
+    return rows.length > 0;
   }
 
   /**

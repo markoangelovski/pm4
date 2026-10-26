@@ -1,7 +1,6 @@
 import { z } from "zod";
 import type { Project, ProjectInput } from "@/proto/features/projects/api";
 import type { Me } from "@/proto/features/users/api";
-import { SERVICE_NAME_MAX, SERVICES_MAX } from "./proposed-types";
 import {
   fromProjectLead,
   isHttpUrl,
@@ -10,6 +9,10 @@ import {
   leadToInput,
   type LeadValue
 } from "@/proto/features/users/lead";
+
+/** Longest service name, and most services on a project (API-PRJ-001). */
+export const SERVICE_NAME_MAX = 50;
+export const SERVICES_MAX = 20;
 
 /** SCR-022's create/edit form. */
 export const projectFormSchema = z.object({

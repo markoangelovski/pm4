@@ -83,21 +83,27 @@ function problem(status: number, slug: string, errors?: unknown[]) {
   };
 }
 
-/** GET router: /me → me; /projects → the picker's projects; /users → none. */
+/** GET router: /me → me; /projects → the picker's projects; /projects/{id} → one of them (the Service select); /users → none. */
 function routeGet() {
-  api.GET.mockImplementation(async (path: string) => {
-    if (path === "/api/v1/me") return { data: me, response: res(200) };
-    if (path === "/api/v1/projects") {
-      return {
-        data: { items: projects, total: 2, page: 1, pageSize: 100 },
-        response: res(200)
-      };
+  api.GET.mockImplementation(
+    async (path: string, options?: { params?: { path?: { id?: string } } }) => {
+      if (path === "/api/v1/me") return { data: me, response: res(200) };
+      if (path === "/api/v1/projects") {
+        return {
+          data: { items: projects, total: 2, page: 1, pageSize: 100 },
+          response: res(200)
+        };
+      }
+      if (path === "/api/v1/projects/{id}") {
+        const found = projects.find((p) => p.id === options?.params?.path?.id);
+        if (found) return { data: found, response: res(200) };
+      }
+      if (path === "/api/v1/users") {
+        return { data: { items: [] }, response: res(200) };
+      }
+      throw new Error(`unexpected GET ${path}`);
     }
-    if (path === "/api/v1/users") {
-      return { data: { items: [] }, response: res(200) };
-    }
-    throw new Error(`unexpected GET ${path}`);
-  });
+  );
 }
 
 function renderDialog(props: { task?: Task; defaultProject?: ProjectRef }) {

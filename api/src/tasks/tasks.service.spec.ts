@@ -15,6 +15,8 @@ function row(overrides: Partial<TaskRow> = {}): TaskRow {
     id: ID,
     projectId: PROJECT_ID,
     projectTitle: "Web",
+    serviceId: null,
+    serviceName: null,
     title: "Fix",
     description: null,
     externalLink: null,
@@ -119,6 +121,7 @@ describe("TasksService", () => {
       externalLink: null,
       status: "upcoming",
       dueDate: null,
+      serviceId: null,
       projectLeadUserId: null,
       projectLead: "Ana"
     });

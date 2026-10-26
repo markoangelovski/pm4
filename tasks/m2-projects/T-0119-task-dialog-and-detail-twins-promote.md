@@ -3,7 +3,7 @@ id: T-0119
 title: Task dialog and detail twins, promote service-select.tsx, Prompt twins; proposed-types.ts removed
 milestone: M2
 app: web
-status: blocked
+status: done
 size: S
 tier: haiku
 depends_on: [T-0117, T-0118]
@@ -25,9 +25,25 @@ Work from the brief: `node scripts/pm4.mjs brief T-0119`. Verify with `node scri
 ## Implementation notes
 _Implementer: what changed, and anything the reviewer should look at._
 
+- Prototype: `proto/features/tasks/api.ts` drops the `proposed-types` import (`Task` = schema type with `project`, `TaskInput.serviceId: string | null` required). `proto/features/projects/proposed-types.ts` removed; `grep proposed-types` is empty in `web/proto` and `web/features`.
+- Production twins regenerated from the prototype (rewrite `@/proto/` → `@/`, `mock/client` → `lib/api/client`, then Prettier): `features/tasks/api.ts`, `components/task-detail.tsx`, `components/task-form-dialog.tsx`, `features/time/prompt.ts`, `components/day-prompt-dialog.tsx`. `service-select.tsx` is the promoted copy (only the import delta).
+- `node scripts/pm4.mjs twins`: 120 equal, 1 intended, 0 warnings, 0 failures.
+- Test fixes (orchestrator, BLOCKED: test; test-step gaps, no hashed file changed):
+  - `features/time/logged-time.ac.test.tsx`: the `useUpdateTask` body gets `serviceId: null` (TaskInput.serviceId is required).
+  - `features/tasks/components/task-detail.ac.test.tsx` AC-13: 5 `—`, not 4 (the Service row, AC-19).
+  - `features/tasks/components/task-form-dialog.ac.test.tsx`: the GET router answers `/api/v1/projects/{id}`. `ServiceSelect` loads the project; the unrouted GET threw, and the refetch after create (retry 1 + backoff) outlasted AC-6's `waitFor`.
+- `pm4 check T-0119`: PASS (ac hashes ok (4), scope ok, web lint/format/typecheck/test/build/api:types ok, AC-23 ok, twins ok (120 equal)).
+
 ### Attempts
 | # | Tier | Result | Summary |
 | --- | --- | --- | --- |
+| 1 | haiku | FAILED | Twins and prototype done; check fails on an unedited acceptance test (logged-time.ac.test.tsx:228 missing serviceId), AC-13 stale `—` count, and AC-6 POST never sent (cause not isolated). BLOCKED: test for the first two. |
+| 2 | orchestrator | PASS | Fixed the three acceptance-test fixtures above; no implementation change. `pm4 check` PASS. |
 
 ## Review
-_Filled in by `review-feature`._
+Feature review (Opus, 2026-10-26): `pm4 check --feature prj-services` PASS, no warnings; all four tasks approved.
+
+- Verdict: **approve**. `TaskInput.serviceId` is required, `proposed-types.ts` is gone, and twins report 0 warnings. The three fixture edits to the acceptance tests are faithful to the spec and weaken nothing.
+- Minor (DoD error state): `service-select.tsx:37-40` shows "This project has no services" when the project fetch fails. Fix: a `project.isError` branch, made in the prototype twin first.
+- Note: Copy all copies `**Service:** —` for a card whose task query hasn't resolved yet; the project and task links have the same documented limitation. Accept or follow up.
+- Tier (haiku): fine for the twins. The failure came from gaps in the test step's fixtures. Next time, the test step should search the existing ACs for every Input body and count assertion that a new field affects.

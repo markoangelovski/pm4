@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Controller, useForm } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/dialog";
 import {
   Field,
+  FieldDescription,
   FieldError,
   FieldGroup,
   FieldLabel
@@ -24,6 +25,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useMe } from "@/features/users/api";
 import { ProjectLeadField } from "@/features/users/components/project-lead-field";
+import { ServicesField } from "@/features/projects/components/services-field";
 import {
   useCreateProject,
   useUpdateProject,
@@ -82,6 +84,8 @@ function ProjectForm({
     resolver: zodResolver(projectFormSchema),
     defaultValues: projectFormDefaults(project, me)
   });
+  const services = useWatch({ control, name: "services" });
+  const orphaned = removedInUse(project, services);
 
   function onFailure(error: unknown) {
     if (!applyFieldErrors(error, setError, PROJECT_FIELD_MAP)) {
@@ -162,6 +166,32 @@ function ProjectForm({
           />
           <FieldError errors={[errors.lead]} />
         </Field>
+        <Field data-invalid={!!errors.services}>
+          <FieldLabel htmlFor="project-services">Services</FieldLabel>
+          <Controller
+            control={control}
+            name="services"
+            render={({ field, fieldState }) => (
+              <ServicesField
+                id="project-services"
+                value={field.value}
+                onChange={field.onChange}
+                invalid={fieldState.invalid}
+              />
+            )}
+          />
+          {orphaned.map((s) => (
+            <FieldDescription
+              key={s.id}
+              className="text-amber-600 dark:text-amber-500"
+            >
+              {s.taskCount === 1 ? "1 task uses" : `${s.taskCount} tasks use`} “
+              {s.name}”. {s.taskCount === 1 ? "It" : "They"}&apos;ll have no
+              service.
+            </FieldDescription>
+          ))}
+          <FieldError errors={[errors.services, errors.services?.root]} />
+        </Field>
       </FieldGroup>
       <DialogFooter className="rounded-b-md">
         <DialogClose
@@ -186,5 +216,13 @@ function ProjectForm({
         </Button>
       </DialogFooter>
     </form>
+  );
+}
+
+/** The project's saved services that `names` drops while tasks still use them: saving clears them from those tasks. */
+function removedInUse(project: Project | undefined, names: string[]) {
+  const kept = new Set(names.map((n) => n.trim().toLocaleLowerCase()));
+  return (project?.services ?? []).filter(
+    (s) => s.taskCount > 0 && !kept.has(s.name.toLocaleLowerCase())
   );
 }

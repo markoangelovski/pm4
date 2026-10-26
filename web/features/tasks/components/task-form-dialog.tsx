@@ -1,6 +1,6 @@
 "use client";
 
-import { Controller, useForm } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -33,6 +33,7 @@ import { useMe } from "@/features/users/api";
 import { ProjectLeadField } from "@/features/users/components/project-lead-field";
 import { DueDateField } from "@/features/tasks/components/due-date-field";
 import { ProjectPicker } from "@/features/tasks/components/project-picker";
+import { ServiceSelect } from "@/features/tasks/components/service-select";
 import type { ProjectRef, Task } from "@/features/tasks/api";
 import { useCreateTask, useUpdateTask } from "@/features/tasks/api";
 import {
@@ -95,11 +96,14 @@ function TaskForm({
     register,
     handleSubmit,
     setError,
+    setValue,
     formState: { errors }
   } = useForm<TaskFormValues>({
     resolver: zodResolver(taskFormSchema),
     defaultValues: taskFormDefaults(task, me, defaultProject)
   });
+
+  const watchedProjectId = useWatch({ control, name: "project" })?.id ?? null;
 
   function onFailure(error: unknown) {
     if (isApiError(error, 404)) {
@@ -142,12 +146,33 @@ function TaskForm({
               <ProjectPicker
                 id="task-project"
                 value={field.value}
-                onChange={field.onChange}
+                onChange={(next) => {
+                  // A service belongs to its project: another project starts with none.
+                  if (next?.id !== field.value?.id) setValue("serviceId", null);
+                  field.onChange(next);
+                }}
                 invalid={fieldState.invalid}
               />
             )}
           />
           <FieldError errors={[errors.project]} />
+        </Field>
+        <Field data-invalid={!!errors.serviceId}>
+          <FieldLabel htmlFor="task-service">Service</FieldLabel>
+          <Controller
+            control={control}
+            name="serviceId"
+            render={({ field, fieldState }) => (
+              <ServiceSelect
+                id="task-service"
+                projectId={watchedProjectId}
+                value={field.value}
+                onChange={field.onChange}
+                invalid={fieldState.invalid}
+              />
+            )}
+          />
+          <FieldError errors={[errors.serviceId]} />
         </Field>
         <Field data-invalid={!!errors.title}>
           <FieldLabel htmlFor="task-title">Title</FieldLabel>

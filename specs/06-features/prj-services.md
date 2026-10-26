@@ -6,7 +6,7 @@ owner: Marko Angelovski
 last_updated: 2026-10-26
 milestone: M2
 requirements: [FR-PRJ-009, FR-TSK-009, FR-TLOG-020]
-related: [api-endpoints, api-data-model, web-screens, web-prototype, feat-prj-api, feat-tsk-api, feat-tlog-prompt, feat-book-partial, OQ-243, OQ-244, OQ-245, OQ-246, OQ-247]
+related: [api-endpoints, api-data-model, web-screens, web-prototype, feat-prj-api, feat-tsk-api, feat-tlog-prompt, feat-book-partial, OQ-243, OQ-244, OQ-245, OQ-246, OQ-247, OQ-248]
 prototype: 9e4c367
 ---
 
@@ -87,11 +87,11 @@ existing ones (rows with `tests`, M), the contract files and stubs, `npm run ope
 | web | `web/lib/api/schema.d.ts` | M | tests | `npm run api:types` |
 | web | `web/features/projects/api.ts` | M | tests, T3 | Test step: `projectKeys.serviceNames` and a stub `useServiceNames`. T3: the twin |
 | web | `web/proto/features/projects/api.ts`, `web/proto/features/projects/schemas.ts`, `web/proto/features/projects/components/services-field.tsx`, `web/proto/mock/client.ts` | M | T3 | D10, *Web (T3)* |
-| web | `web/features/projects/schemas.ts`, `web/features/projects/components/project-form-dialog.tsx`, `web/features/projects/components/project-detail.tsx` | M | T3 | Twins (D10) |
+| web | `web/features/projects/schemas.ts`, `web/features/projects/components/project-form-dialog.tsx`, `web/features/projects/components/project-detail.tsx`, `web/features/tasks/schemas.ts` | M | T3 | Twins (D10). `tasks/schemas.ts` extends `projectFormSchema`, so it moves with it (OQ-248) |
 | web | `proto/features/projects/components/services-field.tsx` → `features/projects/components/services-field.tsx` | P | T3 | Promoted after the prototype change above, so it's the twin |
 | web | `web/proto/features/tasks/api.ts` | M | T4 | Generated types in place of `proposed-types.ts` |
 | web | `web/proto/features/projects/proposed-types.ts` | D | T4 | `rm` |
-| web | `web/features/tasks/api.ts`, `web/features/tasks/schemas.ts`, `web/features/tasks/components/task-form-dialog.tsx`, `web/features/tasks/components/task-detail.tsx`, `web/features/time/prompt.ts`, `web/features/time/components/day-prompt-dialog.tsx` | M | T4 | Twins (D10) |
+| web | `web/features/tasks/api.ts`, `web/features/tasks/components/task-form-dialog.tsx`, `web/features/tasks/components/task-detail.tsx`, `web/features/time/prompt.ts`, `web/features/time/components/day-prompt-dialog.tsx` | M | T4 | Twins (D10) |
 | web | `proto/features/tasks/components/service-select.tsx` → `features/tasks/components/service-select.tsx` | P | T4 | |
 
 ## Interfaces
@@ -237,14 +237,15 @@ Prototype first (D10), then the production twins:
   useServiceNames().data ?? [];` (already A–Z and unique); `SERVICE_NAME_MAX` from `@/proto/features/projects/schemas`.
 - `proto/mock/client.ts`: in `projects`, `GET` with path id `service-names` answers before the id lookup with
   `{ items }`: every project's service names, once ignoring case, `localeCompare` A–Z.
-- Production: `features/projects/api.ts`, `schemas.ts`, `components/project-form-dialog.tsx`, `components/project-detail.tsx` become
-  their twins; `pm4 promote` copies `services-field.tsx`. `npm run typecheck` passes in `web/`.
+- Production: `features/projects/api.ts`, `schemas.ts`, `components/project-form-dialog.tsx`, `components/project-detail.tsx` and
+  `features/tasks/schemas.ts` become their twins (`tasks/schemas.ts` extends `projectFormSchema`, so without its twin the task form
+  misses `services` and typecheck fails; it compiles against the generated `Task.service` and the stub `TaskInput.serviceId?`, OQ-248); `pm4 promote` copies `services-field.tsx`. `npm run typecheck` passes in `web/`.
 
 ### Web (T4): tasks and Prompt
 - `proto/features/tasks/api.ts`: drop the `proposed-types` import; `Task` = `Omit<TaskResponse, "project"> & { project: … }` (as before
   `9e4c367`); `TaskInput` gets `serviceId: string | null` (no `extends`). `rm proto/features/projects/proposed-types.ts`; then
   `grep -rn proposed-types web/proto` is empty.
-- Production: `features/tasks/api.ts`, `schemas.ts`, `components/task-form-dialog.tsx`, `components/task-detail.tsx`,
+- Production: `features/tasks/api.ts`, `components/task-form-dialog.tsx`, `components/task-detail.tsx`,
   `features/time/prompt.ts`, `components/day-prompt-dialog.tsx` become their twins; `pm4 promote` copies `service-select.tsx`.
 - Afterwards `node scripts/pm4.mjs twins` reports no failure.
 
@@ -298,8 +299,9 @@ test ! -e web/proto/features/projects/proposed-types.ts
 | T4 | Task dialog and detail twins, promote `service-select.tsx`, Prompt twins; `proposed-types.ts` removed | web | S | haiku | Copy-and-sed twins (D10) per *Web (T4)* | T2, T3 |
 
 ## Open questions
-None. OQ-243…OQ-247 are answered.
+None. OQ-243…OQ-248 are answered.
 
 ## Changelog
 - 2026-10-26: Initial draft from prototype `9e4c367` and OQ-243…OQ-247. Status `review`.
 - 2026-10-26: Approved by the owner.
+- 2026-10-26: OQ-248: the `features/tasks/schemas.ts` twin moves from T4 to T3 (T3 alone failed typecheck).

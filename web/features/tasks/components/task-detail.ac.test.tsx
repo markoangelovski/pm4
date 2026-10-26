@@ -203,8 +203,8 @@ describe("TaskDetail (feat-tsk-web)", () => {
     });
     renderDetail();
     await screen.findByRole("heading", { name: "Write the docs" });
-    // Due date, project lead, external link and description.
-    expect(screen.getAllByText("—")).toHaveLength(4);
+    // Due date, project lead, service, external link and description.
+    expect(screen.getAllByText("—")).toHaveLength(5);
   });
 
   it("AC-14 FR-TSK-004 SCR-031: not found, and error with Retry", async () => {

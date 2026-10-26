@@ -155,6 +155,16 @@ function projects(
       )
     );
   }
+  if (id === "service-names" && method === "GET") {
+    // API-PRJ-006: every project's service names, once ignoring case, A–Z.
+    const names = new Map<string, string>();
+    for (const x of all)
+      for (const sv of x.services)
+        if (!names.has(nameKey(sv.name))) names.set(nameKey(sv.name), sv.name);
+    return json({
+      items: [...names.values()].sort((a, b) => a.localeCompare(b))
+    });
+  }
   const p = all.find((x) => x.id === id);
   if (!p) return notFound();
   if (method === "DELETE") {
