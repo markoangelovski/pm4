@@ -9,18 +9,10 @@ import {
 import { apiClient } from "@/proto/mock/client";
 import { isApiError, unwrap, unwrapVoid } from "@/lib/api/problem";
 import type { components } from "@/lib/api/schema";
-import type {
-  ProjectServicesFields,
-  ProjectServicesInput
-} from "./proposed-types";
 
-export type Project = components["schemas"]["ProjectResponseDto"] &
-  ProjectServicesFields;
-export type ProjectList = Omit<
-  components["schemas"]["ProjectListResponseDto"],
-  "items"
-> & { items: Project[] };
-export type ProjectService = Project["services"][number];
+export type Project = components["schemas"]["ProjectResponseDto"];
+export type ProjectList = components["schemas"]["ProjectListResponseDto"];
+export type ProjectService = components["schemas"]["ProjectServiceDto"];
 
 /** The sorts the UI offers. */
 export const PROJECT_SORTS = [
@@ -37,12 +29,13 @@ export interface ProjectListParams {
   pageSize: number;
 }
 
-export interface ProjectInput extends ProjectServicesInput {
+export interface ProjectInput {
   title: string;
   description: string | null;
   externalLink: string | null;
   projectLeadUserId: string | null;
   projectLeadName: string | null;
+  services: string[];
 }
 
 export const projectKeys = {
@@ -51,7 +44,8 @@ export const projectKeys = {
   list: (params: ProjectListParams) =>
     [...projectKeys.lists(), params] as const,
   details: () => [...projectKeys.all, "detail"] as const,
-  detail: (id: string) => [...projectKeys.details(), id] as const
+  detail: (id: string) => [...projectKeys.details(), id] as const,
+  serviceNames: () => [...projectKeys.all, "service-names"] as const
 };
 
 /** Task queries live under this key (feat-tsk-web); deleting a project deletes its tasks. */
@@ -75,7 +69,7 @@ export function useProjects(
           },
           signal
         })
-      ) as ProjectList;
+      );
     },
     placeholderData: keepPreviousData
   });
@@ -94,14 +88,24 @@ export function useProject(
           params: { path: { id } },
           signal
         })
-      ) as Project,
+      ),
     // The app default is one retry; a missing or deleted project won't appear on a retry.
     retry: (failureCount, error) => !isApiError(error, 404) && failureCount < 1,
     enabled
   });
 }
 
-/** API-PRJ-001. onSuccess: setQueryData(detail), invalidate lists(). */
+/** API-PRJ-006: the service names on the user's projects (the Services field's suggestions). */
+export function useServiceNames(): UseQueryResult<string[]> {
+  return useQuery({
+    queryKey: projectKeys.serviceNames(),
+    queryFn: async ({ signal }) =>
+      unwrap(await apiClient.GET("/api/v1/projects/service-names", { signal }))
+        .items
+  });
+}
+
+/** API-PRJ-001. onSuccess: setQueryData(detail), invalidate lists() and the service names. */
 export function useCreateProject(): UseMutationResult<
   Project,
   Error,
@@ -110,18 +114,19 @@ export function useCreateProject(): UseMutationResult<
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (input: ProjectInput) =>
-      unwrap(
-        await apiClient.POST("/api/v1/projects", { body: input })
-      ) as Project,
+      unwrap(await apiClient.POST("/api/v1/projects", { body: input })),
     onSuccess: (project) => {
       queryClient.setQueryData(projectKeys.detail(project.id), project);
+      void queryClient.invalidateQueries({
+        queryKey: projectKeys.serviceNames()
+      });
       return queryClient.invalidateQueries({ queryKey: projectKeys.lists() });
     }
   });
 }
 
-/** API-PRJ-004 (all fields). onSuccess: setQueryData(detail), invalidate lists() and ["tasks"] (a removed service
- *  leaves its tasks). */
+/** API-PRJ-004 (all fields). onSuccess: setQueryData(detail), invalidate lists(), the service names and ["tasks"] (a
+ *  removed service leaves its tasks). */
 export function useUpdateProject(
   id: string
 ): UseMutationResult<Project, Error, ProjectInput> {
@@ -133,16 +138,19 @@ export function useUpdateProject(
           params: { path: { id } },
           body: input
         })
-      ) as Project,
+      ),
     onSuccess: (project) => {
       queryClient.setQueryData(projectKeys.detail(project.id), project);
+      void queryClient.invalidateQueries({
+        queryKey: projectKeys.serviceNames()
+      });
       void queryClient.invalidateQueries({ queryKey: TASKS_KEY });
       return queryClient.invalidateQueries({ queryKey: projectKeys.lists() });
     }
   });
 }
 
-/** API-PRJ-005. onSuccess: removeQueries(detail(id)), invalidate lists(), ["tasks"] and ["time"]. */
+/** API-PRJ-005. onSuccess: removeQueries(detail(id)), invalidate lists(), the service names, ["tasks"] and ["time"]. */
 export function useDeleteProject(): UseMutationResult<void, Error, string> {
   const queryClient = useQueryClient();
   return useMutation({
@@ -157,6 +165,9 @@ export function useDeleteProject(): UseMutationResult<void, Error, string> {
       // Not returned: the dialog's onDeleted must run right away to disable the
       // detail query, not after the lists refetch (the deleted project would 404).
       void queryClient.invalidateQueries({ queryKey: projectKeys.lists() });
+      void queryClient.invalidateQueries({
+        queryKey: projectKeys.serviceNames()
+      });
       void queryClient.invalidateQueries({ queryKey: TASKS_KEY });
       void queryClient.invalidateQueries({ queryKey: TIME_KEY });
     }

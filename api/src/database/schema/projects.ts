@@ -4,6 +4,7 @@ import {
   pgEnum,
   pgTable,
   timestamp,
+  uniqueIndex,
   uuid,
   varchar
 } from "drizzle-orm/pg-core";
@@ -42,6 +43,29 @@ export const projects = pgTable(
   (t) => [index("projects_user_id_idx").on(t.userId)]
 );
 
+/** A service a project offers (data-model.md *project_services*). */
+export const projectServices = pgTable(
+  "project_services",
+  {
+    id: uuid("id")
+      .primaryKey()
+      .default(sql`uuidv7()`),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    projectId: uuid("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    name: varchar("name", { length: 50 }).notNull()
+  },
+  (t) => [
+    uniqueIndex("project_services_project_name").on(
+      t.projectId,
+      sql`lower(${t.name})`
+    )
+  ]
+);
+
 export const tasks = pgTable(
   "tasks",
   {
@@ -62,6 +86,9 @@ export const tasks = pgTable(
     projectId: uuid("project_id")
       .notNull()
       .references(() => projects.id, { onDelete: "cascade" }),
+    serviceId: uuid("service_id").references(() => projectServices.id, {
+      onDelete: "set null"
+    }),
     projectLeadUserId: uuid("project_lead_user_id").references(() => users.id, {
       onDelete: "set null"
     }),
@@ -71,6 +98,9 @@ export const tasks = pgTable(
     projectLead: varchar("project_lead", { length: 100 })
   },
   (t) => [
+    index("tasks_service_id_idx")
+      .on(t.serviceId)
+      .where(sql`${t.serviceId} IS NOT NULL`),
     index("tasks_project_id_idx").on(t.projectId),
     index("tasks_user_id_status_idx").on(t.userId, t.status)
   ]

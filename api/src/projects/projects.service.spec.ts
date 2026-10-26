@@ -32,12 +32,14 @@ describe("ProjectsService", () => {
     findById: vi.fn(),
     list: vi.fn(),
     update: vi.fn(),
-    delete: vi.fn()
+    delete: vi.fn(),
+    servicesOf: vi.fn()
   };
   const findLeadUser = vi.fn();
 
   beforeEach(async () => {
     Object.values(repository).forEach((fn) => fn.mockReset());
+    repository.servicesOf.mockResolvedValue([]);
     findLeadUser.mockReset();
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -92,13 +94,17 @@ describe("ProjectsService", () => {
 
     await service.create("user-1", { title: "Web", projectLeadName: "Ana" });
 
-    expect(repository.insert).toHaveBeenCalledWith("user-1", {
-      title: "Web",
-      description: null,
-      externalLink: null,
-      projectLeadUserId: null,
-      projectLead: "Ana"
-    });
+    expect(repository.insert).toHaveBeenCalledWith(
+      "user-1",
+      {
+        title: "Web",
+        description: null,
+        externalLink: null,
+        projectLeadUserId: null,
+        projectLead: "Ana"
+      },
+      []
+    );
   });
 
   it("list passes an empty q as no filter", async () => {
@@ -126,12 +132,22 @@ describe("ProjectsService", () => {
     repository.findById.mockResolvedValue(row());
 
     await service.update("user-1", ID, { description: null });
-    expect(repository.update).toHaveBeenCalledWith("user-1", ID, {
-      description: null
-    });
+    expect(repository.update).toHaveBeenCalledWith(
+      "user-1",
+      ID,
+      {
+        description: null
+      },
+      undefined
+    );
 
     await service.update("user-1", ID, {});
-    expect(repository.update).toHaveBeenLastCalledWith("user-1", ID, {});
+    expect(repository.update).toHaveBeenLastCalledWith(
+      "user-1",
+      ID,
+      {},
+      undefined
+    );
   });
 
   it("update on a missing project → not found, nothing written", async () => {

@@ -232,6 +232,7 @@ describe("logged time hooks (feat-proto-sync-web)", () => {
         externalLink: null,
         projectLeadUserId: null,
         projectLeadName: null,
+        serviceId: null,
         status: "upcoming",
         dueDate: null
       })

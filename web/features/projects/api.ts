@@ -12,6 +12,7 @@ import type { components } from "@/lib/api/schema";
 
 export type Project = components["schemas"]["ProjectResponseDto"];
 export type ProjectList = components["schemas"]["ProjectListResponseDto"];
+export type ProjectService = components["schemas"]["ProjectServiceDto"];
 
 /** The sorts the UI offers. */
 export const PROJECT_SORTS = [
@@ -34,8 +35,7 @@ export interface ProjectInput {
   externalLink: string | null;
   projectLeadUserId: string | null;
   projectLeadName: string | null;
-  /** Stub (feat-prj-services): optional until T3 makes it required. */
-  services?: string[];
+  services: string[];
 }
 
 export const projectKeys = {
@@ -99,13 +99,13 @@ export function useProject(
 export function useServiceNames(): UseQueryResult<string[]> {
   return useQuery({
     queryKey: projectKeys.serviceNames(),
-    queryFn: (): Promise<string[]> => {
-      throw new Error("not implemented (feat-prj-services)");
-    }
+    queryFn: async ({ signal }) =>
+      unwrap(await apiClient.GET("/api/v1/projects/service-names", { signal }))
+        .items
   });
 }
 
-/** API-PRJ-001. onSuccess: setQueryData(detail), invalidate lists(). */
+/** API-PRJ-001. onSuccess: setQueryData(detail), invalidate lists() and the service names. */
 export function useCreateProject(): UseMutationResult<
   Project,
   Error,
@@ -117,12 +117,16 @@ export function useCreateProject(): UseMutationResult<
       unwrap(await apiClient.POST("/api/v1/projects", { body: input })),
     onSuccess: (project) => {
       queryClient.setQueryData(projectKeys.detail(project.id), project);
+      void queryClient.invalidateQueries({
+        queryKey: projectKeys.serviceNames()
+      });
       return queryClient.invalidateQueries({ queryKey: projectKeys.lists() });
     }
   });
 }
 
-/** API-PRJ-004 (all fields). onSuccess: setQueryData(detail), invalidate lists(). */
+/** API-PRJ-004 (all fields). onSuccess: setQueryData(detail), invalidate lists(), the service names and ["tasks"] (a
+ *  removed service leaves its tasks). */
 export function useUpdateProject(
   id: string
 ): UseMutationResult<Project, Error, ProjectInput> {
@@ -137,12 +141,16 @@ export function useUpdateProject(
       ),
     onSuccess: (project) => {
       queryClient.setQueryData(projectKeys.detail(project.id), project);
+      void queryClient.invalidateQueries({
+        queryKey: projectKeys.serviceNames()
+      });
+      void queryClient.invalidateQueries({ queryKey: TASKS_KEY });
       return queryClient.invalidateQueries({ queryKey: projectKeys.lists() });
     }
   });
 }
 
-/** API-PRJ-005. onSuccess: removeQueries(detail(id)), invalidate lists(), ["tasks"] and ["time"]. */
+/** API-PRJ-005. onSuccess: removeQueries(detail(id)), invalidate lists(), the service names, ["tasks"] and ["time"]. */
 export function useDeleteProject(): UseMutationResult<void, Error, string> {
   const queryClient = useQueryClient();
   return useMutation({
@@ -157,6 +165,9 @@ export function useDeleteProject(): UseMutationResult<void, Error, string> {
       // Not returned: the dialog's onDeleted must run right away to disable the
       // detail query, not after the lists refetch (the deleted project would 404).
       void queryClient.invalidateQueries({ queryKey: projectKeys.lists() });
+      void queryClient.invalidateQueries({
+        queryKey: projectKeys.serviceNames()
+      });
       void queryClient.invalidateQueries({ queryKey: TASKS_KEY });
       void queryClient.invalidateQueries({ queryKey: TIME_KEY });
     }

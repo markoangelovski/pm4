@@ -15,6 +15,7 @@ import { escapeLike } from "../common/sql/escape-like.js";
 import { DRIZZLE, type DrizzleDb } from "../database/drizzle.js";
 import {
   notes,
+  projectServices,
   projects,
   tasks,
   timeLogs,
@@ -35,6 +36,7 @@ export interface TaskValues {
   projectLead: string | null;
   status: TaskStatus;
   dueDate: string | null;
+  serviceId: string | null;
 }
 
 /** A task with its lead user's current name/avatar and its project's title. */
@@ -42,6 +44,9 @@ export interface TaskRow extends LeadRow {
   id: string;
   projectId: string;
   projectTitle: string;
+  /** The task's service (FR-TSK-009) and its name, when linked. */
+  serviceId: string | null;
+  serviceName: string | null;
   title: string;
   description: string | null;
   externalLink: string | null;
@@ -181,7 +186,8 @@ export class TasksRepository {
   }
 
   /**
-   * `tasks` with the lead user (`LEFT JOIN users AS lead`) and project info.
+   * `tasks` with the lead user (`LEFT JOIN users AS lead`), the project and
+   * the service (`LEFT JOIN project_services`).
    */
   private selectRows(userId: string) {
     return this.db
@@ -189,6 +195,8 @@ export class TasksRepository {
         id: tasks.id,
         projectId: tasks.projectId,
         projectTitle: projects.title,
+        serviceId: tasks.serviceId,
+        serviceName: projectServices.name,
         title: tasks.title,
         description: tasks.description,
         externalLink: tasks.externalLink,
@@ -209,6 +217,7 @@ export class TasksRepository {
       .from(tasks)
       .innerJoin(projects, eq(tasks.projectId, projects.id))
       .leftJoin(lead, eq(lead.id, tasks.projectLeadUserId))
+      .leftJoin(projectServices, eq(projectServices.id, tasks.serviceId))
       .where(eq(tasks.userId, userId))
       .$dynamic();
   }

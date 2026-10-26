@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException
+} from "@nestjs/common";
 import { isUUID } from "class-validator";
 import { ProjectLeadService } from "../users/project-lead.service.js";
 import { CreateProjectDto } from "./dto/create-project.dto.js";
@@ -11,6 +15,7 @@ import { ServiceNamesResponseDto } from "./dto/project-service.dto.js";
 import { UpdateProjectDto } from "./dto/update-project.dto.js";
 import {
   type ProjectRow,
+  type ProjectServiceRow,
   type ProjectValues,
   ProjectsRepository
 } from "./projects.repository.js";
@@ -28,12 +33,16 @@ export class ProjectsService {
     dto: CreateProjectDto
   ): Promise<ProjectResponseDto> {
     const lead = (await this.projectLeadService.toColumns(dto, false))!;
-    const id = await this.projectsRepository.insert(userId, {
-      title: dto.title,
-      description: dto.description ?? null,
-      externalLink: dto.externalLink ?? null,
-      ...lead
-    });
+    const id = await this.projectsRepository.insert(
+      userId,
+      {
+        title: dto.title,
+        description: dto.description ?? null,
+        externalLink: dto.externalLink ?? null,
+        ...lead
+      },
+      dto.services ?? []
+    );
     return this.get(userId, id);
   }
 
@@ -49,11 +58,29 @@ export class ProjectsService {
       page,
       pageSize
     );
-    return { items: rows.map((row) => this.toDto(row)), page, pageSize, total };
+    const services = await this.projectsRepository.servicesOf(
+      userId,
+      rows.map((r) => r.id)
+    );
+    return {
+      items: rows.map((row) =>
+        this.toDto(
+          row,
+          services.filter((s) => s.projectId === row.id)
+        )
+      ),
+      page,
+      pageSize,
+      total
+    };
   }
 
   async get(userId: string, id: string): Promise<ProjectResponseDto> {
-    return this.toDto(await this.findOwned(userId, id));
+    const row = await this.findOwned(userId, id);
+    return this.toDto(
+      row,
+      await this.projectsRepository.servicesOf(userId, [id])
+    );
   }
 
   /** Changes only the given fields; always sets `updatedAt` to now. */
@@ -68,7 +95,7 @@ export class ProjectsService {
     if (dto.title !== undefined) values.title = dto.title;
     if (dto.description !== undefined) values.description = dto.description;
     if (dto.externalLink !== undefined) values.externalLink = dto.externalLink;
-    await this.projectsRepository.update(userId, id, values);
+    await this.projectsRepository.update(userId, id, values, dto.services);
     return this.get(userId, id);
   }
 
@@ -81,8 +108,29 @@ export class ProjectsService {
 
   /** Every service name on the caller's projects (API-PRJ-006). */
   serviceNames(userId: string): Promise<ServiceNamesResponseDto> {
-    void userId;
-    throw new Error("not implemented (feat-prj-services)");
+    return this.projectsRepository
+      .serviceNames(userId)
+      .then((items) => ({ items }));
+  }
+
+  /** `400` on `serviceId` unless it is a service of the caller's project. */
+  async assertService(
+    userId: string,
+    projectId: string,
+    serviceId: string
+  ): Promise<void> {
+    if (
+      !(await this.projectsRepository.hasService(userId, projectId, serviceId))
+    ) {
+      throw new BadRequestException({
+        errors: [
+          {
+            field: "serviceId",
+            message: "must be one of the project's services"
+          }
+        ]
+      });
+    }
   }
 
   /**
@@ -99,7 +147,10 @@ export class ProjectsService {
     return project;
   }
 
-  private toDto(row: ProjectRow): ProjectResponseDto {
+  private toDto(
+    row: ProjectRow,
+    services: ProjectServiceRow[]
+  ): ProjectResponseDto {
     const { upcoming, inProgress, completed } = row.counts;
     return {
       id: row.id,
@@ -107,7 +158,11 @@ export class ProjectsService {
       description: row.description,
       externalLink: row.externalLink,
       projectLead: this.projectLeadService.toDto(row),
-      services: [],
+      services: services.map(({ id, name, taskCount }) => ({
+        id,
+        name,
+        taskCount
+      })),
       taskCounts: {
         upcoming,
         inProgress,

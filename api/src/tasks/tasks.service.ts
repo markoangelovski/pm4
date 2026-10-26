@@ -27,6 +27,13 @@ export class TasksService {
   async create(userId: string, dto: CreateTaskDto): Promise<TaskResponseDto> {
     // A missing or foreign project → 404 (D5).
     await this.projectsService.findOwned(userId, dto.projectId);
+    if (dto.serviceId != null) {
+      await this.projectsService.assertService(
+        userId,
+        dto.projectId,
+        dto.serviceId
+      );
+    }
 
     const lead = (await this.projectLeadService.toColumns(dto, false))!;
     const id = await this.tasksRepository.insert(userId, {
@@ -36,6 +43,7 @@ export class TasksService {
       externalLink: dto.externalLink ?? null,
       status: dto.status ?? "upcoming",
       dueDate: dto.dueDate ?? null,
+      serviceId: dto.serviceId ?? null,
       ...lead
     });
     return this.get(userId, id);
@@ -69,8 +77,11 @@ export class TasksService {
     const task = await this.findOwned(userId, id);
 
     // Moving: the target project is checked like on create (D5).
-    if (dto.projectId !== undefined && dto.projectId !== task.projectId) {
-      await this.projectsService.findOwned(userId, dto.projectId);
+    const moved =
+      dto.projectId !== undefined && dto.projectId !== task.projectId;
+    const target = moved ? dto.projectId! : task.projectId;
+    if (moved) {
+      await this.projectsService.findOwned(userId, dto.projectId!);
     }
 
     const lead = await this.projectLeadService.toColumns(dto, true);
@@ -82,6 +93,14 @@ export class TasksService {
     if (dto.externalLink !== undefined) values.externalLink = dto.externalLink;
     if (dto.status !== undefined) values.status = dto.status;
     if (dto.dueDate !== undefined) values.dueDate = dto.dueDate;
+    // The service must belong to the target project (FR-TSK-009, OQ-247):
+    // a move clears it unless the body names one of the new project's.
+    if (typeof dto.serviceId === "string") {
+      await this.projectsService.assertService(userId, target, dto.serviceId);
+      values.serviceId = dto.serviceId;
+    } else if (dto.serviceId === null || moved) {
+      values.serviceId = null;
+    }
 
     await this.tasksRepository.update(userId, id, values);
     return this.get(userId, id);
@@ -113,7 +132,9 @@ export class TasksService {
         title: row.projectTitle,
         deleted: false
       },
-      service: null,
+      service: row.serviceId
+        ? { id: row.serviceId, name: row.serviceName! }
+        : null,
       title: row.title,
       description: row.description,
       externalLink: row.externalLink,
