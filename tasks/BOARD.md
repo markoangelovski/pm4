@@ -1,6 +1,6 @@
 # Task Board
 
-**Next free ID:** T-0120
+**Next free ID:** T-0122
 
 | ID | Title | Milestone | App | Size | Status | Depends on |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -123,5 +123,7 @@
 | [T-0117](m2-projects/T-0117-serviceid-service-on-api-tsk-001.md) | serviceId / service on API-TSK-001…004, cleared on a move | M2 | api | S | done | T-0116 |
 | [T-0118](m2-projects/T-0118-prototype-off-proposed-types-for-projects.md) | Prototype off proposed-types for projects, useServiceNames + mock route; project dialog and detail twins, promote services-field.tsx | M2 | web | S | done | T-0116 |
 | [T-0119](m2-projects/T-0119-task-dialog-and-detail-twins-promote.md) | Task dialog and detail twins, promote service-select.tsx, Prompt twins; proposed-types.ts removed | M2 | web | S | done | T-0117, T-0118 |
+| [T-0120](m2-projects/T-0120-project-services-user-scoped-queries.md) | Project services queries always carry a userId condition | M2 | api | S | done | — |
+| [T-0121](m2-projects/T-0121-service-select-shows-why-it-is-disabled.md) | The Service select shows why it is disabled | M2 | web | S | done | — |
 
 M0–M6 are done. Later follow-ups are filed under the milestone they extend.

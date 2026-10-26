@@ -15,6 +15,11 @@ already in context: don't re-read it.
    - api e2e: `api/test/health.e2e-spec.ts` with `createTestApp()`, black-box over HTTP
    - api unit: `api/src/health/health.service.spec.ts`
    - web: `web/app/components/shared/view-id-guard.test.tsx`
+   When the feature adds a field to an input type or a row to a screen, also update the **existing**
+   acceptance tests it breaks. Search every `*.ac.*` file for request bodies of that input type (a field
+   that becomes required) and for count or exact-text assertions on that screen (e.g. the number of `—`).
+   Also search for API mocks that the new code calls through a route they don't answer. An implementer
+   may not edit those tests, so a fixture missed here blocks the task.
 3. Create the typed stubs the spec lists: the exact signature, and a body that throws
    `new Error("not implemented (feat-…)")`. Nothing more.
 4. Verify from each affected app: `npm run lint` and `npm run typecheck` pass, every new acceptance

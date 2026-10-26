@@ -12,7 +12,7 @@ import { useProject } from "@/features/projects/api";
 const NONE = { value: null, label: "No service" };
 
 /** SCR-032's Service: **No service**, then the chosen project's services. Disabled until a project is chosen, and
- *  while the project has none. */
+ *  while the project has none or its services failed to load. */
 export function ServiceSelect({
   id,
   projectId,
@@ -32,20 +32,24 @@ export function ServiceSelect({
     NONE,
     ...services.map((s) => ({ value: s.id as string | null, label: s.name }))
   ];
+  const disabled = services.length === 0;
   const placeholder = !projectId
     ? "Choose a project first"
     : project.isPending
       ? "Loading…"
-      : services.length === 0
-        ? "This project has no services"
-        : "No service";
+      : project.isError
+        ? "Couldn't load the services"
+        : services.length === 0
+          ? "This project has no services"
+          : "No service";
 
   return (
     <Select
-      items={items}
+      // Disabled: no items, so the box shows why (the placeholder) instead of No service's label.
+      items={disabled ? [] : items}
       value={value}
       onValueChange={(v) => onChange(v ?? null)}
-      disabled={services.length === 0}
+      disabled={disabled}
     >
       <SelectTrigger
         id={id}
