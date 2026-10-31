@@ -31,7 +31,7 @@ import type { Ref } from "../types";
 import { DeletedName } from "./deleted-marker";
 import { DayCharts, logColors } from "./day-charts";
 import { DayHeader } from "./day-header";
-import { PushToPmspaButton } from "@/features/integrations/components/push-button";
+import { usePmspaAction } from "@/features/integrations/components/push-button";
 import { DayMenu } from "./day-menu";
 import { DayPicker } from "./day-picker";
 import { LogFormDialog } from "./log-form-dialog";
@@ -75,6 +75,12 @@ export function DayView() {
   const dayQuery = useDay(date);
   const day = dayQuery.data;
   const [logging, setLogging] = useState(false);
+  // Push to PMSPA, an item of the day's ⋯ menu (FR-INT-012): its dialog renders here, so it outlives the menu.
+  const push = usePmspaAction({
+    target: { type: "day", id: date },
+    label: `the logs of ${formatWorkDate(date)}`,
+    disabled: !day || day.logs.length === 0
+  });
   const [open, setOpen] = useState<Record<"project" | "task", string[]>>({
     project: [],
     task: []
@@ -140,18 +146,9 @@ export function DayView() {
         today={today}
         timeZone={timeZone}
         onChange={setDate}
-        actions={
-          <>
-            <PushToPmspaButton
-              target={{ type: "day", id: date }}
-              label={`the logs of ${formatWorkDate(date)}`}
-              disabled={day.logs.length === 0}
-              disabledHint="This day has no logs to push."
-            />
-            <DayMenu day={day} />
-          </>
-        }
+        actions={<DayMenu day={day} today={today} push={push} />}
       />
+      {push.dialog}
       <DayHeader
         day={day}
         isToday={date === today}

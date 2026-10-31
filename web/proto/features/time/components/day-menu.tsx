@@ -74,7 +74,12 @@ export function DayMenu({
           <DropdownMenuItem
             disabled={noLogs}
             className="cursor-pointer"
-            render={<Link href={bookingsHref(day.workDate, today)} />}
+            // Disabled, it isn't a link: middle-click or "Open in new tab" would reach a day Bookings doesn't list.
+            render={
+              noLogs ? undefined : (
+                <Link href={bookingsHref(day.workDate, today)} />
+              )
+            }
           >
             <CalendarCheck /> Go to Bookings
           </DropdownMenuItem>
@@ -89,7 +94,9 @@ export function DayMenu({
             <DropdownMenuItem
               disabled={push.disabled}
               title={push.hint}
-              className="cursor-pointer"
+              // A disabled item gets no pointer events, so its title would never show: this one keeps hover
+              // (Base UI still blocks the click).
+              className="cursor-pointer data-disabled:pointer-events-auto data-disabled:cursor-default"
               onClick={push.start}
             >
               <Upload /> Push to PMSPA
