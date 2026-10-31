@@ -146,9 +146,10 @@ export interface RunningPoint {
 }
 
 /**
- * Cumulative worked, booked and target (+ targetMinutes per day with a start), one point per day
- * up to today with time logged: days without logs (weekends, days off, the future) are left out,
- * so the lines have no flat stretches. Target still counts a workday without logs, on the next point.
+ * Cumulative worked, booked and target (+ targetMinutes per day with a start). Before today, one point per day with
+ * time logged: days without logs are left out, so the lines have no flat stretches (a workday without logs still adds
+ * to the target, on the next point). From today to the range's end, every weekday and any day with logs, as in the
+ * Workdays chart, so the lines run flat to the end of the range.
  */
 export function running(
   days: DayStat[],
@@ -159,11 +160,12 @@ export function running(
   let booked = 0;
   let target = 0;
   return days.flatMap((d) => {
-    if (d.workDate > today) return [];
     worked += d.worked;
     booked += d.booked;
     if (d.startMinute !== null) target += targetMinutes;
-    if (d.worked === 0) return [];
+    const shown =
+      d.worked > 0 || (d.workDate >= today && !isWeekend(parseISO(d.workDate)));
+    if (!shown) return [];
     return [
       {
         workDate: d.workDate,

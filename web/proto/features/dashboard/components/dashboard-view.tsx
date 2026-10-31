@@ -143,7 +143,7 @@ export function DashboardView() {
             <HoursSummary t={stats.totals} targetMinutes={target} />
           </div>
           <div className="min-w-0 xl:col-span-7">
-            <RunningTotals points={stats.running} />
+            <RunningTotals points={stats.running} totals={stats.totals} />
           </div>
           <div className="min-w-0 xl:col-span-5">
             <ProjectHours rows={data.projects} />

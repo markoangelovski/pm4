@@ -9,7 +9,7 @@ import {
   type ChartConfig
 } from "@/components/ui/chart";
 import { formatDuration } from "@/lib/time";
-import { hourTicks, type RunningPoint } from "../stats";
+import { hourTicks, type RunningPoint, type Totals } from "../stats";
 
 const CONFIG: ChartConfig = {
   worked: { label: "Worked", color: "var(--dash-worked)" },
@@ -69,9 +69,17 @@ function RunningTooltip({ active, payload }: TipProps) {
   );
 }
 
-/** Cumulative worked, booked and target through the range: are you on pace, and is booking keeping up? */
-export function RunningTotals({ points }: { points: RunningPoint[] }) {
-  const last = [...points].reverse().find((p) => p.worked !== null);
+/**
+ * Cumulative worked, booked and target through the range: are you on pace, and is booking keeping up?
+ * The legend shows the range's totals (as Worked · target · booked). Nothing logged → a message in place of the chart.
+ */
+export function RunningTotals({
+  points,
+  totals
+}: {
+  points: RunningPoint[];
+  totals: Pick<Totals, "worked" | "booked" | "target">;
+}) {
   const yTicks = hourTicks(
     Math.max(
       0,
@@ -97,61 +105,67 @@ export function RunningTotals({ points }: { points: RunningPoint[] }) {
               <Marker s={s} />
               {s.label}
               <span className="font-medium text-foreground tabular-nums">
-                {hours(last?.[s.key] ?? 0)}
+                {hours(totals[s.key])}
               </span>
             </span>
           ))}
         </div>
-        <ChartContainer config={CONFIG} className="aspect-auto! w-full">
-          <LineChart
-            data={points}
-            margin={{ top: 8, right: 12, bottom: 0, left: 0 }}
-          >
-            <CartesianGrid vertical={false} stroke="var(--border)" />
-            <XAxis
-              dataKey="workDate"
-              tickLine={false}
-              axisLine={false}
-              tickMargin={8}
-              interval="preserveStartEnd"
-              minTickGap={8}
-              tick={tick}
-              tickFormatter={(date: string) => ticks.get(date) ?? ""}
-            />
-            <YAxis
-              width={52}
-              domain={[0, yTicks.at(-1)!]}
-              ticks={yTicks}
-              interval={0}
-              tickLine={false}
-              axisLine={false}
-              tick={tick}
-              tickFormatter={(m: number) => `${m / 60}h`}
-            />
-            <ChartTooltip
-              cursor={{ stroke: "var(--border)" }}
-              content={<RunningTooltip />}
-            />
-            {SERIES.map((s) => (
-              <Line
-                key={s.key}
-                dataKey={s.key}
-                type="linear"
-                stroke={s.color}
-                strokeWidth={2}
-                strokeDasharray={s.dash}
-                dot={false}
-                activeDot={{
-                  r: 4,
-                  fill: s.color,
-                  stroke: "var(--card)",
-                  strokeWidth: 2
-                }}
-                isAnimationActive={false}
+        {totals.worked === 0 ? (
+          <p className="py-6 text-center text-sm text-muted-foreground">
+            Nothing logged in this range.
+          </p>
+        ) : (
+          <ChartContainer config={CONFIG} className="aspect-auto! w-full">
+            <LineChart
+              data={points}
+              margin={{ top: 8, right: 12, bottom: 0, left: 0 }}
+            >
+              <CartesianGrid vertical={false} stroke="var(--border)" />
+              <XAxis
+                dataKey="workDate"
+                tickLine={false}
+                axisLine={false}
+                tickMargin={8}
+                interval="preserveStartEnd"
+                minTickGap={8}
+                tick={tick}
+                tickFormatter={(date: string) => ticks.get(date) ?? ""}
               />
-            ))}
-          </LineChart>
-        </ChartContainer>
+              <YAxis
+                width={52}
+                domain={[0, yTicks.at(-1)!]}
+                ticks={yTicks}
+                interval={0}
+                tickLine={false}
+                axisLine={false}
+                tick={tick}
+                tickFormatter={(m: number) => `${m / 60}h`}
+              />
+              <ChartTooltip
+                cursor={{ stroke: "var(--border)" }}
+                content={<RunningTooltip />}
+              />
+              {SERIES.map((s) => (
+                <Line
+                  key={s.key}
+                  dataKey={s.key}
+                  type="linear"
+                  stroke={s.color}
+                  strokeWidth={2}
+                  strokeDasharray={s.dash}
+                  dot={false}
+                  activeDot={{
+                    r: 4,
+                    fill: s.color,
+                    stroke: "var(--card)",
+                    strokeWidth: 2
+                  }}
+                  isAnimationActive={false}
+                />
+              ))}
+            </LineChart>
+          </ChartContainer>
+        )}
       </CardContent>
     </Card>
   );
