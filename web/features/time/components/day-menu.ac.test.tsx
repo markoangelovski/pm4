@@ -154,17 +154,19 @@ describe("Day menu (feat-tlog-day-menu)", () => {
     }
   );
 
-  it("AC-3 OQ-252: Go to Bookings is disabled on a day without logs, as Prompt", async () => {
+  it("AC-3 OQ-252: Go to Bookings is disabled on a day without logs, as Prompt, and isn't a link then", async () => {
     renderWith(<DayMenu day={dayOf("2026-10-06", [])} today="2026-10-31" />);
     openMenu();
-    expect(await item("Go to Bookings")).toHaveAttribute(
-      "aria-disabled",
-      "true"
-    );
+    const bookings = await item("Go to Bookings");
+    expect(bookings).toHaveAttribute("aria-disabled", "true");
+    // No href to middle-click or open in a new tab.
+    expect(bookings.closest("a")).toBeNull();
+    expect(bookings.querySelector("a")).toBeNull();
+    expect(screen.queryByRole("link")).not.toBeInTheDocument();
     expect(await item("Prompt")).toHaveAttribute("aria-disabled", "true");
   });
 
-  it("AC-4 FR-INT-012: Push to PMSPA hidden without push or when hidden; disabled with the hint as its title; enabled → push.start", async () => {
+  it("AC-4 FR-INT-012: Push to PMSPA hidden without push or when hidden; disabled with the hint as its title, kept hoverable; enabled → push.start", async () => {
     const day = withLogs("2026-10-06");
     const none = renderWith(<DayMenu day={day} today="2026-10-31" />);
     openMenu();
@@ -185,17 +187,18 @@ describe("Day menu (feat-tlog-day-menu)", () => {
     hidden.unmount();
 
     const hint = "PMSPA: Error. Check it in Settings → Integrations.";
+    const disabledPush = action({ disabled: true, hint });
     const disabled = renderWith(
-      <DayMenu
-        day={day}
-        today="2026-10-31"
-        push={action({ disabled: true, hint })}
-      />
+      <DayMenu day={day} today="2026-10-31" push={disabledPush} />
     );
     openMenu();
     const off = await item("Push to PMSPA");
     expect(off).toHaveAttribute("aria-disabled", "true");
     expect(off).toHaveAttribute("title", hint);
+    // A disabled item gets no pointer events (shadcn), which would hide its title: this one keeps them.
+    expect(off).toHaveClass("data-disabled:pointer-events-auto");
+    fireEvent.click(off);
+    expect(disabledPush.start).not.toHaveBeenCalled();
     disabled.unmount();
 
     const push = action();
