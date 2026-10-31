@@ -33,11 +33,11 @@ const DESCRIPTION: Record<Target["type"], string> = {
 };
 
 /**
- * FR-INT-012: **Sync with PMSPA** on the project detail and the task detail (both ways, OQ-172), **Push to
- * PMSPA** on the day view. Hidden without a saved connection; disabled, with the status as its hint, unless the
- * status is Connected.
+ * The PMSPA action of a target: what its control shows (hidden without a saved connection; disabled, with the status
+ * as its hint, unless the status is Connected) and the preview dialog it opens. The control and the dialog render
+ * apart, so a menu item can open a dialog that outlives the menu.
  */
-export function PushToPmspaButton({
+export function usePmspaAction({
   target,
   label,
   disabled,
@@ -67,49 +67,27 @@ export function PushToPmspaButton({
       ? push.mutateAsync({ target, choices })
       : sync.mutateAsync({ target, choices });
 
-  if (!connection || connection.status === "not-configured") return null;
-  const connected = connection.status === "connected";
-  const hint = !connected
-    ? `PMSPA: ${STATUS_LABEL[connection.status]}. Check it in Settings → Integrations.`
-    : disabled
-      ? disabledHint
-      : undefined;
+  const hidden = !connection || connection.status === "not-configured";
+  const connected = connection?.status === "connected";
+  const hint =
+    connection && !connected
+      ? `PMSPA: ${STATUS_LABEL[connection.status]}. Check it in Settings → Integrations.`
+      : disabled
+        ? disabledHint
+        : undefined;
 
-  const button = (
-    <Button
-      variant="outline"
-      className="cursor-pointer"
-      disabled={!connected || disabled}
-      onClick={() => {
-        preview.reset();
-        load();
-        setOpen(true);
-      }}
-    >
-      {mode === "sync" ? (
-        <RefreshCw data-icon="inline-start" />
-      ) : (
-        <Upload data-icon="inline-start" />
-      )}
-      {mode === "sync" ? "Sync with PMSPA" : "Push to PMSPA"}
-    </Button>
-  );
-
-  return (
-    <>
-      {hint ? (
-        <Tooltip>
-          {/* A disabled button gets no pointer events: the wrapper carries the hint. */}
-          <TooltipTrigger
-            render={<span tabIndex={0} className="inline-flex" />}
-          >
-            {button}
-          </TooltipTrigger>
-          <TooltipContent>{hint}</TooltipContent>
-        </Tooltip>
-      ) : (
-        button
-      )}
+  return {
+    hidden,
+    mode,
+    label: mode === "sync" ? "Sync with PMSPA" : "Push to PMSPA",
+    disabled: !connected || !!disabled,
+    hint,
+    start: () => {
+      preview.reset();
+      load();
+      setOpen(true);
+    },
+    dialog: hidden ? null : (
       <SyncPreviewDialog
         open={open}
         onOpenChange={setOpen}
@@ -127,6 +105,52 @@ export function PushToPmspaButton({
         onRetry={load}
         onRun={run}
       />
+    )
+  };
+}
+
+export type PmspaAction = ReturnType<typeof usePmspaAction>;
+
+/**
+ * FR-INT-012: **Sync with PMSPA** on the project detail and the task detail (both ways, OQ-172). The day view's
+ * **Push to PMSPA** is an item of its ⋯ menu (`DayMenu`), over `usePmspaAction`.
+ */
+export function PushToPmspaButton(props: Parameters<typeof usePmspaAction>[0]) {
+  const action = usePmspaAction(props);
+  if (action.hidden) return null;
+
+  const button = (
+    <Button
+      variant="outline"
+      className="cursor-pointer"
+      disabled={action.disabled}
+      onClick={action.start}
+    >
+      {action.mode === "sync" ? (
+        <RefreshCw data-icon="inline-start" />
+      ) : (
+        <Upload data-icon="inline-start" />
+      )}
+      {action.label}
+    </Button>
+  );
+
+  return (
+    <>
+      {action.hint ? (
+        <Tooltip>
+          {/* A disabled button gets no pointer events: the wrapper carries the hint. */}
+          <TooltipTrigger
+            render={<span tabIndex={0} className="inline-flex" />}
+          >
+            {button}
+          </TooltipTrigger>
+          <TooltipContent>{action.hint}</TooltipContent>
+        </Tooltip>
+      ) : (
+        button
+      )}
+      {action.dialog}
     </>
   );
 }
