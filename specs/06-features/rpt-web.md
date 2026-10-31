@@ -3,10 +3,11 @@ id: feat-rpt-web
 title: "Dashboard web: the dashboard page"
 status: approved
 owner: Marko Angelovski
-last_updated: 2026-10-09
+last_updated: 2026-10-31
 milestone: M5
 requirements: [FR-RPT-001, FR-RPT-002, FR-RPT-003, FR-RPT-004, FR-RPT-005, FR-RPT-006, SCR-010]
-related: [req-reporting, web-screens, web-routing, feat-rpt-api, feat-tlog-web, OQ-126, OQ-127, OQ-128, OQ-129, OQ-130]
+related: [req-reporting, web-screens, web-routing, feat-rpt-api, feat-tlog-web, OQ-126, OQ-127, OQ-128, OQ-129, OQ-130, OQ-250, OQ-251]
+prototype: 5546896
 ---
 
 # Dashboard web: the dashboard page
@@ -24,9 +25,15 @@ worked / target / booked totals, the running totals and the hours per project. B
 | D3 | Up to 62 days → one bar per day, else one per Monday–Sunday week. Per day, a weekend day with no start and no logs is left out. | OQ-128 (owner) |
 | D4 | `reportKeys` live under `timeKeys.all`, so log mutations (header **Log time**) refresh the dashboard; `staleTime: 0`, so bookings, renames and deletions made elsewhere show on the next visit. | Agent |
 | D5 | Series colours: worked `#2a78d6` / dark `#3987e5`, booked `#1baf7a` / dark `#199e70`, start `#eb6834` / dark `#d95926`, as CSS variables `--dash-worked`, `--dash-booked`, `--dash-start` on the page root. | Owner's screen (2026-10-09) |
+| D6 | Running totals: before today, one point per day with time logged (`worked > 0`); days without logs are left out, so the past has no flat stretches. From today to the range's end, a point for every Monday–Friday and any day with `worked > 0` (as D3), so the lines run flat to the end of the range. A day with a start but no logs still adds `targetMinutes` to the running target, which shows on the next point. The legend shows the range's `Totals` (worked, target, booked, as HoursSummary), not the last point. `totals.worked === 0` → "Nothing logged in this range." in place of the chart; the legend stays. | Owner, 2026-10-31 (OQ-250, OQ-251); prototype `5546896` |
+| D7 | Workdays: the start panel's x-axis uses `scale="band"`, as the bars' axis does, so the shared hover line, the start dot and the bar's centre line up. | Owner, 2026-10-31 (bug); prototype `f453800` |
 
 ## Scope
-**In:** `features/dashboard/` (logic, hooks, components) and the page `/app`.
+**In:** `features/dashboard/` (logic, hooks, components) and the page `/app`. T3 (D6, D7): Running totals without empty days, its
+legend and empty state, and the aligned Workdays hover, as twins of the prototype files.
+
+**Test step (main session, before T3):** updates AC-5 in `web/features/dashboard/stats.ac.test.ts` to D6 and adds AC-14 to
+`web/features/dashboard/components/dashboard-view.ac.test.tsx` (no stubs: the exports exist), then `pm4 hash`.
 
 **Before the tests are written:** feat-rpt-api, feat-tlog-web and feat-book-web are done. The test writer runs `npm run api:types`.
 
@@ -65,6 +72,12 @@ worked / target / booked totals, the running totals and the hours per project. B
 | web | `web/features/dashboard/components/running-totals.tsx` | C | tests, T2 | Cumulative lines |
 | web | `web/features/dashboard/components/project-hours.tsx` | C | tests, T2 | Hours by project |
 | web | `web/app/(dashboard-layout)/app/page.tsx` | M | tests, T2 | Renders `DashboardView` |
+| web | `web/features/dashboard/stats.ac.test.ts` | M | tests | AC-5 to D6 |
+| web | `web/features/dashboard/components/dashboard-view.ac.test.tsx` | M | tests | AC-14 (D6) |
+| web | `web/features/dashboard/stats.ts` | M | T3 | The twin of the prototype file, with D6 (commands under *Web (T3)*) |
+| web | `web/features/dashboard/components/running-totals.tsx` | M | T3 | The twin of the prototype file, with D6 |
+| web | `web/features/dashboard/components/dashboard-view.tsx` | M | T3 | The twin of the prototype file, with D6 (passes `totals`) |
+| web | `web/features/dashboard/components/workday-chart.tsx` | M | T3 | The twin of the prototype file, with D7 |
 
 ## Interfaces
 
@@ -117,6 +130,7 @@ export function hourTicks(maxMinutes: number): number[];
   `title` "Week of `d MMM` (Monday) – `d MMM yyyy` (Sunday)"; `startMinute` = `totals(its days).avgStart`; `target` = its workdays × `targetMinutes`.
 - Both: `worked`, `booked` = sums; `unbooked` = `worked − booked`.
 - `running`: cumulative `worked`, `booked`, and `target` (+ `targetMinutes` per day with a start); all three `null` after `today`; `tick` `d MMM`.
+  Since T3 (D6): a day is a point when `worked > 0`, or when it is `≥ today` and Monday–Friday; none `null`; the totals still accumulate over the days left out.
 
 ### Data (T1)
 ```ts
@@ -177,6 +191,18 @@ export function ProjectHours(props: { rows: ReportProject[] }): React.JSX.Elemen
   `project.deleted` → plain text with the deleted marker, no link.
 - `page.tsx`: `<Suspense><DashboardView /></Suspense>`, `metadata.title` "Dashboard".
 
+### Web (T3)
+The four files become their prototype twins (D6, D7), from the repo root:
+```bash
+for f in stats.ts components/running-totals.tsx components/dashboard-view.tsx components/workday-chart.tsx; do
+  sed 's#@/proto/#@/#g' web/proto/features/dashboard/$f > web/features/dashboard/$f
+done
+cd web && npx prettier --write features/dashboard/stats.ts features/dashboard/components/running-totals.tsx features/dashboard/components/dashboard-view.tsx features/dashboard/components/workday-chart.tsx
+```
+The diff they bring is `git diff 7caf4a5 5546896 -- web/proto/features/dashboard/`. API changes: `running` as under *Stats*
+(same signature and `RunningPoint` type); `RunningTotals` takes `{ points: RunningPoint[]; totals: Pick<Totals, "worked" | "booked" | "target"> }`
+and `DashboardView` passes `stats.totals`. No new imports outside `features/dashboard/`.
+
 ## Acceptance criteria
 Tests mock `@/lib/api/client`, `next/navigation` and `useMe` (time zone `Europe/Zagreb`, `dailyTargetMinutes` 420), wrap in `NuqsTestingAdapter`, and use fake
 timers (2026-10-09 12:00 in Zagreb). "The report" for 1–31 Oct 2026: `days` 1 Oct `{480, 0, 0}`, 6 Oct `{510, 315, 120}`, 7 Oct `{555, 375, 240}`; `projects` Anthropic
@@ -189,7 +215,7 @@ tasks 2 upcoming, 3 in progress, 4 completed.
 | AC-2 | `dayStats` of the report → 31 days, 2 Oct `{null, 0, 0}`; `totals` → worked 690, booked 360, workdays 3, target 1260, average 515, earliest 480, latest 555 | `web/features/dashboard/stats.ac.test.ts` | tests |
 | AC-3 | `buckets` for October → by day, 22 items (the 9 weekend days without work left out), ticks `1`…, 6 Oct title "Tue, 6 Oct 2026", booked 120, unbooked 195; with 2h worked on Sat 10 Oct → 23 items; 2026-08-01..2026-10-01 (62 days) → by day with ticks `d MMM`; 2026-08-01..2026-10-02 → by week | `web/features/dashboard/stats.ac.test.ts` | tests |
 | AC-4 | `buckets` for 2026-01-01..2026-06-30 → by week, 27 items; the first: key `2025-12-29`, date `2026-01-01`, tick "1 Jan", title "Week of 29 Dec – 4 Jan 2026"; a week with starts 08:00 and 09:00 → start 510, target 840 | `web/features/dashboard/stats.ac.test.ts` | tests |
-| AC-5 | `running` for October (today 9 Oct): 7 Oct and 9 Oct → worked 690, booked 360, target 1260; 10 Oct → all `null`; `hourTicks(0)` → [0, 60]; `hourTicks(450)` → [0, 120, 240, 360, 480] | `web/features/dashboard/stats.ac.test.ts` | tests |
+| AC-5 | `running` for October (today Fri 9 Oct), since T3 (D6): 18 points: 6 Oct `{tick "6 Oct", worked 315, booked 120, target 840}` (1 Oct's start counted, 1 Oct itself left out), 7 Oct `{worked 690, booked 360, target 1260}`, then 9 Oct and every weekday 12–30 Oct, each `{690, 360, 1260}`; no point for 1, 2, 5, 8, 10, 11 or 31 Oct; with 2h logged on Sat 10 Oct → 19 points, 10 Oct worked 810; `hourTicks(0)` → [0, 60]; `hourTicks(450)` → [0, 120, 240, 360, 480] | `web/features/dashboard/stats.ac.test.ts` | tests, T3 |
 | AC-6 | `useDashboardReport` calls `GET /api/v1/reports/dashboard` with `from`/`to` and returns the body; `reportKeys.all` starts with `timeKeys.all`; `useProjectCount` requests projects with `pageSize` 1 and returns `total`; `useTaskCounts` makes one request per status with `pageSize` 1 and returns the three counts | `web/features/dashboard/api.ac.test.tsx` | T1 |
 | AC-7 | `/app` without parameters: heading **Dashboard**, "October 2026", *Time range* shows "This month", the report is requested for 2026-10-01..2026-10-31; tiles: Projects `12`, "3 with time logged in this range"; Tasks `9` with Upcoming 2, In progress 3, Completed 4; Workdays `3`, "Days with a start time, of 7 weekdays so far"; Average start `08:35`, "Earliest 08:00 · latest 09:15" | `web/features/dashboard/components/dashboard-view.ac.test.tsx` | T2 |
 | AC-8 | Choosing *Last 7 days* sets `?from=2026-10-03&to=2026-10-09` and requests that range; choosing *This month* clears both; `?from=2025-01-01&to=2026-10-09` requests 1–31 Oct; picking 1 Sep and 9 Oct in *Pick dates* and **Apply** sets `?from=2026-09-01&to=2026-10-09` and the select shows "Custom range" | `web/features/dashboard/components/dashboard-view.ac.test.tsx` | T2 |
@@ -197,6 +223,9 @@ tasks 2 upcoming, 3 in progress, 4 completed.
 | AC-10 | Hours by project lists Anthropic, Nvidia, PM Internal, Unsorted, Non-prod in that order; Anthropic links to `/app/project?id=…` and shows `4h 15m` and "2h booked"; PM Internal is plain text with the deleted marker (an element labelled "deleted"); Unsorted and Non-prod show `—`; a report with no projects → "Nothing logged in this range." | `web/features/dashboard/components/dashboard-view.ac.test.tsx` | T2 |
 | AC-11 | Workdays card shows "by day"; its **Table** tab has 22 rows, the 6 Oct row "Tue, 6 Oct 2026", `08:30`, `5h 15m`, `2h`, `7h` | `web/features/dashboard/components/dashboard-view.ac.test.tsx` | T2 |
 | AC-12 | Report pending → no card content, skeletons; report error → "Couldn't load the dashboard." and **Retry** requests it again; the project count failing → `—` in Projects while the rest shows | `web/features/dashboard/components/dashboard-view.ac.test.tsx` | T2 |
+| AC-14 | Running totals (D6): with the report, the legend shows `11h 30m`, `21h`, `6h` (as AC-9); with a report whose only day is 9 Oct `{480, 0, 0}` (a start, no logs) → the legend shows Worked `0h`, Target `7h`, Booked `0h` and the card says "Nothing logged in this range." | `web/features/dashboard/components/dashboard-view.ac.test.tsx` | T3 |
+| AC-15 | `stats.ts`, `running-totals.tsx`, `dashboard-view.tsx` and `workday-chart.tsx` equal their prototype twins | check | T3 |
+| AC-16 | In the browser (D7): hovering a Workdays bar puts the start panel's hover line through that day's start dot and the bar's centre; Running totals has no flat stretches before today and runs flat from today to the range's end | manual | T3 |
 | AC-13 | In the browser: the start line and the stacked bars share one hover with SCR-010's tooltip; a bar of a past day opens Logs on that date; 1 Jan–30 Jun shows weekly bars; a custom range over 366 days disables **Apply** with "Pick at most 366 days."; the colours read in light and dark | manual | T2 |
 
 Typed stubs (created with the tests, so lint and typecheck pass while the tests fail):
@@ -208,9 +237,12 @@ Typed stubs (created with the tests, so lint and typecheck pass while the tests 
 | --- | --- | --- | --- | --- | --- | --- |
 | T1 | Dashboard hooks (`features/dashboard/api.ts`): the report and the counts | web | S | haiku | Copies `features/bookings/api.ts`; the keys, URLs and params are stated | — (feat-rpt-api, feat-tlog-web, feat-book-web done) |
 | T2 | Dashboard page: range picker in the URL, count tiles, workday chart and table, worked / target / booked, running totals, hours by project | web | L | sonnet | Two synced recharts panels with custom tooltips and click-through, a range picker with a draft and URL state, loading and error states across six components | T1 |
+| T3 | Running totals without empty days and the aligned Workdays hover (D6, D7): four prototype twins | web | S | haiku | Twin copy, the commands under *Web (T3)* | T2 |
 
 ## Open questions
 None.
 
 ## Changelog
 - 2026-10-09: Initial draft from the owner's Dashboard screen (OQ-126…OQ-130). Ready for review.
+- 2026-10-31: D6 (owner, OQ-250, OQ-251): Running totals leaves out past days without logs and runs flat from today over the remaining weekdays, its legend shows the range totals, no logs → "Nothing logged in this range."; D7: the Workdays start panel uses a band x-axis so its hover lines up with the bars. Prototype `f453800` + `5546896`, T3, AC-5 updated, AC-14…AC-16. Back to `review`.
+- 2026-10-31: Approved by the owner.

@@ -349,6 +349,38 @@ describe("DashboardView (feat-rpt-web)", () => {
     expect(running).toHaveTextContent(/Booked\s*6h/);
   });
 
+  it("AC-14 FR-RPT-005 OQ-250 OQ-251 SCR-010: running totals' legend shows the range totals; nothing logged", async () => {
+    const first = renderView();
+    await loaded();
+    const running = runningCard();
+    expect(running).toHaveTextContent(/Worked\s*11h 30m/);
+    expect(running).toHaveTextContent(/Target\s*21h/);
+    expect(running).toHaveTextContent(/Booked\s*6h/);
+    first.unmount();
+
+    // A start on 9 Oct (today) and no logs: the target counts, nothing is drawn.
+    report = {
+      days: [
+        {
+          workDate: "2026-10-09",
+          startMinute: 480,
+          workedMinutes: 0,
+          bookedMinutes: 0
+        }
+      ],
+      projects: []
+    };
+    renderView();
+    await loaded();
+    const empty = runningCard();
+    expect(empty).toHaveTextContent(/Worked\s*0h/);
+    expect(empty).toHaveTextContent(/Target\s*7h/);
+    expect(empty).toHaveTextContent(/Booked\s*0h/);
+    expect(
+      within(empty).getByText("Nothing logged in this range.")
+    ).toBeInTheDocument();
+  });
+
   it("AC-10 FR-RPT-006 SCR-010: hours by project in API order, links, deleted and the two buckets; nothing logged", async () => {
     const first = renderView();
     await loaded();

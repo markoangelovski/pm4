@@ -3,8 +3,8 @@ id: req-reporting
 title: Dashboard and Reporting
 status: approved
 owner: Marko Angelovski
-last_updated: 2026-10-23
-related: [req-time-logs, req-bookings, api-endpoints, web-screens, OQ-029, OQ-126, OQ-127, OQ-128, OQ-129, OQ-130, OQ-212]
+last_updated: 2026-10-31
+related: [req-time-logs, req-bookings, api-endpoints, web-screens, OQ-029, OQ-126, OQ-127, OQ-128, OQ-129, OQ-130, OQ-212, OQ-250, OQ-251]
 ---
 
 # Dashboard and Reporting
@@ -83,10 +83,14 @@ book" or "Everything is booked".
 
 ### FR-RPT-005: Running totals
 **Priority:** Must
-**Statement:** Three lines over the range: worked, target and booked, each added up day by day, ending at today. The legend
-shows each total up to today.
+**Statement:** Three lines over the range: worked, target and booked, each added up day by day: before today, one point per day with
+time logged (days without logs are left out); from today to the end of the range, every weekday and any day with logs,
+so the lines run flat to the range's end. The legend shows the range's totals.
 **Acceptance criteria:**
-- Given the range is this month, then the lines stop at today, and the legend's totals equal FR-RPT-004's.
+- Given the range is this month and today is a Wednesday, then a past weekday without logs has no point, the lines run flat
+  from today through the month's remaining weekdays, and the legend's totals equal FR-RPT-004's (also when a workday has a
+  start but no logs yet).
+- Given a range with no logs, then the card says "Nothing logged in this range." in place of the lines.
 
 ### FR-RPT-006: Hours by project
 **Priority:** Must
@@ -113,3 +117,5 @@ None.
 - 2026-10-09: Rewritten from the owner's Dashboard screen: count tiles, workday chart, worked / target / booked, running
   totals, hours by project (OQ-126…OQ-130). The per-project line chart is dropped. Ready for review.
 - 2026-10-23: *Booked* sums the logs' booked minutes, so a partly booked log counts its booked part (feat-book-partial). Back to `review`.
+- 2026-10-31: FR-RPT-005: past days without logs are left out of the lines, which run flat from today to the range's end; the legend shows the range totals; no logs → "Nothing logged in this range." (OQ-250, OQ-251). Back to `review`.
+- 2026-10-31: Approved by the owner.

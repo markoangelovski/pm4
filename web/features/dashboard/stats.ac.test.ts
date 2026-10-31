@@ -223,33 +223,58 @@ describe("dashboard stats (feat-rpt-web)", () => {
     });
   });
 
-  it("AC-5 FR-RPT-004: running totals stop after today; hour ticks", () => {
+  it("AC-5 FR-RPT-005 OQ-250: running totals skip past days without logs and run flat from today; hour ticks", () => {
     const points = running(dayStats(october, reportDays), TARGET, TODAY);
-    expect(points).toHaveLength(31);
-    const at = (date: string) => points.find((p) => p.workDate === date);
-    expect(at("2026-10-01")).toEqual({
-      workDate: "2026-10-01",
-      tick: "1 Oct",
-      worked: 0,
-      booked: 0,
-      target: 420
+    const flat = [
+      "2026-10-09",
+      "2026-10-12",
+      "2026-10-13",
+      "2026-10-14",
+      "2026-10-15",
+      "2026-10-16",
+      "2026-10-19",
+      "2026-10-20",
+      "2026-10-21",
+      "2026-10-22",
+      "2026-10-23",
+      "2026-10-26",
+      "2026-10-27",
+      "2026-10-28",
+      "2026-10-29",
+      "2026-10-30"
+    ];
+    expect(points.map((p) => p.workDate)).toEqual([
+      "2026-10-06",
+      "2026-10-07",
+      ...flat
+    ]);
+    expect(points[0]).toEqual({
+      workDate: "2026-10-06",
+      tick: "6 Oct",
+      worked: 315,
+      booked: 120,
+      target: 840
     });
-    expect(at("2026-10-07")).toMatchObject({
+    expect(points[1]).toMatchObject({
+      workDate: "2026-10-07",
       worked: 690,
       booked: 360,
       target: 1260
     });
-    expect(at("2026-10-09")).toMatchObject({
-      worked: 690,
-      booked: 360,
-      target: 1260
-    });
-    expect(at("2026-10-10")).toMatchObject({
-      tick: "10 Oct",
-      worked: null,
-      booked: null,
-      target: null
-    });
+    for (const p of points.slice(2)) {
+      expect(p).toMatchObject({ worked: 690, booked: 360, target: 1260 });
+    }
+
+    // Work on Saturday 10 Oct (after today) adds that day.
+    const withSaturday = running(
+      dayStats(october, [...reportDays, day("2026-10-10", null, 120, 0)]),
+      TARGET,
+      TODAY
+    );
+    expect(withSaturday).toHaveLength(19);
+    expect(withSaturday.find((p) => p.workDate === "2026-10-10")).toMatchObject(
+      { tick: "10 Oct", worked: 810, booked: 360, target: 1260 }
+    );
 
     expect(hourTicks(0)).toEqual([0, 60]);
     expect(hourTicks(450)).toEqual([0, 120, 240, 360, 480]);
