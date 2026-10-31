@@ -15,6 +15,7 @@ import {
   DialogTitle
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
+import { formatDuration } from "@/lib/time";
 import { projectKeys, useProject, type Project } from "@/features/projects/api";
 import { taskKeys, useTask, type Task } from "@/features/tasks/api";
 import {
@@ -210,7 +211,11 @@ function PromptCard({
         <dd className="min-w-0 break-words">{service ?? "—"}</dd>
         <dt className="font-medium">Date:</dt>
         <dd>{section.date}</dd>
-        <dt className="font-medium">Note:</dt>
+        <dt className="font-medium">Duration:</dt>
+        <dd className="tabular-nums">
+          {formatDuration(section.durationMinutes)}
+        </dd>
+        <dt className="font-medium">Notes:</dt>
         <dd className="min-w-0">
           <ul className="list-disc space-y-0.5 pl-4">
             {section.notes.map((n, i) => (

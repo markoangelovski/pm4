@@ -125,6 +125,6 @@
 | [T-0119](m2-projects/T-0119-task-dialog-and-detail-twins-promote.md) | Task dialog and detail twins, promote service-select.tsx, Prompt twins; proposed-types.ts removed | M2 | web | S | done | T-0117, T-0118 |
 | [T-0120](m2-projects/T-0120-project-services-user-scoped-queries.md) | Project services queries always carry a userId condition | M2 | api | S | done | — |
 | [T-0121](m2-projects/T-0121-service-select-shows-why-it-is-disabled.md) | The Service select shows why it is disabled | M2 | web | S | done | — |
-| [T-0122](m4-time-logs/T-0122-duration-line-and-notes-label-d9.md) | Duration line and Notes label (D9): the confirmed prototype's prompt.ts and dialog twins | M4 | web | S | ready | T-0091 |
+| [T-0122](m4-time-logs/T-0122-duration-line-and-notes-label-d9.md) | Duration line and Notes label (D9): the confirmed prototype's prompt.ts and dialog twins | M4 | web | S | done | T-0091 |
 
 M0–M6 are done. Later follow-ups are filed under the milestone they extend.
