@@ -228,7 +228,7 @@ export function WorkdayChart({
                 margin={{ top: 12, right: 8, bottom: 8, left: 0 }}
               >
                 <CartesianGrid vertical={false} stroke="var(--border)" />
-                <XAxis dataKey="key" hide />
+                <XAxis dataKey="key" scale="band" hide />
                 <YAxis
                   width={Y_WIDTH}
                   domain={[lo, hi]}
