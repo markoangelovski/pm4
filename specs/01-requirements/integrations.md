@@ -3,7 +3,7 @@ id: req-integrations
 title: Integrations and connectors
 status: review
 owner: Marko Angelovski
-last_updated: 2026-10-23
+last_updated: 2026-10-31
 related: [prod-scope, sec, web-routing, web-screens, OQ-138, OQ-139, OQ-140, OQ-141, OQ-142, OQ-143, OQ-144, OQ-145, OQ-146, OQ-147, OQ-148, OQ-155, OQ-156, OQ-157, OQ-158, OQ-159, OQ-160, OQ-161, OQ-162, OQ-163, OQ-164, OQ-165, OQ-166, OQ-167, OQ-168, OQ-169, OQ-170, OQ-171, OQ-172, OQ-173, OQ-174, OQ-175, OQ-176, OQ-177, OQ-178, OQ-179, OQ-180, OQ-181, OQ-182, OQ-200, OQ-201, OQ-202, OQ-204, OQ-197, OQ-198, OQ-199, OQ-206, OQ-207, OQ-208, OQ-209, OQ-215, OQ-217, OQ-220]
 ---
 
@@ -381,9 +381,9 @@ when the row would import.
 ### FR-INT-012: Sync with PMSPA and Push to PMSPA
 **Priority:** Must
 **Statement:** While a PMSPA connection is saved, the project detail (SCR-021) and the task detail (SCR-031) have **Sync
-with PMSPA**, and the day view (SCR-040) has **Push to PMSPA** for the day's logs (OQ-157, OQ-172). Each is disabled
+with PMSPA**, and the day view (SCR-040) has **Push to PMSPA** for the day's logs, an item of its ⋯ menu (OQ-157, OQ-172, OQ-252). Each is disabled
 with the connection status as its hint while the status isn't **Connected**, and hidden without a connection. The day
-view's button is also disabled on a day without logs. Each opens a preview first (design principle 6), the user
+view's item is also disabled on a day without logs. Each opens a preview first (design principle 6), the user
 confirms, and the result lists every record's outcome.
 - **Sync a project or a task** (both ways, FR-INT-008): a project includes its tasks by default and the preview lets the
   user untick them; a task whose project isn't linked brings its project (design principle 5). Not linked: **Create new**
@@ -497,3 +497,4 @@ None.
   every log the import rejects (OQ-197); FR-INT-014 no "Some records may have been written" after `pmspa-sync-running` (OQ-199); FR-INT-015 **Expand all** the cheaper way (OQ-206). Still `review`.
 - 2026-10-23: Bookings aren't synced with PMSPA in either direction (OQ-215): the push no longer sets an event's `booked`, and `booked` leaves the compared log fields; stored log fingerprints change once (OQ-217). FR-INT-011: an import never shortens a log below its
   booked time, and the preview warns about such a log (OQ-220) (feat-book-partial).
+- 2026-10-31: FR-INT-012: the day view's **Push to PMSPA** is an item of its ⋯ menu (OQ-252, feat-tlog-day-menu). Still `review`.

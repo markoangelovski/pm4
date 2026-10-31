@@ -221,7 +221,7 @@ describe("Prompt dialog: editable notes (feat-tlog-prompt D8)", () => {
   });
 
   it("AC-17 FR-TLOG-020: edits are discarded when the dialog closes, and nothing is written to the API", async () => {
-    renderWith(<DayMenu day={day} />);
+    renderWith(<DayMenu day={day} today="2026-10-31" />);
     const open = async () => {
       fireEvent.click(screen.getByRole("button", { name: "Day actions" }));
       fireEvent.click(await screen.findByRole("menuitem", { name: "Prompt" }));

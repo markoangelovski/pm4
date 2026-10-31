@@ -149,14 +149,14 @@ describe("Prompt dialog (feat-tlog-prompt)", () => {
   });
 
   it("AC-6 FR-TLOG-020: Prompt is disabled on a day without logs, and opens the dialog on a day with logs", async () => {
-    const empty = renderWith(<DayMenu day={dayOf([])} />);
+    const empty = renderWith(<DayMenu day={dayOf([])} today="2026-10-31" />);
     fireEvent.click(screen.getByRole("button", { name: "Day actions" }));
     expect(
       await screen.findByRole("menuitem", { name: "Prompt" })
     ).toHaveAttribute("aria-disabled", "true");
     empty.unmount();
 
-    renderWith(<DayMenu day={day} />);
+    renderWith(<DayMenu day={day} today="2026-10-31" />);
     fireEvent.click(screen.getByRole("button", { name: "Day actions" }));
     fireEvent.click(await screen.findByRole("menuitem", { name: "Prompt" }));
     const dialog = await screen.findByRole("dialog");

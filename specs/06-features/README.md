@@ -63,3 +63,4 @@ A feature spec links to those. It doesn't copy them.
 | Installable web app (PWA): the app shell offline and an offline banner | [shell-pwa.md](shell-pwa.md) | M0 | approved |
 | New menu with project, task and log; floating Log time button | [shell-new-menu.md](shell-new-menu.md) | M0 | approved |
 | Project services: a project's services, a task's service, the Prompt's Service line | [prj-services.md](prj-services.md) | M2 | approved |
+| Day menu: Go to Bookings, and Push to PMSPA in the menu | [tlog-day-menu.md](tlog-day-menu.md) | M4 | approved |
