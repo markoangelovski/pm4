@@ -1,4 +1,5 @@
 import { format, parseISO } from "date-fns";
+import { formatDuration } from "@/lib/time";
 import type { TimeLog } from "./types";
 
 export interface PromptSection {
@@ -6,6 +7,8 @@ export interface PromptSection {
   project: { id: string | null; title: string } | null;
   task: { id: string | null; title: string } | null;
   date: string;
+  /** Total minutes of the section's logs. */
+  durationMinutes: number;
   notes: string[];
 }
 
@@ -16,7 +19,7 @@ const refKey = (ref: { id: string | null; title: string } | null) =>
   ref ? (ref.id ?? `deleted:${ref.title}`) : "none";
 
 /** One section per project + task, in first-appearance order. Excluded (non-productive) logs aren't booked, so
- *  they're left out. A note is the log's text on one line. */
+ *  they're left out. The duration sums the section's logs. A note is the log's text on one line. */
 export function promptSections(
   workDate: string,
   logs: TimeLog[]
@@ -35,10 +38,12 @@ export function promptSections(
           : null,
         task: log.task ? { id: log.task.id, title: log.task.title } : null,
         date,
+        durationMinutes: 0,
         notes: []
       };
       sections.set(key, section);
     }
+    section.durationMinutes += log.durationMinutes;
     const note = oneLine(log.text);
     if (note) section.notes.push(note);
   }
@@ -72,7 +77,8 @@ export function promptMarkdown(
       `**Task:** ${withLink(section.task, links.task)}`,
       `**Service:** ${service ?? "—"}`,
       `**Date:** ${section.date}`,
-      "**Note:**",
+      `**Duration:** ${formatDuration(section.durationMinutes)}`,
+      "**Notes:**",
       ...section.notes
         .map(oneLine)
         .filter(Boolean)

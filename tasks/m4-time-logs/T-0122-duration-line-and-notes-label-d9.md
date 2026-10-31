@@ -3,7 +3,7 @@ id: T-0122
 title: Duration line and Notes label (D9): the confirmed prototype's prompt.ts and dialog twins
 milestone: M4
 app: web
-status: ready
+status: done
 size: S
 tier: haiku
 depends_on: [T-0091]
@@ -20,11 +20,22 @@ ac_files:
 Work from the brief: `node scripts/pm4.mjs brief T-0122`. Verify with `node scripts/pm4.mjs check T-0122`.
 
 ## Implementation notes
-_Implementer: what changed, and anything the reviewer should look at._
+Done in the main session (two-file twin copy, task-routing: a few lines already in context), no subagent.
+`web/features/time/prompt.ts` and `web/features/time/components/day-prompt-dialog.tsx` are the twins of the prototype
+files at `30f62f0` (`sed 's#@/proto/#@/#g'` + Prettier): `PromptSection.durationMinutes` (the sum of the section's
+non-excluded logs), a **Duration** line after **Date** (`formatDuration`) in the card and the markdown, **Note** → **Notes**.
+
+`pm4 check T-0122`: ac hashes ok (1), scope ok, web lint / format:check / typecheck / test / build ok, AC-12 twins equal ok
+(120 equal), manual AC-13 (owner). **PASS**.
 
 ### Attempts
 | # | Tier | Result | Summary |
 | --- | --- | --- | --- |
+| 1 | main session | PASS | Twin copy of the two files; all gates green |
 
 ## Review
-_Filled in by `review-feature`._
+**Verdict: approve** (Opus reviewer, 2026-10-31). `pm4 check` PASS. No findings: the sum skips excluded logs (after the
+`excludeFromStats` skip), `**Duration:**` follows `**Date:**` and `**Note:**` became `**Notes:**`, the dialog shows Date, Duration,
+Notes in order, the twins are equal, no non-goals touched. Manual for the owner: AC-13 (the taller cards still scroll inside the
+fixed header and footer; the Duration row aligns at 360 px and desktop, light and dark).
+**Tier feedback:** haiku was enough; a mechanical twin copy, done in the main session.
