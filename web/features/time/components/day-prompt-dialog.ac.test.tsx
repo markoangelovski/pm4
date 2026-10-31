@@ -129,13 +129,13 @@ const markdownA =
   P1 +
   ")\n**Task:** X (" +
   T1 +
-  ")\n**Service:** QA\n**Date:** Tuesday, 6 October 2026\n**Note:**\n- one\n- two";
+  ")\n**Service:** QA\n**Date:** Tuesday, 6 October 2026\n**Duration:** 2h\n**Notes:**\n- one\n- two";
 const markdownB =
   "**Project:** B (" +
   P2 +
-  ")\n**Task:** —\n**Service:** —\n**Date:** Tuesday, 6 October 2026\n**Note:**\n- three";
+  ")\n**Task:** —\n**Service:** —\n**Date:** Tuesday, 6 October 2026\n**Duration:** 1h\n**Notes:**\n- three";
 const markdownOld =
-  "**Project:** Old\n**Task:** —\n**Service:** —\n**Date:** Tuesday, 6 October 2026\n**Note:**\n- four";
+  "**Project:** Old\n**Task:** —\n**Service:** —\n**Date:** Tuesday, 6 October 2026\n**Duration:** 1h\n**Notes:**\n- four";
 
 describe("Prompt dialog (feat-tlog-prompt)", () => {
   beforeEach(() => {

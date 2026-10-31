@@ -54,7 +54,7 @@ A feature spec links to those. It doesn't copy them.
 | PMSPA connector web: Integrations settings, the connector page, sync and push, sync flags | [int-web.md](int-web.md) | M6 | approved |
 | PMSPA call budget: the requests line, fewer PMSPA calls, integrations on the profile | [int-budget.md](int-budget.md) | M6 | approved |
 | PMSPA follow-ups: log limits in the preview, created-in-PMSPA dates, a token per connection, cheaper Expand all, error lines | [int-followups.md](int-followups.md) | M6 | approved |
-| Booking prompt: the day's logs as a Slack prompt | [tlog-prompt.md](tlog-prompt.md) | M4 | review |
+| Booking prompt: the day's logs as a Slack prompt | [tlog-prompt.md](tlog-prompt.md) | M4 | approved |
 | Partial bookings: a log's time booked in parts to several dates | [book-partial.md](book-partial.md) | M4 | approved |
 | Prototype sync: Logged time chart, billable hours, Statistics link and Bookings day links | [proto-sync-logged-chart.md](proto-sync-logged-chart.md) | M4 | approved |
 | Bookings navigation: range presets, project filter, Expand all, links between a booking's two days | [book-web-nav.md](book-web-nav.md) | M4 | approved |

@@ -3,7 +3,7 @@ id: req-time-logs
 title: Time Capture (Workdays and Time Logs)
 status: review
 owner: Marko Angelovski
-last_updated: 2026-10-26
+last_updated: 2026-10-31
 related: [req-projects, req-tasks, req-reporting, api-endpoints, api-data-model, web-screens]
 ---
 
@@ -224,8 +224,8 @@ keep it. A day with no start and no logs can't be deleted (OQ-152).
 ### FR-TLOG-020: Booking prompt
 **Priority:** Should
 **Statement:** From the day view, the user opens the viewed day's logs as a booking prompt, to paste into Slack: one section
-per project + task, in the order they first appear, each with the project, the task, the task's service (FR-TSK-009, OQ-243), the date
-and one note line per log, and
+per project + task, in the order they first appear, each with the project, the task, the task's service (FR-TSK-009, OQ-243), the date,
+the section's duration (the sum of its logs' durations, OQ-249) and one note line per log under **Notes**, and
 copies one section or all of them as markdown. Excluded logs (FR-TLOG-018) are left out. A project or task with an external
 link shows it after its name (OQ-210). Before copying, the user can edit each note line; the edits change only
 what is copied, not the logs, and are discarded when the prompt closes (OQ-211).
@@ -235,6 +235,8 @@ what is copied, not the logs, and are discarded when the prompt closes (OQ-211).
   followed by both sections.
 - Given task X has the service "QA", then its section shows and copies **Service:** QA after **Task**; a section without a task, or
   whose task has no service, shows "—".
+- Given the A · X logs of 1h and 30m and an excluded A · X log of 2h, then that section shows and copies **Duration:** 1h 30m
+  after **Date**, followed by **Notes:** and its note lines.
 - Given a day with no logs, then **Prompt** is disabled.
 - Given a note line edited in the prompt, when its section or all sections are copied, then the copy has the edited line;
   when the prompt is closed and opened again, the line shows the log's text, and the log is unchanged.
@@ -267,3 +269,5 @@ None.
 - 2026-10-25: The owner approved FR-TLOG-011 for feat-shell-new-menu.
 - 2026-10-26: FR-TLOG-020: each section has the task's service (OQ-243, feat-prj-services). Still `review`.
 - 2026-10-26: The owner approved FR-TLOG-020 (as updated) for feat-prj-services.
+- 2026-10-31: FR-TLOG-020: each section has a **Duration** (its logs' sum) after the date; "Note" → "Notes" (OQ-249). Back to `review` (feat-tlog-prompt).
+- 2026-10-31: The owner approved FR-TLOG-020 (as updated) for feat-tlog-prompt.

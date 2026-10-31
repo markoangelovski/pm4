@@ -10,7 +10,7 @@ depends_on: [T-0090]
 feature_spec: specs/06-features/tlog-prompt.md
 spec_row: T3
 ac_files:
-  - { path: web/features/time/components/day-prompt-notes.ac.test.tsx, sha256: ba1f7f826b62e5e5350a78624a83ad9ade1fd5be8ad2f77472bfcb68d409d576 }
+  - { path: web/features/time/components/day-prompt-notes.ac.test.tsx, sha256: 85377b88849810524b72c28aff090ee72cd1c7e4bd4c5cc25512bc2e823246cb }
 ---
 
 # T-0091: Editable notes (D8): the confirmed prototype's prompt.ts and dialog twins

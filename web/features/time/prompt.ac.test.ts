@@ -99,8 +99,8 @@ describe("prompt (feat-tlog-prompt)", () => {
       ])
     ).toBe(
       "Book my time accordingly:\n\n" +
-        "**Project:** A (https://p)\n**Task:** X (https://t)\n**Service:** —\n**Date:** Tuesday, 6 October 2026\n**Note:**\n- one\n- two\n\n" +
-        "**Project:** B\n**Task:** —\n**Service:** —\n**Date:** Tuesday, 6 October 2026\n**Note:**\n- three"
+        "**Project:** A (https://p)\n**Task:** X (https://t)\n**Service:** —\n**Date:** Tuesday, 6 October 2026\n**Duration:** 2h\n**Notes:**\n- one\n- two\n\n" +
+        "**Project:** B\n**Task:** —\n**Service:** —\n**Date:** Tuesday, 6 October 2026\n**Duration:** 1h\n**Notes:**\n- three"
     );
   });
 });
@@ -119,9 +119,9 @@ describe("prompt: Service line (feat-prj-services)", () => {
     ];
     expect(promptMarkdown(entries)).toBe(
       "Book my time accordingly:\n\n" +
-        `**Project:** A\n**Task:** X\n**Service:** QA\n**Date:** ${date}\n**Note:**\n- one\n\n` +
-        `**Project:** B\n**Task:** —\n**Service:** —\n**Date:** ${date}\n**Note:**\n- two\n\n` +
-        `**Project:** A\n**Task:** —\n**Service:** —\n**Date:** ${date}\n**Note:**\n- three`
+        `**Project:** A\n**Task:** X\n**Service:** QA\n**Date:** ${date}\n**Duration:** 1h\n**Notes:**\n- one\n\n` +
+        `**Project:** B\n**Task:** —\n**Service:** —\n**Date:** ${date}\n**Duration:** 1h\n**Notes:**\n- two\n\n` +
+        `**Project:** A\n**Task:** —\n**Service:** —\n**Date:** ${date}\n**Duration:** 1h\n**Notes:**\n- three`
     );
   });
 });

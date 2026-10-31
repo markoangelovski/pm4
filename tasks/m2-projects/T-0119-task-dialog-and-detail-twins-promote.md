@@ -11,9 +11,9 @@ feature_spec: specs/06-features/prj-services.md
 spec_row: T4
 ac_files:
   - { path: web/features/tasks/components/task-service.ac.test.tsx, sha256: e17a7e6786b8548f2637bfe518a12a3ef86a47707ad83489c5ab9f230b337f4d }
-  - { path: web/features/time/prompt.ac.test.ts, sha256: 2c5b1ee96344c04b40060ace8cc797139f664f96d21d331ed5597155ad10a0e6 }
-  - { path: web/features/time/components/day-prompt-dialog.ac.test.tsx, sha256: 90e88882af829fa529e3d73325c2809f5215b24d81ad2d8b0af3c655cc3c06cc }
-  - { path: web/features/time/components/day-prompt-notes.ac.test.tsx, sha256: ea6f719dcaa5f835dc06905f25ac7ac7215bd01505a3cc88f1be949a28234f11 }
+  - { path: web/features/time/prompt.ac.test.ts, sha256: 72f414407806a4cbd2ff6ff5e341d25cbe463db101174c8d5782d62c8ac46051 }
+  - { path: web/features/time/components/day-prompt-dialog.ac.test.tsx, sha256: 1dba0d4a8e3347f3516ee47f1507d03ded8ccd572c7c95a33307d8b05d65623f }
+  - { path: web/features/time/components/day-prompt-notes.ac.test.tsx, sha256: 85377b88849810524b72c28aff090ee72cd1c7e4bd4c5cc25512bc2e823246cb }
 ---
 
 # T-0119: Task dialog and detail twins, promote service-select.tsx, Prompt twins; proposed-types.ts removed

@@ -3,10 +3,10 @@ id: feat-tlog-prompt
 title: "Booking prompt: the day's logs as a Slack prompt"
 status: approved
 owner: Marko Angelovski
-last_updated: 2026-10-22
+last_updated: 2026-10-31
 milestone: M4
 requirements: [FR-TLOG-020, SCR-040]
-related: [req-time-logs, web-screens, feat-tlog-web, feat-hard-delete, OQ-210, OQ-211]
+related: [req-time-logs, web-screens, feat-tlog-web, feat-hard-delete, OQ-210, OQ-211, OQ-249]
 prototype: d091e93
 ---
 
@@ -27,14 +27,18 @@ sections, one per project + task, each copyable as markdown, or all at once, to 
 | D6 | The production files are twins of the prototype's: copy, `@/proto/` → `@/`, then Prettier, so `pm4 twins` reports them equal. No new hook: production's `useProject`, `useTask`, `projectKeys` and `taskKeys` already match the mock ones. | as feat-hard-delete D5 |
 | D7 | The dialog's header (title) and footer (**Cancel**, **Copy all**) stay fixed and only the body (the sections, or the empty message) scrolls, the way the PMSPA **Import** preview dialog does (`sync-preview-dialog.tsx`, e.g. Time tab with all days selected). Same layout: `DialogContent` `flex! max-h-[90vh] flex-col gap-0! rounded-md! p-0! sm:max-w-2xl!` (no `overflow-y-auto`); `DialogHeader` `border-b p-6 pb-4`; body `min-h-0 flex-1 overflow-y-auto` with the content padded `px-6` (plus vertical padding so the first and last card don't touch the borders); `DialogFooter` `mx-0 mb-0 rounded-b-md border-t p-4`. Built and confirmed in the prototype (`prototype` step), then copied over as the twin (D6). | Owner, 2026-10-19; prototype `8fe9c80` |
 | D8 | Each note is editable in the dialog: an inline, auto-growing shadcn `Textarea` per bullet (`aria-label` "Note <n>", borderless until hover or focus). **Copy to clipboard** and **Copy all** copy the edited notes; `promptMarkdown` puts each note on one line and leaves out empty ones. Edits are for the copy only: no API call, the logs don't change, and they're discarded when the dialog closes (the content unmounts), so reopening shows the logs' texts. Project, task and date stay read-only. | Owner, 2026-10-22 (OQ-211); prototype `3c9f4af` |
+| D9 | Each section has a **Duration** line between **Date** and the notes: the sum of the section's logs' `durationMinutes` (that project + task on the day; excluded logs are left out, as in D2), formatted with `formatDuration` from `@/lib/time` (`1h 15m`, `45m`, `2h`), as `PromptSection.durationMinutes`. The notes label becomes **Notes:**. Both show in the dialog (`tabular-nums`) and in the copied markdown: `**Date:** …\n**Duration:** 1h 30m\n**Notes:**\n- …`. The textareas keep their `aria-label` "Note <n>" (one note each). | Owner, 2026-10-31 (OQ-249); prototype `30f62f0` |
 
 ## Scope
 **In:** the **Prompt** menu item, the Prompt dialog and its pure prompt builder in `web/features/time/`, as twins of the
-prototype files. T2 (D7): the dialog's fixed header and footer with a scrolling body. T3 (D8): editable notes.
+prototype files. T2 (D7): the dialog's fixed header and footer with a scrolling body. T3 (D8): editable notes. T4 (D9): the Duration line and the Notes label.
 
 **Test step (main session, before T1):** writes the two acceptance test files and the typed stubs below, then `pm4 hash`.
 **Test step (main session, before T3):** writes `web/features/time/components/day-prompt-notes.ac.test.tsx` (no stubs: the
 exports exist), then `pm4 hash`.
+**Test step (main session, before T4):** writes `web/features/time/components/day-prompt-duration.ac.test.tsx` (no stubs) and
+updates the expected markdown in `prompt.ac.test.ts`, `day-prompt-dialog.ac.test.tsx` and `day-prompt-notes.ac.test.tsx` to
+D9's format (a `**Duration:**` line after `**Date:**`, `**Note:**` → `**Notes:**`; nothing else changes), then `pm4 hash`.
 
 **Non-goals** (implementers must not touch these):
 - `api/` (no contract change), `web/proto/**` (except the dialog file listed for T1), `web/app/proto/**`, `web/components/ui/*`.
@@ -63,6 +67,12 @@ exports exist), then `pm4 hash`.
 | web | `web/features/time/components/day-prompt-notes.ac.test.tsx` | C | tests | Acceptance tests (D8) |
 | web | `web/features/time/prompt.ts` | M | T3 | The twin of the prototype file again, with D8 (same `sed` + Prettier as T1) |
 | web | `web/features/time/components/day-prompt-dialog.tsx` | M | T3 | The twin of the prototype file again, with D8 (same `sed` + Prettier as T1) |
+| web | `web/features/time/components/day-prompt-duration.ac.test.tsx` | C | tests | Acceptance tests (D9) |
+| web | `web/features/time/prompt.ac.test.ts` | M | tests | Expected markdown in D9's format |
+| web | `web/features/time/components/day-prompt-dialog.ac.test.tsx` | M | tests | Expected markdown in D9's format |
+| web | `web/features/time/components/day-prompt-notes.ac.test.tsx` | M | tests | Expected markdown in D9's format |
+| web | `web/features/time/prompt.ts` | M | T4 | The twin of the prototype file again, with D9 (same `sed` + Prettier as T1) |
+| web | `web/features/time/components/day-prompt-dialog.tsx` | M | T4 | The twin of the prototype file again, with D9 (same `sed` + Prettier as T1) |
 
 ## Interfaces
 
@@ -98,6 +108,11 @@ The T1 commands for `prompt.ts` and `components/day-prompt-dialog.tsx` only (not
 bring is `git diff 8fe9c80 3c9f4af -- web/proto/features/time/`. The exported API stays as under *Web (T1)*; the dialog
 now also imports `@/components/ui/textarea` (exists in production).
 
+### Web (T4)
+The T1 commands for `prompt.ts` and `components/day-prompt-dialog.tsx` only. The diff they bring is
+`git diff 9e4c367 30f62f0 -- web/proto/features/time/`. `PromptSection` gains `durationMinutes: number` (the sum, D9); both
+files now also import `formatDuration` from `@/lib/time` (exists in production). Nothing else in the exported API changes.
+
 ## Acceptance criteria
 | AC | Case → expected | Test | Task |
 | --- | --- | --- | --- |
@@ -119,6 +134,11 @@ now also imports `@/components/ui/textarea` (exists in production).
 | AC-16 | Editing a note, then the section's **Copy to clipboard** → that section's markdown with the edited note; **Copy all** → every section, the edited note in place, the others unchanged; clearing a note → its bullet left out of the copy | `web/features/time/components/day-prompt-notes.ac.test.tsx` | T3 |
 | AC-17 | Edit a note, close the dialog, open it again → the note shows the log's original text; no `POST`/`PATCH`/`PUT`/`DELETE` call was made | `web/features/time/components/day-prompt-notes.ac.test.tsx` | T3 |
 | AC-18 | `prompt.ts` and `day-prompt-dialog.tsx` equal their prototype twins | check | T3 |
+| AC-19 | `promptSections` on A·X logs of 60 and 30 min, a B log of 45 min and an excluded A·X log of 120 min → A·X `durationMinutes` 90, B 45 | `web/features/time/components/day-prompt-duration.ac.test.tsx` | T4 |
+| AC-20 | `promptMarkdown` of a section with `durationMinutes` 90, then of one with 45 and one with 120 → the line after `**Date:** …` is exactly `**Duration:** 1h 30m` / `45m` / `2h`, followed by `**Notes:**`; no `**Note:**` line | `web/features/time/components/day-prompt-duration.ac.test.tsx` | T4 |
+| AC-21 | The dialog's cards show the terms Date, Duration, Notes in that order; the Duration value is `1h 30m` for A·X and `45m` for B; **Copy to clipboard** on A·X copies its `**Duration:** 1h 30m` line | `web/features/time/components/day-prompt-duration.ac.test.tsx` | T4 |
+| AC-22 | AC-1…AC-17 pass with the expected markdown in D9's format | the three updated test files | T4 |
+| AC-23 | `prompt.ts` and `day-prompt-dialog.tsx` equal their prototype twins | check | T4 |
 
 Typed stubs (created with the tests, so lint and typecheck pass while the tests fail):
 - `web/features/time/prompt.ts`: the two interfaces as above; `promptSections` and `promptMarkdown` with each body
@@ -137,6 +157,7 @@ node scripts/pm4.mjs twins
 | T1 | The Prompt item and dialog: the three prototype twins | web | S | haiku | Twin copy, the commands under *Interfaces → Web* | — |
 | T2 | Fixed header and footer, scrolling body (D7): the confirmed prototype dialog's twin | web | S | haiku | Twin copy, the T1 commands for `day-prompt-dialog.tsx` only | T1 |
 | T3 | Editable notes (D8): the confirmed prototype's `prompt.ts` and dialog twins | web | S | haiku | Twin copy, the T1 commands for two files | T2 |
+| T4 | Duration line and Notes label (D9): the confirmed prototype's `prompt.ts` and dialog twins | web | S | haiku | Twin copy, the T1 commands for two files | T3 |
 
 ## Open questions
 None.
@@ -149,3 +170,5 @@ None.
 - 2026-10-20: D7 confirmed in prototype `8fe9c80`. Approved by the owner.
 - 2026-10-22: D8 (owner, OQ-211): editable notes, copied as edited, for the copy only. Prototype `3c9f4af`, T3, AC-14…AC-18. Back to `review`.
 - 2026-10-22: Approved by the owner.
+- 2026-10-31: D9 (owner, OQ-249): a **Duration** line (the section's logs' sum) after the date; "Note" → "Notes". Prototype `30f62f0`, T4, AC-19…AC-23; the existing tests' expected markdown is updated in the test step. Back to `review`.
+- 2026-10-31: Approved by the owner.

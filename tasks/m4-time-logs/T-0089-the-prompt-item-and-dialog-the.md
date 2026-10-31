@@ -10,8 +10,8 @@ depends_on: []
 feature_spec: specs/06-features/tlog-prompt.md
 spec_row: T1
 ac_files:
-  - { path: web/features/time/prompt.ac.test.ts, sha256: cbc42048199dde50daed33ebc50d4cec2b679e74da82e5014e078710e86cfcc3 }
-  - { path: web/features/time/components/day-prompt-dialog.ac.test.tsx, sha256: 53bb236f8356362e780ae15a20524c0878338d135bf8b7a72e5f69ea3d4d607e }
+  - { path: web/features/time/prompt.ac.test.ts, sha256: 72f414407806a4cbd2ff6ff5e341d25cbe463db101174c8d5782d62c8ac46051 }
+  - { path: web/features/time/components/day-prompt-dialog.ac.test.tsx, sha256: 1dba0d4a8e3347f3516ee47f1507d03ded8ccd572c7c95a33307d8b05d65623f }
 ---
 
 # T-0089: The Prompt item and dialog: the three prototype twins

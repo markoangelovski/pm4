@@ -124,10 +124,10 @@ const section = (project: keyof typeof cards) =>
 const date = "Tuesday, 6 October 2026";
 const head = "Book my time accordingly:\n\n";
 const markdownA = (notes: string[]) =>
-  `**Project:** A (${P1})\n**Task:** X (${T1})\n**Service:** QA\n**Date:** ${date}\n**Note:**` +
+  `**Project:** A (${P1})\n**Task:** X (${T1})\n**Service:** QA\n**Date:** ${date}\n**Duration:** 2h\n**Notes:**` +
   notes.map((n) => `\n- ${n}`).join("");
-const markdownB = `**Project:** B (${P2})\n**Task:** —\n**Service:** —\n**Date:** ${date}\n**Note:**\n- three`;
-const markdownOld = `**Project:** Old\n**Task:** —\n**Service:** —\n**Date:** ${date}\n**Note:**\n- four`;
+const markdownB = `**Project:** B (${P2})\n**Task:** —\n**Service:** —\n**Date:** ${date}\n**Duration:** 1h\n**Notes:**\n- three`;
+const markdownOld = `**Project:** Old\n**Task:** —\n**Service:** —\n**Date:** ${date}\n**Duration:** 1h\n**Notes:**\n- four`;
 
 describe("Prompt dialog: editable notes (feat-tlog-prompt D8)", () => {
   beforeEach(() => {
@@ -140,15 +140,17 @@ describe("Prompt dialog: editable notes (feat-tlog-prompt D8)", () => {
   });
 
   it("AC-14 FR-TLOG-020 (+ AC-22 feat-prj-services): promptMarkdown puts each note on one line and leaves out empty ones", () => {
-    const s: PromptSection = {
+    // A literal with D9's durationMinutes (feat-tlog-prompt T4).
+    const s = {
       key: "p1:none",
       project: { id: "p1", title: "A" },
       task: null,
       date,
+      durationMinutes: 90,
       notes: ["a\n  b ", "  ", "c"]
-    };
+    } as PromptSection;
     expect(promptMarkdown([{ section: s, links: {} }])).toBe(
-      `${head}**Project:** A\n**Task:** —\n**Service:** —\n**Date:** ${date}\n**Note:**\n- a b\n- c`
+      `${head}**Project:** A\n**Task:** —\n**Service:** —\n**Date:** ${date}\n**Duration:** 1h 30m\n**Notes:**\n- a b\n- c`
     );
   });
 
