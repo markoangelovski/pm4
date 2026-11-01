@@ -2,7 +2,7 @@
 
 import { Fragment, useState } from "react";
 import Link from "next/link";
-import { toast } from "sonner";
+import { toastError } from "@/features/system/rate-limit";
 import {
   ChevronRight,
   FolderKanban,
@@ -101,7 +101,10 @@ export function PmspaProjectsTab({
       {
         onSuccess: () => setOpen(new Set(ids)),
         onError: (error) =>
-          toast.error(pmspaProblemText(error) ?? "Couldn't read the tasks.")
+          toastError(
+            error,
+            pmspaProblemText(error) ?? "Couldn't read the tasks."
+          )
       }
     );
   };

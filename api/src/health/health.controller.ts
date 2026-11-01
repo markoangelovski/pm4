@@ -2,6 +2,7 @@ import { Controller, Get, HttpStatus, Res } from "@nestjs/common";
 import { ApiExcludeController } from "@nestjs/swagger";
 import type { Response } from "express";
 import { Public } from "../common/decorators/public/public.decorator.js";
+import { NoRateLimit } from "../rate-limit/rate-limits.js";
 import { HealthResult, HealthService } from "./health.service.js";
 
 /**
@@ -9,6 +10,7 @@ import { HealthResult, HealthService } from "./health.service.js";
  * Swagger and (later) rate limiting.
  */
 @Public()
+@NoRateLimit()
 @ApiExcludeController()
 @Controller("health")
 export class HealthController {

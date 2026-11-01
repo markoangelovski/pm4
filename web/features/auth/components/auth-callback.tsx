@@ -8,6 +8,7 @@ import {
   postSignInPath,
   sanitizeReturnTo
 } from "@/lib/auth/return-to";
+import { isApiError } from "@/lib/api/problem";
 import { exchangeLoginCode } from "@/lib/auth/session";
 import { routes } from "@/lib/routes";
 
@@ -20,8 +21,8 @@ export function AuthCallback(): React.JSX.Element {
 
   useEffect(() => {
     let cancelled = false;
-    const fail = () => {
-      const params = new URLSearchParams({ error: "failed" });
+    const fail = (reason: "failed" | "rate-limited" = "failed") => {
+      const params = new URLSearchParams({ error: reason });
       const safe = sanitizeReturnTo(returnTo);
       if (safe !== null) params.set(RETURN_TO_PARAM, safe);
       router.replace(`${routes.signIn}?${params.toString()}`);
@@ -34,8 +35,9 @@ export function AuthCallback(): React.JSX.Element {
       () => {
         if (!cancelled) router.replace(postSignInPath(returnTo));
       },
-      () => {
-        if (!cancelled) fail();
+      (error: unknown) => {
+        if (!cancelled)
+          fail(isApiError(error, 429) ? "rate-limited" : "failed");
       }
     );
     return () => {

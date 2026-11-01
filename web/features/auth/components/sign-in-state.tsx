@@ -29,6 +29,9 @@ export function SignInState(): React.JSX.Element | null {
 export function signInErrorMessage(error: string | null): string | null {
   if (error === null) return null;
   if (error === "cancelled") return "Sign-in was cancelled.";
+  if (error === "rate-limited") {
+    return "Too many sign-in attempts. Try again in a minute.";
+  }
   if (error === "not-allowed") {
     return "This account isn't allowed to use PM4. Continue with Google to choose a different account.";
   }

@@ -12,7 +12,7 @@ import {
 import { formatDuration } from "@/lib/time";
 import { formatClock } from "@/lib/time/clock";
 import { cn } from "@/lib/utils";
-import { toast } from "sonner";
+import { toastError } from "@/features/system/rate-limit";
 import { useNowMinute, useSetDayStart } from "../api";
 import { dayFigures } from "../day";
 import type { Day } from "../types";
@@ -116,7 +116,8 @@ export function DayHeader({
             onValueChange={(v) =>
               v !== null &&
               setStart.mutate(v as number, {
-                onError: () => toast.error("Couldn't save the start time.")
+                onError: (error) =>
+                  toastError(error, "Couldn't save the start time.")
               })
             }
           >

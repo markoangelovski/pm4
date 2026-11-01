@@ -134,6 +134,16 @@
               }
             }
           },
+          "429": {
+            "description": "Rate limited: `retryAfterSeconds` and `Retry-After`.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
           "500": {
             "description": "Unexpected error.",
             "content": {
@@ -196,6 +206,16 @@
               }
             }
           },
+          "429": {
+            "description": "Rate limited: `retryAfterSeconds` and `Retry-After`.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
           "500": {
             "description": "Unexpected error.",
             "content": {
@@ -241,6 +261,16 @@
               }
             }
           },
+          "429": {
+            "description": "Rate limited: `retryAfterSeconds` and `Retry-After`.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
           "500": {
             "description": "Unexpected error.",
             "content": {
@@ -268,6 +298,16 @@
           },
           "401": {
             "description": "Missing, invalid or expired credentials.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited: `retryAfterSeconds` and `Retry-After`.",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -315,6 +355,16 @@
           },
           "401": {
             "description": "Missing, invalid or expired credentials.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited: `retryAfterSeconds` and `Retry-After`.",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -379,6 +429,16 @@
           },
           "401": {
             "description": "Missing, invalid or expired credentials.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited: `retryAfterSeconds` and `Retry-After`.",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -456,6 +516,16 @@
               }
             }
           },
+          "429": {
+            "description": "Rate limited: `retryAfterSeconds` and `Retry-After`.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
           "500": {
             "description": "Unexpected error.",
             "content": {
@@ -514,6 +584,16 @@
           },
           "401": {
             "description": "Missing, invalid or expired credentials.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited: `retryAfterSeconds` and `Retry-After`.",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -629,6 +709,16 @@
               }
             }
           },
+          "429": {
+            "description": "Rate limited: `retryAfterSeconds` and `Retry-After`.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
           "500": {
             "description": "Unexpected error.",
             "content": {
@@ -668,6 +758,16 @@
           },
           "401": {
             "description": "Missing, invalid or expired credentials.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited: `retryAfterSeconds` and `Retry-After`.",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -734,6 +834,16 @@
           },
           "404": {
             "description": "Not found.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited: `retryAfterSeconds` and `Retry-After`.",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -826,6 +936,16 @@
               }
             }
           },
+          "429": {
+            "description": "Rate limited: `retryAfterSeconds` and `Retry-After`.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
           "500": {
             "description": "Unexpected error.",
             "content": {
@@ -875,6 +995,16 @@
           },
           "404": {
             "description": "Not found.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited: `retryAfterSeconds` and `Retry-After`.",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -942,6 +1072,16 @@
           },
           "401": {
             "description": "Missing, invalid or expired credentials.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited: `retryAfterSeconds` and `Retry-After`.",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -1079,6 +1219,16 @@
               }
             }
           },
+          "429": {
+            "description": "Rate limited: `retryAfterSeconds` and `Retry-After`.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
           "500": {
             "description": "Unexpected error.",
             "content": {
@@ -1137,6 +1287,16 @@
           },
           "404": {
             "description": "Not found.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited: `retryAfterSeconds` and `Retry-After`.",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -1229,6 +1389,16 @@
               }
             }
           },
+          "429": {
+            "description": "Rate limited: `retryAfterSeconds` and `Retry-After`.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
           "500": {
             "description": "Unexpected error.",
             "content": {
@@ -1278,6 +1448,16 @@
           },
           "404": {
             "description": "Not found.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited: `retryAfterSeconds` and `Retry-After`.",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -1364,6 +1544,16 @@
               }
             }
           },
+          "429": {
+            "description": "Rate limited: `retryAfterSeconds` and `Retry-After`.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
           "500": {
             "description": "Unexpected error.",
             "content": {
@@ -1423,6 +1613,16 @@
           },
           "401": {
             "description": "Missing, invalid or expired credentials.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited: `retryAfterSeconds` and `Retry-After`.",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -1506,6 +1706,16 @@
               }
             }
           },
+          "429": {
+            "description": "Rate limited: `retryAfterSeconds` and `Retry-After`.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
           "500": {
             "description": "Unexpected error.",
             "content": {
@@ -1566,6 +1776,16 @@
           },
           "404": {
             "description": "Not found.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited: `retryAfterSeconds` and `Retry-After`.",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -1675,6 +1895,16 @@
               }
             }
           },
+          "429": {
+            "description": "Rate limited: `retryAfterSeconds` and `Retry-After`.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
           "500": {
             "description": "Unexpected error.",
             "content": {
@@ -1742,6 +1972,16 @@
           },
           "404": {
             "description": "Not found.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited: `retryAfterSeconds` and `Retry-After`.",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -1836,6 +2076,16 @@
               }
             }
           },
+          "429": {
+            "description": "Rate limited: `retryAfterSeconds` and `Retry-After`.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
           "500": {
             "description": "Unexpected error.",
             "content": {
@@ -1885,6 +2135,16 @@
           },
           "404": {
             "description": "Not found.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited: `retryAfterSeconds` and `Retry-After`.",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -1971,6 +2231,16 @@
               }
             }
           },
+          "429": {
+            "description": "Rate limited: `retryAfterSeconds` and `Retry-After`.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
           "500": {
             "description": "Unexpected error.",
             "content": {
@@ -2038,6 +2308,16 @@
           },
           "404": {
             "description": "Not found.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited: `retryAfterSeconds` and `Retry-After`.",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -2124,6 +2404,16 @@
               }
             }
           },
+          "429": {
+            "description": "Rate limited: `retryAfterSeconds` and `Retry-After`.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
           "500": {
             "description": "Unexpected error.",
             "content": {
@@ -2163,6 +2453,16 @@
           },
           "401": {
             "description": "Missing, invalid or expired credentials.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited: `retryAfterSeconds` and `Retry-After`.",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -2246,6 +2546,16 @@
               }
             }
           },
+          "429": {
+            "description": "Rate limited: `retryAfterSeconds` and `Retry-After`.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
           "500": {
             "description": "Unexpected error.",
             "content": {
@@ -2286,6 +2596,16 @@
           },
           "401": {
             "description": "Missing, invalid or expired credentials.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited: `retryAfterSeconds` and `Retry-After`.",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -2343,6 +2663,16 @@
           },
           "404": {
             "description": "Not found.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited: `retryAfterSeconds` and `Retry-After`.",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -2410,6 +2740,16 @@
           },
           "409": {
             "description": "Conflict.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited: `retryAfterSeconds` and `Retry-After`.",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -2526,6 +2866,16 @@
               }
             }
           },
+          "429": {
+            "description": "Rate limited: `retryAfterSeconds` and `Retry-After`.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
           "500": {
             "description": "Unexpected error.",
             "content": {
@@ -2595,6 +2945,16 @@
           },
           "409": {
             "description": "Conflict.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited: `retryAfterSeconds` and `Retry-After`.",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -2711,6 +3071,16 @@
               }
             }
           },
+          "429": {
+            "description": "Rate limited: `retryAfterSeconds` and `Retry-After`.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
           "500": {
             "description": "Unexpected error.",
             "content": {
@@ -2814,6 +3184,16 @@
               }
             }
           },
+          "429": {
+            "description": "Rate limited: `retryAfterSeconds` and `Retry-After`.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
           "500": {
             "description": "Unexpected error.",
             "content": {
@@ -2905,6 +3285,16 @@
               }
             }
           },
+          "429": {
+            "description": "Rate limited: `retryAfterSeconds` and `Retry-After`.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
           "500": {
             "description": "Unexpected error.",
             "content": {
@@ -2981,6 +3371,16 @@
           },
           "404": {
             "description": "Not found.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited: `retryAfterSeconds` and `Retry-After`.",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -3088,6 +3488,16 @@
               }
             }
           },
+          "429": {
+            "description": "Rate limited: `retryAfterSeconds` and `Retry-After`.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
           "500": {
             "description": "Unexpected error.",
             "content": {
@@ -3177,6 +3587,16 @@
           },
           "409": {
             "description": "Conflict.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited: `retryAfterSeconds` and `Retry-After`.",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -3292,6 +3712,16 @@
               }
             }
           },
+          "429": {
+            "description": "Rate limited: `retryAfterSeconds` and `Retry-After`.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
           "500": {
             "description": "Unexpected error.",
             "content": {
@@ -3399,6 +3829,16 @@
               }
             }
           },
+          "429": {
+            "description": "Rate limited: `retryAfterSeconds` and `Retry-After`.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
           "500": {
             "description": "Unexpected error.",
             "content": {
@@ -3488,6 +3928,16 @@
           },
           "409": {
             "description": "Conflict.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited: `retryAfterSeconds` and `Retry-After`.",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -3603,6 +4053,16 @@
               }
             }
           },
+          "429": {
+            "description": "Rate limited: `retryAfterSeconds` and `Retry-After`.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
           "500": {
             "description": "Unexpected error.",
             "content": {
@@ -3710,6 +4170,16 @@
               }
             }
           },
+          "429": {
+            "description": "Rate limited: `retryAfterSeconds` and `Retry-After`.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
           "500": {
             "description": "Unexpected error.",
             "content": {
@@ -3799,6 +4269,16 @@
           },
           "409": {
             "description": "Conflict.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited: `retryAfterSeconds` and `Retry-After`.",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -3978,6 +4458,16 @@
               }
             }
           },
+          "429": {
+            "description": "Rate limited: `retryAfterSeconds` and `Retry-After`.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
           "500": {
             "description": "Unexpected error.",
             "content": {
@@ -4045,6 +4535,16 @@
           },
           "404": {
             "description": "Not found.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited: `retryAfterSeconds` and `Retry-After`.",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -4139,6 +4639,16 @@
               }
             }
           },
+          "429": {
+            "description": "Rate limited: `retryAfterSeconds` and `Retry-After`.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
           "500": {
             "description": "Unexpected error.",
             "content": {
@@ -4188,6 +4698,16 @@
           },
           "404": {
             "description": "Not found.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited: `retryAfterSeconds` and `Retry-After`.",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -4324,6 +4844,16 @@
               }
             }
           },
+          "429": {
+            "description": "Rate limited: `retryAfterSeconds` and `Retry-After`.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
           "500": {
             "description": "Unexpected error.",
             "content": {
@@ -4391,6 +4921,16 @@
           },
           "404": {
             "description": "Not found.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited: `retryAfterSeconds` and `Retry-After`.",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -4485,6 +5025,16 @@
               }
             }
           },
+          "429": {
+            "description": "Rate limited: `retryAfterSeconds` and `Retry-After`.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
           "500": {
             "description": "Unexpected error.",
             "content": {
@@ -4534,6 +5084,16 @@
           },
           "404": {
             "description": "Not found.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited: `retryAfterSeconds` and `Retry-After`.",
             "content": {
               "application/problem+json": {
                 "schema": {

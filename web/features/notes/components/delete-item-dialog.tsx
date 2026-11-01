@@ -1,6 +1,7 @@
 "use client";
 
 import { toast } from "sonner";
+import { toastError } from "@/features/system/rate-limit";
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -49,8 +50,8 @@ export function DeleteItemDialog({
       await del.mutateAsync(id);
       toast.success(copy.done);
       onOpenChange(false);
-    } catch {
-      toast.error(copy.failed);
+    } catch (error) {
+      toastError(error, copy.failed);
     }
   };
   return (

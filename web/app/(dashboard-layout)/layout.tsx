@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import RouteErrorBoundary from "@/app/components/shared/route-error-boundary";
 import { OfflineBanner } from "@/features/system/components/offline-banner";
 import { LogTimeButton } from "@/features/time/components/log-time-button";
+import { RateLimitNotifier } from "@/features/system/components/rate-limit-notifier";
 
 export default function Layout({
   children
@@ -39,6 +40,7 @@ export default function Layout({
           </div>
         </SidebarInset>
         <LogTimeButton />
+        <RateLimitNotifier />
       </SidebarProvider>
     </AuthGuard>
   );
