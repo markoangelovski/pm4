@@ -3,8 +3,8 @@ id: req-reporting
 title: Dashboard and Reporting
 status: approved
 owner: Marko Angelovski
-last_updated: 2026-10-31
-related: [req-time-logs, req-bookings, api-endpoints, web-screens, OQ-029, OQ-126, OQ-127, OQ-128, OQ-129, OQ-130, OQ-212, OQ-250, OQ-251]
+last_updated: 2026-11-01
+related: [req-time-logs, req-bookings, api-endpoints, web-screens, OQ-029, OQ-126, OQ-127, OQ-128, OQ-129, OQ-130, OQ-212, OQ-250, OQ-251, OQ-258, OQ-259, OQ-260]
 ---
 
 # Dashboard and Reporting
@@ -26,8 +26,9 @@ OQ-126); booked hours by booking date (that's the Bookings page, FR-BOOK-002).
   included (they are logged time, FR-TLOG-018).
 - **Booked**: the booked minutes of the logs in *Worked* (the sum of their bookings), whatever the bookings' dates: a booking counts on the
   day its log was worked (OQ-127). A partly booked log adds only its booked part (OQ-212). Only bookable logs can be booked (req-bookings §Model), so Unsorted and Non-prod hours are never booked.
-- **Workday**: a date with a start time (FR-TLOG-009). **Target**: the range's workdays × the **current** daily target
-  (FR-TLOG-017); the target has no history.
+- **Workday**: a date with a start time (FR-TLOG-009). **Target**: the range's **weekdays** (its Monday–Friday dates, past and
+  future) × the **current** daily target (FR-TLOG-017); the target has no history. Saturdays and Sundays never add to it, even with a
+  start time; their hours still count in *Worked* (OQ-258). Holidays aren't special.
 - Hours are shown as `7h 30m` (`0h` for none), start times as `HH:mm`.
 - One range drives every widget except the Projects and Tasks counts, which are totals.
 
@@ -62,34 +63,39 @@ latest start; "—" and "No workdays in this range" when there are none).
 **Statement:** A chart of the range: above, the **start time** of each day as a line (no point on a day without a start), with
 the average start as a dotted line; below, on the same date axis, the **hours worked** as a bar split into booked and not booked,
 with the daily target as a dashed line. A range of up to 62 days has one bar per day; a longer one has one bar per Monday–Sunday
-week (the days of it inside the range), whose start is the average of its workdays and whose target is its workdays × the daily
-target. Per day, a Saturday or Sunday with no start and no logs is left out; one with work is shown (OQ-128). Hovering a bar
+week (the days of it inside the range), whose start is the average of its workdays and whose target is its weekdays × the daily
+target. A day's target is the daily target on Monday–Friday and 0h on Saturday or Sunday (OQ-258). Per day, a Saturday or Sunday with no start and no logs is left out; one with work is shown (OQ-128). Hovering a bar
 shows its date (or week), start, worked, booked, not booked and target. Clicking a day's bar (today or earlier) opens that date
 in Logs. A **Table** tab lists the same days or weeks: date, start, worked, booked, target.
 **Acceptance criteria:**
 - Given the range 1–31 October 2026, then the chart has one bar per weekday and per weekend day with work.
 - Given the range 1 January – 30 June 2026, then the chart has one bar per week, the first one for 1–4 January.
 - Given a day with 6 h worked of which 4 h booked, then its bar shows 4 h booked and 2 h not booked.
+- Given 2 h worked on a Saturday, then its target is `0h`; the week of Thursday 1 – Sunday 4 January 2026 has a target of 2 days × the daily target.
 
 ### FR-RPT-004: Worked, target and booked
 **Priority:** Must
-**Statement:** The range's **Worked**, **Target** ("N days × 7h") and **Booked** side by side; one bar that shows worked, the
-booked part inside it, and a mark at the target; how far worked is over or under the target ("On target" when they are equal, "No workdays in
-this range yet." when the target is 0); **Worked of target** and **Booked of worked** as percentages (rounded down) with their hours, "Xh still to
+**Statement:** The range's **Worked**, **Target** ("N days × 7h", N = the range's weekdays, shown in full from the range's
+first day) and **Booked** side by side; one bar that shows worked, the
+booked part inside it, and a mark at the target; how far worked is over or under the target ("On target" when they are equal, "No weekdays in
+this range." when the target is 0); all worked hours, weekend hours included, are compared with the target (OQ-259); **Worked of target** and **Booked of worked** as percentages (rounded down) with their hours, "Xh still to
 book" or "Everything is booked".
 **Acceptance criteria:**
-- Given 10 workdays, a 7 h target, 72 h 30 m worked and 60 h booked, then Target is `70h`, "2h 30m over target", *Worked of
+- Given a range with 10 weekdays, a 7 h target, 72 h 30 m worked and 60 h booked, then Target is `70h`, "2h 30m over target", *Worked of
   target* 103 %, *Booked of worked* 82 % and "12h 30m still to book".
+- Given the range is November 2026, today is Sunday 1 November and nothing is logged on a weekday, then Target is `147h`, "21 days × 7h".
+- Given 68 h worked Monday–Friday and 5 h on a Saturday against a `70h` target, then Worked is `73h` and "3h over target".
 
 ### FR-RPT-005: Running totals
 **Priority:** Must
 **Statement:** Three lines over the range: worked, target and booked, each added up day by day: before today, one point per day with
 time logged (days without logs are left out); from today to the end of the range, every weekday and any day with logs,
-so the lines run flat to the range's end. The legend shows the range's totals.
+so worked and booked run flat to the range's end. The target adds the daily target on every Monday–Friday, past and future, so it
+climbs to the range's Target at the range's end (OQ-260). The legend shows the range's totals.
 **Acceptance criteria:**
 - Given the range is this month and today is a Wednesday, then a past weekday without logs has no point, the lines run flat
-  from today through the month's remaining weekdays, and the legend's totals equal FR-RPT-004's (also when a workday has a
-  start but no logs yet).
+  from today through the month's remaining weekdays while the target rises on each of them, and the legend's totals equal
+  FR-RPT-004's (also when a workday has a start but no logs yet).
 - Given a range with no logs, then the card says "Nothing logged in this range." in place of the lines.
 
 ### FR-RPT-006: Hours by project
@@ -119,3 +125,5 @@ None.
 - 2026-10-23: *Booked* sums the logs' booked minutes, so a partly booked log counts its booked part (feat-book-partial). Back to `review`.
 - 2026-10-31: FR-RPT-005: past days without logs are left out of the lines, which run flat from today to the range's end; the legend shows the range totals; no logs → "Nothing logged in this range." (OQ-250, OQ-251). Back to `review`.
 - 2026-10-31: Approved by the owner.
+- 2026-11-01: Target = the range's Monday–Friday dates × the daily target, future ones included; weekend days never add to it but their hours count in Worked and in over / under target; the running target climbs on every weekday to the range's end (OQ-258…OQ-260, prototype `bf93b65`). FR-RPT-003…005. Back to `review`.
+- 2026-11-01: Approved by the owner.
