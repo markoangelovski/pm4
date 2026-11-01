@@ -39,23 +39,31 @@ export function dayStats(range: DateRange, days: ReportDay[]): DayStat[] {
 export interface Totals {
   worked: number;
   booked: number;
-  /** Workdays × the daily target. */
+  /** Monday–Friday dates of the range × the daily target; weekend days never add to it. */
   target: number;
+  /** Monday–Friday dates of the range, past and future. */
+  weekdays: number;
+  /** Days with a start. */
   workdays: number;
   avgStart: number | null;
   earliestStart: number | null;
   latestStart: number | null;
 }
 
-/** workdays = days with a start; target = workdays × targetMinutes; avgStart = Math.round(mean of the starts). */
+/** A Monday–Friday date: the days that count towards the target. */
+const isWeekday = (workDate: string) => !isWeekend(parseISO(workDate));
+
+/** weekdays = Monday–Friday dates of the range; target = weekdays × targetMinutes; workdays = days with a start; avgStart = Math.round(mean of the starts). */
 export function totals(days: DayStat[], targetMinutes: number): Totals {
   const starts = days.flatMap((d) =>
     d.startMinute === null ? [] : [d.startMinute]
   );
+  const weekdays = days.filter((d) => isWeekday(d.workDate)).length;
   return {
     worked: days.reduce((t, d) => t + d.worked, 0),
     booked: days.reduce((t, d) => t + d.booked, 0),
-    target: starts.length * targetMinutes,
+    target: weekdays * targetMinutes,
+    weekdays,
     workdays: starts.length,
     avgStart: starts.length
       ? Math.round(starts.reduce((t, m) => t + m, 0) / starts.length)
@@ -76,8 +84,10 @@ export interface Bucket {
   worked: number;
   booked: number;
   unbooked: number;
-  /** The daily target for a day; workdays × the daily target for a week. */
+  /** The daily target for a weekday, 0 for a Saturday or Sunday; a week's weekdays × the daily target. */
   target: number;
+  /** Monday–Friday dates in the bucket. */
+  weekdays: number;
   workdays: number;
 }
 
@@ -93,10 +103,7 @@ export function buckets(
       by: "day",
       items: days
         .filter(
-          (d) =>
-            d.startMinute !== null ||
-            d.worked > 0 ||
-            !isWeekend(parseISO(d.workDate))
+          (d) => d.startMinute !== null || d.worked > 0 || isWeekday(d.workDate)
         )
         .map((d) => ({
           key: d.workDate,
@@ -107,7 +114,8 @@ export function buckets(
           worked: d.worked,
           booked: d.booked,
           unbooked: d.worked - d.booked,
-          target: targetMinutes,
+          target: isWeekday(d.workDate) ? targetMinutes : 0,
+          weekdays: isWeekday(d.workDate) ? 1 : 0,
           workdays: d.startMinute === null ? 0 : 1
         }))
     };
@@ -131,6 +139,7 @@ export function buckets(
         booked: t.booked,
         unbooked: t.worked - t.booked,
         target: t.target,
+        weekdays: t.weekdays,
         workdays: t.workdays
       };
     })
@@ -146,10 +155,10 @@ export interface RunningPoint {
 }
 
 /**
- * Cumulative worked, booked and target (+ targetMinutes per day with a start). Before today, one point per day with
- * time logged: days without logs are left out, so the lines have no flat stretches (a workday without logs still adds
- * to the target, on the next point). From today to the range's end, every weekday and any day with logs, as in the
- * Workdays chart, so the lines run flat to the end of the range.
+ * Cumulative worked, booked and target (+ targetMinutes per Monday–Friday date, past and future). Before today, one
+ * point per day with time logged: days without logs are left out, so the lines have no flat stretches (a weekday
+ * without logs still adds to the target, on the next point). From today to the range's end, every weekday and any day
+ * with logs, as in the Workdays chart: worked and booked run flat and the target climbs to the range's total.
  */
 export function running(
   days: DayStat[],
@@ -162,9 +171,9 @@ export function running(
   return days.flatMap((d) => {
     worked += d.worked;
     booked += d.booked;
-    if (d.startMinute !== null) target += targetMinutes;
+    if (isWeekday(d.workDate)) target += targetMinutes;
     const shown =
-      d.worked > 0 || (d.workDate >= today && !isWeekend(parseISO(d.workDate)));
+      d.worked > 0 || (d.workDate >= today && isWeekday(d.workDate));
     if (!shown) return [];
     return [
       {
