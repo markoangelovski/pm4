@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Plus } from "lucide-react";
-import { toast } from "sonner";
+import { toastError } from "@/proto/features/system/rate-limit";
 import {
   InputGroup,
   InputGroupAddon,
@@ -32,8 +32,8 @@ export function TodoAddInput({
           : { projectId: link.project?.id ?? null })
       });
       setText("");
-    } catch {
-      toast.error("Couldn't add the to-do.");
+    } catch (error) {
+      toastError(error, "Couldn't add the to-do.");
     }
   };
   return (

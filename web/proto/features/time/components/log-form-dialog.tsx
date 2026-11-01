@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
+import { toastError } from "@/proto/features/system/rate-limit";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -168,7 +169,7 @@ function LogForm({
         setError("task", { message: "This item no longer exists." });
         return;
       }
-      toast.error("Couldn't save the log.");
+      toastError(error, "Couldn't save the log.");
     }
   });
 

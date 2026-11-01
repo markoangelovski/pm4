@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
+import { toastError } from "@/proto/features/system/rate-limit";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -102,7 +103,7 @@ function TodoForm({
         setError("task", { message: "This item no longer exists." });
         return;
       }
-      toast.error("Couldn't save the to-do.");
+      toastError(error, "Couldn't save the to-do.");
     }
   });
 

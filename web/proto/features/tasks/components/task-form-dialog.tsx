@@ -3,6 +3,7 @@
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
+import { toastError } from "@/proto/features/system/rate-limit";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -112,7 +113,7 @@ function TaskForm({
     if (isApiError(error, 404)) {
       setError("project", { message: "Choose a project." });
     } else if (!applyFieldErrors(error, setError, TASK_FIELD_MAP)) {
-      toast.error("Couldn't save the task.");
+      toastError(error, "Couldn't save the task.");
     }
   }
 

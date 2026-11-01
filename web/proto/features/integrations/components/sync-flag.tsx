@@ -2,6 +2,7 @@
 
 import { RefreshCw, Unlink } from "lucide-react";
 import { toast } from "sonner";
+import { toastError } from "@/proto/features/system/rate-limit";
 import { badgeVariants } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -110,7 +111,8 @@ export function SyncFlag({
                   toast(
                     `Unlinked from PMSPA. The ${NOUN[type]} stays in both apps.`
                   ),
-                onError: () => toast.error("Couldn't unlink the record.")
+                onError: (error) =>
+                  toastError(error, "Couldn't unlink the record.")
               }
             )
           }

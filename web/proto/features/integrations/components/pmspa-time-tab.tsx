@@ -3,7 +3,7 @@
 import { Fragment, useState } from "react";
 import { addDays, format, parseISO, startOfWeek } from "date-fns";
 import { parseAsString, useQueryState } from "nuqs";
-import { toast } from "sonner";
+import { toastError } from "@/proto/features/system/rate-limit";
 import {
   CalendarIcon,
   CalendarX,
@@ -115,7 +115,7 @@ export function PmspaTimeTab({
     loadDays.mutate(dates, {
       onSuccess: () => setOpen(new Set(dates)),
       onError: (error) =>
-        toast.error(pmspaProblemText(error) ?? "Couldn't read the days.")
+        toastError(error, pmspaProblemText(error) ?? "Couldn't read the days.")
     });
   };
 

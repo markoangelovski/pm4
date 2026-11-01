@@ -2,6 +2,7 @@
 
 import { format, parseISO } from "date-fns";
 import { toast } from "sonner";
+import { toastError } from "@/proto/features/system/rate-limit";
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -41,8 +42,8 @@ export function DeleteDayDialog({
       await del.mutateAsync(day.workDate);
       toast.success("Day deleted");
       onOpenChange(false);
-    } catch {
-      toast.error("Couldn't delete the day.");
+    } catch (error) {
+      toastError(error, "Couldn't delete the day.");
     }
   };
   return (

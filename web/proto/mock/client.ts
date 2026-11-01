@@ -25,6 +25,7 @@ import { format } from "date-fns";
 import { formatDuration, today } from "@/lib/time";
 import { getMockState, mock, nextId } from "./store";
 import * as pmspa from "./pmspa";
+import { apiRetryAfterSeconds, rateLimitedResponse } from "./rate-limit";
 
 /** Every mock response waits this long, so loading states show. */
 export const MOCK_LATENCY_MS = 150;
@@ -951,6 +952,12 @@ async function mockFetch(request: Request): Promise<Response> {
       ? ""
       : await request.text();
   const body = text ? (JSON.parse(text) as Body) : {};
+  // The prototype shell's "API rate limit" switch: the API's guard answers before anything else runs.
+  const limitedFor = apiRetryAfterSeconds();
+  if (limitedFor > 0) {
+    await new Promise((r) => setTimeout(r, MOCK_LATENCY_MS));
+    return rateLimitedResponse(limitedFor);
+  }
   // The prototype shell's "another one running" switch: the API turns the next commit away on its lock,
   // before it calls PMSPA or writes anything (so ahead of the rate limit).
   if (

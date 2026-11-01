@@ -7,7 +7,7 @@ import {
   type UseMutationResult,
   type UseQueryResult
 } from "@tanstack/react-query";
-import { toast } from "sonner";
+import { toastError } from "@/proto/features/system/rate-limit";
 import { projectKeys } from "@/proto/features/projects/api";
 import { TASK_STATUSES, type TaskStatus } from "@/proto/features/tasks/status";
 import { apiClient } from "@/proto/mock/client";
@@ -230,7 +230,7 @@ export function useUpdateTaskStatus(): UseMutationResult<
       }
       return { lists, detail };
     },
-    onError: (_error, { task }, context) => {
+    onError: (error, { task }, context) => {
       if (context) {
         for (const [key, data] of context.lists) {
           queryClient.setQueryData(key, data);
@@ -239,7 +239,7 @@ export function useUpdateTaskStatus(): UseMutationResult<
           queryClient.setQueryData(taskKeys.detail(task.id), context.detail);
         }
       }
-      toast.error("Couldn't change the status.");
+      toastError(error, "Couldn't change the status.");
     },
     onSuccess: (saved) => {
       queryClient.setQueryData(taskKeys.detail(saved.id), saved);

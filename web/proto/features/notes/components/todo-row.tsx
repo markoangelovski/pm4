@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
-import { toast } from "sonner";
+import { toastError } from "@/proto/features/system/rate-limit";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -48,7 +48,7 @@ export function TodoRow({
     onToggled?.(todo, next);
     update.mutate(
       { id: todo.id, input: { done: next } },
-      { onError: () => toast.error("Couldn't save the to-do.") }
+      { onError: (error) => toastError(error, "Couldn't save the to-do.") }
     );
   };
   const project = showLink.project ? todo.project : null;

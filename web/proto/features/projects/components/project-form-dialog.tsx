@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
+import { toastError } from "@/proto/features/system/rate-limit";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -89,7 +90,7 @@ function ProjectForm({
 
   function onFailure(error: unknown) {
     if (!applyFieldErrors(error, setError, PROJECT_FIELD_MAP)) {
-      toast.error("Couldn't save the project.");
+      toastError(error, "Couldn't save the project.");
     }
   }
 

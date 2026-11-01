@@ -1,6 +1,6 @@
 "use client";
 
-import { toast } from "sonner";
+import { toastError } from "@/proto/features/system/rate-limit";
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -34,8 +34,8 @@ export function DeleteTaskDialog({
         onOpenChange(false);
         onDeleted?.();
       },
-      onError: () => {
-        toast.error("Couldn't delete the task.");
+      onError: (error) => {
+        toastError(error, "Couldn't delete the task.");
       }
     });
   };

@@ -7,7 +7,9 @@ import Footer from "./footer";
 import Header from "./header";
 import { LogTimeButton } from "@/proto/features/time/components/log-time-button";
 import { OfflineBanner } from "@/proto/features/system/components/offline-banner";
+import { RateLimitNotifier } from "@/proto/features/system/components/rate-limit-notifier";
 import { PmspaMockSwitch } from "./pmspa-mock-switch";
+import { RateLimitMockSwitch } from "./rate-limit-mock-switch";
 import { ProtoSidebar } from "./proto-sidebar";
 
 /** The `/proto/app` shell: twins of the real header and footer around the prototype sidebar. */
@@ -24,6 +26,7 @@ export function ProtoShell({ children }: { children: React.ReactNode }) {
         <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 px-4 py-1 text-center text-xs dark:text-amber-400">
           <span>UI prototype: mock data in memory, reset on every reload.</span>
           <PmspaMockSwitch />
+          <RateLimitMockSwitch />
         </div>
         <div className="flex flex-1 flex-col gap-4 p-4">
           <div className="w-full mx-auto container">
@@ -39,6 +42,7 @@ export function ProtoShell({ children }: { children: React.ReactNode }) {
         </div>
       </SidebarInset>
       <LogTimeButton />
+      <RateLimitNotifier />
     </SidebarProvider>
   );
 }

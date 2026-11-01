@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
+import { toastError } from "@/proto/features/system/rate-limit";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -91,8 +92,8 @@ function SettingsForm({ me }: { me: Me }): React.JSX.Element {
     try {
       await mutateAsync(input);
       toast.success("Settings saved");
-    } catch {
-      toast.error("Couldn't save the settings.");
+    } catch (error) {
+      toastError(error, "Couldn't save the settings.");
     }
   }
 

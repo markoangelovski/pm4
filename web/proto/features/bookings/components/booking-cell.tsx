@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, type ReactNode } from "react";
 import { BookmarkCheck, Check, Pencil, X } from "lucide-react";
-import { toast } from "sonner";
+import { toastError } from "@/proto/features/system/rate-limit";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DateField } from "@/proto/features/time/components/date-field";
@@ -114,7 +114,7 @@ export function BookingDateCell({
       { logs: [{ logId: log.id, bookings }] },
       {
         onSuccess: reset,
-        onError: () => toast.error("Couldn't save the booking.")
+        onError: (error) => toastError(error, "Couldn't save the booking.")
       }
     );
 
