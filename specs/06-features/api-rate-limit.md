@@ -83,7 +83,7 @@ owner-approved, D1), writes the acceptance tests and the stubs below, and adds t
 | api | `api/test/create-test-app.ts` | M | tests | The `RATE_LIMITS` default (*Test harness*) |
 | api | `api/src/rate-limit/rate-limits.ts` | C | tests, T1 | Stub (real `DEFAULT_RATE_LIMITS`, `RATE_LIMITS`; `clientIp` throws), then T1 |
 | api | `api/src/rate-limit/redis-throttler.storage.ts` | C | tests, T1 | Stub (`increment` throws), then T1 |
-| api | `api/src/rate-limit/rate-limit.guard.ts`, `api/src/rate-limit/rate-limit.module.ts` | C | T1 | Hand-written: `nest g guard` / `nest g module` then edit |
+| api | `api/src/rate-limit/rate-limit.guard.ts`, `api/src/rate-limit/rate-limit.module.ts` | C | T1 | Hand-written: `nest g guard` / `nest g module` then edit. No `rate-limit.guard.spec.ts`: an exception to the keep-the-generated-spec convention, because the e2e ACs cover the guard |
 | api | `api/src/common/filters/problem-details/redirect-exception.ts` | C | T1 | |
 | api | `api/src/common/filters/problem-details/problem-details.filter.ts` | M | T1 | Redirect branch |
 | api | `api/src/auth/auth.module.ts` | M | T1 | Imports `RateLimitModule`, second `APP_GUARD` |
@@ -312,13 +312,11 @@ for (const [p,ops] of Object.entries(d.paths)) for (const [m,op] of Object.entri
   if (skip.has(id) ? r : !ok) bad.push(id);
 }
 if (bad.length) { console.error('429 wrong on:', bad); process.exit(1); }"
-```
-```bash
+
 # AC-24: schema.d.ts regenerates unchanged and has the 429 responses
 cd web && before=$(sha1sum lib/api/schema.d.ts) && npm run -s api:types >/dev/null \
   && test "$before" = "$(sha1sum lib/api/schema.d.ts)" && test "$(grep -c '429' lib/api/schema.d.ts)" -gt 10
-```
-```bash
+
 # AC-25: every production twin equals its prototype file
 out=$(node scripts/pm4.mjs twins) || { echo "$out"; exit 1; }
 if echo "$out" | grep -E '^(WARN|FAIL)'; then exit 1; fi
@@ -339,3 +337,4 @@ None.
 - 2026-11-01: Initial draft (OQ-253…OQ-257). The API part is complete; the web part waits for the prototype (OQ-256).
 - 2026-11-01: Web part from prototype `078f795` (OQ-256 resolved): D11–D14, T3, T4, AC-18…AC-25. Status `review`.
 - 2026-11-01: Approved by the owner (T3 no longer promotes the files: the test step does).
+- 2026-11-01: *Checks* merged into one bash block so `pm4 check` runs AC-24 and AC-25 too (review finding). *Files*: no guard unit spec, recorded as an exception (review finding).
