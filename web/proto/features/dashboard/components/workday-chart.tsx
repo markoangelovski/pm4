@@ -96,8 +96,8 @@ function WorkdayTooltip({
           {row("var(--dash-worked)", "Not booked", hours(b.unbooked))}
           {row(
             null,
-            by === "week" ? `Target (${b.workdays} d)` : "Target",
-            hours(b.workdays ? b.target : 0)
+            by === "week" ? `Target (${b.weekdays} d)` : "Target",
+            hours(b.target)
           )}
         </>
       )}
@@ -389,7 +389,7 @@ export function WorkdayChart({
                       {hours(b.booked)}
                     </TableCell>
                     <TableCell className="px-3 tabular-nums">
-                      {hours(b.workdays ? b.target : 0)}
+                      {hours(b.target)}
                     </TableCell>
                   </TableRow>
                 ))}

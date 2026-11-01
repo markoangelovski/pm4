@@ -158,7 +158,7 @@ export function HoursSummary({
             label="Target"
             value={hours(t.target)}
             dashed
-            sub={`${t.workdays} ${t.workdays === 1 ? "day" : "days"} × ${hours(targetMinutes)}`}
+            sub={`${t.weekdays} ${t.weekdays === 1 ? "day" : "days"} × ${hours(targetMinutes)}`}
           />
           <Figure
             color="var(--dash-booked)"
@@ -174,7 +174,7 @@ export function HoursSummary({
             diff >= 0 && "bg-primary/5"
           )}
         >
-          {t.workdays > 0 && diff === 0 ? (
+          {t.target > 0 && diff === 0 ? (
             <Target className="size-4 shrink-0" />
           ) : diff >= 0 ? (
             <TrendingUp className="size-4 shrink-0" />
@@ -182,8 +182,8 @@ export function HoursSummary({
             <Hourglass className="size-4 shrink-0 text-amber-600 dark:text-amber-400" />
           )}
           <span>
-            {t.workdays === 0 ? (
-              "No workdays in this range yet."
+            {t.target === 0 ? (
+              "No weekdays in this range."
             ) : diff === 0 ? (
               "On target"
             ) : diff > 0 ? (
@@ -207,7 +207,7 @@ export function HoursSummary({
             hint={
               t.target
                 ? `${hours(t.worked)} of ${hours(t.target)}`
-                : "No workdays in this range"
+                : "No weekdays in this range"
             }
           />
           <Meter
