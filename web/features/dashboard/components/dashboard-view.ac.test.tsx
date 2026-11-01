@@ -330,35 +330,35 @@ describe("DashboardView (feat-rpt-web)", () => {
     );
   });
 
-  it("AC-9 FR-RPT-004 FR-RPT-005 SCR-010: worked, target and booked; the running totals' legend", async () => {
+  it("AC-9 FR-RPT-004 FR-RPT-005 SCR-010 OQ-258 OQ-259: worked, target (the range's weekdays) and booked; the running totals' legend", async () => {
     renderView();
     await loaded();
     const summary = summaryCard();
     expect(summary).toHaveTextContent("11h 30m");
-    expect(summary).toHaveTextContent("21h");
-    expect(summary).toHaveTextContent("3 days × 7h");
+    expect(summary).toHaveTextContent("154h");
+    expect(summary).toHaveTextContent("22 days × 7h");
     expect(summary).toHaveTextContent("6h");
-    expect(summary).toHaveTextContent("9h 30m under target");
-    expect(summary).toHaveTextContent(/Worked of target\s*54\s?%/);
+    expect(summary).toHaveTextContent("142h 30m under target");
+    expect(summary).toHaveTextContent(/Worked of target\s*7\s?%/);
     expect(summary).toHaveTextContent(/Booked of worked\s*52\s?%/);
     expect(summary).toHaveTextContent("5h 30m still to book");
 
     const running = runningCard();
     expect(running).toHaveTextContent(/Worked\s*11h 30m/);
-    expect(running).toHaveTextContent(/Target\s*21h/);
+    expect(running).toHaveTextContent(/Target\s*154h/);
     expect(running).toHaveTextContent(/Booked\s*6h/);
   });
 
-  it("AC-14 FR-RPT-005 OQ-250 OQ-251 SCR-010: running totals' legend shows the range totals; nothing logged", async () => {
+  it("AC-14 FR-RPT-005 OQ-250 OQ-251 OQ-258 SCR-010: running totals' legend shows the range totals; nothing logged", async () => {
     const first = renderView();
     await loaded();
     const running = runningCard();
     expect(running).toHaveTextContent(/Worked\s*11h 30m/);
-    expect(running).toHaveTextContent(/Target\s*21h/);
+    expect(running).toHaveTextContent(/Target\s*154h/);
     expect(running).toHaveTextContent(/Booked\s*6h/);
     first.unmount();
 
-    // A start on 9 Oct (today) and no logs: the target counts, nothing is drawn.
+    // A start on 9 Oct (today) and no logs: the target is the range's weekdays, nothing is drawn.
     report = {
       days: [
         {
@@ -374,7 +374,7 @@ describe("DashboardView (feat-rpt-web)", () => {
     await loaded();
     const empty = runningCard();
     expect(empty).toHaveTextContent(/Worked\s*0h/);
-    expect(empty).toHaveTextContent(/Target\s*7h/);
+    expect(empty).toHaveTextContent(/Target\s*154h/);
     expect(empty).toHaveTextContent(/Booked\s*0h/);
     expect(
       within(empty).getByText("Nothing logged in this range.")

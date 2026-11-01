@@ -10,8 +10,8 @@ depends_on: [T-0050]
 feature_spec: specs/06-features/rpt-web.md
 spec_row: T3
 ac_files:
-  - { path: web/features/dashboard/stats.ac.test.ts, sha256: 6c01679dd0de652baa1b187ccd03131ef7ed69875f13c3ccf9d85100228e9dfe }
-  - { path: web/features/dashboard/components/dashboard-view.ac.test.tsx, sha256: cd8f6e3d78a7cefddf657443f213a75c84027388a757c940fe3ffc81c4bd8d8a }
+  - { path: web/features/dashboard/stats.ac.test.ts, sha256: e94da804eb01e1a0ad09f02d11eb83661db908f141c3f1d696e1b45e42ef116b }
+  - { path: web/features/dashboard/components/dashboard-view.ac.test.tsx, sha256: 2b75105bf150138c1ab73641c6a815472758ec70ac41d03e3e77966b98d8d943 }
 ---
 
 # T-0123: Running totals without empty days and the aligned Workdays hover (D6, D7): four prototype twins

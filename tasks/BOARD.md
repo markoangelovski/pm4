@@ -132,6 +132,6 @@
 | [T-0126](m1-auth/T-0126-429-in-the-openapi-contract-apiproblemresponses.md) | 429 in the OpenAPI contract: ApiProblemResponses + ApiProblemResponsesNotLimited, export openapi.json | M1 | api | S | done | T-0125 |
 | [T-0127](m1-auth/T-0127-web-mount-the-promoted-notifier-no.md) | Web: mount the promoted notifier, no query retry on 429, SCR-001/002 rate-limited, api:types | M1 | web | S | done | T-0126 |
 | [T-0128](m1-auth/T-0128-web-toasterror-in-the-23-production.md) | Web: toastError in the 23 production twins | M1 | web | S | done | T-0127 |
-| [T-0129](m5-reporting/T-0129-weekday-target-d8-three-prototype-twins.md) | Weekday target (D8): three prototype twins | M5 | web | S | blocked | T-0123 |
+| [T-0129](m5-reporting/T-0129-weekday-target-d8-three-prototype-twins.md) | Weekday target (D8): three prototype twins | M5 | web | S | ready | T-0123 |
 
 M0–M6 are done. Later follow-ups are filed under the milestone they extend.
