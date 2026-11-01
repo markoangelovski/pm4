@@ -3,7 +3,7 @@ id: web-conventions
 title: Web Conventions
 status: approved
 owner: Marko Angelovski
-last_updated: 2026-10-14
+last_updated: 2026-11-01
 related: [web-static-export, web-template, web-routing, web-prototype, qa-code-style, ADR-0009, ADR-0010, ADR-0012, feat-land-app-route-split]
 ---
 
@@ -63,7 +63,9 @@ proto/                         # UI prototype code, mirroring this tree; never i
 - Query keys come from a factory (`projectKeys.all/list(params)/detail(id)`). Mutations invalidate the
   precise keys they affect (e.g. creating a log invalidates that day's logs, the linked task/project details, and reports).
 - Optimistic updates for task status changes and log edits, with rollback on error.
-- Defaults: `staleTime` 30 s, `retry` 1 for idempotent queries, no retry for mutations. `refetchOnWindowFocus` stays on.
+- Defaults: `staleTime` 30 s, `retry` 1 for idempotent queries, no retry for mutations. A `429` is never retried. `refetchOnWindowFocus` stays on.
+- A `429` (rate limited) gets one shared toast from the shell (SCR-007, `features/system/rate-limit.ts`). A failed API call's
+  toast goes through `toastError(error, message)` from that file instead of `toast.error`, so it is skipped for a `429` (OQ-256).
 - `lib/api` attaches the access token (not to the public endpoints). On a 401 it runs a single shared
   refresh, then retries once. If the refresh is **rejected** (`401`/`400`), it signs out (removes the stored
   refresh token), then replaces the URL with
@@ -110,3 +112,5 @@ proto/                         # UI prototype code, mirroring this tree; never i
 - 2026-10-03: Links styled as buttons are a plain `<Link>` with `buttonVariants(...)`, never a Base UI button part's `render` (dev console warning on the landing page; `nativeButton={false}` would give the link `role="button"`; T-0032).
 - 2026-10-11: `app/proto/` and `proto/`: the dev-only UI prototype (ADR-0012). Back to `review`.
 - 2026-10-11: Approved by the owner.
+- 2026-11-01: A `429` is never retried; failure toasts go through `toastError` (OQ-256, feat-api-rate-limit). Back to `review`.
+- 2026-11-01: Approved by the owner with feat-api-rate-limit.

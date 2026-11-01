@@ -3,7 +3,7 @@ id: sec
 title: Security
 status: approved
 owner: Marko Angelovski
-last_updated: 2026-10-17
+last_updated: 2026-11-01
 related: [web-routing, req-auth, arch-env, api-conventions, ADR-0007, NFR-004, NFR-005]
 ---
 
@@ -87,15 +87,24 @@ same `user_identities` table (`provider` = the configured provider key). Provide
 ## API hardening
 - CORS: allow-list `CORS_ORIGINS` only, with no credentials. Methods and headers restricted to what's used.
 - helmet, a JSON body limit (e.g. 100 kB), and `ValidationPipe` with whitelist + forbidNonWhitelisted.
-- Rate limiting (Redis-backed, `@nestjs/throttler`, OQ-039). **Not implemented yet:** it comes in its own
-  feature after auth (OQ-060).
+- Rate limiting (Redis-backed, `@nestjs/throttler`, OQ-039, feat-api-rate-limit). One fixed one-minute window
+  per counter. Each auth route has its own counter per client IP (OQ-253); every other endpoint shares **one**
+  counter per user across the whole API (OQ-254):
   | Scope | Key | Limit |
   | --- | --- | --- |
-  | `GET /auth/google`, `POST /auth/token` | IP | 10 / min |
+  | `GET /auth/google` | IP | 10 / min |
+  | `GET /auth/google/callback` | IP | 10 / min |
+  | `POST /auth/token` | IP | 10 / min |
   | `POST /auth/refresh` | IP | 30 / min |
-  | Every other endpoint | user id | 300 / min |
-  Over the limit → `429` with `Retry-After`. `/health` and `GET /api/v1/version` (API-SYS-003, public,
-  no DB/Redis) aren't limited.
+  | `POST /auth/logout` | IP | 30 / min |
+  | Every other endpoint (one counter in total) | user id | 300 / min |
+  Over the limit → `429` `…/errors/rate-limited` with `Retry-After` and `retryAfterSeconds`, except the two
+  browser navigations (`GET /auth/google` and its callback), which redirect to the web's
+  `/auth/sign-in?error=rate-limited` (OQ-257). A request rejected with `401` (missing or invalid access token)
+  isn't counted. `/health` and `GET /api/v1/version` (API-SYS-003, public, no DB/Redis) aren't limited.
+  **Client IP:** Express `trust proxy` = 1 (the Azure App Service front end is the one proxy), so the IP is the
+  last `X-Forwarded-For` entry; a `:port` suffix is stripped and an IPv6 address counts by its /64.
+  **Redis unreachable or slower than 500 ms:** the request is allowed and a warning is logged (fail open, OQ-255).
 - Never log tokens, codes, secrets or full request bodies of auth endpoints.
 
 ## Outbound calls to PMSPA (M6, req-integrations)
@@ -154,3 +163,5 @@ Secrets live in Azure App Settings and in GitHub Actions secrets. They are never
 - 2026-10-03: Approved by the owner.
 - 2026-10-17: Outbound calls to PMSPA (SSRF, encryption, ownership checks, budget) and `https://images.unsplash.com` in `img-src` (OQ-166) (feat-int-conn-api, feat-int-web). Back to `review`.
 - 2026-10-17: Approved by the owner.
+- 2026-11-01: Rate limiting specified: a counter per auth route, one per-user counter, the callback and logout limits, redirects for the sign-in navigations, the client IP behind Azure, fail open (OQ-253…OQ-257, feat-api-rate-limit). Back to `review`.
+- 2026-11-01: Approved by the owner with feat-api-rate-limit.

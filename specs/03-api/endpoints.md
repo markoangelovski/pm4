@@ -3,7 +3,7 @@ id: api-endpoints
 title: API Endpoints
 status: review
 owner: Marko Angelovski
-last_updated: 2026-10-26
+last_updated: 2026-11-01
 related: [api-conventions, api-data-model, req-auth, req-projects, req-tasks, req-time-logs, req-reporting, req-integrations, req-notes]
 ---
 
@@ -121,6 +121,8 @@ Redis, so it never wakes Neon. Not rate limited (security.md). In the OpenAPI co
   `…/errors/unauthorized`.
 - **Valid `returnTo` (API rule, security.md):** a string of 1–2048 chars that starts with `/`, doesn't start
   with `//`, and has no `\` and no control characters. The web applies its stricter `/app` rule on top.
+- **Rate limits (security.md#api-hardening):** every endpoint except `/health` and API-SYS-003 can answer `429`
+  `rate-limited` (conventions.md#errors). API-AUTH-001 and API-AUTH-002 redirect instead (below).
 
 ### API-AUTH-001: Start Google sign-in
 `GET /auth/google?returnTo=&timeZone=` · Auth: none · Implements: FR-AUTH-001, FR-AUTH-006 (OQ-061, OQ-065)
@@ -131,6 +133,8 @@ causes a `400`: this is a browser navigation.
 `redirect_uri` = `GOOGLE_CALLBACK_URL`, `scope=openid email profile`, `state`, `code_challenge`,
 `code_challenge_method=S256` and `prompt=select_account`. Stores the state entry (security.md step 2,
 TTL 10 min) with the PKCE verifier, `returnTo` and `timeZone`.
+**Rate limited (OQ-257):** **302** to `<WEB_APP_URL>/auth/sign-in?error=rate-limited`, plus `&returnTo=` when the
+query's `returnTo` is valid. No state entry is stored.
 **Errors:** 500 if Google discovery or Redis fails.
 
 ### API-AUTH-002: Google callback
@@ -144,6 +148,7 @@ Always answers **302** to the web app, never JSON.
   | `cancelled` | Google returned `error=access_denied` |
   | `not-allowed` | The allow-list is set and the verified email isn't on it. No user row is created or changed |
   | `failed` | Anything else: no, unknown, expired or already-used `state`; another Google error; code exchange or ID-token validation fails; `email_verified` isn't true; the email belongs to another account |
+  | `rate-limited` | The callback's per-IP limit is reached (OQ-257). The state entry isn't read, so there's no `returnTo` |
 - The state entry is deleted when read, whatever the outcome (single use).
 - Query values are passed to the web with `URLSearchParams` encoding.
 
@@ -802,3 +807,4 @@ None.
 - 2026-10-24: The owner approved API-NOTE-001…004, API-TODO-001…004, *Shared note and to-do shapes*, API-PRJ-005 and API-TSK-004/005 (as updated) for feat-note-todos.
 - 2026-10-26: Project services (FR-PRJ-009, FR-TSK-009, OQ-243…OQ-247, feat-prj-services): `ProjectService`, `ServiceRef`, *Services input*, `serviceId`; `Project.services`, `Task.service`; API-PRJ-006. Still `review`.
 - 2026-10-26: The owner approved *Shared project and task shapes*, API-PRJ-001/004/006 and API-TSK-001/004 (as updated) for feat-prj-services.
+- 2026-11-01: Rate limits: `429` on every endpoint but `/health` and API-SYS-003; API-AUTH-001/002 redirect with `error=rate-limited` (OQ-257, feat-api-rate-limit). Still `review`.
