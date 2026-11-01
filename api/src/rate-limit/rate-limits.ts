@@ -1,5 +1,5 @@
 import { SetMetadata } from "@nestjs/common";
-import { SkipThrottle } from "@nestjs/throttler";
+import { SkipThrottle, normalizeIp } from "@nestjs/throttler";
 import type { Request } from "express";
 
 /** A rate-limit counter: the auth routes' per-IP counters, and one per user (security.md#api-hardening). */
@@ -37,6 +37,9 @@ export const NoRateLimit = () => SkipThrottle();
 
 /** The client IP for the per-IP counters (D8). */
 export function clientIp(req: Request): string {
-  void req;
-  throw new Error("not implemented (feat-api-rate-limit)");
+  const raw = req.ip ?? req.socket.remoteAddress ?? "unknown";
+  const v4 = /^(\d{1,3}(?:\.\d{1,3}){3}):\d+$/.exec(raw);
+  if (v4) return normalizeIp(v4[1]);
+  const v6 = /^\[([^\]]+)\](?::\d+)?$/.exec(raw);
+  return normalizeIp(v6 ? v6[1] : raw);
 }

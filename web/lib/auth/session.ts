@@ -1,5 +1,6 @@
 import createClient from "openapi-fetch";
 import type { paths } from "@/lib/api/schema";
+import { ApiError } from "@/lib/api/problem";
 import { RETURN_TO_PARAM, sanitizeReturnTo } from "@/lib/auth/return-to";
 import {
   clearRefreshToken,
@@ -129,9 +130,7 @@ async function exchange(code: string): Promise<void> {
     body: { code }
   });
   if (response.status !== 200 || !data) {
-    throw new Error(
-      `Exchanging the login code failed with status ${response.status}`
-    );
+    throw new ApiError(response.status, null);
   }
   setRefreshToken(data.refreshToken);
   cache(data);

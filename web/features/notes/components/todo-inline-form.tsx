@@ -3,6 +3,7 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
+import { toastError } from "@/features/system/rate-limit";
 import { Button } from "@/components/ui/button";
 import { Field, FieldError } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
@@ -51,7 +52,7 @@ export function TodoInlineForm({
       onDone();
     } catch (error) {
       if (applyFieldErrors(error, setError, TODO_FIELD_MAP)) return;
-      toast.error("Couldn't save the to-do.");
+      toastError(error, "Couldn't save the to-do.");
     }
   });
 

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
+import { toastError } from "@/features/system/rate-limit";
 import { Globe, PlugZap, Unplug } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
@@ -201,7 +202,8 @@ function ConnectionForm({ connection }: { connection: PmspaConnection }) {
           return;
         }
         if (!applyFieldErrors(error, setError, PMSPA_CONNECTION_FIELD_MAP))
-          toast.error(
+          toastError(
+            error,
             pmspaProblemText(error) ?? "Couldn't save the connection."
           );
       }
@@ -293,7 +295,8 @@ function ConnectionForm({ connection }: { connection: PmspaConnection }) {
                   test.mutate(undefined, {
                     onSuccess: (c) => toastStatus(c, false),
                     onError: (error) =>
-                      toast.error(
+                      toastError(
+                        error,
                         pmspaProblemText(error) ??
                           "Couldn't test the connection."
                       )
@@ -414,7 +417,8 @@ function DisconnectDialog({
                   toast("PMSPA disconnected");
                 },
                 onError: (error) =>
-                  toast.error(
+                  toastError(
+                    error,
                     pmspaProblemText(error) ?? "Couldn't disconnect PMSPA."
                   )
               })

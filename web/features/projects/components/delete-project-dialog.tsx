@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { toastError } from "@/features/system/rate-limit";
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -54,7 +55,8 @@ export function DeleteProjectDialog({
                   router.push(routes.app.projects);
                   toast("Project deleted");
                 },
-                onError: () => toast.error("Couldn't delete the project.")
+                onError: (error) =>
+                  toastError(error, "Couldn't delete the project.")
               })
             }
             className="cursor-pointer"

@@ -7,6 +7,7 @@ import {
   ApiInternalServerErrorResponse,
   ApiNotFoundResponse,
   ApiServiceUnavailableResponse,
+  ApiTooManyRequestsResponse,
   ApiUnauthorizedResponse,
   getSchemaPath
 } from "@nestjs/swagger";
@@ -31,6 +32,10 @@ const RESPONSES = {
   },
   404: { decorator: ApiNotFoundResponse, description: "Not found." },
   409: { decorator: ApiConflictResponse, description: "Conflict." },
+  429: {
+    decorator: ApiTooManyRequestsResponse,
+    description: "Rate limited: `retryAfterSeconds` and `Retry-After`."
+  },
   502: {
     decorator: ApiBadGatewayResponse,
     description: "PMSPA failed or couldn't be reached."
@@ -46,14 +51,18 @@ const RESPONSES = {
 } as const;
 
 /**
- * Documents Problem Details error responses (conventions.md#errors):
- * the given statuses plus `500`, each `application/problem+json` → `ProblemDetailsDto`.
+ * Documents Problem Details error responses (conventions.md#errors): the given
+ * statuses, `429` when `limited`, plus `500`, each `application/problem+json`
+ * → `ProblemDetailsDto`.
  */
-export function ApiProblemResponses(
-  ...statuses: ProblemStatus[]
+function problemResponses(
+  statuses: ProblemStatus[],
+  limited: boolean
 ): MethodDecorator & ClassDecorator {
   const ordered = [
-    ...new Set<ProblemStatus | 500>([...statuses].sort((a, b) => a - b))
+    ...new Set<ProblemStatus | 429 | 500>(
+      [...statuses, ...(limited ? [429 as const] : [])].sort((a, b) => a - b)
+    )
   ];
   ordered.push(500);
   return applyDecorators(
@@ -63,4 +72,18 @@ export function ApiProblemResponses(
       return decorator({ description, content });
     })
   );
+}
+
+/** Problem Details responses of a rate-limited operation: the given statuses, `429` and `500`. */
+export function ApiProblemResponses(
+  ...statuses: ProblemStatus[]
+): MethodDecorator & ClassDecorator {
+  return problemResponses(statuses, true);
+}
+
+/** Problem Details responses of an operation that isn't rate limited: the given statuses and `500`. */
+export function ApiProblemResponsesNotLimited(
+  ...statuses: ProblemStatus[]
+): MethodDecorator & ClassDecorator {
+  return problemResponses(statuses, false);
 }

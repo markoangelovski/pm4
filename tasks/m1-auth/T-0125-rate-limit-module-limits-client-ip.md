@@ -3,7 +3,7 @@ id: T-0125
 title: Rate-limit module: limits, client IP, Redis storage, guard after AccessTokenGuard, redirect, decorators, trust proxy
 milestone: M1
 app: api
-status: ready
+status: done
 size: M
 tier: sonnet
 depends_on: []
@@ -23,11 +23,20 @@ ac_files:
 Work from the brief: `node scripts/pm4.mjs brief T-0125`. Verify with `node scripts/pm4.mjs check T-0125`.
 
 ## Implementation notes
-_Implementer: what changed, and anything the reviewer should look at._
+Rate-limit module, Redis storage, guard (after AccessTokenGuard), RedirectException, decorators, trust proxy.
+`pm4 check T-0125`: PASS (lint, format, typecheck, test, e2e, build ok; AC-17 skipped, later task).
+Reviewer: guard.ts imports types with `import type` (isolatedModules + decorator metadata).
 
 ### Attempts
 | # | Tier | Result | Summary |
 | --- | --- | --- | --- |
+| 1 | sonnet | PASS | Implemented T1; check passed first full run after import-type fix |
 
 ## Review
 _Filled in by `review-feature`._
+
+**Verdict: approve** (Opus, 2026-11-01). Client IP, Lua storage with 500 ms fail-open, guard scopes/trackers/redirects, guard order after `AccessTokenGuard`, path-only redirect logging and `trust proxy` before helmet all match the spec.
+- Finding (minor, spec): no `rate-limit.guard.spec.ts`; conventions keep the `nest g guard` spec file, but *Files* didn't list it. E2E ACs cover the guard. Owner to decide: list it in the spec or record the exception.
+- Feature finding (minor, tooling): the AC-24/AC-25 *Checks* blocks don't run under `pm4 check` (only the first bash block is read); both are covered by the `api:types` and twins gates.
+- Tier: sonnet was right (one attempt).
+- Feature check (`pm4 check --feature`): PASS (api + web gates, AC-17, twins 122 equal, no proto imports in production).

@@ -128,9 +128,9 @@
 | [T-0122](m4-time-logs/T-0122-duration-line-and-notes-label-d9.md) | Duration line and Notes label (D9): the confirmed prototype's prompt.ts and dialog twins | M4 | web | S | done | T-0091 |
 | [T-0123](m5-reporting/T-0123-running-totals-without-empty-days-and.md) | Running totals without empty days and the aligned Workdays hover (D6, D7): four prototype twins | M5 | web | S | review | T-0050 |
 | [T-0124](m4-time-logs/T-0124-go-to-bookings-and-push-to.md) | Go to Bookings and Push to PMSPA in the day menu: the three prototype twins | M4 | web | S | done | — |
-| [T-0125](m1-auth/T-0125-rate-limit-module-limits-client-ip.md) | Rate-limit module: limits, client IP, Redis storage, guard after AccessTokenGuard, redirect, decorators, trust proxy | M1 | api | M | ready | — |
-| [T-0126](m1-auth/T-0126-429-in-the-openapi-contract-apiproblemresponses.md) | 429 in the OpenAPI contract: ApiProblemResponses + ApiProblemResponsesNotLimited, export openapi.json | M1 | api | S | blocked | T-0125 |
-| [T-0127](m1-auth/T-0127-web-mount-the-promoted-notifier-no.md) | Web: mount the promoted notifier, no query retry on 429, SCR-001/002 rate-limited, api:types | M1 | web | S | blocked | T-0126 |
-| [T-0128](m1-auth/T-0128-web-toasterror-in-the-23-production.md) | Web: toastError in the 23 production twins | M1 | web | S | blocked | T-0127 |
+| [T-0125](m1-auth/T-0125-rate-limit-module-limits-client-ip.md) | Rate-limit module: limits, client IP, Redis storage, guard after AccessTokenGuard, redirect, decorators, trust proxy | M1 | api | M | done | — |
+| [T-0126](m1-auth/T-0126-429-in-the-openapi-contract-apiproblemresponses.md) | 429 in the OpenAPI contract: ApiProblemResponses + ApiProblemResponsesNotLimited, export openapi.json | M1 | api | S | done | T-0125 |
+| [T-0127](m1-auth/T-0127-web-mount-the-promoted-notifier-no.md) | Web: mount the promoted notifier, no query retry on 429, SCR-001/002 rate-limited, api:types | M1 | web | S | done | T-0126 |
+| [T-0128](m1-auth/T-0128-web-toasterror-in-the-23-production.md) | Web: toastError in the 23 production twins | M1 | web | S | done | T-0127 |
 
 M0–M6 are done. Later follow-ups are filed under the milestone they extend.

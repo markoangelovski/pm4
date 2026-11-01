@@ -14,8 +14,12 @@ import {
   type AuthUser,
   CurrentUser
 } from "../common/decorators/current-user/current-user.decorator.js";
-import { ApiProblemResponses } from "../common/decorators/api-problem-responses/api-problem-responses.decorator.js";
+import {
+  ApiProblemResponses,
+  ApiProblemResponsesNotLimited
+} from "../common/decorators/api-problem-responses/api-problem-responses.decorator.js";
 import { Public } from "../common/decorators/public/public.decorator.js";
+import { RateLimit } from "../rate-limit/rate-limits.js";
 import { AuthService } from "./auth.service.js";
 import { CodeRequestDto } from "./dto/code-request.dto.js";
 import { RefreshTokenRequestDto } from "./dto/refresh-token-request.dto.js";
@@ -34,13 +38,14 @@ export class AuthController {
   /** API-AUTH-001: start Google sign-in (a browser navigation). */
   @Public()
   @Get("google")
+  @RateLimit("google")
   @Redirect()
   @ApiQuery({ name: "returnTo", required: false, type: String })
   @ApiQuery({ name: "timeZone", required: false, type: String })
   @ApiFoundResponse({
     description: "Redirect to Google's authorization endpoint."
   })
-  @ApiProblemResponses()
+  @ApiProblemResponsesNotLimited()
   async start(
     @Query("returnTo") returnTo?: string,
     @Query("timeZone") timeZone?: string
@@ -52,6 +57,7 @@ export class AuthController {
   /** API-AUTH-002: Google's callback; always redirects to the web app. */
   @Public()
   @Get("google/callback")
+  @RateLimit("callback")
   @Redirect()
   @ApiFoundResponse({
     description:
@@ -67,6 +73,7 @@ export class AuthController {
   /** API-AUTH-003: exchange the login code for a token pair. */
   @Public()
   @Post("token")
+  @RateLimit("token")
   @HttpCode(200)
   @ApiProblemResponses(400, 401)
   token(@Body() body: CodeRequestDto): Promise<TokenPairDto> {
@@ -76,6 +83,7 @@ export class AuthController {
   /** API-AUTH-004: rotate the refresh token. */
   @Public()
   @Post("refresh")
+  @RateLimit("refresh")
   @HttpCode(200)
   @ApiProblemResponses(400, 401)
   refresh(@Body() body: RefreshTokenRequestDto): Promise<TokenPairDto> {
@@ -85,6 +93,7 @@ export class AuthController {
   /** API-AUTH-005: sign out of this session. */
   @Public()
   @Post("logout")
+  @RateLimit("logout")
   @HttpCode(204)
   @ApiProblemResponses(400)
   logout(@Body() body: RefreshTokenRequestDto): Promise<void> {

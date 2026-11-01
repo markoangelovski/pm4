@@ -3,17 +3,20 @@
 import { useState, type ReactNode } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+import { isApiError } from "@/lib/api/problem";
 
 /**
  * ADR-0009 defaults: 30s stale time, one retry for queries, no retry for
  * mutations. `refetchOnWindowFocus` stays on (the TanStack Query default).
+ * One retry for queries, never for a 429 (feat-api-rate-limit).
  */
 export function createQueryClient(): QueryClient {
   return new QueryClient({
     defaultOptions: {
       queries: {
         staleTime: 30_000,
-        retry: 1
+        retry: (failureCount, error) =>
+          !isApiError(error, 429) && failureCount < 1
       },
       mutations: {
         retry: 0

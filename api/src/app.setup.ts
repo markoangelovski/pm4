@@ -15,6 +15,8 @@ export function configureApp(app: NestExpressApplication): void {
 
   app.setGlobalPrefix("api/v1", { exclude: ["health"] });
 
+  app.set("trust proxy", 1);
+
   app.use(helmet());
 
   // `/favicon.ico` for browsers and the Swagger UI. src/assets is copied next to

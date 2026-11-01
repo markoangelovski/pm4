@@ -19,7 +19,7 @@ import {
   ChevronsUpDown,
   ListTodo
 } from "lucide-react";
-import { toast } from "sonner";
+import { toastError } from "@/features/system/rate-limit";
 import {
   Tooltip,
   TooltipContent,
@@ -159,7 +159,9 @@ function BookAllButton({
               bookings: addBooking(log.bookings, workDate, unbookedMinutes(log))
             }))
           },
-          { onError: () => toast.error("Couldn't save the booking.") }
+          {
+            onError: (error) => toastError(error, "Couldn't save the booking.")
+          }
         )
       }
     >

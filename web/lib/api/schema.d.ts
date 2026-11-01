@@ -1611,6 +1611,15 @@ export interface operations {
                     "application/problem+json": components["schemas"]["ProblemDetailsDto"];
                 };
             };
+            /** @description Rate limited: `retryAfterSeconds` and `Retry-After`. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
             /** @description Unexpected error. */
             500: {
                 headers: {
@@ -1661,6 +1670,15 @@ export interface operations {
                     "application/problem+json": components["schemas"]["ProblemDetailsDto"];
                 };
             };
+            /** @description Rate limited: `retryAfterSeconds` and `Retry-After`. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
             /** @description Unexpected error. */
             500: {
                 headers: {
@@ -1693,6 +1711,15 @@ export interface operations {
             };
             /** @description Validation failed: one entry in errors[] per invalid field. */
             400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Rate limited: `retryAfterSeconds` and `Retry-After`. */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -1735,6 +1762,15 @@ export interface operations {
                     "application/problem+json": components["schemas"]["ProblemDetailsDto"];
                 };
             };
+            /** @description Rate limited: `retryAfterSeconds` and `Retry-After`. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
             /** @description Unexpected error. */
             500: {
                 headers: {
@@ -1765,6 +1801,15 @@ export interface operations {
             };
             /** @description Missing, invalid or expired credentials. */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Rate limited: `retryAfterSeconds` and `Retry-After`. */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -1822,6 +1867,15 @@ export interface operations {
                     "application/problem+json": components["schemas"]["ProblemDetailsDto"];
                 };
             };
+            /** @description Rate limited: `retryAfterSeconds` and `Retry-After`. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
             /** @description Unexpected error. */
             500: {
                 headers: {
@@ -1864,6 +1918,15 @@ export interface operations {
             };
             /** @description Missing, invalid or expired credentials. */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Rate limited: `retryAfterSeconds` and `Retry-After`. */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -1926,6 +1989,15 @@ export interface operations {
                     "application/problem+json": components["schemas"]["ProblemDetailsDto"];
                 };
             };
+            /** @description Rate limited: `retryAfterSeconds` and `Retry-After`. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
             /** @description Unexpected error. */
             500: {
                 headers: {
@@ -1976,6 +2048,15 @@ export interface operations {
                     "application/problem+json": components["schemas"]["ProblemDetailsDto"];
                 };
             };
+            /** @description Rate limited: `retryAfterSeconds` and `Retry-After`. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
             /** @description Unexpected error. */
             500: {
                 headers: {
@@ -2006,6 +2087,15 @@ export interface operations {
             };
             /** @description Missing, invalid or expired credentials. */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Rate limited: `retryAfterSeconds` and `Retry-After`. */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -2061,6 +2151,15 @@ export interface operations {
                     "application/problem+json": components["schemas"]["ProblemDetailsDto"];
                 };
             };
+            /** @description Rate limited: `retryAfterSeconds` and `Retry-After`. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
             /** @description Unexpected error. */
             500: {
                 headers: {
@@ -2101,6 +2200,15 @@ export interface operations {
             };
             /** @description Not found. */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Rate limited: `retryAfterSeconds` and `Retry-After`. */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -2169,6 +2277,15 @@ export interface operations {
                     "application/problem+json": components["schemas"]["ProblemDetailsDto"];
                 };
             };
+            /** @description Rate limited: `retryAfterSeconds` and `Retry-After`. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
             /** @description Unexpected error. */
             500: {
                 headers: {
@@ -2228,6 +2345,15 @@ export interface operations {
                     "application/problem+json": components["schemas"]["ProblemDetailsDto"];
                 };
             };
+            /** @description Rate limited: `retryAfterSeconds` and `Retry-After`. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
             /** @description Unexpected error. */
             500: {
                 headers: {
@@ -2271,6 +2397,15 @@ export interface operations {
             };
             /** @description Missing, invalid or expired credentials. */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Rate limited: `retryAfterSeconds` and `Retry-After`. */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -2326,6 +2461,15 @@ export interface operations {
                     "application/problem+json": components["schemas"]["ProblemDetailsDto"];
                 };
             };
+            /** @description Rate limited: `retryAfterSeconds` and `Retry-After`. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
             /** @description Unexpected error. */
             500: {
                 headers: {
@@ -2366,6 +2510,15 @@ export interface operations {
             };
             /** @description Not found. */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Rate limited: `retryAfterSeconds` and `Retry-After`. */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -2434,6 +2587,15 @@ export interface operations {
                     "application/problem+json": components["schemas"]["ProblemDetailsDto"];
                 };
             };
+            /** @description Rate limited: `retryAfterSeconds` and `Retry-After`. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
             /** @description Unexpected error. */
             500: {
                 headers: {
@@ -2476,6 +2638,15 @@ export interface operations {
             };
             /** @description Missing, invalid or expired credentials. */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Rate limited: `retryAfterSeconds` and `Retry-After`. */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -2531,6 +2702,15 @@ export interface operations {
                     "application/problem+json": components["schemas"]["ProblemDetailsDto"];
                 };
             };
+            /** @description Rate limited: `retryAfterSeconds` and `Retry-After`. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
             /** @description Unexpected error. */
             500: {
                 headers: {
@@ -2576,6 +2756,15 @@ export interface operations {
             };
             /** @description Missing, invalid or expired credentials. */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Rate limited: `retryAfterSeconds` and `Retry-After`. */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -2639,6 +2828,15 @@ export interface operations {
                     "application/problem+json": components["schemas"]["ProblemDetailsDto"];
                 };
             };
+            /** @description Rate limited: `retryAfterSeconds` and `Retry-After`. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
             /** @description Unexpected error. */
             500: {
                 headers: {
@@ -2687,6 +2885,15 @@ export interface operations {
             };
             /** @description Missing, invalid or expired credentials. */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Rate limited: `retryAfterSeconds` and `Retry-After`. */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -2753,6 +2960,15 @@ export interface operations {
                     "application/problem+json": components["schemas"]["ProblemDetailsDto"];
                 };
             };
+            /** @description Rate limited: `retryAfterSeconds` and `Retry-After`. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
             /** @description Unexpected error. */
             500: {
                 headers: {
@@ -2793,6 +3009,15 @@ export interface operations {
             };
             /** @description Not found. */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Rate limited: `retryAfterSeconds` and `Retry-After`. */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -2861,6 +3086,15 @@ export interface operations {
                     "application/problem+json": components["schemas"]["ProblemDetailsDto"];
                 };
             };
+            /** @description Rate limited: `retryAfterSeconds` and `Retry-After`. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
             /** @description Unexpected error. */
             500: {
                 headers: {
@@ -2903,6 +3137,15 @@ export interface operations {
             };
             /** @description Missing, invalid or expired credentials. */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Rate limited: `retryAfterSeconds` and `Retry-After`. */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -2969,6 +3212,15 @@ export interface operations {
                     "application/problem+json": components["schemas"]["ProblemDetailsDto"];
                 };
             };
+            /** @description Rate limited: `retryAfterSeconds` and `Retry-After`. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
             /** @description Unexpected error. */
             500: {
                 headers: {
@@ -3018,6 +3270,15 @@ export interface operations {
                     "application/problem+json": components["schemas"]["ProblemDetailsDto"];
                 };
             };
+            /** @description Rate limited: `retryAfterSeconds` and `Retry-After`. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
             /** @description Unexpected error. */
             500: {
                 headers: {
@@ -3048,6 +3309,15 @@ export interface operations {
             };
             /** @description Missing, invalid or expired credentials. */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Rate limited: `retryAfterSeconds` and `Retry-After`. */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -3114,6 +3384,15 @@ export interface operations {
                     "application/problem+json": components["schemas"]["ProblemDetailsDto"];
                 };
             };
+            /** @description Rate limited: `retryAfterSeconds` and `Retry-After`. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
             /** @description Unexpected error. */
             500: {
                 headers: {
@@ -3152,6 +3431,15 @@ export interface operations {
             };
             /** @description Missing, invalid or expired credentials. */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Rate limited: `retryAfterSeconds` and `Retry-After`. */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -3198,6 +3486,15 @@ export interface operations {
             };
             /** @description Not found. */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Rate limited: `retryAfterSeconds` and `Retry-After`. */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -3253,6 +3550,15 @@ export interface operations {
             };
             /** @description Conflict. */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Rate limited: `retryAfterSeconds` and `Retry-After`. */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -3345,6 +3651,15 @@ export interface operations {
                     "application/problem+json": components["schemas"]["ProblemDetailsDto"];
                 };
             };
+            /** @description Rate limited: `retryAfterSeconds` and `Retry-After`. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
             /** @description Unexpected error. */
             500: {
                 headers: {
@@ -3402,6 +3717,15 @@ export interface operations {
             };
             /** @description Conflict. */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Rate limited: `retryAfterSeconds` and `Retry-After`. */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -3485,6 +3809,15 @@ export interface operations {
                     "application/problem+json": components["schemas"]["ProblemDetailsDto"];
                 };
             };
+            /** @description Rate limited: `retryAfterSeconds` and `Retry-After`. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
             /** @description Unexpected error. */
             500: {
                 headers: {
@@ -3560,6 +3893,15 @@ export interface operations {
                     "application/problem+json": components["schemas"]["ProblemDetailsDto"];
                 };
             };
+            /** @description Rate limited: `retryAfterSeconds` and `Retry-After`. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
             /** @description Unexpected error. */
             500: {
                 headers: {
@@ -3619,6 +3961,15 @@ export interface operations {
             };
             /** @description Missing, invalid or expired credentials. */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Rate limited: `retryAfterSeconds` and `Retry-After`. */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -3687,6 +4038,15 @@ export interface operations {
             };
             /** @description Conflict. */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Rate limited: `retryAfterSeconds` and `Retry-After`. */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -3770,6 +4130,15 @@ export interface operations {
                     "application/problem+json": components["schemas"]["ProblemDetailsDto"];
                 };
             };
+            /** @description Rate limited: `retryAfterSeconds` and `Retry-After`. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
             /** @description Unexpected error. */
             500: {
                 headers: {
@@ -3822,6 +4191,15 @@ export interface operations {
             };
             /** @description Conflict. */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Rate limited: `retryAfterSeconds` and `Retry-After`. */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -3915,6 +4293,15 @@ export interface operations {
                     "application/problem+json": components["schemas"]["ProblemDetailsDto"];
                 };
             };
+            /** @description Rate limited: `retryAfterSeconds` and `Retry-After`. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
             /** @description Unexpected error. */
             500: {
                 headers: {
@@ -4001,6 +4388,15 @@ export interface operations {
                     "application/problem+json": components["schemas"]["ProblemDetailsDto"];
                 };
             };
+            /** @description Rate limited: `retryAfterSeconds` and `Retry-After`. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
             /** @description Unexpected error. */
             500: {
                 headers: {
@@ -4071,6 +4467,15 @@ export interface operations {
             };
             /** @description Conflict. */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Rate limited: `retryAfterSeconds` and `Retry-After`. */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -4164,6 +4569,15 @@ export interface operations {
                     "application/problem+json": components["schemas"]["ProblemDetailsDto"];
                 };
             };
+            /** @description Rate limited: `retryAfterSeconds` and `Retry-After`. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
             /** @description Unexpected error. */
             500: {
                 headers: {
@@ -4250,6 +4664,15 @@ export interface operations {
                     "application/problem+json": components["schemas"]["ProblemDetailsDto"];
                 };
             };
+            /** @description Rate limited: `retryAfterSeconds` and `Retry-After`. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
             /** @description Unexpected error. */
             500: {
                 headers: {
@@ -4320,6 +4743,15 @@ export interface operations {
             };
             /** @description Conflict. */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Rate limited: `retryAfterSeconds` and `Retry-After`. */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -4410,6 +4842,15 @@ export interface operations {
                     "application/problem+json": components["schemas"]["ProblemDetailsDto"];
                 };
             };
+            /** @description Rate limited: `retryAfterSeconds` and `Retry-After`. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
             /** @description Unexpected error. */
             500: {
                 headers: {
@@ -4469,6 +4910,15 @@ export interface operations {
                     "application/problem+json": components["schemas"]["ProblemDetailsDto"];
                 };
             };
+            /** @description Rate limited: `retryAfterSeconds` and `Retry-After`. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
             /** @description Unexpected error. */
             500: {
                 headers: {
@@ -4509,6 +4959,15 @@ export interface operations {
             };
             /** @description Not found. */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Rate limited: `retryAfterSeconds` and `Retry-After`. */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -4577,6 +5036,15 @@ export interface operations {
                     "application/problem+json": components["schemas"]["ProblemDetailsDto"];
                 };
             };
+            /** @description Rate limited: `retryAfterSeconds` and `Retry-After`. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
             /** @description Unexpected error. */
             500: {
                 headers: {
@@ -4631,6 +5099,15 @@ export interface operations {
             };
             /** @description Missing, invalid or expired credentials. */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Rate limited: `retryAfterSeconds` and `Retry-After`. */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -4697,6 +5174,15 @@ export interface operations {
                     "application/problem+json": components["schemas"]["ProblemDetailsDto"];
                 };
             };
+            /** @description Rate limited: `retryAfterSeconds` and `Retry-After`. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
             /** @description Unexpected error. */
             500: {
                 headers: {
@@ -4737,6 +5223,15 @@ export interface operations {
             };
             /** @description Not found. */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Rate limited: `retryAfterSeconds` and `Retry-After`. */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -4798,6 +5293,15 @@ export interface operations {
             };
             /** @description Not found. */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Rate limited: `retryAfterSeconds` and `Retry-After`. */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };

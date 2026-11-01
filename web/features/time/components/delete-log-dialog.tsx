@@ -1,6 +1,7 @@
 "use client";
 
 import { toast } from "sonner";
+import { toastError } from "@/features/system/rate-limit";
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -30,8 +31,8 @@ export function DeleteLogDialog({
       await del.mutateAsync(log);
       toast.success("Log deleted");
       onOpenChange(false);
-    } catch {
-      toast.error("Couldn't delete the log.");
+    } catch (error) {
+      toastError(error, "Couldn't delete the log.");
     }
   };
   return (

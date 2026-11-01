@@ -10,6 +10,7 @@ import type { Request, Response } from "express";
 import { AppConfigService } from "../../../config/app-config.service.js";
 import { ProblemDetailsDto } from "./problem-details.dto.js";
 import { FieldError } from "../../validation/flatten-validation-errors.js";
+import { RedirectException } from "./redirect-exception.js";
 import { ProblemException } from "./problem-exception.js";
 
 /** RFC 9457 slugs, per `specs/03-api/conventions.md#errors`. */
@@ -49,6 +50,13 @@ export class ProblemDetailsFilter implements ExceptionFilter {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
     const request = ctx.getRequest<Request>();
+
+    if (exception instanceof RedirectException) {
+      // The path only: the callback's query holds the OAuth code.
+      this.logger.warn(`${request.method} ${request.path} -> 302 rate-limited`);
+      response.redirect(302, exception.url);
+      return;
+    }
 
     const described = this.describe(exception);
     const slug =
