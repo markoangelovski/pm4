@@ -7,14 +7,20 @@ import { cn } from "@/lib/utils";
 import { NOTE_BODY_MAX } from "../schemas";
 import { Markdown } from "./markdown";
 
-/** A Markdown textarea with Write / Preview tabs, like GitHub's. Nothing is saved until the form is. */
+/**
+ * A Markdown textarea with Write / Preview tabs, like GitHub's. Nothing is saved until the form is.
+ * Near `maxLength` (a note's body by default; null for none) it shows a character count.
+ */
 export function MarkdownEditor({
   id,
   value,
   onChange,
   onBlur,
   invalid,
-  autoFocus
+  autoFocus,
+  placeholder = "Write your note… Markdown is supported.",
+  maxLength = NOTE_BODY_MAX,
+  "aria-label": ariaLabel
 }: {
   id?: string;
   value: string;
@@ -22,9 +28,12 @@ export function MarkdownEditor({
   onBlur?: () => void;
   invalid?: boolean;
   autoFocus?: boolean;
+  placeholder?: string;
+  maxLength?: number | null;
+  "aria-label"?: string;
 }) {
   const [tab, setTab] = useState<"write" | "preview">("write");
-  const near = value.length > NOTE_BODY_MAX * 0.9;
+  const near = maxLength !== null && value.length > maxLength * 0.9;
   return (
     <Tabs value={tab} onValueChange={(v) => setTab(v as "write" | "preview")}>
       <div className="flex items-center justify-between">
@@ -40,13 +49,13 @@ export function MarkdownEditor({
           <span
             className={cn(
               "text-xs tabular-nums",
-              value.length > NOTE_BODY_MAX
+              value.length > (maxLength ?? Infinity)
                 ? "text-destructive"
                 : "text-muted-foreground"
             )}
           >
             {value.length.toLocaleString("en")} /{" "}
-            {NOTE_BODY_MAX.toLocaleString("en")}
+            {(maxLength ?? 0).toLocaleString("en")}
           </span>
         ) : null}
       </div>
@@ -58,7 +67,8 @@ export function MarkdownEditor({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           onBlur={onBlur}
-          placeholder="Write your note… Markdown is supported."
+          placeholder={placeholder}
+          aria-label={ariaLabel}
           aria-invalid={invalid || undefined}
           className="max-h-[50vh] min-h-48 font-mono text-sm"
         />

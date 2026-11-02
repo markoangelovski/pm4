@@ -79,10 +79,10 @@ function routeGet() {
   });
 }
 
-function renderBell() {
+function renderBell({ meLoaded = true } = {}) {
   const queryClient = createQueryClient();
   // The shell has loaded the signed-in user.
-  queryClient.setQueryData(["users", "me"], me);
+  if (meLoaded) queryClient.setQueryData(["users", "me"], me);
   const wrapper = ({ children }: { children: ReactNode }) => (
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   );
@@ -173,4 +173,37 @@ describe("NotificationsButton (feat-tlog-reminder, SCR-008)", () => {
       expect(document.title).toBe("Dashboard - PM4");
     }
   );
+
+  it("AC-12 SCR-008 (OQ-263): until the user loads, the bell has no notifications and loads no day; then it loads today in their time zone", async () => {
+    // 2026-10-09 22:30 UTC is already 2026-10-10 00:30 in Zagreb.
+    vi.setSystemTime(new Date("2026-10-09T22:30:00.000Z"));
+    today = { ...dayOf(480, [log("a", 60)]), workDate: "2026-10-10" };
+    let releaseMe!: () => void;
+    const meHeld = new Promise<void>((resolve) => {
+      releaseMe = resolve;
+    });
+    const routed = api.GET.getMockImplementation()!;
+    api.GET.mockImplementation(async (path: string, options?: GetOptions) => {
+      if (path === "/api/v1/me") await meHeld;
+      return routed(path, options);
+    });
+    const daysRead = () =>
+      api.GET.mock.calls
+        .filter(([path]) => path === "/api/v1/workdays/{date}")
+        .map(([, options]) => (options as GetOptions).params!.path!.date);
+
+    renderBell({ meLoaded: false });
+    expect(await bell("Notifications")).toBeInTheDocument();
+    await waitFor(() =>
+      expect(api.GET.mock.calls.some(([path]) => path === "/api/v1/me")).toBe(
+        true
+      )
+    );
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(daysRead()).toEqual([]);
+
+    releaseMe();
+    await waitFor(() => expect(daysRead()).toEqual(["2026-10-10"]));
+    expect(document.title).toBe("Dashboard - PM4");
+  });
 });

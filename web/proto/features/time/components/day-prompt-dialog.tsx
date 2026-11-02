@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useIsFetching, useQueryClient } from "@tanstack/react-query";
 import { format, parseISO } from "date-fns";
 import { Check, Copy, ExternalLink, Pencil } from "lucide-react";
 import { toast } from "sonner";
@@ -81,8 +81,12 @@ function PromptContent({ day }: { day: Day }) {
   // The Copy all text being edited; null while the sections show.
   const [draft, setDraft] = useState<string | null>(null);
   const sections = promptSections(day.workDate, day.logs);
-  // Each card fetches its project and task, so their links and the task's service are in the cache by the time
-  // Edit or Copy all is clicked.
+  // Each card fetches its project and task; Edit and Copy all read their links and the task's service from the cache.
+  // Edit waits while those load (its text is then fixed); Copy all leaves out what isn't loaded yet.
+  const loading =
+    useIsFetching({ queryKey: projectKeys.details() }) +
+      useIsFetching({ queryKey: taskKeys.details() }) >
+    0;
   const allMarkdown = () =>
     promptMarkdown(
       sections.map((section) => {
@@ -141,7 +145,7 @@ function PromptContent({ day }: { day: Day }) {
         {draft === null ? (
           <Button
             variant="outline"
-            disabled={sections.length === 0}
+            disabled={sections.length === 0 || loading}
             className="cursor-pointer"
             onClick={() => setDraft(allMarkdown())}
           >

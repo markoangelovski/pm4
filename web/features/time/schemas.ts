@@ -1,7 +1,11 @@
 import { z } from "zod";
 import { formatDuration } from "@/lib/time";
 import { parseDurationInput } from "./duration";
+import { NO_LOG_LINK, type LogLink } from "./last-log-link";
 import type { ProjectRef, TaskRef, TimeLog, TimeLogInput } from "./types";
+
+/** A new log's duration, and the step ArrowUp / ArrowDown move it by. */
+export const DURATION_STEP = 15;
 
 export const logFormSchema = z.object({
   date: z.string(),
@@ -21,7 +25,8 @@ export type LogFormValues = z.infer<typeof logFormSchema>;
 export function logFormDefaults(
   log: TimeLog | undefined,
   date: string,
-  nowQuarter: number | null
+  nowQuarter: number | null,
+  link: LogLink = NO_LOG_LINK
 ): LogFormValues {
   if (log) {
     return {
@@ -48,10 +53,10 @@ export function logFormDefaults(
     date,
     dayStart: nowQuarter,
     text: "",
-    duration: "",
+    duration: formatDuration(DURATION_STEP),
     title: "",
-    project: null,
-    task: null,
+    project: link.task?.project ?? link.project,
+    task: link.task,
     excludeFromStats: false
   };
 }

@@ -208,4 +208,33 @@ describe("Prompt dialog: notes and Edit (feat-tlog-prompt, feat-tlog-reminder D7
     expect(api.PUT).not.toHaveBeenCalled();
     expect(api.DELETE).not.toHaveBeenCalled();
   });
+
+  it("AC-13 FR-TLOG-020 (feat-tlog-reminder D7, OQ-263): while a card loads its project or task, Edit is disabled (Copy all isn't); once loaded, Edit is enabled", async () => {
+    let release!: () => void;
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const routed = api.GET.getMockImplementation()!;
+    api.GET.mockImplementation(async (path: string, options?: GetOptions) => {
+      if (path === "/api/v1/tasks/{id}") await held;
+      return routed(path, options);
+    });
+    renderWith(<DayMenu day={day} today="2026-10-31" />);
+    fireEvent.click(screen.getByRole("button", { name: "Day actions" }));
+    fireEvent.click(await screen.findByRole("menuitem", { name: "Prompt" }));
+    const dialog = await screen.findByRole("dialog");
+    const edit = within(dialog).getByRole("button", { name: "Edit" });
+    const copyAll = within(dialog).getByRole("button", { name: "Copy all" });
+
+    // The projects are in; task X is still loading.
+    await screen.findByRole("link", { name: P1 });
+    await screen.findByRole("link", { name: P2 });
+    await waitFor(() => expect(edit).toBeDisabled());
+    expect(copyAll).toBeEnabled();
+
+    release();
+    await screen.findByRole("link", { name: T1 });
+    await waitFor(() => expect(edit).toBeEnabled());
+    expect(copyAll).toBeEnabled();
+  });
 });

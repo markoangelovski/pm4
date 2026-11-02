@@ -13,6 +13,7 @@ import {
 } from "@/lib/auth/session";
 import { clearRefreshToken } from "@/lib/auth/token-store";
 import { OfflineBanner } from "@/features/system/components/offline-banner";
+import { NO_LOG_LINK, setLastLogLink } from "@/features/time/last-log-link";
 
 type GuardState = "checking" | "ready" | "unavailable";
 
@@ -39,6 +40,7 @@ export function AuthGuard({
         }
         clearRefreshToken();
         queryClient.clear();
+        setLastLogLink(NO_LOG_LINK);
         router.replace(
           landingHref(window.location.pathname + window.location.search)
         );
@@ -69,6 +71,7 @@ export function AuthGuard({
     () =>
       onSessionEnded(() => {
         queryClient.clear();
+        setLastLogLink(NO_LOG_LINK);
         router.replace(
           landingHref(window.location.pathname + window.location.search)
         );
