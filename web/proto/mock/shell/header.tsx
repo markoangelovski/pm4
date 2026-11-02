@@ -10,6 +10,7 @@ import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { Suspense } from "react";
 import { NewItemButton } from "@/proto/features/notes/components/new-item-button";
+import { NotificationsButton } from "@/proto/features/time/components/notifications-button";
 
 const Header = () => {
   const { toggleSidebar } = useSidebar();
@@ -44,6 +45,7 @@ const Header = () => {
             <Suspense fallback={null}>
               <NewItemButton />
             </Suspense>
+            <NotificationsButton />
             <LightDark />
             <Profile />
           </div>

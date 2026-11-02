@@ -27,6 +27,7 @@ import { useMe } from "@/proto/features/users/api";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDay } from "../api";
 import { groupLogs, rowFields, type LogGroup } from "../day";
+import type { LogLink } from "../last-log-link";
 import type { Ref } from "../types";
 import { DeletedName } from "./deleted-marker";
 import { DayCharts, logColors } from "./day-charts";
@@ -75,6 +76,12 @@ export function DayView() {
   const dayQuery = useDay(date);
   const day = dayQuery.data;
   const [logging, setLogging] = useState(false);
+  // The + of a project or task group: a new log preset to it (undefined: the main Log time buttons).
+  const [preset, setPreset] = useState<LogLink | undefined>(undefined);
+  const logTime = (link?: LogLink) => {
+    setPreset(link);
+    setLogging(true);
+  };
   // Push to PMSPA, an item of the day's ⋯ menu (FR-INT-012): its dialog renders here, so it outlives the menu.
   const push = usePmspaAction({
     target: { type: "day", id: date },
@@ -137,7 +144,7 @@ export function DayView() {
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-2">
         <h1 className="text-2xl font-semibold tracking-tight">Logs</h1>
-        <Button className="cursor-pointer" onClick={() => setLogging(true)}>
+        <Button className="cursor-pointer" onClick={() => logTime()}>
           <Plus data-icon="inline-start" /> Log time
         </Button>
       </div>
@@ -170,10 +177,7 @@ export function DayView() {
                   </EmptyDescription>
                 </EmptyHeader>
                 <EmptyContent>
-                  <Button
-                    className="cursor-pointer"
-                    onClick={() => setLogging(true)}
-                  >
+                  <Button className="cursor-pointer" onClick={() => logTime()}>
                     <Plus data-icon="inline-start" /> Log time
                   </Button>
                 </EmptyContent>
@@ -234,7 +238,12 @@ export function DayView() {
                     >
                       {groups[by].map((g) => (
                         <AccordionItem key={g.key} value={g.key}>
-                          <AccordionTrigger className="cursor-pointer items-center gap-2 py-3 hover:no-underline sm:gap-3">
+                          {/* A div, not a button, so the group's + (a button) can sit inside it. */}
+                          <AccordionTrigger
+                            nativeButton={false}
+                            render={<div />}
+                            className="cursor-pointer items-center gap-2 py-3 hover:no-underline sm:gap-3"
+                          >
                             {g.key !== "unsorted" &&
                             g.key !== "nonprod" &&
                             !g.key.startsWith("deleted:") ? (
@@ -243,14 +252,21 @@ export function DayView() {
                                 className="size-5 rounded-md"
                               />
                             ) : null}
-                            <span className="min-w-0 flex-1 truncate text-sm font-semibold">
-                              {g.key === "unsorted" ? (
-                                "Unsorted"
-                              ) : g.key === "nonprod" ? (
-                                "Non-prod"
-                              ) : (
-                                <GroupName group={g} by={by} />
-                              )}
+                            <span className="flex min-w-0 flex-1 items-center gap-1">
+                              <span className="min-w-0 truncate text-sm font-semibold">
+                                {g.key === "unsorted" ? (
+                                  "Unsorted"
+                                ) : g.key === "nonprod" ? (
+                                  "Non-prod"
+                                ) : (
+                                  <GroupName group={g} by={by} />
+                                )}
+                              </span>
+                              <GroupLogButton
+                                group={g}
+                                by={by}
+                                onLog={logTime}
+                              />
                             </span>
                             <span className="hidden text-xs text-muted-foreground sm:inline">
                               {g.logs.length}{" "}
@@ -291,10 +307,58 @@ export function DayView() {
       <LogFormDialog
         open={logging}
         onOpenChange={setLogging}
+        preset={preset}
         defaultDate={date}
         onSaved={setDate}
       />
     </div>
+  );
+}
+
+/** A group's project, or its task and the task's project; null for Unsorted, Non-prod and deleted ones. */
+function groupLink(group: LogGroup, by: "project" | "task"): LogLink | null {
+  const project = group.logs[0].project;
+  if (!project?.id) return null;
+  const projectRef = { id: project.id, title: project.title };
+  if (by === "project") return { project: projectRef, task: null };
+  const task = group.logs[0].task;
+  return task?.id
+    ? {
+        project: projectRef,
+        task: { id: task.id, title: task.title, project: projectRef }
+      }
+    : null;
+}
+
+/** The + beside a group's name: a new log preset to its project or task. It doesn't open or close the group. */
+function GroupLogButton({
+  group,
+  by,
+  onLog
+}: {
+  group: LogGroup;
+  by: "project" | "task";
+  onLog: (link: LogLink) => void;
+}) {
+  if (group.key === "unsorted" || group.key === "nonprod") return null;
+  const link = groupLink(group, by);
+  if (!link) return null;
+  const label = `Log time to ${link.task?.title ?? link.project?.title}`;
+  return (
+    <Button
+      variant="ghost"
+      size="icon-xs"
+      aria-label={label}
+      title={label}
+      className="shrink-0 cursor-pointer text-muted-foreground hover:text-foreground"
+      onClick={(e) => {
+        e.stopPropagation();
+        onLog(link);
+      }}
+      onKeyDown={(e) => e.stopPropagation()}
+    >
+      <Plus />
+    </Button>
   );
 }
 

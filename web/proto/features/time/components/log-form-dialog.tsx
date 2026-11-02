@@ -37,7 +37,9 @@ import { useMe } from "@/proto/features/users/api";
 import { applyFieldErrors, isApiError } from "@/lib/api/problem";
 import { useCreateLog, useDay, useUpdateLog } from "../api";
 import { parseDurationInput } from "../duration";
+import { getLastLogLink, setLastLogLink, type LogLink } from "../last-log-link";
 import {
+  DURATION_STEP,
   LOG_FIELD_MAP,
   logFormDefaults,
   logFormSchema,
@@ -54,26 +56,44 @@ export const START_OPTIONS = Array.from({ length: 96 }, (_, i) => ({
   label: formatClock(i * 15)
 }));
 
-/** SCR-041: add (no `log`) or edit a log. Mounts its form only while open. */
+/** ArrowUp / ArrowDown: the duration ± 15 min, kept within 15 min – 24 h; from an empty or invalid value, 15 min. */
+function stepDuration(value: string, direction: 1 | -1): string {
+  const parsed = parseDurationInput(value);
+  const minutes = parsed.ok
+    ? Math.min(
+        1440,
+        Math.max(DURATION_STEP, parsed.minutes + direction * DURATION_STEP)
+      )
+    : DURATION_STEP;
+  return formatDuration(minutes);
+}
+
+/**
+ * SCR-041: add (no `log`) or edit a log. Mounts its form only while open.
+ * A new log starts with `preset`'s project and task, else with those of the last log created in this tab.
+ */
 export function LogFormDialog({
   open,
   onOpenChange,
   log,
+  preset,
   defaultDate,
   onSaved
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   log?: TimeLog;
+  preset?: LogLink;
   defaultDate: string;
   onSaved?: (date: string) => void;
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="rounded-md! sm:max-w-lg max-h-[92vh] overflow-y-auto">
+      <DialogContent className="rounded-md! sm:max-w-2xl! max-h-[92vh] overflow-y-auto">
         {open ? (
           <LogForm
             log={log}
+            preset={preset}
             defaultDate={defaultDate}
             onDone={(d) => {
               onOpenChange(false);
@@ -88,10 +108,12 @@ export function LogFormDialog({
 
 function LogForm({
   log,
+  preset,
   defaultDate,
   onDone
 }: {
   log?: TimeLog;
+  preset?: LogLink;
   defaultDate: string;
   onDone: (date: string) => void;
 }) {
@@ -112,7 +134,12 @@ function LogForm({
   } = useForm<LogFormValues>({
     resolver: zodResolver(logFormSchema),
     defaultValues: (() => {
-      const base = logFormDefaults(log, defaultDate, null);
+      const base = logFormDefaults(
+        log,
+        defaultDate,
+        null,
+        preset ?? getLastLogLink()
+      );
       return {
         ...base,
         dayStart:
@@ -161,6 +188,11 @@ function LogForm({
         (values.project?.id ?? null) !== (log.project?.id ?? null) ||
         (values.task?.id ?? null) !== (log.task?.id ?? null);
       await save.mutateAsync(toLogInput(values, needsDayStart, linkChanged));
+      if (!log)
+        setLastLogLink({
+          project: values.task?.project ?? values.project,
+          task: values.task
+        });
       toast.success(log ? "Log saved" : "Log added");
       onDone(values.date);
     } catch (error) {
@@ -257,6 +289,15 @@ function LogForm({
             placeholder="e.g. 0.25, 45 or 1h 15m"
             autoComplete="off"
             {...register("duration")}
+            onKeyDown={(e) => {
+              if (e.key !== "ArrowUp" && e.key !== "ArrowDown") return;
+              e.preventDefault();
+              setValue(
+                "duration",
+                stepDuration(duration, e.key === "ArrowUp" ? 1 : -1),
+                { shouldValidate: !!errors.duration }
+              );
+            }}
             aria-invalid={!!errors.duration || undefined}
           />
           {errors.duration ? (

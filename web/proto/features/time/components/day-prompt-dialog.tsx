@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { format, parseISO } from "date-fns";
-import { Check, Copy, ExternalLink } from "lucide-react";
+import { Check, Copy, ExternalLink, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,7 +14,7 @@ import {
   DialogHeader,
   DialogTitle
 } from "@/components/ui/dialog";
-import { Textarea } from "@/components/ui/textarea";
+import { MarkdownEditor } from "@/proto/features/notes/components/markdown-editor";
 import { formatDuration } from "@/lib/time";
 import {
   projectKeys,
@@ -53,7 +53,8 @@ function useCopy(): [boolean, (text: string) => Promise<void>] {
 }
 
 /** SCR-040's Prompt dialog: one section per project + task of the day, each copyable as Slack markdown, or all at once.
- *  Each note is editable for the copy only; the logs don't change. */
+ *  Edit swaps the sections for the Copy all text in a Write / Preview editor; Copy all then copies the edited text.
+ *  The logs don't change. */
 export function DayPromptDialog({
   day,
   open,
@@ -72,45 +73,35 @@ export function DayPromptDialog({
   );
 }
 
-/** The dialog's content. It unmounts with the closed dialog, so edited notes reset on the next open. */
+/** The dialog's content. It unmounts with the closed dialog, so an edited text resets on the next open. */
 function PromptContent({ day }: { day: Day }) {
   const date = format(parseISO(day.workDate), "EEEE, d MMMM yyyy");
   const queryClient = useQueryClient();
   const [copiedAll, copy] = useCopy();
-  // Edited notes by section key; a section not edited yet keeps its logs' notes.
-  const [edits, setEdits] = useState<Record<string, string[]>>({});
-  const sections = promptSections(day.workDate, day.logs).map((s) => ({
-    ...s,
-    notes: edits[s.key] ?? s.notes
-  }));
-  const handleNoteChange = (section: PromptSection, i: number, text: string) =>
-    setEdits((prev) => ({
-      ...prev,
-      [section.key]: section.notes.map((n, j) => (j === i ? text : n))
-    }));
+  // The Copy all text being edited; null while the sections show.
+  const [draft, setDraft] = useState<string | null>(null);
+  const sections = promptSections(day.workDate, day.logs);
   // Each card fetches its project and task, so their links and the task's service are in the cache by the time
-  // Copy all is clicked.
-  const handleCopyAll = () =>
-    copy(
-      promptMarkdown(
-        sections.map((section) => {
-          const task = section.task?.id
-            ? queryClient.getQueryData<Task>(taskKeys.detail(section.task.id))
-            : undefined;
-          return {
-            section,
-            links: {
-              project: section.project?.id
-                ? queryClient.getQueryData<Project>(
-                    projectKeys.detail(section.project.id)
-                  )?.externalLink
-                : null,
-              task: task?.externalLink
-            },
-            service: task?.service?.name
-          };
-        })
-      )
+  // Edit or Copy all is clicked.
+  const allMarkdown = () =>
+    promptMarkdown(
+      sections.map((section) => {
+        const task = section.task?.id
+          ? queryClient.getQueryData<Task>(taskKeys.detail(section.task.id))
+          : undefined;
+        return {
+          section,
+          links: {
+            project: section.project?.id
+              ? queryClient.getQueryData<Project>(
+                  projectKeys.detail(section.project.id)
+                )?.externalLink
+              : null,
+            task: task?.externalLink
+          },
+          service: task?.service?.name
+        };
+      })
     );
   return (
     <>
@@ -122,14 +113,21 @@ function PromptContent({ day }: { day: Day }) {
           <p className="px-6 py-4 text-muted-foreground">
             This day has no logs to book.
           </p>
+        ) : draft !== null ? (
+          <div className="px-6 py-4">
+            <MarkdownEditor
+              aria-label="Prompt text"
+              value={draft}
+              onChange={setDraft}
+              maxLength={null}
+              placeholder="The text Copy all copies. Markdown is supported."
+              autoFocus
+            />
+          </div>
         ) : (
           <div className="flex flex-col gap-3 px-6 py-4">
             {sections.map((s) => (
-              <PromptCard
-                key={s.key}
-                section={s}
-                onNoteChange={(i, text) => handleNoteChange(s, i, text)}
-              />
+              <PromptCard key={s.key} section={s} />
             ))}
           </div>
         )}
@@ -140,10 +138,20 @@ function PromptContent({ day }: { day: Day }) {
         >
           Cancel
         </DialogClose>
+        {draft === null ? (
+          <Button
+            variant="outline"
+            disabled={sections.length === 0}
+            className="cursor-pointer"
+            onClick={() => setDraft(allMarkdown())}
+          >
+            <Pencil /> Edit
+          </Button>
+        ) : null}
         <Button
           disabled={sections.length === 0}
           className="cursor-pointer"
-          onClick={handleCopyAll}
+          onClick={() => copy(draft ?? allMarkdown())}
           aria-live="polite"
         >
           {copiedAll ? <Check /> : <Copy />}
@@ -181,13 +189,7 @@ function RefLink({
   );
 }
 
-function PromptCard({
-  section,
-  onNoteChange
-}: {
-  section: PromptSection;
-  onNoteChange: (i: number, text: string) => void;
-}) {
+function PromptCard({ section }: { section: PromptSection }) {
   const projectId = section.project?.id ?? null;
   const taskId = section.task?.id ?? null;
   const project = useProject(projectId ?? "", projectId !== null);
@@ -223,13 +225,8 @@ function PromptCard({
         <dd className="min-w-0">
           <ul className="list-disc space-y-0.5 pl-4">
             {section.notes.map((n, i) => (
-              <li key={i}>
-                <Textarea
-                  aria-label={`Note ${i + 1}`}
-                  value={n}
-                  onChange={(e) => onNoteChange(i, e.target.value)}
-                  className="min-h-0 resize-none rounded-md border-transparent px-1.5 py-0.5 align-top hover:border-input md:text-base"
-                />
+              <li key={i} className="break-words">
+                {n}
               </li>
             ))}
           </ul>

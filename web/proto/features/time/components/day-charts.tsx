@@ -10,7 +10,8 @@ import {
   XAxis,
   YAxis
 } from "recharts";
-import { useState } from "react";
+import { useState, type PointerEvent } from "react";
+import { createPortal } from "react-dom";
 import { BarChart3, Maximize2, PieChart as PieIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -70,6 +71,58 @@ function MinutesTooltip({
   );
 }
 
+/** The pointer in viewport px, while it is over the pie. */
+type Pointer = { x: number; y: number };
+/** Gap (px) between the pointer and the tooltip, and between the tooltip and the screen's edges. */
+const GAP = 12;
+const EDGE = 16;
+
+/**
+ * The pie's tooltip, beside the pointer and in front of everything (a portal, so no card clips it). It may grow to the
+ * right edge of the screen; a longer name wraps.
+ */
+function SliceTooltip({
+  active,
+  payload,
+  pointer
+}: {
+  active?: boolean;
+  payload?: readonly TipItem[];
+  pointer: Pointer | null;
+}) {
+  const p = active ? payload?.[0]?.payload : null;
+  if (!p || !pointer || typeof document === "undefined") return null;
+  const left = pointer.x + GAP;
+  const maxWidth = Math.max(
+    160,
+    document.documentElement.clientWidth - left - EDGE
+  );
+  const below = pointer.y + GAP + 48 < window.innerHeight;
+  return createPortal(
+    <div
+      role="tooltip"
+      className="pointer-events-none fixed z-60 flex w-max items-start gap-2 rounded-lg border border-border/50 bg-background px-2.5 py-1.5 text-xs shadow-xl"
+      style={{
+        left,
+        maxWidth,
+        ...(below
+          ? { top: pointer.y + GAP }
+          : { bottom: window.innerHeight - pointer.y + GAP })
+      }}
+    >
+      <span
+        className="mt-0.5 size-2.5 shrink-0 rounded-[2px]"
+        style={{ background: p.fill ?? payload?.[0]?.color }}
+      />
+      <span className="min-w-0 font-medium break-words">{p.label}</span>
+      <span className="ml-auto shrink-0 pl-2 font-mono font-medium tabular-nums">
+        {formatDuration(p.minutes)}
+      </span>
+    </div>,
+    document.body
+  );
+}
+
 type Slice = ReturnType<typeof pieSlices>[number] & { fill: string };
 type BarItem = ReturnType<typeof barBars>[number] & { fill: string };
 
@@ -104,6 +157,8 @@ function PieBody({
   targetMinutes: number;
   large?: boolean;
 }) {
+  const [pointer, setPointer] = useState<Pointer | null>(null);
+  const track = (e: PointerEvent) => setPointer({ x: e.clientX, y: e.clientY });
   return (
     <div
       className={
@@ -118,10 +173,12 @@ function PieBody({
             ? "relative size-[min(45vh,calc(95vw-3rem))] shrink-0 lg:size-[min(65vh,36rem)]"
             : "relative mx-auto size-56 max-w-full"
         }
+        onPointerMove={track}
+        onPointerLeave={() => setPointer(null)}
       >
         <ChartContainer config={CONFIG} className="aspect-auto! h-full! w-full">
           <PieChart>
-            <ChartTooltip content={<MinutesTooltip />} />
+            <ChartTooltip content={<SliceTooltip pointer={pointer} />} />
             <Pie
               data={slices}
               dataKey="minutes"

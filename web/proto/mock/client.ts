@@ -475,7 +475,7 @@ function bookings(method: string, q: URLSearchParams, body: Body) {
   return json({ items });
 }
 
-/** API-RPT-001: worked and booked minutes per day and per project of the range. */
+/** API-RPT-001: worked (excluded logs left out), booked and Non-prod minutes per day, and minutes per project of the range. */
 function dashboard(q: URLSearchParams) {
   const s = getMockState();
   const from = q.get("from") ?? "";
@@ -493,8 +493,9 @@ function dashboard(q: URLSearchParams) {
     return {
       workDate,
       startMinute: s.starts[workDate] ?? null,
-      workedMinutes: sumMinutes(own),
-      bookedMinutes: own.reduce((t, l) => t + bookedOf(l), 0)
+      workedMinutes: sumMinutes(own.filter((l) => !l.excludeFromStats)),
+      bookedMinutes: own.reduce((t, l) => t + bookedOf(l), 0),
+      nonprodMinutes: sumMinutes(own.filter((l) => l.excludeFromStats))
     };
   });
   type Row = {

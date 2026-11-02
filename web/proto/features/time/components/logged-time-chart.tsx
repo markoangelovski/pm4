@@ -39,7 +39,8 @@ export function loggedBuckets(days: LoggedDay[]) {
       workDate,
       startMinute: null,
       worked: byDate.get(workDate)?.workedMinutes ?? 0,
-      booked: byDate.get(workDate)?.bookedMinutes ?? 0
+      booked: byDate.get(workDate)?.bookedMinutes ?? 0,
+      nonprod: 0
     })),
     0
   );
