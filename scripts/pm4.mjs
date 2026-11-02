@@ -293,11 +293,11 @@ function loadSpec(specPath) {
     e.task = e.tasks.at(-1);
   }
 
-  // Checks: the first bash block of "Checks" (or the old "Definition of done"), chunked by "# AC-n" comments.
+  // Checks: every bash block of "Checks" (or the old "Definition of done"), chunked by "# AC-n" comments.
   const checks = [];
   const checksSec = section(secs, "Checks", "Definition of done");
-  const block = checksSec?.text.match(/```(?:bash|sh)\n([\s\S]*?)```/);
-  if (block) checks.push(...chunkChecks(block[1], false));
+  for (const block of checksSec?.text.matchAll(/```(?:bash|sh)\n([\s\S]*?)```/g) ?? [])
+    checks.push(...chunkChecks(block[1], false));
 
   return {
     path: p,
@@ -796,8 +796,7 @@ async function cmdCheck(args) {
     manual = [...spec.acs].filter(([ac, e]) => e.manual && !pendingAcs.has(ac)).map(([ac]) => ac);
   } else {
     const s = section(sections(splitFrontmatter(task.text).body), "Checks");
-    const block = s?.text.match(/```(?:bash|sh)\n([\s\S]*?)```/);
-    checks = block ? chunkChecks(block[1], true) : [];
+    checks = [...(s?.text.matchAll(/```(?:bash|sh)\n([\s\S]*?)```/g) ?? [])].flatMap((block) => chunkChecks(block[1], true));
     manual = [];
   }
 
