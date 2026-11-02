@@ -1,7 +1,7 @@
 ---
 id: feat-rpt-web
 title: "Dashboard web: the dashboard page"
-status: review
+status: approved
 owner: Marko Angelovski
 last_updated: 2026-11-02
 milestone: M5
@@ -323,3 +323,4 @@ None.
 - 2026-11-01: D8 (owner, OQ-258…OQ-260): Target = the range's Monday–Friday dates × the daily target, future ones included; weekend days never add to it; all worked hours are compared; the running target climbs on every weekday. Prototype `bf93b65`, T4, AC-2…AC-5, AC-9, AC-14 updated, AC-17, AC-18. Back to `review`.
 - 2026-11-01: Approved by the owner.
 - 2026-11-02: D9 (owner, OQ-261): logs excluded from statistics leave *Worked* and every total; the Workdays chart shows them as a grey Non-prod segment, tooltip row, legend item and table column. Prototype `570b9cc`, T5, AC-2, AC-3, AC-11 updated, AC-19…AC-21. Back to `review`.
+- 2026-11-02: Approved by the owner.

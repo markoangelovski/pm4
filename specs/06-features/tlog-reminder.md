@@ -1,7 +1,7 @@
 ---
 id: feat-tlog-reminder
 title: "Log presets, the reminder to log time, Prompt Edit and wider dialogs"
-status: review
+status: approved
 owner: Marko Angelovski
 last_updated: 2026-11-02
 milestone: M4
@@ -166,3 +166,4 @@ None.
 
 ## Changelog
 - 2026-11-02: Initial draft from prototype `570b9cc` (OQ-262; the Prompt's editable notes of OQ-211 become an Edit mode). Ready for review.
+- 2026-11-02: Approved by the owner.

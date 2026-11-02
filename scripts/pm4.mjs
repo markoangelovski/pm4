@@ -182,6 +182,8 @@ function col(table, ...names) {
 
 const codeSpans = (cell) => [...(cell ?? "").matchAll(/`([^`]+)`/g)].map((m) => m[1]);
 const taskRefs = (cell) => [...(cell ?? "").matchAll(/\bT\d+\b/g)].map((m) => m[0]);
+// "T4, feat-rpt-api T2" → ["T4", "feat-rpt-api T2"]: a row of another feature keeps its feature id
+const depRefs = (cell) => [...(cell ?? "").matchAll(/(?:\b(feat-[a-z0-9-]+)\s+)?\bT\d+\b/g)].map((m) => m[0]);
 
 // "AC-1–AC-5, AC-9 and AC-11/AC-12" → [1..5, 9, 11, 12]
 function acRefs(cell) {
@@ -227,7 +229,7 @@ function loadSpec(specPath) {
         size: c.size >= 0 ? r[c.size] : "S",
         tier: r[c.tier],
         why: c.why >= 0 ? r[c.why] : "",
-        deps: taskRefs(r[c.deps]),
+        deps: depRefs(r[c.deps]),
         doneWhen: c.done >= 0 ? r[c.done] : "",
         line: tt.rowLines[i],
       });
@@ -367,6 +369,19 @@ function loadTask(idOrPath) {
   };
 }
 
+// "feat-rpt-api T2" → the task ID created for row T2 of the feature spec with id feat-rpt-api
+function featureTaskId(ref) {
+  const [feat, row] = ref.split(/\s+/);
+  const dir = "specs/06-features";
+  const file = fs
+    .readdirSync(path.resolve(ROOT, dir))
+    .filter((f) => f.endsWith(".md"))
+    .find((f) => field(read(`${dir}/${f}`), "id") === feat);
+  if (!file) die(`dependency ${ref}: no feature spec with id ${feat}`);
+  const t = specTasks(loadSpec(`${dir}/${file}`)).find((x) => x.row === row);
+  return t?.id ?? die(`dependency ${ref}: ${dir}/${file} row ${row} has no task yet (run pm4 tasks on it first)`);
+}
+
 function specTasks(spec) {
   return allTaskFiles()
     .map(loadTask)
@@ -442,7 +457,7 @@ function cmdTasks(specPath) {
   for (const r of spec.rows) {
     if (existing.has(r.row)) continue;
     const id = ids.get(r.row);
-    const deps = r.deps.map((d) => ids.get(d) ?? die(`row ${r.row} depends on unknown row ${d}`));
+    const deps = r.deps.map((d) => (d.includes(" ") ? featureTaskId(d) : ids.get(d)) ?? die(`row ${r.row} depends on unknown row ${d}`));
     const plain = r.title.replace(/`/g, "");
     const slug = plain
       .toLowerCase()
@@ -870,7 +885,8 @@ async function cmdCheck(args) {
 const [cmd, ...args] = process.argv.slice(2);
 switch (cmd) {
   case "tasks":
-    cmdTasks(args[0] ?? die("usage: tasks <feature-spec>"));
+    if (!args.length) die("usage: tasks <feature-spec>...");
+    for (const a of args) cmdTasks(a);
     break;
   case "hash":
     cmdHash(args[0] ?? die("usage: hash <feature-spec>"));

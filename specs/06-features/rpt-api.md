@@ -1,7 +1,7 @@
 ---
 id: feat-rpt-api
 title: "Dashboard API: the dashboard report"
-status: review
+status: approved
 owner: Marko Angelovski
 last_updated: 2026-11-02
 milestone: M5
@@ -209,3 +209,4 @@ None.
 - 2026-10-09: Initial draft from the owner's Dashboard screen (OQ-127, OQ-129). Ready for review.
 - 2026-10-11: Files row: the full path of `reports.service.ts` (T-0048's scope check read the bare name as `api/reports.service.ts`).
 - 2026-11-02: D5 (owner, OQ-261): a day's `workedMinutes` leaves out the logs excluded from statistics, `nonprodMinutes` adds them up. Prototype `570b9cc`, T2, AC-10, AC-11. Back to `review`.
+- 2026-11-02: Approved by the owner.
