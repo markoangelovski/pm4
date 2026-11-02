@@ -6,6 +6,7 @@ import {
   type UseMutationResult,
   type UseQueryResult
 } from "@tanstack/react-query";
+import { forgetLogLinkTo } from "@/features/time/last-log-link";
 import { apiClient } from "@/lib/api/client";
 import { isApiError, unwrap, unwrapVoid } from "@/lib/api/problem";
 import type { components } from "@/lib/api/schema";
@@ -150,7 +151,7 @@ export function useUpdateProject(
   });
 }
 
-/** API-PRJ-005. onSuccess: removeQueries(detail(id)), invalidate lists(), the service names, ["tasks"] and ["time"]. */
+/** API-PRJ-005. onSuccess: removeQueries(detail(id)), invalidate lists(), the service names, ["tasks"] and ["time"]; forget the last log link to it. */
 export function useDeleteProject(): UseMutationResult<void, Error, string> {
   const queryClient = useQueryClient();
   return useMutation({
@@ -170,6 +171,7 @@ export function useDeleteProject(): UseMutationResult<void, Error, string> {
       });
       void queryClient.invalidateQueries({ queryKey: TASKS_KEY });
       void queryClient.invalidateQueries({ queryKey: TIME_KEY });
+      forgetLogLinkTo(id);
     }
   });
 }

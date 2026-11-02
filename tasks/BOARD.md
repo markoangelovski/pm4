@@ -135,7 +135,7 @@
 | [T-0129](m5-reporting/T-0129-weekday-target-d8-three-prototype-twins.md) | Weekday target (D8): three prototype twins | M5 | web | S | done | T-0123 |
 | [T-0130](m5-reporting/T-0130-non-prod-out-of-worked-d5.md) | Non-prod out of worked (D5): nonprodMinutes on the report's days | M5 | api | S | done | T-0048 |
 | [T-0131](m5-reporting/T-0131-non-prod-out-of-worked-shown.md) | Non-prod out of worked, shown as a Workdays segment (D9): four prototype twins, the proposed types removed | M5 | web | S | done | T-0129, T-0130 |
-| [T-0132](m4-time-logs/T-0132-log-presets-group-prompt-edit-pie.md) | Log presets, group **+**, Prompt Edit, pie tooltip, wider dialogs: ten prototype twins | M4 | web | S | ready | — |
-| [T-0133](m4-time-logs/T-0133-reminder-to-log-time-reminder-ts.md) | Reminder to log time: reminder.ts, the bell, use-attention.ts, the header | M4 | web | S | blocked | T-0132 |
+| [T-0132](m4-time-logs/T-0132-log-presets-group-prompt-edit-pie.md) | Log presets, group **+**, Prompt Edit, pie tooltip, wider dialogs: ten prototype twins | M4 | web | S | done | — |
+| [T-0133](m4-time-logs/T-0133-reminder-to-log-time-reminder-ts.md) | Reminder to log time: reminder.ts, the bell, use-attention.ts, the header | M4 | web | S | done | T-0132 |
 
 M0–M6 are done. Later follow-ups are filed under the milestone they extend.

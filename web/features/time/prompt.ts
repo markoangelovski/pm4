@@ -62,7 +62,7 @@ export interface PromptLinks {
 }
 
 /** Slack markdown, ready to paste: "Book my time accordingly:" once, then each section with the project's and task's
- *  external links and the task's service ("—" for none), separated by a blank line. Notes (edited in the dialog) go
+ *  external links and the task's service ("—" for none), separated by a blank line. Notes go
  *  on one line; empty ones are left out. */
 export function promptMarkdown(
   entries: {

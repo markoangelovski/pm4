@@ -54,7 +54,7 @@ export function ProjectFormDialog({
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="rounded-md! sm:max-w-lg">
+      <DialogContent className="rounded-md! sm:max-w-2xl!">
         {open ? (
           <ProjectForm project={project} onDone={() => onOpenChange(false)} />
         ) : null}

@@ -10,6 +10,7 @@ import {
 import { toastError } from "@/features/system/rate-limit";
 import { projectKeys } from "@/features/projects/api";
 import { TASK_STATUSES, type TaskStatus } from "@/features/tasks/status";
+import { forgetLogLinkTo } from "@/features/time/last-log-link";
 import { apiClient } from "@/lib/api/client";
 import { isApiError, unwrap, unwrapVoid } from "@/lib/api/problem";
 import type { components } from "@/lib/api/schema";
@@ -257,7 +258,7 @@ export function useUpdateTaskStatus(): UseMutationResult<
   });
 }
 
-/** API-TSK-005. onSuccess: removeQueries(detail); invalidate lists(), projectKeys.detail(task.project.id), projectKeys.lists(), ["time"]. */
+/** API-TSK-005. onSuccess: removeQueries(detail); invalidate lists(), projectKeys.detail(task.project.id), projectKeys.lists(), ["time"]; forget the last log link to it. */
 export function useDeleteTask(): UseMutationResult<void, Error, Task> {
   const queryClient = useQueryClient();
   return useMutation({
@@ -277,6 +278,7 @@ export function useDeleteTask(): UseMutationResult<void, Error, Task> {
       });
       void queryClient.invalidateQueries({ queryKey: projectKeys.lists() });
       void queryClient.invalidateQueries({ queryKey: TIME_KEY });
+      forgetLogLinkTo(task.id);
     }
   });
 }
