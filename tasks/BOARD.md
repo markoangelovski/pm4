@@ -126,7 +126,7 @@
 | [T-0120](m2-projects/T-0120-project-services-user-scoped-queries.md) | Project services queries always carry a userId condition | M2 | api | S | done | — |
 | [T-0121](m2-projects/T-0121-service-select-shows-why-it-is-disabled.md) | The Service select shows why it is disabled | M2 | web | S | done | — |
 | [T-0122](m4-time-logs/T-0122-duration-line-and-notes-label-d9.md) | Duration line and Notes label (D9): the confirmed prototype's prompt.ts and dialog twins | M4 | web | S | done | T-0091 |
-| [T-0123](m5-reporting/T-0123-running-totals-without-empty-days-and.md) | Running totals without empty days and the aligned Workdays hover (D6, D7): four prototype twins | M5 | web | S | review | T-0050 |
+| [T-0123](m5-reporting/T-0123-running-totals-without-empty-days-and.md) | Running totals without empty days and the aligned Workdays hover (D6, D7): four prototype twins | M5 | web | S | done | T-0050 |
 | [T-0124](m4-time-logs/T-0124-go-to-bookings-and-push-to.md) | Go to Bookings and Push to PMSPA in the day menu: the three prototype twins | M4 | web | S | done | — |
 | [T-0125](m1-auth/T-0125-rate-limit-module-limits-client-ip.md) | Rate-limit module: limits, client IP, Redis storage, guard after AccessTokenGuard, redirect, decorators, trust proxy | M1 | api | M | done | — |
 | [T-0126](m1-auth/T-0126-429-in-the-openapi-contract-apiproblemresponses.md) | 429 in the OpenAPI contract: ApiProblemResponses + ApiProblemResponsesNotLimited, export openapi.json | M1 | api | S | done | T-0125 |

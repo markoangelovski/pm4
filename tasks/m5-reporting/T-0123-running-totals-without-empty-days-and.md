@@ -3,7 +3,7 @@ id: T-0123
 title: Running totals without empty days and the aligned Workdays hover (D6, D7): four prototype twins
 milestone: M5
 app: web
-status: review
+status: done
 size: S
 tier: haiku
 depends_on: [T-0050]
