@@ -88,6 +88,7 @@ export interface ReportDayRow {
   startMinute: number | null;
   workedMinutes: number;
   bookedMinutes: number;
+  nonprodMinutes: number;
 }
 
 /** One dashboard project row: a `kind` group, with the retained name for deleted projects. */
@@ -449,12 +450,15 @@ export class TimeRepository {
       start_minute: number | null;
       worked: number;
       booked: number;
+      nonprod: number;
     }>(sql`
       WITH l AS (
-        SELECT work_date, SUM(duration_minutes)::int AS worked,
-               COALESCE(SUM(booked_minutes), 0)::int AS booked
+        SELECT work_date,
+               COALESCE(SUM(duration_minutes) FILTER (WHERE NOT exclude_from_stats), 0)::int AS worked,
+               COALESCE(SUM(booked_minutes), 0)::int AS booked,
+               COALESCE(SUM(duration_minutes) FILTER (WHERE exclude_from_stats), 0)::int AS nonprod
         FROM (
-          SELECT work_date, duration_minutes,
+          SELECT work_date, duration_minutes, exclude_from_stats,
                  (SELECT SUM(bk.minutes) FROM bookings bk WHERE bk.time_log_id = time_logs.id) AS booked_minutes
           FROM time_logs
           WHERE user_id = ${userId} AND work_date BETWEEN ${from}::date AND ${to}::date
@@ -465,7 +469,8 @@ export class TimeRepository {
         WHERE user_id = ${userId} AND work_date BETWEEN ${from}::date AND ${to}::date
       )
       SELECT COALESCE(w.work_date, l.work_date)::text AS work_date, w.start_minute,
-             COALESCE(l.worked, 0) AS worked, COALESCE(l.booked, 0) AS booked
+             COALESCE(l.worked, 0) AS worked, COALESCE(l.booked, 0) AS booked,
+             COALESCE(l.nonprod, 0) AS nonprod
       FROM w FULL JOIN l ON l.work_date = w.work_date
       ORDER BY 1
     `);
@@ -473,7 +478,8 @@ export class TimeRepository {
       workDate: row.work_date,
       startMinute: row.start_minute,
       workedMinutes: row.worked,
-      bookedMinutes: row.booked
+      bookedMinutes: row.booked,
+      nonprodMinutes: row.nonprod
     }));
   }
 

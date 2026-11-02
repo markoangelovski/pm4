@@ -71,7 +71,8 @@ export class ReportsService {
       workDate: row.workDate,
       startMinute: row.startMinute,
       workedMinutes: row.workedMinutes,
-      bookedMinutes: row.bookedMinutes
+      bookedMinutes: row.bookedMinutes,
+      nonprodMinutes: row.nonprodMinutes
     }));
     return { days: dayDtos, projects };
   }
