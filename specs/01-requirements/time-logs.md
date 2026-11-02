@@ -1,7 +1,7 @@
 ---
 id: req-time-logs
 title: Time Capture (Workdays and Time Logs)
-status: review
+status: approved
 owner: Marko Angelovski
 last_updated: 2026-11-02
 related: [req-projects, req-tasks, req-reporting, api-endpoints, api-data-model, web-screens]

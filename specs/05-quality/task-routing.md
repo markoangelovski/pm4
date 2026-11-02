@@ -1,7 +1,7 @@
 ---
 id: qa-task-routing
 title: Task Routing and Escalation
-status: review
+status: approved
 owner: Marko Angelovski
 last_updated: 2026-10-17
 related: [qa-testing, qa-dod, feat-template, web-prototype, ADR-0012, OQ-189]

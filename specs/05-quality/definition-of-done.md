@@ -1,7 +1,7 @@
 ---
 id: qa-dod
 title: Definition of Done
-status: review
+status: approved
 owner: Marko Angelovski
 last_updated: 2026-10-01
 related: [qa-testing, qa-code-style, qa-task-routing]

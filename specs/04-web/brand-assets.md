@@ -1,7 +1,7 @@
 ---
 id: web-brand-assets
 title: Brand Assets (Logo, Favicons, App Icons)
-status: review
+status: approved
 owner: Marko Angelovski
 last_updated: 2026-10-25
 related: [web-screens, web-static-export, api-conventions]

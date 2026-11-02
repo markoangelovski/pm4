@@ -1,7 +1,7 @@
 ---
 id: req-reporting
 title: Dashboard and Reporting
-status: review
+status: approved
 owner: Marko Angelovski
 last_updated: 2026-11-02
 related: [req-time-logs, req-bookings, api-endpoints, web-screens, OQ-029, OQ-126, OQ-127, OQ-128, OQ-129, OQ-130, OQ-212, OQ-250, OQ-251, OQ-258, OQ-259, OQ-260, OQ-261]

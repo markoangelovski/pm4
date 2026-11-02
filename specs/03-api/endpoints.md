@@ -1,7 +1,7 @@
 ---
 id: api-endpoints
 title: API Endpoints
-status: review
+status: approved
 owner: Marko Angelovski
 last_updated: 2026-11-02
 related: [api-conventions, api-data-model, req-auth, req-projects, req-tasks, req-time-logs, req-reporting, req-integrations, req-notes]

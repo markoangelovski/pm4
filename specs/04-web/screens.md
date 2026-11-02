@@ -1,7 +1,7 @@
 ---
 id: web-screens
 title: Screens
-status: review
+status: approved
 owner: Marko Angelovski
 last_updated: 2026-11-02
 related: [web-routing, req-landing, feat-land-app-route-split, req-projects, req-tasks, req-time-logs, req-reporting, req-integrations]

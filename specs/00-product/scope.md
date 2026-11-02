@@ -1,7 +1,7 @@
 ---
 id: prod-scope
 title: Scope and Milestones
-status: review
+status: approved
 owner: Marko Angelovski
 last_updated: 2026-10-25
 related: [prod-vision, req-overview, req-integrations]
