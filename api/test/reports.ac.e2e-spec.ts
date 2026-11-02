@@ -6,6 +6,7 @@ import {
   closeTestClients,
   deleteTestUsers,
   insertUser,
+  testDb,
   type UserRow
 } from "./support/auth-test-utils.js";
 import { insertProject, insertTask } from "./support/project-test-utils.js";
@@ -26,6 +27,7 @@ interface ReportDayBody {
   startMinute: number | null;
   workedMinutes: number;
   bookedMinutes: number;
+  nonprodMinutes: number;
 }
 
 interface ReportProjectBody {
@@ -146,8 +148,15 @@ describe("Dashboard report API (feat-rpt-api)", () => {
     workDate: string,
     startMinute: number | null,
     workedMinutes: number,
-    bookedMinutes: number
-  ): ReportDayBody => ({ workDate, startMinute, workedMinutes, bookedMinutes });
+    bookedMinutes: number,
+    nonprodMinutes: number
+  ): ReportDayBody => ({
+    workDate,
+    startMinute,
+    workedMinutes,
+    bookedMinutes,
+    nonprodMinutes
+  });
 
   const projectRow = (
     project: RefBody,
@@ -166,11 +175,11 @@ describe("Dashboard report API (feat-rpt-api)", () => {
     deleted: false
   });
 
-  /** A's days in 1–9 Oct (AC-1). */
+  /** A's days in 1–9 Oct (AC-1, D5: the excluded log *d* is in nonprod, not worked). */
   const octoberDays = [
-    day("2026-10-01", 480, 0, 0),
-    day("2026-10-06", 510, 315, 120),
-    day("2026-10-07", 555, 375, 240)
+    day("2026-10-01", 480, 0, 0, 0),
+    day("2026-10-06", 510, 225, 120, 90),
+    day("2026-10-07", 555, 375, 240, 0)
   ];
 
   /**
@@ -253,7 +262,7 @@ describe("Dashboard report API (feat-rpt-api)", () => {
     };
   };
 
-  it("AC-1 FR-RPT-003: days in 1–9 Oct carry the start time and the worked and booked minutes; a log booked into the range adds nothing to its booking date", async () => {
+  it("AC-1 FR-RPT-003: days in 1–9 Oct carry the start time and the worked, booked and non-prod minutes; a log booked into the range adds nothing to its booking date", async () => {
     const { user } = await seed();
 
     const { days } = await report(user, "2026-10-01", "2026-10-09");
@@ -279,7 +288,7 @@ describe("Dashboard report API (feat-rpt-api)", () => {
     const { user, projects } = await seed();
 
     expect(await report(user, "2026-09-30", "2026-09-30")).toEqual({
-      days: [day("2026-09-30", 540, 90, 60)],
+      days: [day("2026-09-30", 540, 90, 60, 0)],
       projects: [projectRow(ref(projects.nvidia), 90, 60)]
     });
   });
@@ -368,6 +377,43 @@ describe("Dashboard report API (feat-rpt-api)", () => {
       days: [],
       projects: []
     });
+  });
+
+  it("AC-10 FR-RPT-003: a day's worked minutes leave out the logs excluded from statistics, which its nonprod minutes add up; projects are unchanged", async () => {
+    const { user, projects } = await seed();
+
+    const october = await report(user, "2026-10-01", "2026-10-09");
+    expect(october.days).toEqual([
+      day("2026-10-01", 480, 0, 0, 0),
+      day("2026-10-06", 510, 225, 120, 90),
+      day("2026-10-07", 555, 375, 240, 0)
+    ]);
+    expect(october.projects).toEqual([
+      projectRow(ref(projects.anthropic), 255, 120),
+      projectRow(ref(projects.nvidia), 240, 240),
+      projectRow(ref(projects.internal), 60, 0),
+      { kind: "unsorted", project: null, workedMinutes: 45, bookedMinutes: 0 },
+      { kind: "nonprod", project: null, workedMinutes: 90, bookedMinutes: 0 }
+    ]);
+
+    expect((await report(user, "2026-09-30", "2026-09-30")).days).toEqual([
+      day("2026-09-30", 540, 90, 60, 0)
+    ]);
+
+    // An excluded 30-min log alone on 8 Oct, on a day without a start time.
+    await createLog(user, {
+      workDate: "2026-10-08",
+      durationMinutes: 30,
+      excludeFromStats: true
+    });
+    await testDb().query(
+      "DELETE FROM workdays WHERE user_id = $1 AND work_date = '2026-10-08'",
+      [user.id]
+    );
+
+    expect((await report(user, "2026-10-08", "2026-10-08")).days).toEqual([
+      day("2026-10-08", null, 0, 0, 30)
+    ]);
   });
 
   describe("AC-7 API-RPT-001: an invalid range → 400", () => {

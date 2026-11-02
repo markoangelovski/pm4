@@ -10,7 +10,7 @@ depends_on: []
 feature_spec: specs/06-features/rpt-api.md
 spec_row: T1
 ac_files:
-  - { path: api/test/reports.ac.e2e-spec.ts, sha256: 77b477864b3d65597f409a0191d02ce950114e161677f1131c1bb4917ff8421a }
+  - { path: api/test/reports.ac.e2e-spec.ts, sha256: 3d8650d92d7ab9761c6652f3831e66aadde5ce4064843c358311b14740275c76 }
 ---
 
 # T-0048: Dashboard report: GET /reports/dashboard, its DTOs and two repository queries

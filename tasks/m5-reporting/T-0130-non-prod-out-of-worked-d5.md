@@ -3,13 +3,14 @@ id: T-0130
 title: Non-prod out of worked (D5): nonprodMinutes on the report's days
 milestone: M5
 app: api
-status: blocked
+status: ready
 size: S
 tier: haiku
 depends_on: [T-0048]
 feature_spec: specs/06-features/rpt-api.md
 spec_row: T2
-ac_files: []
+ac_files:
+  - { path: api/test/reports.ac.e2e-spec.ts, sha256: 3d8650d92d7ab9761c6652f3831e66aadde5ce4064843c358311b14740275c76 }
 ---
 
 # T-0130: Non-prod out of worked (D5): nonprodMinutes on the report's days
