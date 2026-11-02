@@ -14,15 +14,17 @@ export type DashboardReport =
 export type ReportDay = components["schemas"]["ReportDayDto"];
 export type ReportProject = components["schemas"]["ReportProjectDto"];
 
-/** One calendar day of the range. A workday is a day with a start time. */
+/** One calendar day of the range. A workday is a day with a start time. `worked` leaves out the logs excluded from
+ *  statistics; `nonprod` is theirs, shown in the Workdays chart only. */
 export interface DayStat {
   workDate: string;
   startMinute: number | null;
   worked: number;
   booked: number;
+  nonprod: number;
 }
 
-/** One per date of the range, oldest first; a date missing from `days` → { startMinute: null, worked: 0, booked: 0 }. */
+/** One per date of the range, oldest first; a date missing from `days` → { startMinute: null, worked: 0, booked: 0, nonprod: 0 }. */
 export function dayStats(range: DateRange, days: ReportDay[]): DayStat[] {
   const byDate = new Map(days.map((d) => [d.workDate, d]));
   return eachDay(range).map((workDate) => {
@@ -31,7 +33,8 @@ export function dayStats(range: DateRange, days: ReportDay[]): DayStat[] {
       workDate,
       startMinute: d?.startMinute ?? null,
       worked: d?.workedMinutes ?? 0,
-      booked: d?.bookedMinutes ?? 0
+      booked: d?.bookedMinutes ?? 0,
+      nonprod: d?.nonprodMinutes ?? 0
     };
   });
 }
@@ -39,6 +42,8 @@ export function dayStats(range: DateRange, days: ReportDay[]): DayStat[] {
 export interface Totals {
   worked: number;
   booked: number;
+  /** Excluded from statistics: in no other total. */
+  nonprod: number;
   /** Monday–Friday dates of the range × the daily target; weekend days never add to it. */
   target: number;
   /** Monday–Friday dates of the range, past and future. */
@@ -62,6 +67,7 @@ export function totals(days: DayStat[], targetMinutes: number): Totals {
   return {
     worked: days.reduce((t, d) => t + d.worked, 0),
     booked: days.reduce((t, d) => t + d.booked, 0),
+    nonprod: days.reduce((t, d) => t + d.nonprod, 0),
     target: weekdays * targetMinutes,
     weekdays,
     workdays: starts.length,
@@ -84,6 +90,8 @@ export interface Bucket {
   worked: number;
   booked: number;
   unbooked: number;
+  /** Non-prod minutes, stacked on top of worked in the chart; not part of worked. */
+  nonprod: number;
   /** The daily target for a weekday, 0 for a Saturday or Sunday; a week's weekdays × the daily target. */
   target: number;
   /** Monday–Friday dates in the bucket. */
@@ -91,7 +99,7 @@ export interface Bucket {
   workdays: number;
 }
 
-/** Up to 62 days → one bar per day (a weekend day with no start and no work left out); longer → one per ISO week (start = the week's average). */
+/** Up to 62 days → one bar per day (a weekend day with no start and no work, Non-prod included, left out); longer → one per ISO week (start = the week's average). */
 export function buckets(
   days: DayStat[],
   targetMinutes: number
@@ -103,7 +111,10 @@ export function buckets(
       by: "day",
       items: days
         .filter(
-          (d) => d.startMinute !== null || d.worked > 0 || isWeekday(d.workDate)
+          (d) =>
+            d.startMinute !== null ||
+            d.worked + d.nonprod > 0 ||
+            isWeekday(d.workDate)
         )
         .map((d) => ({
           key: d.workDate,
@@ -114,6 +125,7 @@ export function buckets(
           worked: d.worked,
           booked: d.booked,
           unbooked: d.worked - d.booked,
+          nonprod: d.nonprod,
           target: isWeekday(d.workDate) ? targetMinutes : 0,
           weekdays: isWeekday(d.workDate) ? 1 : 0,
           workdays: d.startMinute === null ? 0 : 1
@@ -138,6 +150,7 @@ export function buckets(
         worked: t.worked,
         booked: t.booked,
         unbooked: t.worked - t.booked,
+        nonprod: t.nonprod,
         target: t.target,
         weekdays: t.weekdays,
         workdays: t.workdays
