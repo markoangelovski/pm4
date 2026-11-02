@@ -19,6 +19,10 @@ export class ReportDayDto {
 
   @ApiProperty({ example: 120 })
   bookedMinutes: number;
+
+  /** Minutes of the day's logs excluded from statistics (Non-prod). */
+  @ApiProperty({ example: 60 })
+  nonprodMinutes: number;
 }
 
 /** `ReportProject`: the worked and booked minutes of one project, or of `unsorted` / `nonprod`. */

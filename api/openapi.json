@@ -6390,13 +6390,19 @@
           "bookedMinutes": {
             "type": "number",
             "example": 120
+          },
+          "nonprodMinutes": {
+            "type": "number",
+            "description": "Minutes of the day's logs excluded from statistics (Non-prod).",
+            "example": 60
           }
         },
         "required": [
           "workDate",
           "startMinute",
           "workedMinutes",
-          "bookedMinutes"
+          "bookedMinutes",
+          "nonprodMinutes"
         ]
       },
       "ReportProjectKind": {
