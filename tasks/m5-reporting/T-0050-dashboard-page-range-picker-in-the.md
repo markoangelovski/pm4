@@ -10,7 +10,7 @@ depends_on: [T-0049]
 feature_spec: specs/06-features/rpt-web.md
 spec_row: T2
 ac_files:
-  - { path: web/features/dashboard/components/dashboard-view.ac.test.tsx, sha256: 2b75105bf150138c1ab73641c6a815472758ec70ac41d03e3e77966b98d8d943 }
+  - { path: web/features/dashboard/components/dashboard-view.ac.test.tsx, sha256: 34f3abcdc7a25ee8e6dabdf38d2569a340a992f7b922e0ce16ea9299d18661b0 }
 ---
 
 # T-0050: Dashboard page: range picker in the URL, count tiles, workday chart and table, worked / target / booked, running totals, hours by project

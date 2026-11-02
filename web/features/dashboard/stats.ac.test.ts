@@ -28,8 +28,15 @@ const day = (
   workDate: string,
   startMinute: number | null,
   workedMinutes: number,
-  bookedMinutes: number
-): ReportDay => ({ workDate, startMinute, workedMinutes, bookedMinutes });
+  bookedMinutes: number,
+  nonprodMinutes = 0
+): ReportDay => ({
+  workDate,
+  startMinute,
+  workedMinutes,
+  bookedMinutes,
+  nonprodMinutes
+});
 
 /** The report's days (spec, Acceptance criteria). */
 const reportDays: ReportDay[] = [
@@ -100,32 +107,36 @@ describe("dashboard range (feat-rpt-web)", () => {
 });
 
 describe("dashboard stats (feat-rpt-web)", () => {
-  it("AC-2 FR-RPT-002 FR-RPT-003 FR-RPT-004 OQ-258: dayStats fills the range, totals sum it; target = the range's weekdays", () => {
+  it("AC-2 FR-RPT-002 FR-RPT-003 FR-RPT-004 OQ-258 OQ-261: dayStats fills the range, totals sum it; target = the range's weekdays", () => {
     const days = dayStats(october, reportDays);
     expect(days).toHaveLength(31);
     expect(days[0]).toEqual({
       workDate: "2026-10-01",
       startMinute: 480,
       worked: 0,
-      booked: 0
+      booked: 0,
+      nonprod: 0
     });
     expect(days[1]).toEqual({
       workDate: "2026-10-02",
       startMinute: null,
       worked: 0,
-      booked: 0
+      booked: 0,
+      nonprod: 0
     });
     expect(days[5]).toEqual({
       workDate: "2026-10-06",
       startMinute: 510,
       worked: 315,
-      booked: 120
+      booked: 120,
+      nonprod: 0
     });
     expect(days.at(-1)?.workDate).toBe("2026-10-31");
 
     expect(totals(days, TARGET)).toEqual({
       worked: 690,
       booked: 360,
+      nonprod: 0,
       weekdays: 22,
       workdays: 3,
       target: 9240,
@@ -151,9 +162,30 @@ describe("dashboard stats (feat-rpt-web)", () => {
         TARGET
       )
     ).toMatchObject({ worked: 810, weekdays: 22, workdays: 4, target: 9240 });
+
+    // D9 (OQ-261): 90 min excluded from statistics on 6 Oct → nonprod, never worked.
+    const withNonprod = dayStats(october, [
+      day("2026-10-01", 480, 0, 0),
+      day("2026-10-06", 510, 315, 120, 90),
+      day("2026-10-07", 555, 375, 240)
+    ]);
+    expect(withNonprod[5]).toEqual({
+      workDate: "2026-10-06",
+      startMinute: 510,
+      worked: 315,
+      booked: 120,
+      nonprod: 90
+    });
+    expect(totals(withNonprod, TARGET)).toMatchObject({
+      worked: 690,
+      booked: 360,
+      nonprod: 90,
+      workdays: 3,
+      target: 9240
+    });
   });
 
-  it("AC-3 FR-RPT-002 FR-RPT-003 OQ-258: buckets by day up to 62 days, weekend days without work left out, a weekend day's target 0", () => {
+  it("AC-3 FR-RPT-002 FR-RPT-003 OQ-258 OQ-261: buckets by day up to 62 days, weekend days without work left out, a weekend day's target 0, Non-prod keeps a weekend day", () => {
     const oct = buckets(dayStats(october, reportDays), TARGET);
     expect(oct.by).toBe("day");
     expect(oct.items).toHaveLength(22);
@@ -187,6 +219,16 @@ describe("dashboard stats (feat-rpt-web)", () => {
     expect(
       withSaturday.items.find((b) => b.date === "2026-10-10")
     ).toMatchObject({ worked: 120, target: 0, weekdays: 0, workdays: 0 });
+
+    // D9 (OQ-261): only 1h Non-prod on Saturday 10 Oct keeps that day too, worked 0.
+    const nonprodSaturday = buckets(
+      dayStats(october, [...reportDays, day("2026-10-10", null, 0, 0, 60)]),
+      TARGET
+    );
+    expect(nonprodSaturday.items).toHaveLength(23);
+    expect(
+      nonprodSaturday.items.find((b) => b.date === "2026-10-10")
+    ).toMatchObject({ worked: 0, nonprod: 60, target: 0, workdays: 0 });
 
     // 62 days → still by day, ticks with the month.
     const sixtyTwo = buckets(

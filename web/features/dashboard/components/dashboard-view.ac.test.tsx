@@ -62,19 +62,22 @@ const ownerReport: DashboardReport = {
       workDate: "2026-10-01",
       startMinute: 480,
       workedMinutes: 0,
-      bookedMinutes: 0
+      bookedMinutes: 0,
+      nonprodMinutes: 0
     },
     {
       workDate: "2026-10-06",
       startMinute: 510,
       workedMinutes: 315,
-      bookedMinutes: 120
+      bookedMinutes: 120,
+      nonprodMinutes: 0
     },
     {
       workDate: "2026-10-07",
       startMinute: 555,
       workedMinutes: 375,
-      bookedMinutes: 240
+      bookedMinutes: 240,
+      nonprodMinutes: 0
     }
   ],
   projects: [
@@ -365,7 +368,8 @@ describe("DashboardView (feat-rpt-web)", () => {
           workDate: "2026-10-09",
           startMinute: 480,
           workedMinutes: 0,
-          bookedMinutes: 0
+          bookedMinutes: 0,
+          nonprodMinutes: 0
         }
       ],
       projects: []
@@ -429,7 +433,7 @@ describe("DashboardView (feat-rpt-web)", () => {
     ).toBeInTheDocument();
   });
 
-  it("AC-11 FR-RPT-003 SCR-010: the Workdays card by day and its table", async () => {
+  it("AC-11 FR-RPT-003 SCR-010 OQ-261: the Workdays card by day and its table, with the Non-prod column", async () => {
     renderView();
     await loaded();
     expect(screen.getByText(/by day/)).toBeInTheDocument();
@@ -447,7 +451,59 @@ describe("DashboardView (feat-rpt-web)", () => {
       within(sixth)
         .getAllByRole("cell")
         .map((c) => c.textContent?.trim())
-    ).toEqual(["Tue, 6 Oct 2026", "08:30", "5h 15m", "2h", "7h"]);
+    ).toEqual(["Tue, 6 Oct 2026", "08:30", "5h 15m", "2h", "0h", "7h"]);
+  });
+
+  it("AC-19 FR-RPT-002 FR-RPT-003 OQ-261 SCR-010: Non-prod in the Workdays table, out of worked and the tiles", async () => {
+    report = {
+      ...ownerReport,
+      days: [
+        ...ownerReport.days.map((d) =>
+          d.workDate === "2026-10-06" ? { ...d, nonprodMinutes: 90 } : d
+        ),
+        {
+          workDate: "2026-10-10",
+          startMinute: null,
+          workedMinutes: 0,
+          bookedMinutes: 0,
+          nonprodMinutes: 60
+        }
+      ]
+    };
+    renderView();
+    await loaded();
+
+    fireEvent.click(screen.getByRole("tab", { name: "Table" }));
+    const sixth = (await screen.findByText("Tue, 6 Oct 2026")).closest(
+      "tr"
+    ) as HTMLElement;
+    const table = sixth.closest("table") as HTMLElement;
+    expect(
+      within(table)
+        .getAllByRole("columnheader")
+        .map((c) => c.textContent?.trim())
+    ).toContain("Non-prod");
+    const bodyRows = within(table)
+      .getAllByRole("row")
+      .filter((row) => within(row).queryAllByRole("cell").length > 0);
+    expect(bodyRows).toHaveLength(23);
+    expect(
+      within(sixth)
+        .getAllByRole("cell")
+        .map((c) => c.textContent?.trim())
+    ).toEqual(["Tue, 6 Oct 2026", "08:30", "5h 15m", "2h", "1h 30m", "7h"]);
+    const tenth = within(table)
+      .getByText("Sat, 10 Oct 2026")
+      .closest("tr") as HTMLElement;
+    const tenthCells = within(tenth)
+      .getAllByRole("cell")
+      .map((c) => c.textContent?.trim());
+    expect(tenthCells[4]).toBe("1h");
+    expect(tenthCells[5]).toBe("0h");
+
+    // Excluded minutes stay out of Worked and the tiles.
+    expect(summaryCard()).toHaveTextContent("11h 30m");
+    expect(workdaysTile()).toHaveTextContent(/Workdays\s*3/);
   });
 
   it("AC-12 SCR-010: report pending → skeletons; report error → Retry; a failed project count → —", async () => {

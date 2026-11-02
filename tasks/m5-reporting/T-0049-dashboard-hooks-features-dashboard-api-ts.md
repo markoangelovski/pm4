@@ -10,7 +10,7 @@ depends_on: []
 feature_spec: specs/06-features/rpt-web.md
 spec_row: T1
 ac_files:
-  - { path: web/features/dashboard/api.ac.test.tsx, sha256: 1fd54e696a962470dc0c3deeabaff5f9362769ef85834cfb708f786466617bb1 }
+  - { path: web/features/dashboard/api.ac.test.tsx, sha256: 6ce491275a3571a2bc1c077c2134a4ea521894a8b05a11488efeeb2bb80ea941 }
 ---
 
 # T-0049: Dashboard hooks (features/dashboard/api.ts): the report and the counts

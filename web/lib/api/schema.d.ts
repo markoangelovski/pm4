@@ -1125,6 +1125,11 @@ export interface components {
             workedMinutes: number;
             /** @example 120 */
             bookedMinutes: number;
+            /**
+             * @description Minutes of the day's logs excluded from statistics (Non-prod).
+             * @example 60
+             */
+            nonprodMinutes: number;
         };
         /** @enum {string} */
         ReportProjectKind: "project" | "unsorted" | "nonprod";

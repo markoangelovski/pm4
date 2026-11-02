@@ -10,8 +10,8 @@ depends_on: [T-0123]
 feature_spec: specs/06-features/rpt-web.md
 spec_row: T4
 ac_files:
-  - { path: web/features/dashboard/stats.ac.test.ts, sha256: e94da804eb01e1a0ad09f02d11eb83661db908f141c3f1d696e1b45e42ef116b }
-  - { path: web/features/dashboard/components/dashboard-view.ac.test.tsx, sha256: 2b75105bf150138c1ab73641c6a815472758ec70ac41d03e3e77966b98d8d943 }
+  - { path: web/features/dashboard/stats.ac.test.ts, sha256: ef3c5f71c434a8188ec1a29a13ed0fd6c55122d0a4599d58e5eb8c1ee3f7d525 }
+  - { path: web/features/dashboard/components/dashboard-view.ac.test.tsx, sha256: 34f3abcdc7a25ee8e6dabdf38d2569a340a992f7b922e0ce16ea9299d18661b0 }
 ---
 
 # T-0129: Weekday target (D8): three prototype twins

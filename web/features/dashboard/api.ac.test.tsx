@@ -27,7 +27,8 @@ const report: DashboardReport = {
       workDate: "2026-10-06",
       startMinute: 510,
       workedMinutes: 315,
-      bookedMinutes: 120
+      bookedMinutes: 120,
+      nonprodMinutes: 0
     }
   ],
   projects: [
