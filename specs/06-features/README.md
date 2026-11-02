@@ -65,4 +65,4 @@ A feature spec links to those. It doesn't copy them.
 | Project services: a project's services, a task's service, the Prompt's Service line | [prj-services.md](prj-services.md) | M2 | approved |
 | Day menu: Go to Bookings, and Push to PMSPA in the menu | [tlog-day-menu.md](tlog-day-menu.md) | M4 | approved |
 | Rate limiting for the API: per-route IP limits on sign-in, one per-user limit, 429 and sign-in redirects; the web's 429 toast | [api-rate-limit.md](api-rate-limit.md) | M1 | approved |
-| Log presets, the reminder to log time, Prompt Edit and wider dialogs | [tlog-reminder.md](tlog-reminder.md) | M4 | review |
+| Log presets, the reminder to log time, Prompt Edit and wider dialogs | [tlog-reminder.md](tlog-reminder.md) | M4 | approved |
