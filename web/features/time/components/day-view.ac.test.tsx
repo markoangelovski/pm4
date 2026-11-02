@@ -187,8 +187,14 @@ const lastParam = (
 const card = (label: string) =>
   screen.getByText(label).closest('[data-slot="card"]') as HTMLElement;
 
-/** A group's accordion trigger. */
-const group = (name: RegExp) => screen.getByRole("button", { name });
+/** A group's accordion trigger (it has aria-expanded; the group's + "Log time to …" inside it doesn't). */
+function group(name: RegExp) {
+  const triggers = screen
+    .getAllByRole("button", { name })
+    .filter((el) => el.hasAttribute("aria-expanded"));
+  expect(triggers).toHaveLength(1);
+  return triggers[0];
+}
 
 /** The row that holds a log text (the nearest ancestor with the row's ⋯ menu). */
 function rowOf(text: string, container: HTMLElement = document.body) {
@@ -701,5 +707,65 @@ describe("DayView (feat-tlog-web, feat-proto-sync-logged-chart)", () => {
     await loaded();
     expect(await screen.findByText("Time by task")).toBeInTheDocument();
     expect(screen.queryByText("Time by project")).not.toBeInTheDocument();
+  });
+
+  it("AC-6 FR-TLOG-004 SCR-040 SCR-041 (feat-tlog-reminder D4): a group's + opens Log time preset to its project or task, without toggling the group; Unsorted, Non-prod and deleted groups have none", async () => {
+    const gone = log({
+      id: "l5",
+      durationMinutes: 15,
+      text: "Old fixes",
+      project: ref(null, "Old site", true),
+      task: ref(null, "Old task", true)
+    });
+    days["2026-10-07"] = dayOf("2026-10-07", 480, [...ownerLogs, gone]);
+    const field = (label: RegExp) =>
+      within(screen.getByRole("dialog")).getByLabelText(
+        label
+      ) as HTMLInputElement;
+
+    // By Project: only Manhatan's group has a +.
+    const byProject = renderView();
+    await loaded();
+    const plus = await screen.findByRole("button", {
+      name: "Log time to Manhatan"
+    });
+    expect(
+      screen.getAllByRole("button", { name: /^Log time to / })
+    ).toHaveLength(1);
+    expect(group(/^Old site/)).toBeInTheDocument();
+    const manhatanGroup = group(/^Manhatan/);
+    fireEvent.click(plus);
+    expect(
+      await screen.findByRole("heading", { name: "Log time" })
+    ).toBeInTheDocument();
+    await waitFor(() => expect(field(/^Project/).value).toBe("Manhatan"));
+    expect(field(/^Task/).value).toBe("");
+    expect(manhatanGroup).toHaveAttribute("aria-expanded", "false");
+    byProject.unmount();
+
+    // By Task: each live task's group has a +, preset to the task and its project.
+    renderView("?view=task");
+    await loaded();
+    const taskPlus = await screen.findByRole("button", {
+      name: "Log time to Specifications 01"
+    });
+    expect(
+      screen
+        .getAllByRole("button", { name: /^Log time to / })
+        .map((b) => b.getAttribute("aria-label"))
+    ).toEqual([
+      "Log time to Specifications 01",
+      "Log time to Specifications 02"
+    ]);
+    const taskGroup = group(/Specifications 01/);
+    fireEvent.click(taskPlus);
+    expect(
+      await screen.findByRole("heading", { name: "Log time" })
+    ).toBeInTheDocument();
+    await waitFor(() =>
+      expect(field(/^Task/).value).toBe("Manhatan · Specifications 01")
+    );
+    expect(field(/^Project/).value).toBe("Manhatan");
+    expect(taskGroup).toHaveAttribute("aria-expanded", "false");
   });
 });

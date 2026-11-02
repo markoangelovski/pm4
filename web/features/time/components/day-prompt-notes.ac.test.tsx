@@ -12,7 +12,6 @@ import { createQueryClient } from "@/lib/query-client";
 import { promptMarkdown, type PromptSection } from "../prompt";
 import type { Day, Ref, TimeLog } from "../types";
 import { DayMenu } from "./day-menu";
-import { DayPromptDialog } from "./day-prompt-dialog";
 
 const api = vi.hoisted(() => ({
   GET: vi.fn(),
@@ -104,9 +103,6 @@ function renderWith(ui: ReactNode) {
   );
 }
 
-const openDialog = () =>
-  renderWith(<DayPromptDialog day={day} open onOpenChange={() => {}} />);
-
 /** Waits until every section's links are loaded. */
 const linksLoaded = async () => {
   await screen.findByRole("link", { name: P1 });
@@ -129,7 +125,7 @@ const markdownA = (notes: string[]) =>
 const markdownB = `**Project:** B (${P2})\n**Task:** —\n**Service:** —\n**Date:** ${date}\n**Duration:** 1h\n**Notes:**\n- three`;
 const markdownOld = `**Project:** Old\n**Task:** —\n**Service:** —\n**Date:** ${date}\n**Duration:** 1h\n**Notes:**\n- four`;
 
-describe("Prompt dialog: editable notes (feat-tlog-prompt D8)", () => {
+describe("Prompt dialog: notes and Edit (feat-tlog-prompt, feat-tlog-reminder D7)", () => {
   beforeEach(() => {
     Object.values(api).forEach((fn) => fn.mockReset());
     routeGet();
@@ -154,97 +150,59 @@ describe("Prompt dialog: editable notes (feat-tlog-prompt D8)", () => {
     );
   });
 
-  it("AC-15 FR-TLOG-020: each note is a textbox holding the log's text; project, task and date are not", async () => {
-    openDialog();
-    await linksLoaded();
-    const cardA = section("A");
-    expect(within(cardA).getByRole("textbox", { name: "Note 1" })).toHaveValue(
-      "one"
-    );
-    expect(within(cardA).getByRole("textbox", { name: "Note 2" })).toHaveValue(
-      "two"
-    );
-    expect(within(cardA).getAllByRole("textbox")).toHaveLength(2);
-    expect(
-      within(section("B")).getByRole("textbox", { name: "Note 1" })
-    ).toHaveValue("three");
-    expect(
-      within(section("Old")).getByRole("textbox", { name: "Note 1" })
-    ).toHaveValue("four");
-    // Only the four notes are editable.
-    expect(
-      within(screen.getByRole("dialog")).getAllByRole("textbox")
-    ).toHaveLength(4);
-  });
-
-  it("AC-16 FR-TLOG-020 (+ AC-22 feat-prj-services): the copies use the edited notes; a cleared note is left out", async () => {
-    openDialog();
-    await linksLoaded();
-    const cardA = section("A");
-    const copyA = within(cardA).getByRole("button", {
-      name: "Copy to clipboard"
-    });
-    const copyAll = screen.getByRole("button", { name: "Copy all" });
-
-    fireEvent.change(within(cardA).getByRole("textbox", { name: "Note 2" }), {
-      target: { value: "two,\n  edited " }
-    });
-    fireEvent.click(copyA);
-    await waitFor(() =>
-      expect(writeText).toHaveBeenLastCalledWith(
-        head + markdownA(["one", "two, edited"])
-      )
-    );
-
-    fireEvent.click(copyAll);
-    await waitFor(() =>
-      expect(writeText).toHaveBeenLastCalledWith(
-        head +
-          markdownA(["one", "two, edited"]) +
-          "\n\n" +
-          markdownB +
-          "\n\n" +
-          markdownOld
-      )
-    );
-
-    fireEvent.change(within(cardA).getByRole("textbox", { name: "Note 1" }), {
-      target: { value: "" }
-    });
-    fireEvent.click(copyA);
-    await waitFor(() =>
-      expect(writeText).toHaveBeenLastCalledWith(
-        head + markdownA(["two, edited"])
-      )
-    );
-    expect(writeText).toHaveBeenCalledTimes(3);
-  });
-
-  it("AC-17 FR-TLOG-020: edits are discarded when the dialog closes, and nothing is written to the API", async () => {
+  it("AC-7 FR-TLOG-020 (feat-tlog-reminder D7): the notes are text; Edit shows the Copy all text in one textbox and hides itself; Copy all copies the edit; reopening shows the cards; no API write", async () => {
     renderWith(<DayMenu day={day} today="2026-10-31" />);
     const open = async () => {
       fireEvent.click(screen.getByRole("button", { name: "Day actions" }));
       fireEvent.click(await screen.findByRole("menuitem", { name: "Prompt" }));
       return screen.findByRole("dialog");
     };
+    const all =
+      head +
+      markdownA(["one", "two"]) +
+      "\n\n" +
+      markdownB +
+      "\n\n" +
+      markdownOld;
 
     let dialog = await open();
-    fireEvent.change(
-      within(section("A")).getByRole("textbox", { name: "Note 1" }),
-      { target: { value: "edited" } }
+    await linksLoaded();
+    // The notes are plain text, not textboxes.
+    expect(within(section("A")).getByText("one")).toBeInTheDocument();
+    expect(within(section("A")).getByText("two")).toBeInTheDocument();
+    expect(within(section("B")).getByText("three")).toBeInTheDocument();
+    expect(within(section("Old")).getByText("four")).toBeInTheDocument();
+    expect(within(dialog).queryByRole("textbox")).toBeNull();
+
+    // Edit: one textbox with exactly what Copy all would copy; Edit is gone.
+    fireEvent.click(within(dialog).getByRole("button", { name: "Edit" }));
+    const text = await within(dialog).findByRole("textbox", {
+      name: "Prompt text"
+    });
+    expect(text).toHaveValue(all);
+    expect(within(dialog).getAllByRole("textbox")).toHaveLength(1);
+    expect(within(dialog).queryByRole("button", { name: "Edit" })).toBeNull();
+
+    // Copy all copies the edited text.
+    fireEvent.change(text, { target: { value: "Book it all as QA." } });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Copy all" }));
+    await waitFor(() =>
+      expect(writeText).toHaveBeenLastCalledWith("Book it all as QA.")
     );
-    expect(
-      within(section("A")).getByRole("textbox", { name: "Note 1" })
-    ).toHaveValue("edited");
+    expect(writeText).toHaveBeenCalledTimes(1);
+
+    // Cancel discards the edit: reopening shows the cards again.
     fireEvent.click(within(dialog).getByRole("button", { name: "Cancel" }));
     await waitFor(() =>
       expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
     );
-
     dialog = await open();
+    expect(within(section("A")).getByText("one")).toBeInTheDocument();
+    expect(within(dialog).queryByRole("textbox")).toBeNull();
     expect(
-      within(section("A")).getByRole("textbox", { name: "Note 1" })
-    ).toHaveValue("one");
+      within(dialog).getByRole("button", { name: "Edit" })
+    ).toBeInTheDocument();
+
     expect(api.POST).not.toHaveBeenCalled();
     expect(api.PATCH).not.toHaveBeenCalled();
     expect(api.PUT).not.toHaveBeenCalled();

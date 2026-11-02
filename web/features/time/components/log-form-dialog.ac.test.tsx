@@ -12,6 +12,7 @@ import { createQueryClient } from "@/lib/query-client";
 import type { Me } from "@/features/users/api";
 import type { Project } from "@/features/projects/api";
 import type { Task } from "@/features/tasks/api";
+import { NO_LOG_LINK, setLastLogLink, type LogLink } from "../last-log-link";
 import type { TimeLog } from "../types";
 import { LogFormDialog } from "./log-form-dialog";
 import { LogTimeButton } from "./log-time-button";
@@ -170,7 +171,9 @@ function withProviders(ui: React.ReactElement) {
   return render(ui, { wrapper });
 }
 
-function renderDialog(props: { log?: TimeLog; defaultDate?: string } = {}) {
+function renderDialog(
+  props: { log?: TimeLog; defaultDate?: string; preset?: LogLink } = {}
+) {
   const onOpenChange = vi.fn();
   const onSaved = vi.fn();
   const view = withProviders(
@@ -180,6 +183,8 @@ function renderDialog(props: { log?: TimeLog; defaultDate?: string } = {}) {
       onSaved={onSaved}
       defaultDate={props.defaultDate ?? "2026-10-07"}
       log={props.log}
+      // A spread: `preset` comes with feat-tlog-reminder T1, and this typechecks before and after it.
+      {...(props.preset ? { preset: props.preset } : {})}
     />
   );
   return { onOpenChange, onSaved, unmount: view.unmount };
@@ -254,6 +259,8 @@ describe("LogFormDialog (feat-tlog-web)", () => {
     nav.replace.mockReset();
     toast.success.mockReset();
     toast.error.mockReset();
+    // The last log's project and task are module state (feat-tlog-reminder D3): no test inherits them.
+    setLastLogLink(NO_LOG_LINK);
   });
   afterEach(() => {
     vi.useRealTimers();
@@ -623,5 +630,85 @@ describe("LogFormDialog (feat-tlog-web)", () => {
     expect(lastBody(api.POST)).toMatchObject({ workDate: "2026-10-07" });
     expect(nav.push).not.toHaveBeenCalled();
     expect(nav.replace).not.toHaveBeenCalled();
+  });
+
+  it("AC-4 FR-TLOG-004 SCR-041 (feat-tlog-reminder D2): a new log starts at 15m; ArrowUp / ArrowDown step 15 min within 15m–24h; an invalid value steps to 15m; an edit keeps its duration", async () => {
+    const first = renderDialog();
+    const duration = () => input("Duration");
+    const key = (k: "ArrowUp" | "ArrowDown") =>
+      fireEvent.keyDown(duration(), { key: k });
+    expect(duration().value).toBe("15m");
+
+    key("ArrowUp");
+    await waitFor(() => expect(duration().value).toBe("30m"));
+    key("ArrowDown");
+    await waitFor(() => expect(duration().value).toBe("15m"));
+    key("ArrowDown");
+    await waitFor(() => expect(duration().value).toBe("15m"));
+
+    change("Duration", "24h");
+    key("ArrowUp");
+    await waitFor(() => expect(duration().value).toBe("24h"));
+
+    change("Duration", "abc");
+    key("ArrowUp");
+    await waitFor(() => expect(duration().value).toBe("15m"));
+    first.unmount();
+
+    renderDialog({ log: { ...editedLog, durationMinutes: 45 } });
+    expect(duration().value).toBe("45m");
+  });
+
+  it("AC-5 FR-TLOG-004 SCR-041 (feat-tlog-reminder D3): a new log starts with the last added log's project and task; an edit doesn't change them; a preset wins", async () => {
+    // Add a log with task Specifications 01.
+    const first = renderDialog();
+    change("Log text", "Specs review");
+    change("Duration", "30");
+    type(taskField(), "Spec");
+    pick(
+      await screen.findByRole("option", {
+        name: "Manhatan · Specifications 01"
+      })
+    );
+    await waitFor(() => expect(projectField().value).toBe("Manhatan"));
+    api.POST.mockResolvedValueOnce({ data: editedLog, response: res(201) });
+    submit();
+    await waitFor(() => expect(first.onOpenChange).toHaveBeenCalledWith(false));
+    first.unmount();
+
+    // The next new log starts with them.
+    const second = renderDialog();
+    await waitFor(() => expect(projectField().value).toBe("Manhatan"));
+    expect(taskField().value).toBe("Manhatan · Specifications 01");
+    second.unmount();
+
+    // Editing a log on another project doesn't change them.
+    const websiteLog: TimeLog = {
+      ...editedLog,
+      id: "l2",
+      project: { id: "p2", title: "Website", deleted: false },
+      task: { id: "t3", title: "Landing page", deleted: false }
+    };
+    const edit = renderDialog({ log: websiteLog });
+    await waitFor(() => expect(projectField().value).toBe("Website"));
+    change("Log text", "Landing page copy");
+    api.PATCH.mockResolvedValueOnce({ data: websiteLog, response: res(200) });
+    submit("Save");
+    await waitFor(() => expect(edit.onOpenChange).toHaveBeenCalledWith(false));
+    edit.unmount();
+
+    const third = renderDialog();
+    await waitFor(() =>
+      expect(taskField().value).toBe("Manhatan · Specifications 01")
+    );
+    expect(projectField().value).toBe("Manhatan");
+    third.unmount();
+
+    // A preset wins over the last log's link.
+    renderDialog({
+      preset: { project: { id: "p3", title: "Tesla" }, task: null }
+    });
+    await waitFor(() => expect(projectField().value).toBe("Tesla"));
+    expect(taskField().value).toBe("");
   });
 });
