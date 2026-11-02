@@ -1,12 +1,13 @@
 ---
 id: feat-rpt-api
 title: "Dashboard API: the dashboard report"
-status: approved
+status: review
 owner: Marko Angelovski
-last_updated: 2026-10-09
+last_updated: 2026-11-02
 milestone: M5
 requirements: [FR-RPT-002, FR-RPT-003, FR-RPT-004, FR-RPT-005, FR-RPT-006, API-RPT-001]
-related: [req-reporting, api-endpoints, api-data-model, feat-tlog-api, feat-book-api, feat-rpt-web, OQ-127, OQ-129]
+related: [req-reporting, api-endpoints, api-data-model, feat-tlog-api, feat-book-api, feat-rpt-web, OQ-127, OQ-129, OQ-261]
+prototype: 570b9cc
 ---
 
 # Dashboard API: the dashboard report
@@ -23,9 +24,14 @@ The web side is feat-rpt-web.
 | D2 | A booked log counts on its work date, whatever its booking date. | OQ-127 (owner) |
 | D3 | The endpoint lives in the `time` module (a `reports` controller and service), reusing `TimeRepository`, `WorkdaysQueryDto` and the `Ref` mapping. | Agent: the data is the time module's |
 | D4 | No new column or index: both queries scan `(user_id, work_date, id)` and the `workdays` primary key. | Agent |
+| D5 | A day's `workedMinutes` leaves out the logs excluded from statistics; a new `nonprodMinutes` adds them up. `bookedMinutes` is unchanged (excluded logs are never booked); `projects` is unchanged (its `nonprod` row stays). Shape: `web/proto/features/dashboard/proposed-types.ts`. | OQ-261 (owner, 2026-11-02); prototype `570b9cc` |
 
 ## Scope
 **In:** `ReportsController` and `ReportsService` in `api/src/time/`, their DTOs, two `TimeRepository` methods, the OpenAPI export.
+T2 (D5): `nonprodMinutes` on `ReportDayDto`, and `reportDays` leaves excluded logs out of `workedMinutes`.
+
+**Test step (main session, before T2):** updates AC-1 and AC-3 in `api/test/reports.ac.e2e-spec.ts` to D5 (the `day()` helper takes
+`nonprodMinutes`) and adds AC-10, then `pm4 hash`. No stubs: the field is added to an existing DTO.
 
 **Before the tests are written:** feat-tlog-api and feat-book-api are done.
 
@@ -40,6 +46,7 @@ The web side is feat-rpt-web.
 | `api/src/time/bookings.controller.ts`, `bookings.service.ts` | The controller and service to copy: `WorkdaysQueryDto`, the 366-day check, `@ApiProblemResponses` |
 | `api/src/time/time.repository.ts` | `listWorkdays` (an aggregate with `sql`), the `Ref` mapping (`toRef`) |
 | `api/src/common/dto/ref.dto.ts` | `RefDto` |
+| `web/proto/features/dashboard/proposed-types.ts` | T2: the `ReportDayDto` shape with `nonprodMinutes` (D5) |
 | `api/test/bookings.ac.e2e-spec.ts`, `api/test/support/*` | Seeding, booking and sign-in in e2e tests; `testDb()` for raw SQL |
 
 ## Files
@@ -51,6 +58,11 @@ The web side is feat-rpt-web.
 | api | `api/src/time/dto/dashboard-report-response.dto.ts` | C | T1 | Hand-written |
 | api | `api/src/time/time.repository.ts` (+ `.spec.ts`) | M | T1 | Two methods; export `toRef` if it is private |
 | api | `api/openapi.json` | M | T1 | `npm run openapi:export` |
+| api | `api/test/reports.ac.e2e-spec.ts` | M | tests | AC-1, AC-3 to D5; AC-10 |
+| api | `api/src/time/dto/dashboard-report-response.dto.ts` | M | T2 | `ReportDayDto.nonprodMinutes` |
+| api | `api/src/time/time.repository.ts` | M | T2 | `ReportDayRow.nonprodMinutes`, the `reportDays` SQL under *Repository (T2)* |
+| api | `api/src/time/reports.service.ts` | M | T2 | Maps `nonprodMinutes` into `ReportDayDto` |
+| api | `api/openapi.json` | M | T2 | `npm run openapi:export` |
 
 ## Interfaces
 
@@ -109,6 +121,30 @@ GROUP BY g.kind, g.project_id, g.deleted_project_title, p.title;
 ```
 Dates come back as `YYYY-MM-DD` strings, as in `listWorkdays`.
 
+### Repository (T2)
+D5. `ReportDayRow` and `ReportDayDto` gain `nonprodMinutes: number` (DTO: `@ApiProperty({ example: 60 })`, after `bookedMinutes`, doc
+"Minutes of the day's logs excluded from statistics (Non-prod)."); `ReportsService.dashboard` maps it like the other fields. The `reportDays`
+query as it is in the code now (bookings summed per log), with `worked` filtered and `nonprod` added:
+```sql
+WITH l AS (
+  SELECT work_date,
+         COALESCE(SUM(duration_minutes) FILTER (WHERE NOT exclude_from_stats), 0)::int AS worked,
+         COALESCE(SUM(booked_minutes), 0)::int AS booked,
+         COALESCE(SUM(duration_minutes) FILTER (WHERE exclude_from_stats), 0)::int AS nonprod
+  FROM (
+    SELECT work_date, duration_minutes, exclude_from_stats,
+           (SELECT SUM(bk.minutes) FROM bookings bk WHERE bk.time_log_id = time_logs.id) AS booked_minutes
+    FROM time_logs
+    WHERE user_id = $user AND work_date BETWEEN $from::date AND $to::date
+  ) per_log
+  GROUP BY work_date
+), w AS (…unchanged…)
+SELECT COALESCE(w.work_date, l.work_date)::text AS work_date, w.start_minute,
+       COALESCE(l.worked, 0) AS worked, COALESCE(l.booked, 0) AS booked, COALESCE(l.nonprod, 0) AS nonprod
+FROM w FULL JOIN l ON l.work_date = w.work_date
+ORDER BY 1
+```
+
 ### Service and controller
 ```ts
 // api/src/time/reports.service.ts
@@ -138,6 +174,8 @@ Nvidia (tasks Development, PM) and PM Internal are A's projects. Workdays: 30 Se
 | AC-6 | B's logs and workdays never appear; `?from=2026-11-01&to=2026-11-30` (nothing there, in the future) → `{days: [], projects: []}` | `api/test/reports.ac.e2e-spec.ts` | T1 |
 | AC-7 | `400` for `from > to`, 2025-10-07..2026-10-09 (367 days apart), `from=2026-02-30`, a missing `to`; 2025-10-08..2026-10-09 (366) → `200` | `api/test/reports.ac.e2e-spec.ts` | T1 |
 | AC-8 | Without a token → `401` | `api/test/reports.ac.e2e-spec.ts` | T1 |
+| AC-10 | Since T2 (D5): AC-1's days carry `nonprodMinutes`: 1 Oct `{480, worked 0, booked 0, nonprod 0}`, 6 Oct `{510, 225, 120, 90}` (*d* is excluded), 7 Oct `{555, 375, 240, 0}`; AC-3's 30 Sep `{540, 90, 60, 0}`; an excluded 30-min log alone on 8 Oct → 8 Oct `{startMinute null, worked 0, booked 0, nonprod 30}`; `projects` unchanged (AC-2) | `api/test/reports.ac.e2e-spec.ts` | T2 |
+| AC-11 | `api/openapi.json`'s `ReportDayDto` has a required number `nonprodMinutes` | `check` | T2 |
 | AC-9 | `api/openapi.json` has `GET /api/v1/reports/dashboard` requiring `bearer`, returning `DashboardReportResponseDto` with `days` and `projects` | `check` | T1 |
 
 No typed stubs: the e2e tests only call HTTP endpoints.
@@ -151,11 +189,18 @@ if(!g){console.error('missing GET /reports/dashboard');process.exit(1)}
 if(!JSON.stringify(g.security??[]).includes('bearer')){console.error('not protected');process.exit(1)}
 const r=s.DashboardReportResponseDto?.properties; if(!r?.days||!r?.projects){console.error('missing DashboardReportResponseDto.days/projects');process.exit(1)}"
 ```
+```bash
+# AC-11: ReportDayDto has nonprodMinutes (D5)
+node -e "
+const d=require('./api/openapi.json').components.schemas.ReportDayDto;
+if(d?.properties?.nonprodMinutes?.type!=='number'||!d.required?.includes('nonprodMinutes')){console.error('ReportDayDto.nonprodMinutes missing or optional');process.exit(1)}"
+```
 
 ## Tasks
 | # | Task | App | Size | Tier | Why this tier | Depends on |
 | --- | --- | --- | --- | --- | --- | --- |
 | T1 | Dashboard report: `GET /reports/dashboard`, its DTOs and two repository queries | api | M | haiku | Both queries and the mapping are spelled out; the controller and service copy `bookings.controller.ts` / `bookings.service.ts` | — (feat-tlog-api, feat-book-api done) |
+| T2 | Non-prod out of worked (D5): `nonprodMinutes` on the report's days | api | S | haiku | One field and the SQL spelled out under *Repository (T2)* | T1 |
 
 ## Open questions
 None.
@@ -163,3 +208,4 @@ None.
 ## Changelog
 - 2026-10-09: Initial draft from the owner's Dashboard screen (OQ-127, OQ-129). Ready for review.
 - 2026-10-11: Files row: the full path of `reports.service.ts` (T-0048's scope check read the bare name as `api/reports.service.ts`).
+- 2026-11-02: D5 (owner, OQ-261): a day's `workedMinutes` leaves out the logs excluded from statistics, `nonprodMinutes` adds them up. Prototype `570b9cc`, T2, AC-10, AC-11. Back to `review`.

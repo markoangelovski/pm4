@@ -44,8 +44,8 @@ A feature spec links to those. It doesn't copy them.
 | Time logging web: the Logs day view, log dialog, charts and settings | [tlog-web.md](tlog-web.md) | M4 | approved |
 | Bookings API: booking dates on time logs | [book-api.md](book-api.md) | M4 | approved |
 | Bookings web: the Bookings page | [book-web.md](book-web.md) | M4 | approved |
-| Dashboard API: the dashboard report | [rpt-api.md](rpt-api.md) | M5 | approved |
-| Dashboard web: the dashboard page | [rpt-web.md](rpt-web.md) | M5 | approved |
+| Dashboard API: the dashboard report | [rpt-api.md](rpt-api.md) | M5 | review |
+| Dashboard web: the dashboard page | [rpt-web.md](rpt-web.md) | M5 | review |
 | Prototype sync: logged time on projects and tasks, Dashboard and Bookings from the prototype | [proto-sync-web.md](proto-sync-web.md) | M4 | approved |
 | Permanent delete of projects and tasks, and Delete day | [hard-delete.md](hard-delete.md) | M4 | approved |
 | PMSPA connection API: connect, test, disconnect, and the PMSPA client | [int-conn-api.md](int-conn-api.md) | M6 | approved |
@@ -65,3 +65,4 @@ A feature spec links to those. It doesn't copy them.
 | Project services: a project's services, a task's service, the Prompt's Service line | [prj-services.md](prj-services.md) | M2 | approved |
 | Day menu: Go to Bookings, and Push to PMSPA in the menu | [tlog-day-menu.md](tlog-day-menu.md) | M4 | approved |
 | Rate limiting for the API: per-route IP limits on sign-in, one per-user limit, 429 and sign-in redirects; the web's 429 toast | [api-rate-limit.md](api-rate-limit.md) | M1 | approved |
+| Log presets, the reminder to log time, Prompt Edit and wider dialogs | [tlog-reminder.md](tlog-reminder.md) | M4 | review |

@@ -3,7 +3,7 @@ id: req-time-logs
 title: Time Capture (Workdays and Time Logs)
 status: review
 owner: Marko Angelovski
-last_updated: 2026-10-31
+last_updated: 2026-11-02
 related: [req-projects, req-tasks, req-reporting, api-endpoints, api-data-model, web-screens]
 ---
 
@@ -91,6 +91,11 @@ viewed, or today). Both pickers are searchable. A task is shown prefixed with it
 Specifications 01"), and typing matches the task title or the project name. Tasks of every status are offered. Picking a task sets the log's project to the task's project, and locks it. Picking
 a project first narrows the task picker to that project's tasks. Clearing the project clears the task. When the date
 has no workday start yet, the form also asks for it (FR-TLOG-009).
+A new log's duration starts at 15 min; ArrowUp / ArrowDown in the duration box add or take 15 min, within 15 min – 24 h (from an
+empty or invalid value: 15 min). A new log starts with the project and task of the **last log added** since the app was loaded
+(none at first; editing a log doesn't change it). In the grouped day views (FR-TLOG-003/015), a **+** beside a project's or a
+task's group opens a new log preset to that project, or that task and its project, instead; Unsorted, Non-prod and deleted
+projects or tasks have none (prototype `570b9cc`).
 **Acceptance criteria:**
 - Given an empty text, or no/invalid duration, a field error is shown and nothing is created.
 - Given I pick only a project, the log shows that project and no task.
@@ -98,6 +103,10 @@ has no workday start yet, the form also asks for it (FR-TLOG-009).
 - Given a log with neither project nor task, it is saved and shown as unsorted.
 - Given I type "tesla" in the task picker, the tasks of the project "Tesla" are listed.
 - Given a future date, the log is rejected.
+- Given I open Log time, then the duration is `15m`; ArrowUp makes it `30m`; ArrowDown at `15m` keeps it `15m`.
+- Given I added a log on task X, when I open Log time again, then task X and its project are filled in; after a reload, nothing is.
+- Given the By Task view, when I press the **+** of the group "Manhatan · Specifications 01", then Log time opens with that task
+  and project, and the group doesn't open or close.
 
 ### FR-TLOG-006: Edit log
 **Priority:** Must
@@ -227,8 +236,9 @@ keep it. A day with no start and no logs can't be deleted (OQ-152).
 per project + task, in the order they first appear, each with the project, the task, the task's service (FR-TSK-009, OQ-243), the date,
 the section's duration (the sum of its logs' durations, OQ-249) and one note line per log under **Notes**, and
 copies one section or all of them as markdown. Excluded logs (FR-TLOG-018) are left out. A project or task with an external
-link shows it after its name (OQ-210). Before copying, the user can edit each note line; the edits change only
-what is copied, not the logs, and are discarded when the prompt closes (OQ-211).
+link shows it after its name (OQ-210). The notes are read-only. **Edit** replaces the sections with the text **Copy all**
+would copy, in a Markdown editor (Write / Preview); **Copy all** then copies that text. Edits change only what is copied, not the
+logs; there's no way back to the sections except closing the prompt, which discards them (OQ-211, prototype `570b9cc`).
 **Acceptance criteria:**
 - Given a day with two logs on project A / task X, one on project B without a task and one excluded log, then the prompt has
   two sections, A · X with two note lines and B with "—" as the task, and **Copy all** copies "Book my time accordingly:" once
@@ -238,8 +248,23 @@ what is copied, not the logs, and are discarded when the prompt closes (OQ-211).
 - Given the A · X logs of 1h and 30m and an excluded A · X log of 2h, then that section shows and copies **Duration:** 1h 30m
   after **Date**, followed by **Notes:** and its note lines.
 - Given a day with no logs, then **Prompt** is disabled.
-- Given a note line edited in the prompt, when its section or all sections are copied, then the copy has the edited line;
-  when the prompt is closed and opened again, the line shows the log's text, and the log is unchanged.
+- Given I press **Edit**, change a line and press **Copy all**, then the copy has the edited text; when the prompt is closed and
+  opened again, it shows the sections with the logs' text, and the logs are unchanged.
+
+### FR-TLOG-021: Reminder to log time
+**Priority:** Should
+**Statement:** On every app screen, a **notifications** bell in the header reminds the user to log time for **today** when
+the day has a start and at least one log, all its logs (excluded ones too) add up to less than the daily target
+(FR-TLOG-017), and at least 15 min since *Start + logged* are unlogged (FR-TLOG-009). The reminder shows the unlogged time and
+since when; clicking it opens Log time for today; dismissing it hides it until another 15 min are unlogged or *Start +
+logged* changes. Dismissals last until the app is reloaded. While the reminder shows, the tab title starts with "(1) ", the
+favicon has a red dot, and the installed app's icon has a badge where the browser supports it (OQ-262). No API change.
+**Acceptance criteria:**
+- Given today started 08:00, with 2h logged and a 7h target, at 10:14 there's no reminder; at 10:15 the bell shows one: "15m
+  unlogged since 10:00", and the tab title starts with "(1) ".
+- Given I dismiss it at 10:20, then it's hidden until 10:30 ("30m unlogged since 10:00"); given I log 15 min instead, then at 10:20
+  there's none (5m unlogged since 10:15) until 10:30.
+- Given no start, no log, or 7h logged, then there's no reminder.
 
 ## Out of scope
 - Ordering, inserting or repeating logs, per-log clock times, break logs, the legacy "event" level.
@@ -271,3 +296,4 @@ None.
 - 2026-10-26: The owner approved FR-TLOG-020 (as updated) for feat-prj-services.
 - 2026-10-31: FR-TLOG-020: each section has a **Duration** (its logs' sum) after the date; "Note" → "Notes" (OQ-249). Back to `review` (feat-tlog-prompt).
 - 2026-10-31: The owner approved FR-TLOG-020 (as updated) for feat-tlog-prompt.
+- 2026-11-02: FR-TLOG-004: a new log's duration defaults to 15m, ArrowUp/Down step it by 15m, a new log starts with the last added log's project and task, a group's **+** presets it; FR-TLOG-020: read-only notes and an **Edit** mode; FR-TLOG-021 reminder to log time (OQ-262; prototype `570b9cc`, feat-tlog-reminder). Back to `review`.

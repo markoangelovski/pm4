@@ -172,3 +172,4 @@ None.
 - 2026-10-22: Approved by the owner.
 - 2026-10-31: D9 (owner, OQ-249): a **Duration** line (the section's logs' sum) after the date; "Note" → "Notes". Prototype `30f62f0`, T4, AC-19…AC-23; the existing tests' expected markdown is updated in the test step. Back to `review`.
 - 2026-10-31: Approved by the owner.
+- 2026-11-02: D8 (editable notes) superseded by feat-tlog-reminder D7: read-only notes and an **Edit** mode (prototype `570b9cc`); its AC-15…AC-17 tests become feat-tlog-reminder AC-7.

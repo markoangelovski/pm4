@@ -3,7 +3,7 @@ id: api-endpoints
 title: API Endpoints
 status: review
 owner: Marko Angelovski
-last_updated: 2026-11-01
+last_updated: 2026-11-02
 related: [api-conventions, api-data-model, req-auth, req-projects, req-tasks, req-time-logs, req-reporting, req-integrations, req-notes]
 ---
 
@@ -61,7 +61,7 @@ defines its request, response and errors. Paths are relative to `/api/v1` unless
 | API-TLOG-007 | — | (removed) | — | — |
 | API-BOOK-001 | GET | `/bookings?from=&to=` → `{items: BookingLog[]}` (logs worked in the range, and logs booked into it) | FR-BOOK-001/002/003 | specified |
 | API-BOOK-002 | PUT | `/bookings` `{logs: [{logId, bookings}]}` → `{items: BookingLog[]}` (replaces the bookings of one or many logs) | FR-BOOK-004/005 | specified |
-| API-RPT-001 | GET | `/reports/dashboard?from=&to=` → `{days: ReportDay[], projects: ReportProject[]}` (worked and booked minutes per day and per project) | FR-RPT-002…006 | specified |
+| API-RPT-001 | GET | `/reports/dashboard?from=&to=` → `{days: ReportDay[], projects: ReportProject[]}` (worked, booked and Non-prod minutes per day; worked and booked per project) | FR-RPT-002…006 | specified |
 | API-NOTE-001 | GET | `/notes?projectId=&taskId=&unlinked=&q=&sort=&from=&to=&page=&pageSize=` → `{items: Note[], page, pageSize, total}` | FR-NOTE-002/003/008 | specified |
 | API-NOTE-002 | POST | `/notes` `{title?, body, projectId?, taskId?}` | FR-NOTE-004 | specified |
 | API-NOTE-003 | PATCH | `/notes/{id}` | FR-NOTE-004 | specified |
@@ -444,9 +444,10 @@ caller's log; nothing changes on any error.
 `GET /reports/dashboard?from=&to=` · Auth: bearer · Implements: FR-RPT-002…006 ([req-reporting](../01-requirements/reporting.md))
 **Query:** `from`, `to`: dates, `from` ≤ `to`, at most 366 days apart, else `400`. Future dates are allowed (they have nothing).
 **200:** `{ days: ReportDay[], projects: ReportProject[] }`, computed from the caller's workdays and logs whose date is in the range:
-- **`ReportDay`:** `{ workDate, startMinute: number | null, workedMinutes, bookedMinutes }`, one per date that has a workday or a log, ordered by
-  `workDate`. `workedMinutes` sums all of the date's logs (excluded ones too); `bookedMinutes` sums their bookings' minutes, whatever the bookings'
-  dates (OQ-127).
+- **`ReportDay`:** `{ workDate, startMinute: number | null, workedMinutes, bookedMinutes, nonprodMinutes }`, one per date that has a workday or a log,
+  ordered by `workDate`. `workedMinutes` sums the date's logs **not** excluded from statistics; `nonprodMinutes` sums the excluded ones (OQ-261);
+  `bookedMinutes` sums the logs' bookings' minutes, whatever the bookings' dates (OQ-127); excluded logs are never booked. A date whose only logs are
+  excluded has `workedMinutes` 0.
   `startMinute` is `null` for a date with logs but no workday.
 - **`ReportProject`:** `{ kind: "project" | "unsorted" | "nonprod", project: Ref | null, workedMinutes, bookedMinutes }`. A log excluded from statistics
   counts under `nonprod`; else a log without a project (and no retained project name) under `unsorted`; else under its project: one row per
@@ -808,3 +809,4 @@ None.
 - 2026-10-26: Project services (FR-PRJ-009, FR-TSK-009, OQ-243…OQ-247, feat-prj-services): `ProjectService`, `ServiceRef`, *Services input*, `serviceId`; `Project.services`, `Task.service`; API-PRJ-006. Still `review`.
 - 2026-10-26: The owner approved *Shared project and task shapes*, API-PRJ-001/004/006 and API-TSK-001/004 (as updated) for feat-prj-services.
 - 2026-11-01: Rate limits: `429` on every endpoint but `/health` and API-SYS-003; API-AUTH-001/002 redirect with `error=rate-limited` (OQ-257, feat-api-rate-limit). Still `review`.
+- 2026-11-02: API-RPT-001: `ReportDay.workedMinutes` leaves out the logs excluded from statistics, `nonprodMinutes` adds them up (OQ-261, feat-rpt-api D5). Still `review`.

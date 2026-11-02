@@ -1,13 +1,13 @@
 ---
 id: feat-rpt-web
 title: "Dashboard web: the dashboard page"
-status: approved
+status: review
 owner: Marko Angelovski
-last_updated: 2026-11-01
+last_updated: 2026-11-02
 milestone: M5
 requirements: [FR-RPT-001, FR-RPT-002, FR-RPT-003, FR-RPT-004, FR-RPT-005, FR-RPT-006, SCR-010]
-related: [req-reporting, web-screens, web-routing, feat-rpt-api, feat-tlog-web, OQ-126, OQ-127, OQ-128, OQ-129, OQ-130, OQ-250, OQ-251, OQ-258, OQ-259, OQ-260]
-prototype: bf93b65
+related: [req-reporting, web-screens, web-routing, feat-rpt-api, feat-tlog-web, OQ-126, OQ-127, OQ-128, OQ-129, OQ-130, OQ-250, OQ-251, OQ-258, OQ-259, OQ-260, OQ-261]
+prototype: 570b9cc
 ---
 
 # Dashboard web: the dashboard page
@@ -28,11 +28,13 @@ worked / target / booked totals, the running totals and the hours per project. B
 | D6 | Running totals: before today, one point per day with time logged (`worked > 0`); days without logs are left out, so the past has no flat stretches. From today to the range's end, a point for every Monday–Friday and any day with `worked > 0` (as D3), so the lines run flat to the end of the range. A day with a start but no logs still adds `targetMinutes` to the running target, which shows on the next point. The legend shows the range's `Totals` (worked, target, booked, as HoursSummary), not the last point. `totals.worked === 0` → "Nothing logged in this range." in place of the chart; the legend stays. | Owner, 2026-10-31 (OQ-250, OQ-251); prototype `5546896` |
 | D7 | Workdays: the start panel's x-axis uses `scale="band"`, as the bars' axis does, so the shared hover line, the start dot and the bar's centre line up. | Owner, 2026-10-31 (bug); prototype `f453800` |
 | D8 | Target = the range's Monday–Friday dates × `targetMinutes`, future ones included (`Totals.weekdays`); a weekend day never adds to it, even with a start. Over / under target and *Worked of target* compare all worked minutes. A day bucket's target is `targetMinutes` on Monday–Friday, 0 on Saturday or Sunday; a week's is its weekdays × `targetMinutes` (`Bucket.weekdays`, the tooltip's "Target (N d)"). `running` adds `targetMinutes` on every Monday–Friday, so the target climbs to `totals.target` at the range's end. HoursSummary: "N days × Xh" with N = `weekdays`; target 0 → "No weekdays in this range." / "No weekdays in this range". The dashed daily-target line of the Workdays chart stays across all bars. | Owner, 2026-11-01 (OQ-258, OQ-259, OQ-260); prototype `bf93b65` |
+| D9 | Logs excluded from statistics are out of *Worked* and of everything built on it (API-RPT-001's `workedMinutes`, feat-rpt-api D5). Each day carries `nonprod` (`nonprodMinutes`), stacked as a grey **Non-prod** segment on top of the Workdays bar (not part of worked), with a tooltip row (only when > 0), a legend item and a table column; the bars' axis covers worked + Non-prod. A weekend day with only Non-prod still gets a bar. Colour `--dash-nonprod`: `#a1a1aa` / dark `#71717a`. The project and task pages' Logged time chart (which reuses `buckets`) passes `nonprod: 0`. | Owner, 2026-11-02 (OQ-261); prototype `570b9cc` |
 
 ## Scope
 **In:** `features/dashboard/` (logic, hooks, components) and the page `/app`. T3 (D6, D7): Running totals without empty days, its
 legend and empty state, and the aligned Workdays hover, as twins of the prototype files. T4 (D8): the weekday target, as twins of the
-prototype files `stats.ts`, `hours-summary.tsx` and `workday-chart.tsx`.
+prototype files `stats.ts`, `hours-summary.tsx` and `workday-chart.tsx`. T5 (D9): Non-prod out of worked, as twins of the prototype files
+`stats.ts`, `dashboard-view.tsx`, `workday-chart.tsx` and `features/time/components/logged-time-chart.tsx`, and the prototype's `proposed-types.ts` removed.
 
 **Test step (main session, before T3):** updates AC-5 in `web/features/dashboard/stats.ac.test.ts` to D6 and adds AC-14 to
 `web/features/dashboard/components/dashboard-view.ac.test.tsx` (no stubs: the exports exist), then `pm4 hash`.
@@ -40,10 +42,14 @@ prototype files `stats.ts`, `hours-summary.tsx` and `workday-chart.tsx`.
 **Test step (main session, before T4):** updates AC-2…AC-5 in `web/features/dashboard/stats.ac.test.ts` and AC-9, AC-14 in
 `web/features/dashboard/components/dashboard-view.ac.test.tsx` to D8 (no stubs: `weekdays` only adds a field to existing types), then `pm4 hash`.
 
+**Test step (main session, before T5; after feat-rpt-api T2):** `npm run api:types`; adds `nonprodMinutes` to every `ReportDay` built in
+`web/features/**/*.test.ts(x)` (0 unless stated); updates AC-2 and AC-3 in `web/features/dashboard/stats.ac.test.ts` and AC-11 in
+`web/features/dashboard/components/dashboard-view.ac.test.tsx` to D9 and adds AC-19 there (no stubs: `nonprod` only adds a field), then `pm4 hash`.
+
 **Before the tests are written:** feat-rpt-api, feat-tlog-web and feat-book-web are done. The test writer runs `npm run api:types`.
 
 **Non-goals** (implementers must not touch these):
-- `api/`. `features/time/*`, `features/bookings/*`, `features/projects/*`, `features/tasks/*`, the sidebar and routes (`/app` exists).
+- `api/`. `features/time/*` (except T5's `logged-time-chart.tsx`), `features/bookings/*`, `features/projects/*`, `features/tasks/*`, the sidebar and routes (`/app` exists).
 - `lib/api/*` (except the generated `schema.d.ts`), `lib/auth/*`, `web/components/ui/*` (add shadcn components only with the CLI, if one is missing).
 
 ## Read first
@@ -88,6 +94,16 @@ prototype files `stats.ts`, `hours-summary.tsx` and `workday-chart.tsx`.
 | web | `web/features/dashboard/stats.ts` | M | T4 | The twin of the prototype file, with D8 (commands under *Web (T4)*) |
 | web | `web/features/dashboard/components/hours-summary.tsx` | M | T4 | The twin of the prototype file, with D8 |
 | web | `web/features/dashboard/components/workday-chart.tsx` | M | T4 | The twin of the prototype file, with D8 |
+| web | `web/lib/api/schema.d.ts` | M | tests | `npm run api:types` after feat-rpt-api T2 (`nonprodMinutes`) |
+| web | `web/features/dashboard/stats.ac.test.ts` | M | tests | AC-2, AC-3 to D9 |
+| web | `web/features/dashboard/components/dashboard-view.ac.test.tsx` | M | tests | AC-11 to D9; AC-19 |
+| web | `web/features/**/*.test.ts`, `web/features/**/*.test.tsx` | M | tests | `nonprodMinutes` on the `ReportDay`s they build |
+| web | `web/proto/features/dashboard/stats.ts` | M | T5 | Types from the schema again (commands under *Web (T5)*) |
+| web | `web/proto/features/dashboard/proposed-types.ts` | D | T5 | `rm` |
+| web | `web/features/dashboard/stats.ts` | M | T5 | The twin of the prototype file, with D9 |
+| web | `web/features/dashboard/components/dashboard-view.tsx` | M | T5 | The twin of the prototype file, with D9 (`--dash-nonprod`) |
+| web | `web/features/dashboard/components/workday-chart.tsx` | M | T5 | The twin of the prototype file, with D9 |
+| web | `web/features/time/components/logged-time-chart.tsx` | M | T5 | The twin of the prototype file (`nonprod: 0`) |
 
 ## Interfaces
 
@@ -229,6 +245,21 @@ cd web && npx prettier --write features/dashboard/stats.ts features/dashboard/co
 The diff they bring is `git diff bf93b65~1 bf93b65 -- web/proto/features/dashboard/`. API changes: `Totals` and `Bucket` gain `weekdays`; `totals`,
 `buckets` and `running` keep their signatures. `HoursSummary` and `WorkdayChart` keep their props. No new imports outside `features/dashboard/`.
 
+### Web (T5)
+First the prototype's `stats.ts` takes its types from the schema again: in `web/proto/features/dashboard/stats.ts`, remove the
+`./proposed-types` import and set `export type DashboardReport = components["schemas"]["DashboardReportResponseDto"];` and
+`export type ReportDay = components["schemas"]["ReportDayDto"];` (as before `570b9cc`), then `rm web/proto/features/dashboard/proposed-types.ts`.
+Then the four files become their prototype twins (D9), from the repo root:
+```bash
+for f in dashboard/stats.ts dashboard/components/dashboard-view.tsx dashboard/components/workday-chart.tsx time/components/logged-time-chart.tsx; do
+  sed -e 's#@/proto/mock/client#@/lib/api/client#' -e 's#@/proto/#@/#g' web/proto/features/$f > web/features/$f
+done
+cd web && npx prettier --write features/dashboard/stats.ts features/dashboard/components/dashboard-view.tsx features/dashboard/components/workday-chart.tsx features/time/components/logged-time-chart.tsx
+```
+The diff they bring is `git diff 570b9cc~1 570b9cc -- web/proto/features/dashboard/ web/proto/features/time/components/logged-time-chart.tsx`.
+API changes: `DayStat`, `Totals` and `Bucket` gain `nonprod`; `dayStats`, `totals`, `buckets` and `running` keep their signatures; the components
+keep their props. No new imports outside `features/dashboard/` (and `logged-time-chart.tsx`'s existing ones).
+
 ## Acceptance criteria
 Tests mock `@/lib/api/client`, `next/navigation` and `useMe` (time zone `Europe/Zagreb`, `dailyTargetMinutes` 420), wrap in `NuqsTestingAdapter`, and use fake
 timers (2026-10-09 12:00 in Zagreb). "The report" for 1–31 Oct 2026: `days` 1 Oct `{480, 0, 0}`, 6 Oct `{510, 315, 120}`, 7 Oct `{555, 375, 240}`; `projects` Anthropic
@@ -238,8 +269,8 @@ tasks 2 upcoming, 3 in progress, 4 completed.
 | AC | Case → expected | Test | Task |
 | --- | --- | --- | --- |
 | AC-1 | `presetRange` (today 2026-10-09): this-month 10-01..10-31, last-month 09-01..09-30, last-7 10-03..10-09, last-30 09-10..10-09, last-90 07-12..10-09, this-year 01-01..10-09; `matchPreset` finds each and returns `null` for 10-02..10-09; `parseRange` keeps 2025-10-08..2026-10-09 and 2026-11-01..2026-11-30, and gives this month for a missing value, `2026-02-30`, from > to, 2025-10-07..2026-10-09; `rangeLabel` → "October 2026", "1 Sep 2026 – 9 Oct 2026", and "1 Oct 2026 – 9 Oct 2026" for part of a month; `weekdaysSoFar(1–31 Oct)` → 7 | `web/features/dashboard/stats.ac.test.ts` | tests |
-| AC-2 | `dayStats` of the report → 31 days, 2 Oct `{null, 0, 0}`; `totals` → worked 690, booked 360, workdays 3, target 1260, average 515, earliest 480, latest 555. Since T4 (D8): `totals` → worked 690, booked 360, weekdays 22, workdays 3, target 9240, average 515, earliest 480, latest 555; an empty October → weekdays 22, workdays 0, target 9240; with a start and 2h on Sat 10 Oct → workdays 4, worked 810, target still 9240 | `web/features/dashboard/stats.ac.test.ts` | tests, T4 |
-| AC-3 | `buckets` for October → by day, 22 items (the 9 weekend days without work left out), ticks `1`…, 6 Oct title "Tue, 6 Oct 2026", booked 120, unbooked 195; with 2h worked on Sat 10 Oct → 23 items; 2026-08-01..2026-10-01 (62 days) → by day with ticks `d MMM`; 2026-08-01..2026-10-02 → by week. Since T4 (D8): 6 Oct and Fri 2 Oct → target 420, weekdays 1; Sat 10 Oct with 2h worked → target 0, weekdays 0 | `web/features/dashboard/stats.ac.test.ts` | tests, T4 |
+| AC-2 | `dayStats` of the report → 31 days, 2 Oct `{null, 0, 0}` (since T5, D9: `{null, 0, 0, nonprod 0}`; 6 Oct with `nonprodMinutes` 90 → `nonprod` 90 and `totals` nonprod 90, worked still 690); `totals` → worked 690, booked 360, workdays 3, target 1260, average 515, earliest 480, latest 555. Since T4 (D8): `totals` → worked 690, booked 360, weekdays 22, workdays 3, target 9240, average 515, earliest 480, latest 555; an empty October → weekdays 22, workdays 0, target 9240; with a start and 2h on Sat 10 Oct → workdays 4, worked 810, target still 9240 | `web/features/dashboard/stats.ac.test.ts` | tests, T4 |
+| AC-3 | `buckets` for October → by day, 22 items (the 9 weekend days without work left out), ticks `1`…, 6 Oct title "Tue, 6 Oct 2026", booked 120, unbooked 195; with 2h worked on Sat 10 Oct → 23 items; 2026-08-01..2026-10-01 (62 days) → by day with ticks `d MMM`; 2026-08-01..2026-10-02 → by week. Since T4 (D8): 6 Oct and Fri 2 Oct → target 420, weekdays 1; Sat 10 Oct with 2h worked → target 0, weekdays 0. Since T5 (D9): Sat 10 Oct with only 1h Non-prod → 23 items, its bucket worked 0, nonprod 60 | `web/features/dashboard/stats.ac.test.ts` | tests, T4, T5 |
 | AC-4 | `buckets` for 2026-01-01..2026-06-30 → by week, 27 items; the first: key `2025-12-29`, date `2026-01-01`, tick "1 Jan", title "Week of 29 Dec – 4 Jan 2026"; a week with starts 08:00 and 09:00 → start 510, target 840. Since T4 (D8): the first week (Thu 1 – Sun 4 Jan) → workdays 0, weekdays 2, target 840; the week of 5 Jan (starts 08:00, 09:00) → start 510, workdays 2, weekdays 5, target 2100 | `web/features/dashboard/stats.ac.test.ts` | tests, T4 |
 | AC-5 | `running` for October (today Fri 9 Oct), since T3 (D6): 18 points: 6 Oct `{tick "6 Oct", worked 315, booked 120, target 840}` (1 Oct's start counted, 1 Oct itself left out), 7 Oct `{worked 690, booked 360, target 1260}`, then 9 Oct and every weekday 12–30 Oct, each `{690, 360, 1260}`; no point for 1, 2, 5, 8, 10, 11 or 31 Oct; with 2h logged on Sat 10 Oct → 19 points, 10 Oct worked 810; `hourTicks(0)` → [0, 60]; `hourTicks(450)` → [0, 120, 240, 360, 480]. Since T4 (D8), the same 18 points with the target per weekday: 6 Oct target 1680 (1, 2, 5, 6 Oct), 7 Oct 2100, 9 Oct 2940, then +420 per point to 30 Oct 9240; Sat 10 Oct with 2h logged → worked 810, target 2940 | `web/features/dashboard/stats.ac.test.ts` | tests, T3, T4 |
 | AC-6 | `useDashboardReport` calls `GET /api/v1/reports/dashboard` with `from`/`to` and returns the body; `reportKeys.all` starts with `timeKeys.all`; `useProjectCount` requests projects with `pageSize` 1 and returns `total`; `useTaskCounts` makes one request per status with `pageSize` 1 and returns the three counts | `web/features/dashboard/api.ac.test.tsx` | T1 |
@@ -247,13 +278,16 @@ tasks 2 upcoming, 3 in progress, 4 completed.
 | AC-8 | Choosing *Last 7 days* sets `?from=2026-10-03&to=2026-10-09` and requests that range; choosing *This month* clears both; `?from=2025-01-01&to=2026-10-09` requests 1–31 Oct; picking 1 Sep and 9 Oct in *Pick dates* and **Apply** sets `?from=2026-09-01&to=2026-10-09` and the select shows "Custom range" | `web/features/dashboard/components/dashboard-view.ac.test.tsx` | T2 |
 | AC-9 | Worked · target · booked shows `11h 30m`, `21h` with "3 days × 7h", `6h`, "9h 30m under target", Worked of target `54%`, Booked of worked `52%`, "5h 30m still to book"; Running totals' legend shows `11h 30m`, `21h`, `6h`. Since T4 (D8): `154h` with "22 days × 7h", "142h 30m under target", Worked of target `7%`; the legend `11h 30m`, `154h`, `6h` | `web/features/dashboard/components/dashboard-view.ac.test.tsx` | T2, T4 |
 | AC-10 | Hours by project lists Anthropic, Nvidia, PM Internal, Unsorted, Non-prod in that order; Anthropic links to `/app/project?id=…` and shows `4h 15m` and "2h booked"; PM Internal is plain text with the deleted marker (an element labelled "deleted"); Unsorted and Non-prod show `—`; a report with no projects → "Nothing logged in this range." | `web/features/dashboard/components/dashboard-view.ac.test.tsx` | T2 |
-| AC-11 | Workdays card shows "by day"; its **Table** tab has 22 rows, the 6 Oct row "Tue, 6 Oct 2026", `08:30`, `5h 15m`, `2h`, `7h` | `web/features/dashboard/components/dashboard-view.ac.test.tsx` | T2 |
+| AC-11 | Workdays card shows "by day"; its **Table** tab has 22 rows, the 6 Oct row "Tue, 6 Oct 2026", `08:30`, `5h 15m`, `2h`, `7h`. Since T5 (D9): with the Non-prod column, `5h 15m`, `2h`, `0h`, `7h` | `web/features/dashboard/components/dashboard-view.ac.test.tsx` | T2, T5 |
 | AC-12 | Report pending → no card content, skeletons; report error → "Couldn't load the dashboard." and **Retry** requests it again; the project count failing → `—` in Projects while the rest shows | `web/features/dashboard/components/dashboard-view.ac.test.tsx` | T2 |
 | AC-14 | Running totals (D6): with the report, the legend shows `11h 30m`, `21h`, `6h` (as AC-9); with a report whose only day is 9 Oct `{480, 0, 0}` (a start, no logs) → the legend shows Worked `0h`, Target `7h`, Booked `0h` and the card says "Nothing logged in this range." Since T4 (D8): Target `154h` there | `web/features/dashboard/components/dashboard-view.ac.test.tsx` | T3, T4 |
 | AC-15 | `stats.ts`, `running-totals.tsx`, `dashboard-view.tsx` and `workday-chart.tsx` equal their prototype twins | check | T3 |
 | AC-16 | In the browser (D7): hovering a Workdays bar puts the start panel's hover line through that day's start dot and the bar's centre; Running totals has no flat stretches before today and runs flat from today to the range's end | manual | T3 |
 | AC-17 | `stats.ts`, `hours-summary.tsx` and `workday-chart.tsx` equal their prototype twins | check | T4 |
 | AC-18 | In the browser (D8): this month shows the full Target ("N days × 7h", N = its Monday–Friday dates) from its first day; a weekend day's tooltip and Table row show Target `0h`; Running totals' target climbs on each weekday to the Target at the range's end | manual | T4 |
+| AC-19 | D9: the report with `nonprodMinutes` 90 on 6 Oct and a day Sat 10 Oct `{null, 0, 0, nonprod 60}` → Workdays by day has 23 items; its **Table** has a Non-prod column, the 6 Oct row "Tue, 6 Oct 2026", `08:30`, `5h 15m`, `2h`, `1h 30m`, `7h` and the 10 Oct row Non-prod `1h`, Target `0h`; Worked · target · booked still shows `11h 30m`; Workdays tile `3` | `web/features/dashboard/components/dashboard-view.ac.test.tsx` | T5 |
+| AC-20 | `stats.ts`, `dashboard-view.tsx`, `workday-chart.tsx` and `features/time/components/logged-time-chart.tsx` equal their prototype twins; no `web/proto/features/dashboard/proposed-types.ts` | check | T5 |
+| AC-21 | In the browser (D9): a day with an excluded log shows a grey Non-prod segment on top of its bar, a "Non-prod" tooltip row and legend item, in light and dark; the excluded minutes are in no tile, total or running line | manual | T5 |
 | AC-13 | In the browser: the start line and the stacked bars share one hover with SCR-010's tooltip; a bar of a past day opens Logs on that date; 1 Jan–30 Jun shows weekly bars; a custom range over 366 days disables **Apply** with "Pick at most 366 days."; the colours read in light and dark | manual | T2 |
 
 Typed stubs (created with the tests, so lint and typecheck pass while the tests fail):
@@ -265,6 +299,10 @@ Typed stubs (created with the tests, so lint and typecheck pass while the tests 
 # AC-17: twins equal
 node scripts/pm4.mjs twins
 ```
+```bash
+# AC-20: twins equal, the proposed types gone (D9)
+node scripts/pm4.mjs twins && test ! -e web/proto/features/dashboard/proposed-types.ts
+```
 
 ## Tasks
 | # | Task | App | Size | Tier | Why this tier | Depends on |
@@ -273,6 +311,7 @@ node scripts/pm4.mjs twins
 | T2 | Dashboard page: range picker in the URL, count tiles, workday chart and table, worked / target / booked, running totals, hours by project | web | L | sonnet | Two synced recharts panels with custom tooltips and click-through, a range picker with a draft and URL state, loading and error states across six components | T1 |
 | T3 | Running totals without empty days and the aligned Workdays hover (D6, D7): four prototype twins | web | S | haiku | Twin copy, the commands under *Web (T3)* | T2 |
 | T4 | Weekday target (D8): three prototype twins | web | S | haiku | Twin copy, the commands under *Web (T4)* | T3 |
+| T5 | Non-prod out of worked, shown as a Workdays segment (D9): four prototype twins, the proposed types removed | web | S | haiku | Twin copy, the commands under *Web (T5)* | T4, feat-rpt-api T2 |
 
 ## Open questions
 None.
@@ -283,3 +322,4 @@ None.
 - 2026-10-31: Approved by the owner.
 - 2026-11-01: D8 (owner, OQ-258…OQ-260): Target = the range's Monday–Friday dates × the daily target, future ones included; weekend days never add to it; all worked hours are compared; the running target climbs on every weekday. Prototype `bf93b65`, T4, AC-2…AC-5, AC-9, AC-14 updated, AC-17, AC-18. Back to `review`.
 - 2026-11-01: Approved by the owner.
+- 2026-11-02: D9 (owner, OQ-261): logs excluded from statistics leave *Worked* and every total; the Workdays chart shows them as a grey Non-prod segment, tooltip row, legend item and table column. Prototype `570b9cc`, T5, AC-2, AC-3, AC-11 updated, AC-19…AC-21. Back to `review`.
