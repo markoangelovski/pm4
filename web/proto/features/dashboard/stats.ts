@@ -6,15 +6,12 @@ import {
   startOfISOWeek
 } from "date-fns";
 import type { components } from "@/lib/api/schema";
-import type {
-  DashboardReportResponseDto,
-  ReportDayDto
-} from "./proposed-types";
 import { eachDay, type DateRange } from "./range";
 
 /** API-RPT-001's response. */
-export type DashboardReport = DashboardReportResponseDto;
-export type ReportDay = ReportDayDto;
+export type DashboardReport =
+  components["schemas"]["DashboardReportResponseDto"];
+export type ReportDay = components["schemas"]["ReportDayDto"];
 export type ReportProject = components["schemas"]["ReportProjectDto"];
 
 /** One calendar day of the range. A workday is a day with a start time. `worked` leaves out the logs excluded from

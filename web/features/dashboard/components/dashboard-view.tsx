@@ -29,10 +29,11 @@ import { RangePicker } from "./range-picker";
 import { RunningTotals } from "./running-totals";
 import { WorkdayChart } from "./workday-chart";
 
-/** Series colors (validated categorical slots, light and dark steps): worked blue, booked aqua, start orange. */
+/** Series colors (validated categorical slots, light and dark steps): worked blue, booked aqua, start orange; Non-prod
+ *  neutral grey, as it isn't counted. */
 const COLORS =
-  "[--dash-worked:#2a78d6] [--dash-booked:#1baf7a] [--dash-start:#eb6834] " +
-  "dark:[--dash-worked:#3987e5] dark:[--dash-booked:#199e70] dark:[--dash-start:#d95926]";
+  "[--dash-worked:#2a78d6] [--dash-booked:#1baf7a] [--dash-start:#eb6834] [--dash-nonprod:#a1a1aa] " +
+  "dark:[--dash-worked:#3987e5] dark:[--dash-booked:#199e70] dark:[--dash-start:#d95926] dark:[--dash-nonprod:#71717a]";
 
 /** The dashboard page body (SCR-010): counts, then the range's workdays and hours. The range is in the URL (`from`, `to`); default this month. */
 export function DashboardView() {

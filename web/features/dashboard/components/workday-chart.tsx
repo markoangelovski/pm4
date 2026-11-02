@@ -36,7 +36,8 @@ import { hourTicks, type Bucket } from "../stats";
 const CONFIG: ChartConfig = {
   startMinute: { label: "Start", color: "var(--dash-start)" },
   booked: { label: "Booked", color: "var(--dash-booked)" },
-  unbooked: { label: "Not booked", color: "var(--dash-worked)" }
+  unbooked: { label: "Not booked", color: "var(--dash-worked)" },
+  nonprod: { label: "Non-prod", color: "var(--dash-nonprod)" }
 };
 const tick = { fontSize: 12, fill: "var(--muted-foreground)" };
 const Y_WIDTH = 52;
@@ -82,7 +83,7 @@ function WorkdayTooltip({
   return (
     <div className="grid gap-1.5 rounded-lg border border-border/50 bg-background px-2.5 py-1.5 text-xs shadow-xl">
       <div className="font-medium">{b.title}</div>
-      {b.workdays === 0 && b.worked === 0 ? (
+      {b.workdays === 0 && b.worked + b.nonprod === 0 ? (
         <div className="text-muted-foreground">No work logged</div>
       ) : (
         <>
@@ -94,6 +95,9 @@ function WorkdayTooltip({
           {row(null, "Worked", hours(b.worked))}
           {row("var(--dash-booked)", "Booked", hours(b.booked))}
           {row("var(--dash-worked)", "Not booked", hours(b.unbooked))}
+          {b.nonprod > 0
+            ? row("var(--dash-nonprod)", "Non-prod", hours(b.nonprod))
+            : null}
           {row(
             null,
             by === "week" ? `Target (${b.weekdays} d)` : "Target",
@@ -142,6 +146,13 @@ function Legend({
         Not booked
       </span>
       <span className="flex items-center gap-1.5">
+        <span
+          className="size-2 rounded-sm"
+          style={{ background: "var(--dash-nonprod)" }}
+        />
+        Non-prod
+      </span>
+      <span className="flex items-center gap-1.5">
         <span className="inline-block w-3 border-t border-dashed border-foreground" />
         {by === "day"
           ? `Daily target ${formatDuration(targetMinutes)}`
@@ -152,7 +163,8 @@ function Legend({
 }
 
 /**
- * Start time (line) above hours worked (bars, booked + not booked) on one shared date axis. Two
+ * Start time (line) above hours worked (bars, booked + not booked, then Non-prod on top: shown here, counted nowhere else)
+ * on one shared date axis. Two
  * synced panels instead of one chart with two y-axes: clock time and duration don't share a scale.
  */
 export function WorkdayChart({
@@ -176,7 +188,10 @@ export function WorkdayChart({
     (_, i) => lo + i * 60
   );
   const yTicks = hourTicks(
-    Math.max(...items.map((b) => b.worked), by === "day" ? targetMinutes : 0)
+    Math.max(
+      ...items.map((b) => b.worked + b.nonprod),
+      by === "day" ? targetMinutes : 0
+    )
   );
   const ticks = new Map(items.map((b) => [b.key, b.tick]));
   const openDay = (b?: Bucket) => {
@@ -336,6 +351,17 @@ export function WorkdayChart({
                   fill="var(--dash-worked)"
                   stroke="var(--card)"
                   strokeWidth={1}
+                  maxBarSize={24}
+                  isAnimationActive={false}
+                  className={by === "day" ? "cursor-pointer" : undefined}
+                  onClick={(d) => openDay(d.payload as Bucket)}
+                />
+                <Bar
+                  dataKey="nonprod"
+                  stackId="h"
+                  fill="var(--dash-nonprod)"
+                  stroke="var(--card)"
+                  strokeWidth={1}
                   radius={[4, 4, 0, 0]}
                   maxBarSize={24}
                   isAnimationActive={false}
@@ -363,6 +389,7 @@ export function WorkdayChart({
                   </TableHead>
                   <TableHead className="px-3">Worked</TableHead>
                   <TableHead className="px-3">Booked</TableHead>
+                  <TableHead className="px-3">Non-prod</TableHead>
                   <TableHead className="px-3">Target</TableHead>
                 </TableRow>
               </TableHeader>
@@ -371,7 +398,7 @@ export function WorkdayChart({
                   <TableRow
                     key={b.key}
                     className={
-                      b.workdays === 0 && b.worked === 0
+                      b.workdays === 0 && b.worked + b.nonprod === 0
                         ? "text-muted-foreground"
                         : undefined
                     }
@@ -387,6 +414,9 @@ export function WorkdayChart({
                     </TableCell>
                     <TableCell className="px-3 tabular-nums">
                       {hours(b.booked)}
+                    </TableCell>
+                    <TableCell className="px-3 tabular-nums">
+                      {hours(b.nonprod)}
                     </TableCell>
                     <TableCell className="px-3 tabular-nums">
                       {hours(b.target)}
