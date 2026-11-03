@@ -11,7 +11,6 @@ import {
   PopoverTrigger
 } from "@/components/ui/popover";
 import { formatDuration, today as todayIn } from "@/lib/time";
-import { formatClock } from "@/lib/time/clock";
 import { useAttention } from "@/proto/features/system/use-attention";
 import { useMe, type Me } from "@/proto/features/users/api";
 import { useDay, useNowMinute } from "../api";
@@ -19,6 +18,7 @@ import {
   dismissalOf,
   isDismissed,
   logReminder,
+  reminderMinutes,
   type LogReminder,
   type ReminderDismissal
 } from "../reminder";
@@ -26,8 +26,11 @@ import { LogFormDialog } from "./log-form-dialog";
 
 /**
  * The header's notifications: a bell with a dot while there is one, and a list in a popover. Its one notification is
- * the reminder to log time (see `logReminder`); clicking it opens Log time, its × dismisses it until another 15 min
- * are unlogged. While it shows, the tab's title and favicon and the installed app's icon show it too.
+ * the reminder to log time (see `logReminder`). While it shows, Log time is open for today with its unlogged time
+ * (`reminderMinutes`). Closing Log time keeps the reminder in the bell, where Log your time opens it again; Log time
+ * opens by itself again once another 15 min are unlogged or a log is saved. The reminder's × dismisses it (and stops
+ * Log time opening) until another 15 min are unlogged or a log is saved. While it shows, the tab's title and favicon
+ * and the installed app's icon show it too.
  * Today's date needs the user's time zone, so until it loads the bell has no notifications and reads no day.
  */
 export function NotificationsButton() {
@@ -43,11 +46,15 @@ function LogReminderBell({ me }: { me: Me }) {
   const reminder = day.data
     ? logReminder(day.data, now, me.dailyTargetMinutes)
     : null;
-  // Until reload, like the last log's project and task.
+  // Both until reload, like the last log's project and task: the bell's ×, and closing the Log time it opened.
   const [dismissal, setDismissal] = useState<ReminderDismissal | null>(null);
+  const [closed, setClosed] = useState<ReminderDismissal | null>(null);
   const shown =
     reminder && !isDismissed(workDate, reminder, dismissal) ? reminder : null;
+  // Log time opens by itself for each new reminder step; the bell's Log your time opens it again.
   const [logging, setLogging] = useState(false);
+  const open =
+    shown !== null && (logging || !isDismissed(workDate, shown, closed));
   useAttention(shown ? 1 : 0);
   return (
     <>
@@ -57,9 +64,14 @@ function LogReminderBell({ me }: { me: Me }) {
         onDismiss={(r) => setDismissal(dismissalOf(workDate, r))}
       />
       <LogFormDialog
-        open={logging}
-        onOpenChange={setLogging}
+        open={open}
+        onOpenChange={(next) => {
+          if (next) return;
+          setLogging(false);
+          if (shown) setClosed(dismissalOf(workDate, shown));
+        }}
         defaultDate={workDate}
+        defaultMinutes={shown ? reminderMinutes(shown) : undefined}
       />
     </>
   );
@@ -116,8 +128,7 @@ function NotificationsPopover({
               <span className="grid gap-0.5">
                 <span className="text-sm font-medium">Log your time</span>
                 <span className="text-xs text-muted-foreground">
-                  {formatDuration(reminder.unlogged)} unlogged since{" "}
-                  {formatClock(reminder.since)}
+                  {formatDuration(reminder.unlogged)} of billable time unlogged
                 </span>
               </span>
             </button>
