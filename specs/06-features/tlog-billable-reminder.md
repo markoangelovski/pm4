@@ -57,6 +57,8 @@ middle "2h 30m of 7h"). Then `pm4 hash`.
 | web | `web/features/time/components/log-form-dialog.tsx` | M | T1 | Twin (D4: `defaultMinutes` prop) |
 | web | `web/features/time/components/notifications-button.tsx` | M | T1 | Twin (D3, D4) |
 | web | `web/features/time/components/day-charts.tsx` | M | T1 | Twin (D2: the middle's billable line) |
+| web | `web/proto/features/time/reminder.ts` | M | T1 | Review fix: doc comment "start + billable" (the prototype stays ahead) |
+| web | `web/proto/features/time/components/notifications-button.tsx` | M | T1 | Review fix: comment on `onOpenChange` (AC-5) |
 
 ## Interfaces
 
@@ -120,3 +122,4 @@ None.
 - 2026-11-03: Initial draft from prototype `7977c06` (owner decisions 2026-11-03). Ready for review.
 - 2026-11-03: Approved by the owner.
 - 2026-11-03: Test step: AC-5 showed the prototype kept the saved form open after a save; the owner chose to fix the prototype (`key={shown?.since}` on `LogFormDialog`, D4).
+- 2026-11-03: Review fixes (T-0134): the `ReminderDismissal` doc comment says start + billable, and a comment on the reminder dialog's `onOpenChange`; both in the prototype first, then the twins.

@@ -149,11 +149,13 @@ function ExpandButton({
 function PieBody({
   slices,
   logged,
+  billable,
   targetMinutes,
   large
 }: {
   slices: Slice[];
   logged: number;
+  billable: number;
   targetMinutes: number;
   large?: boolean;
 }) {
@@ -202,7 +204,7 @@ function PieBody({
             {formatDuration(logged)}
           </span>
           <span className="text-xs text-muted-foreground">
-            of {formatDuration(targetMinutes)}
+            {formatDuration(billable)} of {formatDuration(targetMinutes)}
           </span>
         </div>
       </div>
@@ -315,6 +317,10 @@ export function DayCharts({
         : "var(--chart-2)"
   }));
   const logged = logs.reduce((s, l) => s + l.durationMinutes, 0);
+  const billable = logs.reduce(
+    (s, l) => (l.excludeFromStats ? s : s + l.durationMinutes),
+    0
+  );
   const pieTitle = (
     <>
       <PieIcon size={16} className="text-muted-foreground" /> Time by log
@@ -342,6 +348,7 @@ export function DayCharts({
           <PieBody
             slices={slices}
             logged={logged}
+            billable={billable}
             targetMinutes={targetMinutes}
           />
         </CardContent>
@@ -377,6 +384,7 @@ export function DayCharts({
               <PieBody
                 slices={slices}
                 logged={logged}
+                billable={billable}
                 targetMinutes={targetMinutes}
                 large
               />

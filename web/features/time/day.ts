@@ -131,7 +131,7 @@ export interface PieSlice {
 }
 
 /** One slice per log in order (key = log id, label = [project, task, text] present parts joined by " - "),
- *  then { key "remaining", label "Remaining" } of target − all logged when positive. */
+ *  then { key "remaining", label "Remaining" } of target − billable (logs without excludeFromStats) when positive. */
 export function pieSlices(logs: TimeLog[], targetMinutes: number): PieSlice[] {
   const slices: PieSlice[] = logs.map((l) => ({
     key: l.id,
@@ -141,7 +141,11 @@ export function pieSlices(logs: TimeLog[], targetMinutes: number): PieSlice[] {
     minutes: l.durationMinutes,
     kind: "log"
   }));
-  const remaining = targetMinutes - slices.reduce((s, x) => s + x.minutes, 0);
+  const billable = logs.reduce(
+    (sum, l) => (l.excludeFromStats ? sum : sum + l.durationMinutes),
+    0
+  );
+  const remaining = targetMinutes - billable;
   if (remaining > 0) {
     slices.push({
       key: "remaining",

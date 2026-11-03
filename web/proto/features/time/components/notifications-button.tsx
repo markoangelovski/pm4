@@ -67,6 +67,7 @@ function LogReminderBell({ me }: { me: Me }) {
       <LogFormDialog
         key={shown?.since}
         open={open}
+        // Closes over the reminder this dialog opened for: after a save, the new reminder stays open (AC-5).
         onOpenChange={(next) => {
           if (next) return;
           setLogging(false);

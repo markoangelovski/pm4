@@ -26,7 +26,8 @@ export function logFormDefaults(
   log: TimeLog | undefined,
   date: string,
   nowQuarter: number | null,
-  link: LogLink = NO_LOG_LINK
+  link: LogLink = NO_LOG_LINK,
+  minutes: number = DURATION_STEP
 ): LogFormValues {
   if (log) {
     return {
@@ -53,7 +54,7 @@ export function logFormDefaults(
     date,
     dayStart: nowQuarter,
     text: "",
-    duration: formatDuration(DURATION_STEP),
+    duration: formatDuration(minutes),
     title: "",
     project: link.task?.project ?? link.project,
     task: link.task,

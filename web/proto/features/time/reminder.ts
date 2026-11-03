@@ -45,7 +45,7 @@ export function reminderMinutes(reminder: LogReminder): number {
   );
 }
 
-/** A dismissed reminder: it stays hidden while its day and start + logged are the same and fewer than another 15 min pass. */
+/** A dismissed reminder: it stays hidden while its day and start + billable are the same and fewer than another 15 min pass. */
 export interface ReminderDismissal {
   workDate: string;
   since: number;
