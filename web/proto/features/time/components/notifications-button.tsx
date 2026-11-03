@@ -63,7 +63,9 @@ function LogReminderBell({ me }: { me: Me }) {
         onLog={() => setLogging(true)}
         onDismiss={(r) => setDismissal(dismissalOf(workDate, r))}
       />
+      {/* A saved log refetches the day before the dialog closes; a new `since` mounts a fresh form for the new reminder. */}
       <LogFormDialog
+        key={shown?.since}
         open={open}
         onOpenChange={(next) => {
           if (next) return;
