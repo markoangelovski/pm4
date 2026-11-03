@@ -70,7 +70,8 @@ function stepDuration(value: string, direction: 1 | -1): string {
 
 /**
  * SCR-041: add (no `log`) or edit a log. Mounts its form only while open.
- * A new log starts with `preset`'s project and task, else with those of the last log created in this tab.
+ * A new log starts with `preset`'s project and task, else with those of the last log created in this tab, and with
+ * `defaultMinutes` (15 min when not given).
  */
 export function LogFormDialog({
   open,
@@ -78,6 +79,7 @@ export function LogFormDialog({
   log,
   preset,
   defaultDate,
+  defaultMinutes,
   onSaved
 }: {
   open: boolean;
@@ -85,6 +87,7 @@ export function LogFormDialog({
   log?: TimeLog;
   preset?: LogLink;
   defaultDate: string;
+  defaultMinutes?: number;
   onSaved?: (date: string) => void;
 }) {
   return (
@@ -95,6 +98,7 @@ export function LogFormDialog({
             log={log}
             preset={preset}
             defaultDate={defaultDate}
+            defaultMinutes={defaultMinutes}
             onDone={(d) => {
               onOpenChange(false);
               onSaved?.(d);
@@ -110,11 +114,13 @@ function LogForm({
   log,
   preset,
   defaultDate,
+  defaultMinutes,
   onDone
 }: {
   log?: TimeLog;
   preset?: LogLink;
   defaultDate: string;
+  defaultMinutes?: number;
   onDone: (date: string) => void;
 }) {
   const { data: me } = useMe();
@@ -138,7 +144,8 @@ function LogForm({
         log,
         defaultDate,
         null,
-        preset ?? getLastLogLink()
+        preset ?? getLastLogLink(),
+        defaultMinutes
       );
       return {
         ...base,
