@@ -1,9 +1,9 @@
 ---
 id: req-time-logs
 title: Time Capture (Workdays and Time Logs)
-status: approved
+status: review
 owner: Marko Angelovski
-last_updated: 2026-11-02
+last_updated: 2026-11-03
 related: [req-projects, req-tasks, req-reporting, api-endpoints, api-data-model, web-screens]
 ---
 
@@ -194,15 +194,19 @@ it (FR-TLOG-006); the new link replaces the deleted name.
 **Priority:** Must
 **Statement:** The day view shows two charts of the viewed day, for any view:
 - **Pie chart** (*Time by log*): every log is a slice, sized by duration and labelled "Project - Task - Log text"
-  (the parts the log has). The **daily target** (FR-TLOG-017) is the whole pie: the part of the target not yet logged
-  is one grey slice, **Remaining**. When the logged time reaches or exceeds the target there is no grey slice, and the
-  pie is the logged time. The middle shows the logged time and "of" the target, and a legend lists every slice with its duration.
+  (the parts the log has), logs excluded from statistics (FR-TLOG-018) included. The **daily target** (FR-TLOG-017) is
+  measured against the **billable** time (the logs not excluded from statistics): the part of the target not yet billable
+  is one grey slice, **Remaining** (target − billable). When the billable time reaches or exceeds the target there is no
+  grey slice, and the pie is the logged time. The middle shows the logged time (all logs) and, smaller, "<billable> of
+  <target>"; a legend lists every slice with its duration.
 - **Bar chart** (*Time by project*): one bar per group of the By project view (FR-TLOG-003), including **Unsorted**
   and **Non-prod**, with the hours logged. In the By task view, one bar per group of that view instead (*Time by task*).
 Both show the label and the duration on hover, and each can be expanded to fill the screen. An empty day shows an empty state.
 **Acceptance criteria:**
 - Given a target of 7 h and logs of 30 min, 1 h 45 min and 15 min, the pie has three coloured slices and a grey one of 4 h 30 min.
 - Given 8 h logged and a target of 7 h, the pie has no grey slice.
+- Given a target of 7 h and logs of 30 min, 1 h 45 min, 15 min and 1 h excluded from statistics, the pie has four
+  coloured slices and a grey one of 4 h 30 min, and its middle shows `3h 30m` and "2h 30m of 7h".
 - Given a log "Weekly with Peter." on the task "Meetings" of "Tesla", its slice is labelled "Tesla - Meetings - Weekly with Peter."; an unsorted log is labelled by its text alone.
 
 ### FR-TLOG-017: Daily target
@@ -214,7 +218,8 @@ Both show the label and the duration on hover, and each can be expanded to fill 
 ### FR-TLOG-018: Exclude from statistics
 **Priority:** Must
 **Statement:** A log can be marked **Exclude from statistics** when it is added or edited. Such a log still counts in the
-day's *Logged*, *Start + logged* and *Unlogged* figures and in the pie chart, but not in *% billable* or *Overtime*. In the
+day's *Logged*, *Start + logged* and *Unlogged* figures and has its slice in the pie chart, but not in *% billable*,
+*Overtime*, the pie's **Remaining** and its "<billable> of <target>" (FR-TLOG-016), or the reminder to log time (FR-TLOG-021). In the
 grouped views and the bar chart it belongs to **Non-prod** (FR-TLOG-003/015/016), and its row shows an **Excluded from
 statistics** badge.
 **Acceptance criteria:**
@@ -254,17 +259,29 @@ logs; there's no way back to the sections except closing the prompt, which disca
 ### FR-TLOG-021: Reminder to log time
 **Priority:** Should
 **Statement:** On every app screen, a **notifications** bell in the header reminds the user to log time for **today** when
-the day has a start and at least one log, all its logs (excluded ones too) add up to less than the daily target
-(FR-TLOG-017), and at least 15 min since *Start + logged* are unlogged (FR-TLOG-009). The reminder shows the unlogged time and
-since when; clicking it opens Log time for today; dismissing it hides it until another 15 min are unlogged or *Start +
-logged* changes. Dismissals last until the app is reloaded. While the reminder shows, the tab title starts with "(1) ", the
-favicon has a red dot, and the installed app's icon has a badge where the browser supports it (OQ-262). No API change.
+the day has a start and at least one log, and at least 15 min of **billable** time are unlogged: *unlogged* = min(now −
+start − billable, daily target − billable), where billable is the sum of the logs not excluded from statistics
+(FR-TLOG-018); excluded logs never count, neither as logged nor towards the target. The reminder shows "<unlogged> of
+billable time unlogged". While it shows, **Log time** for today opens by itself with its duration set to the unlogged time
+rounded down to a multiple of 15 min (15 min at least). Closing that dialog keeps the reminder in the bell, where clicking
+it opens Log time again (with the same duration). Log time opens by itself again when another 15 min are unlogged or a
+log is saved (saving part of the time reopens it with the rest). Dismissing the reminder (its ×) hides it and stops Log
+time opening until another 15 min are unlogged or the billable time changes. Dismissals and closings last until the app
+is reloaded. While the reminder shows, the tab title starts with "(1) ", the favicon has a red dot, and the installed
+app's icon has a badge where the browser supports it (OQ-262; owner, prototype `7977c06`). The day header's *Unlogged*
+(FR-TLOG-009) is unchanged. No API change.
 **Acceptance criteria:**
 - Given today started 08:00, with 2h logged and a 7h target, at 10:14 there's no reminder; at 10:15 the bell shows one: "15m
-  unlogged since 10:00", and the tab title starts with "(1) ".
-- Given I dismiss it at 10:20, then it's hidden until 10:30 ("30m unlogged since 10:00"); given I log 15 min instead, then at 10:20
-  there's none (5m unlogged since 10:15) until 10:30.
-- Given no start, no log, or 7h logged, then there's no reminder.
+  of billable time unlogged", the tab title starts with "(1) ", and Log time opens for today with a duration of 15m.
+- Given I close that Log time at 10:20, then the bell still shows the reminder and clicking it opens Log time again; Log time
+  opens by itself again at 10:30 (duration 30m).
+- Given I dismiss the reminder at 10:20, then neither it nor Log time shows until 10:30; given I log 15 min instead, then at
+  10:20 there's none (5m unlogged) until 10:30.
+- Given today started 08:00 with 1h logged and 1h excluded, at 10:20 the reminder shows "1h 20m of billable time unlogged"
+  and Log time opens with 1h 15m; I save 30m, then it opens again with 45m.
+- Given today started 08:00 with 5h logged and a 7h target, at 17:00 the reminder shows "2h of billable time unlogged" (the
+  target caps it); with 2h more excluded, it still does.
+- Given no start, no log, or 7h billable logged, then there's no reminder.
 
 ## Out of scope
 - Ordering, inserting or repeating logs, per-log clock times, break logs, the legacy "event" level.
@@ -297,3 +314,4 @@ None.
 - 2026-10-31: FR-TLOG-020: each section has a **Duration** (its logs' sum) after the date; "Note" → "Notes" (OQ-249). Back to `review` (feat-tlog-prompt).
 - 2026-10-31: The owner approved FR-TLOG-020 (as updated) for feat-tlog-prompt.
 - 2026-11-02: FR-TLOG-004: a new log's duration defaults to 15m, ArrowUp/Down step it by 15m, a new log starts with the last added log's project and task, a group's **+** presets it; FR-TLOG-020: read-only notes and an **Edit** mode; FR-TLOG-021 reminder to log time (OQ-262; prototype `570b9cc`, feat-tlog-reminder). Back to `review`.
+- 2026-11-03: FR-TLOG-016: **Remaining** is target − billable, the middle adds "<billable> of <target>"; FR-TLOG-018: excluded logs stay out of Remaining and the reminder; FR-TLOG-021: billable-based unlogged capped by the target, Log time opens by itself with the unlogged duration, new copy (owner, prototype `7977c06`, feat-tlog-billable-reminder). Back to `review`.

@@ -236,7 +236,7 @@ describe("time pure logic (feat-tlog-web)", () => {
     });
   });
 
-  it("AC-7 FR-TLOG-016: pieSlices per log plus Remaining; barBars by project and by task", () => {
+  it("AC-7 FR-TLOG-016 (feat-tlog-billable-reminder D2): pieSlices per log plus Remaining of target − billable; barBars by project and by task", () => {
     expect(pieSlices(ownerLogs, 420)).toEqual([
       {
         key: "l1",
@@ -252,10 +252,19 @@ describe("time pure logic (feat-tlog-web)", () => {
       },
       { key: "l3", label: "Chat with coworker", minutes: 15, kind: "log" },
       { key: "l4", label: "Manhatan - Commute", minutes: 60, kind: "log" },
-      { key: "remaining", label: "Remaining", minutes: 210, kind: "remaining" }
+      { key: "remaining", label: "Remaining", minutes: 270, kind: "remaining" }
     ]);
     const full = [log({ id: "f", durationMinutes: 480 })];
     expect(pieSlices(full, 420).map((s) => s.kind)).toEqual(["log"]);
+    const mixed = [
+      log({ id: "b", durationMinutes: 360 }),
+      log({ id: "x", durationMinutes: 120, excludeFromStats: true })
+    ];
+    expect(pieSlices(mixed, 420)).toEqual([
+      { key: "b", label: "Work", minutes: 360, kind: "log" },
+      { key: "x", label: "Work", minutes: 120, kind: "log" },
+      { key: "remaining", label: "Remaining", minutes: 60, kind: "remaining" }
+    ]);
 
     expect(barBars(ownerLogs, "project")).toEqual([
       { key: "p1", label: "Manhatan", minutes: 135 },

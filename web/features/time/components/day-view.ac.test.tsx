@@ -679,7 +679,7 @@ describe("DayView (feat-tlog-web, feat-proto-sync-logged-chart)", () => {
     );
   });
 
-  it("AC-20 FR-TLOG-016 SCR-043: the pie legend and middle, the bar card title per view, Expand opens a dialog", async () => {
+  it("AC-8 FR-TLOG-016 SCR-043 (feat-tlog-billable-reminder D2): the pie legend (Remaining of target − billable) and middle (logged, billable of target), the bar card title per view, Expand opens a dialog", async () => {
     const first = renderView();
     await loaded();
     for (const label of [
@@ -691,8 +691,10 @@ describe("DayView (feat-tlog-web, feat-proto-sync-logged-chart)", () => {
       expect(await screen.findByText(label)).toBeInTheDocument();
     }
     const remaining = screen.getByText("Remaining").parentElement!;
-    expect(remaining).toHaveTextContent("3h 30m");
-    expect(screen.getByText("of 7h")).toBeInTheDocument();
+    expect(remaining).toHaveTextContent("4h 30m");
+    // The middle: all logged, then billable of the target (60 min of the owner logs are excluded).
+    const middle = screen.getByText("2h 30m of 7h");
+    expect(middle.previousElementSibling).toHaveTextContent("3h 30m");
     expect(screen.getByText("Time by log")).toBeInTheDocument();
     expect(screen.getByText("Time by project")).toBeInTheDocument();
 

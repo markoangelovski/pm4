@@ -27,6 +27,12 @@ export function logReminder(
   return { unlogged: f.unlogged, since: day.startMinute + f.logged };
 }
 
+/** The duration a log for the reminder starts with: its unlogged time in whole 15 min (15 min at least). */
+export function reminderMinutes(reminder: LogReminder): number {
+  void reminder;
+  throw new Error("not implemented (feat-tlog-billable-reminder)");
+}
+
 /** A dismissed reminder: it stays hidden while its day and start + logged are the same and fewer than another 15 min pass. */
 export interface ReminderDismissal {
   workDate: string;

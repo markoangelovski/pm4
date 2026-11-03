@@ -1,6 +1,6 @@
 # Task Board
 
-**Next free ID:** T-0134
+**Next free ID:** T-0135
 
 | ID | Title | Milestone | App | Size | Status | Depends on |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -137,5 +137,6 @@
 | [T-0131](m5-reporting/T-0131-non-prod-out-of-worked-shown.md) | Non-prod out of worked, shown as a Workdays segment (D9): four prototype twins, the proposed types removed | M5 | web | S | done | T-0129, T-0130 |
 | [T-0132](m4-time-logs/T-0132-log-presets-group-prompt-edit-pie.md) | Log presets, group **+**, Prompt Edit, pie tooltip, wider dialogs: ten prototype twins | M4 | web | S | done | — |
 | [T-0133](m4-time-logs/T-0133-reminder-to-log-time-reminder-ts.md) | Reminder to log time: reminder.ts, the bell, use-attention.ts, the header | M4 | web | S | done | T-0132 |
+| [T-0134](m4-time-logs/T-0134-billable-remaining-and-reminder-auto-open.md) | Billable Remaining and reminder, auto-open Log time: six prototype twins | M4 | web | S | ready | — |
 
 M0–M6 are done. Later follow-ups are filed under the milestone they extend.

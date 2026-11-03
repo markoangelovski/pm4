@@ -43,7 +43,11 @@ const me: Me = {
   createdAt: "2026-10-02T22:30:00.000Z"
 };
 
-const log = (id: string, durationMinutes: number): TimeLog => ({
+const log = (
+  id: string,
+  durationMinutes: number,
+  excludeFromStats = false
+): TimeLog => ({
   id,
   workDate: "2026-10-09",
   durationMinutes,
@@ -51,7 +55,7 @@ const log = (id: string, durationMinutes: number): TimeLog => ({
   title: null,
   project: null,
   task: null,
-  excludeFromStats: false
+  excludeFromStats
 });
 
 const res = (status: number) => new Response(null, { status });
@@ -97,8 +101,25 @@ const dayOf = (startMinute: number | null, logs: TimeLog[]): Day => ({
 });
 
 const bell = (name: string) => screen.findByRole("button", { name });
+const input = (label: string) =>
+  screen.getByLabelText(label) as HTMLInputElement;
+const duration = () => input("Duration");
 
-describe("NotificationsButton (feat-tlog-reminder, SCR-008)", () => {
+/** The Log time dialog, once it is open. */
+async function logTime() {
+  const dialog = await screen.findByRole("dialog");
+  expect(
+    within(dialog).getByRole("heading", { name: "Log time" })
+  ).toBeInTheDocument();
+  return dialog;
+}
+
+const cancel = () =>
+  fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+const noDialog = () =>
+  waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+
+describe("NotificationsButton (feat-tlog-reminder, feat-tlog-billable-reminder, SCR-008)", () => {
   beforeEach(() => {
     // "Now" is 2026-10-09 10:20 in Zagreb; only Date is faked, timers stay real.
     vi.useFakeTimers({ toFake: ["Date"] });
@@ -112,44 +133,114 @@ describe("NotificationsButton (feat-tlog-reminder, SCR-008)", () => {
     vi.useRealTimers();
   });
 
-  it("AC-2 FR-TLOG-021 SCR-008: 20m unlogged → a new notification, the title prefix; Dismiss clears both; Log your time opens Log time for today", async () => {
-    // Start 08:00, 2h logged → unlogged since 10:00.
+  it("AC-3 FR-TLOG-021 SCR-008 (feat-tlog-billable-reminder D3 D4): 20m unlogged → Log time opens by itself for today with 15m; a new notification with the billable copy; the title prefix", async () => {
+    // Start 08:00, 2h billable → 20m unlogged at 10:20.
     today = dayOf(480, [log("a", 60), log("b", 60)]);
-    const first = renderBell();
-    const trigger = await bell("Notifications (1 new)");
+    renderBell();
+    const dialog = await logTime();
+    expect(within(dialog).getByLabelText("Date")).toHaveTextContent(
+      "9 Oct 2026"
+    );
+    await waitFor(() => expect(duration().value).toBe("15m"));
+    expect(
+      await screen.findByRole("button", {
+        name: "Notifications (1 new)",
+        hidden: true
+      })
+    ).toBeInTheDocument();
     await waitFor(() => expect(document.title).toBe("(1) Dashboard - PM4"));
 
-    fireEvent.click(trigger);
-    const item = await screen.findByText("Log your time");
-    expect(screen.getByText("20m unlogged since 10:00")).toBeInTheDocument();
+    cancel();
+    await noDialog();
+    fireEvent.click(await bell("Notifications (1 new)"));
+    expect(await screen.findByText("Log your time")).toBeInTheDocument();
+    expect(
+      screen.getByText("20m of billable time unlogged")
+    ).toBeInTheDocument();
+  });
 
+  it("AC-4 FR-TLOG-021 SCR-008 (feat-tlog-billable-reminder D4): closing Log time keeps the reminder; Log your time opens it again with 15m; Dismiss clears the reminder, the dialog and the title prefix", async () => {
+    today = dayOf(480, [log("a", 60), log("b", 60)]);
+    renderBell();
+    await logTime();
+    cancel();
+    await noDialog();
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    const trigger = await bell("Notifications (1 new)");
+    expect(document.title).toBe("(1) Dashboard - PM4");
+
+    fireEvent.click(trigger);
+    fireEvent.click(await screen.findByText("Log your time"));
+    await logTime();
+    await waitFor(() => expect(duration().value).toBe("15m"));
+    cancel();
+    await noDialog();
+
+    fireEvent.click(await bell("Notifications (1 new)"));
+    await screen.findByText("Log your time");
     fireEvent.click(screen.getByRole("button", { name: "Dismiss" }));
     expect(await bell("Notifications")).toBeInTheDocument();
     expect(await screen.findByText("No notifications.")).toBeInTheDocument();
     expect(screen.queryByText("Log your time")).not.toBeInTheDocument();
     await waitFor(() => expect(document.title).toBe("Dashboard - PM4"));
-    expect(item).not.toBeInTheDocument();
-    first.unmount();
-
-    // A new mount (a reload) shows it again; clicking it opens Log time for today.
-    renderBell();
-    fireEvent.click(await bell("Notifications (1 new)"));
-    fireEvent.click(await screen.findByText("Log your time"));
-    const dialog = await screen.findByRole("dialog");
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    // The popover is a dialog too: no Log time.
     expect(
-      within(dialog).getByRole("heading", { name: "Log time" })
+      screen.queryByRole("heading", { name: "Log time" })
+    ).not.toBeInTheDocument();
+  });
+
+  it("AC-5 FR-TLOG-021 SCR-008 (feat-tlog-billable-reminder D3 D4): excluded logs don't count: 1h 20m unlogged, Log time opens with 1h 15m; saving 30m → Log time opens again with 45m", async () => {
+    // Start 08:00, 1h billable + 1h excluded → 1h 20m unlogged at 10:20.
+    today = dayOf(480, [log("a", 60), log("b", 60, true)]);
+    const saved = log("c", 30);
+    api.POST.mockImplementation(async () => {
+      today = dayOf(480, [...today.logs, saved]);
+      return { data: saved, response: res(201) };
+    });
+    renderBell();
+    await logTime();
+    await waitFor(() => expect(duration().value).toBe("1h 15m"));
+    expect(
+      await screen.findByRole("button", {
+        name: "Notifications (1 new)",
+        hidden: true
+      })
     ).toBeInTheDocument();
-    expect(within(dialog).getByLabelText("Date")).toHaveTextContent(
-      "9 Oct 2026"
+
+    fireEvent.change(input("Log text"), { target: { value: "Work" } });
+    fireEvent.change(duration(), { target: { value: "30m" } });
+    fireEvent.click(screen.getByRole("button", { name: "Log time" }));
+    await waitFor(() => expect(api.POST).toHaveBeenCalledTimes(1));
+    expect(api.POST).toHaveBeenCalledWith(
+      "/api/v1/time-logs",
+      expect.objectContaining({
+        body: expect.objectContaining({
+          workDate: "2026-10-09",
+          durationMinutes: 30
+        })
+      })
     );
+
+    // 1h 30m billable → 50m unlogged: it opens again with 45m.
+    await waitFor(() => expect(duration().value).toBe("45m"));
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+
+    cancel();
+    await noDialog();
+    fireEvent.click(await bell("Notifications (1 new)"));
+    expect(
+      await screen.findByText("50m of billable time unlogged")
+    ).toBeInTheDocument();
   });
 
   it.each([
     ["no start", () => dayOf(null, [log("a", 60), log("b", 60)])],
     ["no logs", () => dayOf(480, [])],
-    ["7h logged", () => dayOf(120, [log("a", 300), log("b", 120)])]
+    ["7h billable logged", () => dayOf(120, [log("a", 300), log("b", 120)])]
   ])(
-    "AC-3 FR-TLOG-021 SCR-008: %s → no notification, no title prefix",
+    "AC-6 FR-TLOG-021 SCR-008 (feat-tlog-billable-reminder D3): %s → no notification, no dialog, no title prefix",
     async (_, make) => {
       today = make();
       renderBell();
@@ -163,6 +254,7 @@ describe("NotificationsButton (feat-tlog-reminder, SCR-008)", () => {
       );
       await Promise.all(api.GET.mock.results.map((r) => r.value));
       await new Promise((resolve) => setTimeout(resolve, 50));
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
       const trigger = await bell("Notifications");
       fireEvent.click(trigger);
       expect(await screen.findByText("No notifications.")).toBeInTheDocument();
