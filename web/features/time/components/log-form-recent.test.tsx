@@ -102,6 +102,22 @@ const savedLog: TimeLog = log(["p1", "Manhatan"], ["t1", "Specifications 01"]);
 
 const res = (status: number) => new Response(null, { status });
 
+function problem(status: number, slug: string) {
+  const body = {
+    type: `https://pm4.angelovski.top/errors/${slug}`,
+    title: "Error",
+    status,
+    detail: "Error."
+  };
+  return {
+    error: body,
+    response: new Response(JSON.stringify(body), {
+      status,
+      headers: { "content-type": "application/problem+json" }
+    })
+  };
+}
+
 /** The logs of each date; set per test. */
 let dayLogs: Record<string, TimeLog[]> = {};
 
@@ -240,5 +256,43 @@ describe("Edit log Recent chips (feat-tlog-recent-links D3, D4)", () => {
     await waitFor(() => expect(onOpenChange).toHaveBeenCalledWith(false));
     expect(api.PATCH).toHaveBeenCalledTimes(1);
     expect(lastBody()).toMatchObject({ projectId: "p1", taskId: "t1" });
+  });
+
+  it("a project chip that clears the task also clears the task's error; one that keeps it keeps the error", async () => {
+    dayLogs = {
+      "2026-10-07": [
+        log(["p2", "Website"], ["t3", "Landing page"]),
+        log(["p1", "Manhatan"], ["t1", "Specifications 01"])
+      ]
+    };
+    setLastLogLink({
+      project: { id: "p1", title: "Manhatan" },
+      task: {
+        id: "t1",
+        title: "Specifications 01",
+        project: { id: "p1", title: "Manhatan" }
+      }
+    });
+    api.POST.mockResolvedValue(problem(404, "not-found"));
+    renderDialog();
+    await screen.findByRole("group", { name: "Recent projects" });
+    fireEvent.change(screen.getByLabelText("Log text"), {
+      target: { value: "Specs review" }
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Log time" }));
+    expect(
+      await screen.findByText("This item no longer exists.")
+    ).toBeInTheDocument();
+
+    // The same project keeps the task, so the error stays.
+    fireEvent.click(chip("Recent projects", "Manhatan"));
+    expect(screen.getByText("This item no longer exists.")).toBeInTheDocument();
+
+    // Another project clears the task and its error.
+    fireEvent.click(chip("Recent projects", "Website"));
+    await waitFor(() => expect(taskField().value).toBe(""));
+    expect(
+      screen.queryByText("This item no longer exists.")
+    ).not.toBeInTheDocument();
   });
 });
