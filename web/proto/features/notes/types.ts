@@ -15,7 +15,7 @@ export type TodoListDto = S["TodoListResponseDto"];
 /** Create (text required) and update (any subset). `done` sets or clears `doneAt`. */
 export type TodoInputDto = S["TodoInputDto"];
 
-/** The Notes tab's sorts; `title:asc` (the default) is proposed (NoteSortDto). */
+/** The Notes tab's sorts; `title:asc` is the default. */
 export const NOTE_SORTS = [
   "title:asc",
   "updatedAt:desc",
