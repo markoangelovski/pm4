@@ -96,6 +96,10 @@ empty or invalid value: 15 min). A new log starts with the project and task of t
 (none at first; editing a log doesn't change it). In the grouped day views (FR-TLOG-003/015), a **+** beside a project's or a
 task's group opens a new log preset to that project, or that task and its project, instead; Unsorted, Non-prod and deleted
 projects or tasks have none (prototype `570b9cc`).
+Under the pickers, **Recent:** suggests, as one-click chips, the projects of the chosen date's logs and their tasks (only the picked
+project's tasks once a project is picked), the latest logged first, at most 5 each; deleted projects and tasks aren't suggested. A
+project chip picks that project (and clears a task of another project); a task chip picks the task and its project. They come from
+the date's logs the form already loads: no extra request (prototype `c9c3343`, feat-tlog-recent-links).
 **Acceptance criteria:**
 - Given an empty text, or no/invalid duration, a field error is shown and nothing is created.
 - Given I pick only a project, the log shows that project and no task.
@@ -107,6 +111,8 @@ projects or tasks have none (prototype `570b9cc`).
 - Given I added a log on task X, when I open Log time again, then task X and its project are filled in; after a reload, nothing is.
 - Given the By Task view, when I press the **+** of the group "Manhatan · Specifications 01", then Log time opens with that task
   and project, and the group doesn't open or close.
+- Given I logged on Manhatan · Specifications 01 and then on Website today, when I open Log time for today, then **Recent:** shows
+  Website and Manhatan, and the task chip Specifications 01; clicking Manhatan, then Specifications 01 picks them both (two clicks).
 
 ### FR-TLOG-006: Edit log
 **Priority:** Must
@@ -318,3 +324,4 @@ None.
 - 2026-11-02: FR-TLOG-004: a new log's duration defaults to 15m, ArrowUp/Down step it by 15m, a new log starts with the last added log's project and task, a group's **+** presets it; FR-TLOG-020: read-only notes and an **Edit** mode; FR-TLOG-021 reminder to log time (OQ-262; prototype `570b9cc`, feat-tlog-reminder). Back to `review`.
 - 2026-11-03: FR-TLOG-016: **Remaining** is target − billable, the middle adds "<billable> of <target>"; FR-TLOG-018: excluded logs stay out of Remaining and the reminder; FR-TLOG-021: billable-based unlogged capped by the target, Log time opens by itself with the unlogged duration, new copy (owner, prototype `7977c06`, feat-tlog-billable-reminder). Back to `review`.
 - 2026-11-04: FR-TLOG-018/021: the reminder's unlogged time counts all logs since the start (excluded ones too), and the target still counts only billable time: min(now − start − logged, target − billable) (owner, prototype `5dcda69`, feat-tlog-reminder-all-logged).
+- 2026-11-04: FR-TLOG-004: **Recent:** project and task chips under the pickers, from the chosen date's logs (owner, prototype `c9c3343`, feat-tlog-recent-links).

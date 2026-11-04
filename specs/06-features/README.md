@@ -68,3 +68,4 @@ A feature spec links to those. It doesn't copy them.
 | Log presets, the reminder to log time, Prompt Edit and wider dialogs | [tlog-reminder.md](tlog-reminder.md) | M4 | approved |
 | Billable reminder: Remaining and the reminder count billable time; Log time opens with the unlogged duration | [tlog-billable-reminder.md](tlog-billable-reminder.md) | M4 | approved |
 | Reminder counts all logs: unlogged since the start counts excluded logs, the target only billable | [tlog-reminder-all-logged.md](tlog-reminder-all-logged.md) | M4 | approved |
+| Log time: Recent project and task chips | [tlog-recent-links.md](tlog-recent-links.md) | M4 | approved |
