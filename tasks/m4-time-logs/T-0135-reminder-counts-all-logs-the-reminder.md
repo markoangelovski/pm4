@@ -3,7 +3,7 @@ id: T-0135
 title: Reminder counts all logs: the reminder.ts twin
 milestone: M4
 app: web
-status: review
+status: done
 size: S
 tier: haiku
 depends_on: []

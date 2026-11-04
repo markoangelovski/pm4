@@ -138,6 +138,6 @@
 | [T-0132](m4-time-logs/T-0132-log-presets-group-prompt-edit-pie.md) | Log presets, group **+**, Prompt Edit, pie tooltip, wider dialogs: ten prototype twins | M4 | web | S | done | — |
 | [T-0133](m4-time-logs/T-0133-reminder-to-log-time-reminder-ts.md) | Reminder to log time: reminder.ts, the bell, use-attention.ts, the header | M4 | web | S | done | T-0132 |
 | [T-0134](m4-time-logs/T-0134-billable-remaining-and-reminder-auto-open.md) | Billable Remaining and reminder, auto-open Log time: six prototype twins | M4 | web | S | done | — |
-| [T-0135](m4-time-logs/T-0135-reminder-counts-all-logs-the-reminder.md) | Reminder counts all logs: the reminder.ts twin | M4 | web | S | review | — |
+| [T-0135](m4-time-logs/T-0135-reminder-counts-all-logs-the-reminder.md) | Reminder counts all logs: the reminder.ts twin | M4 | web | S | done | — |
 
 M0–M6 are done. Later follow-ups are filed under the milestone they extend.
