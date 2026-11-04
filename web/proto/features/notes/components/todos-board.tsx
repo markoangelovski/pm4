@@ -2,7 +2,13 @@
 
 import { useState } from "react";
 import type { UseQueryResult } from "@tanstack/react-query";
-import { ChevronsDownUp, ChevronsUpDown, ListChecks, Plus } from "lucide-react";
+import {
+  ChevronsDownUp,
+  ChevronsUpDown,
+  ListChecks,
+  ListTodo,
+  Plus
+} from "lucide-react";
 import {
   Accordion,
   AccordionContent,
@@ -56,12 +62,15 @@ const EMPTY_TITLES = {
 export function TodosBoard({
   query,
   filtered,
+  byParent,
   timeZone,
   onCreate
 }: {
   query: UseQueryResult<Todo[], Error>;
   /** What narrows the list, for the empty state and the always-there General group. */
   filtered: "search" | "range" | "project" | "general" | null;
+  /** The Parent A–Z sort: General is ordered by name among the projects. */
+  byParent: boolean;
   timeZone: string;
   onCreate: () => void;
 }) {
@@ -101,19 +110,11 @@ export function TodosBoard({
 
   const all = query.data;
   const visible = all.filter((t) => shown(t, filter, keep));
-  const groups = groupTodos(visible);
-  if (
-    (filtered === null || filtered === "general") &&
-    filter !== "done" &&
-    !groups.some((g) => g.key === "general")
-  )
-    groups.unshift({
-      key: "general",
-      project: null,
-      task: null,
-      todos: [],
-      openCount: 0
-    });
+  const groups = groupTodos(visible, {
+    byParent,
+    withGeneral:
+      (filtered === null || filtered === "general") && filter !== "done"
+  });
   const keys = groups.map((g) => g.key);
   const allOpen = keys.every((k) => !closed.includes(k));
 
@@ -258,7 +259,7 @@ export function TodosBoard({
   );
 }
 
-/** General, a project's name, or "Project · Task"; a deleted one with the deleted marker. */
+/** General, a project's name, or "Project · Task" (the task with its icon); a deleted one with the deleted marker. */
 function GroupName({ group }: { group: TodoGroup }) {
   if (group.key === "general") return <>General</>;
   const part = (ref: TodoGroup["project"]) =>
@@ -272,7 +273,15 @@ function GroupName({ group }: { group: TodoGroup }) {
           <span className="text-muted-foreground">·</span>{" "}
         </>
       ) : null}
-      {group.task ? part(group.task) : null}
+      {group.task ? (
+        <>
+          <ListTodo
+            aria-hidden
+            className="mr-1 inline size-4 align-[-3px] text-muted-foreground"
+          />
+          {part(group.task)}
+        </>
+      ) : null}
     </>
   );
 }

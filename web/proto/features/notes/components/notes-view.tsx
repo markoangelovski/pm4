@@ -15,7 +15,7 @@ import { useProjects } from "@/proto/features/projects/api";
 import { useMe } from "@/proto/features/users/api";
 import { today as todayIn } from "@/lib/time";
 import { useTodos } from "../api";
-import { NOTE_SORTS } from "../types";
+import { NOTE_SORTS, TODO_SORTS, type NoteSort, type TodoSort } from "../types";
 import { NO_LINK, type NoteLink } from "../schemas";
 import { ALL, UNLINKED } from "./notes-filter";
 import { NoteFormDialog } from "./note-form-dialog";
@@ -27,24 +27,44 @@ import { TodosBoard } from "./todos-board";
 const TABS = ["notes", "todos"] as const;
 type Tab = (typeof TABS)[number];
 
+/** Each tab's filter and sort when the URL has none: Notes shows General, title A–Z; To-dos all, by parent. */
+const DEFAULTS = {
+  notes: { show: UNLINKED, sort: "title:asc" },
+  todos: { show: ALL, sort: "parent:asc" }
+} as const satisfies Record<Tab, { show: string; sort: NoteSort | TodoSort }>;
+
+const isNoteSort = (v: string | null): v is NoteSort =>
+  (NOTE_SORTS as readonly (string | null)[]).includes(v);
+const isTodoSort = (v: string | null): v is TodoSort =>
+  (TODO_SORTS as readonly (string | null)[]).includes(v);
+
 /**
  * The Notes page (`/app/notes?tab=…`): Notes and To-dos tabs, the New button. One toolbar serves both tabs, its
- * state in `show` (General by default, All or a project), `q`, `sort`, `from`/`to` (absent: All time); the Notes tab
- * also has `page`.
+ * state in `show` (General, All or a project; the default is the tab's), `q`, `sort` (the tab's sorts),
+ * `from`/`to` (absent: All time); the Notes tab also has `page`. Switching tabs resets `show` and `sort`.
  */
 export function NotesView() {
-  const [{ tab, show, q, sort, from, to, page }, setParams] = useQueryStates(
+  const [
+    { tab, show: showParam, q, sort: sortParam, from, to, page },
+    setParams
+  ] = useQueryStates(
     {
       tab: parseAsStringLiteral(TABS).withDefault("notes"),
-      show: parseAsString.withDefault(UNLINKED),
+      show: parseAsString,
       q: parseAsString.withDefault(""),
-      sort: parseAsStringLiteral(NOTE_SORTS).withDefault("updatedAt:desc"),
+      sort: parseAsString,
       from: parseAsString,
       to: parseAsString,
       page: parseAsInteger.withDefault(1)
     },
     { history: "replace", clearOnDefault: true }
   );
+  const defaults = DEFAULTS[tab];
+  const show = showParam ?? defaults.show;
+  const noteSort: NoteSort =
+    tab === "notes" && isNoteSort(sortParam) ? sortParam : DEFAULTS.notes.sort;
+  const todoSort: TodoSort =
+    tab === "todos" && isTodoSort(sortParam) ? sortParam : DEFAULTS.todos.sort;
   const me = useMe();
   const timeZone = me.data?.timeZone ?? "UTC";
   const today = todayIn(timeZone);
@@ -63,18 +83,28 @@ export function NotesView() {
     key: p.id,
     project: { id: p.id, title: p.title, deleted: false }
   }));
-  // An unknown project id in `show` falls back to General.
+  // An unknown project id in `show` falls back to the tab's default.
   const shown =
     show === ALL || show === UNLINKED
       ? null
       : (options.find((o) => o.key === show) ?? null);
-  const showValue = shown ? shown.key : show === ALL ? ALL : UNLINKED;
+  const showValue = shown
+    ? shown.key
+    : show === ALL || show === UNLINKED
+      ? show
+      : defaults.show;
   const noteFilter = shown
     ? { projectId: shown.key }
     : showValue === UNLINKED
       ? { unlinked: true }
       : {};
-  const listOptions = { q: q || undefined, sort, ...range };
+  const listOptions = { q: q || undefined, sort: noteSort, ...range };
+  // Parent A–Z groups on the page; in a group, the oldest to-do first.
+  const todoOptions = {
+    q: q || undefined,
+    sort: todoSort === "parent:asc" ? "createdAt:asc" : todoSort,
+    ...range
+  } as const;
   const filtered = q
     ? "search"
     : range
@@ -88,7 +118,7 @@ export function NotesView() {
   const preset: NoteLink = shown
     ? { project: { id: shown.key, title: shown.project.title }, task: null }
     : NO_LINK;
-  const todos = useTodos(noteFilter, listOptions);
+  const todos = useTodos(noteFilter, todoOptions);
   // The tab's count: every open to-do, whatever the toolbar shows.
   const allTodos = useTodos({});
   const openTodos = (allTodos.data ?? []).filter((t) => !t.doneAt).length;
@@ -106,7 +136,9 @@ export function NotesView() {
       <Tabs
         className="gap-3"
         value={tab}
-        onValueChange={(v) => setParams({ tab: v as Tab, page: null })}
+        onValueChange={(v) =>
+          setParams({ tab: v as Tab, show: null, sort: null, page: null })
+        }
       >
         <div className="border-b">
           <TabsList variant="line" className="h-11 justify-start">
@@ -138,9 +170,13 @@ export function NotesView() {
             title: o.project.title
           }))}
           show={showValue}
-          onShow={(v) => setParams({ show: v, page: null })}
-          sort={sort}
-          onSort={(v) => setParams({ sort: v, page: null })}
+          onShow={(v) =>
+            setParams({ show: v === defaults.show ? null : v, page: null })
+          }
+          sort={tab === "notes" ? noteSort : todoSort}
+          onSort={(v) =>
+            setParams({ sort: v === defaults.sort ? null : v, page: null })
+          }
           range={range}
           today={today}
           onRange={(r) =>
@@ -166,6 +202,7 @@ export function NotesView() {
           <TodosBoard
             query={todos}
             filtered={filtered}
+            byParent={todoSort === "parent:asc"}
             timeZone={timeZone}
             onCreate={() => setCreating("todos")}
           />

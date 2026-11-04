@@ -61,6 +61,35 @@ function paged<T>(items: T[], q: URLSearchParams) {
   };
 }
 
+/**
+ * GET /projects' and /tasks' `sort`, as the API orders them: `title` case-insensitively, `dueDate` with no date last,
+ * ties on `id` descending.
+ */
+function sorted<
+  T extends {
+    id: string;
+    title: string;
+    createdAt?: string;
+    updatedAt: string;
+    dueDate?: string | null;
+  }
+>(items: T[], q: URLSearchParams): T[] {
+  const [field, dir] = (q.get("sort") ?? "updatedAt:desc").split(":") as [
+    "title" | "createdAt" | "updatedAt" | "dueDate",
+    "asc" | "desc"
+  ];
+  const sign = dir === "asc" ? 1 : -1;
+  const valueOf = (x: T) =>
+    field === "title" ? x.title.toLowerCase() : (x[field] ?? null);
+  return [...items].sort((a, b) => {
+    const [va, vb] = [valueOf(a), valueOf(b)];
+    if (va === null || vb === null) {
+      if (va !== vb) return va === null ? 1 : -1;
+    } else if (va !== vb) return sign * (va < vb ? -1 : 1);
+    return b.id.localeCompare(a.id);
+  });
+}
+
 const sumMinutes = (logs: TimeLog[]) =>
   logs.reduce((t, l) => t + l.durationMinutes, 0);
 
@@ -151,7 +180,10 @@ function projects(
     const s = (q.get("q") ?? "").toLowerCase();
     return json(
       paged(
-        all.filter((p) => p.title.toLowerCase().includes(s)).map(withCounts),
+        sorted(
+          all.filter((p) => p.title.toLowerCase().includes(s)),
+          q
+        ).map(withCounts),
         q
       )
     );
@@ -236,7 +268,7 @@ function tasks(
         (!q.get("projectId") || t.project.id === q.get("projectId")) &&
         (st.length === 0 || st.includes(t.status))
     );
-    return json(paged(list.map(withLogged), q));
+    return json(paged(sorted(list, q).map(withLogged), q));
   }
   const t = all.find((x) => x.id === id);
   if (!t) return notFound();
@@ -763,10 +795,14 @@ function listItems<T extends Pick<NoteDto, "createdAt" | "updatedAt">>(
   q: URLSearchParams,
   textOf: (item: T) => string
 ) {
-  const [field, dir] = (q.get("sort") ?? "updatedAt:desc").split(":") as [
-    "updatedAt" | "createdAt",
+  const [sortField, dir] = (q.get("sort") ?? "updatedAt:desc").split(":") as [
+    "updatedAt" | "createdAt" | "title",
     "asc" | "desc"
   ];
+  // Title A–Z (notes only, proposed): the range is on the last edit.
+  const field = sortField === "title" ? "updatedAt" : sortField;
+  const titleOf = (item: T) =>
+    ((item as { title?: string | null }).title ?? "").trim();
   const tz = getMockState().me.timeZone;
   const day = (iso: string) => format(new TZDate(iso, tz), "yyyy-MM-dd");
   const from = q.get("from");
@@ -779,11 +815,20 @@ function listItems<T extends Pick<NoteDto, "createdAt" | "updatedAt">>(
         (!to || day(n[field]) <= to) &&
         (!text || textOf(n).toLowerCase().includes(text))
     )
-    .sort((a, b) =>
-      dir === "asc"
+    .sort((a, b) => {
+      if (sortField === "title") {
+        const [ta, tb] = [titleOf(a), titleOf(b)];
+        // Untitled last, most recently edited first.
+        if (!ta !== !tb) return ta ? -1 : 1;
+        return (
+          ta.localeCompare(tb, undefined, { sensitivity: "base" }) ||
+          b.updatedAt.localeCompare(a.updatedAt)
+        );
+      }
+      return dir === "asc"
         ? a[field].localeCompare(b[field])
-        : b[field].localeCompare(a[field])
-    );
+        : b[field].localeCompare(a[field]);
+    });
 }
 
 /** `/notes` (API-NOTE-001…004): newest change first by default, paged. */

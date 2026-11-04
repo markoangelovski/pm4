@@ -13,7 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useMe } from "@/proto/features/users/api";
 import { useNotes, useTodos, type NoteFilter, type Todo } from "../api";
-import { byOpenThenDone } from "../group";
+import { byCreated } from "../group";
 import type { NoteLink } from "../schemas";
 import { NoteFormDialog } from "./note-form-dialog";
 import { NoteItem } from "./note-item";
@@ -58,7 +58,8 @@ function NotesCard({
 }) {
   const [limit, setLimit] = useState(NOTES_FIRST);
   const [creating, setCreating] = useState(false);
-  const query = useNotes(filter, 1, limit);
+  // Title A–Z, as on the Notes page.
+  const query = useNotes(filter, 1, limit, { sort: "title:asc" });
   const data = query.data;
   return (
     <Card>
@@ -143,12 +144,16 @@ function TodosCard({
 }) {
   const query = useTodos(filter);
   const [showDone, setShowDone] = useState(false);
-  // Ticked off here: stays among the open ones until the page is left (or Show done is used).
+  // Ticked off here: stays in its place until the page is left (or Show done is used).
   const [keep, setKeep] = useState<Set<string>>(new Set());
-  const todos = [...(query.data ?? [])].sort(byOpenThenDone);
-  const open = todos.filter((t) => !t.doneAt || keep.has(t.id));
-  const done = todos.filter((t) => t.doneAt && !keep.has(t.id));
-  const openCount = todos.filter((t) => !t.doneAt).length;
+  // One list by creation, oldest first, done or not, so ticking one off (or reopening it) doesn't move it.
+  const todos = [...(query.data ?? [])].sort(byCreated);
+  const shownTodos = todos.filter(
+    (t) => showDone || !t.doneAt || keep.has(t.id)
+  );
+  const doneCount = todos.filter((t) => t.doneAt).length;
+  const hiddenDone = todos.filter((t) => t.doneAt && !keep.has(t.id)).length;
+  const openCount = todos.length - doneCount;
   const row = (t: Todo) => (
     <TodoRow
       key={t.id}
@@ -187,15 +192,15 @@ function TodosCard({
           <Skeleton className="h-24 w-full" />
         ) : (
           <>
-            {open.length > 0 ? (
-              <div className="-mt-2.5 divide-y">{open.map(row)}</div>
+            {shownTodos.length > 0 ? (
+              <div className="-mt-2.5 divide-y">{shownTodos.map(row)}</div>
             ) : (
               <p className="text-sm text-muted-foreground">
-                {done.length > 0 ? "Everything is done." : "No to-dos yet."}
+                {doneCount > 0 ? "Everything is done." : "No to-dos yet."}
               </p>
             )}
             <TodoAddInput link={link} />
-            {done.length > 0 ? (
+            {showDone || hiddenDone > 0 ? (
               <>
                 <Button
                   variant="ghost"
@@ -211,11 +216,8 @@ function TodosCard({
                   ) : (
                     <ChevronDown data-icon="inline-start" />
                   )}
-                  {showDone ? "Hide done" : `Show done (${done.length})`}
+                  {showDone ? "Hide done" : `Show done (${hiddenDone})`}
                 </Button>
-                {showDone ? (
-                  <div className="divide-y">{done.map(row)}</div>
-                ) : null}
               </>
             ) : null}
           </>

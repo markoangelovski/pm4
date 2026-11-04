@@ -8,6 +8,7 @@ import {
 } from "@tanstack/react-query";
 import { apiClient } from "@/proto/mock/client";
 import { unwrap, unwrapVoid } from "@/lib/api/problem";
+import type { NoteSortDto } from "./proposed-types";
 import type {
   NoteDto,
   NoteFilterQuery,
@@ -15,6 +16,7 @@ import type {
   NoteListDto,
   NoteListQuery,
   TodoDto,
+  TodoListQuery,
   TodoInputDto
 } from "./types";
 
@@ -24,8 +26,12 @@ export type NoteInput = NoteInputDto;
 export type Todo = TodoDto;
 export type TodoInput = TodoInputDto;
 export type NoteFilter = NoteFilterQuery;
-/** The Notes page's list query beyond the link filter (search, sort, date range); the To-dos tab's too. */
-export type NoteListOptions = Pick<NoteListQuery, "q" | "sort" | "from" | "to">;
+/** The Notes page's list query beyond the link filter (search, sort, date range). */
+export type NoteListOptions = Pick<NoteListQuery, "q" | "from" | "to"> & {
+  sort?: NoteSortDto;
+};
+/** The To-dos tab's: the same without the title sort. */
+export type TodoListOptions = Pick<TodoListQuery, "q" | "sort" | "from" | "to">;
 
 export const noteKeys = {
   all: ["notes"] as const,
@@ -37,7 +43,7 @@ export const noteKeys = {
     options: NoteListOptions = {}
   ) => [...noteKeys.notes(), filter, page, pageSize, options] as const,
   todos: () => [...noteKeys.all, "todos"] as const,
-  todoList: (filter: NoteFilter, options: NoteListOptions = {}) =>
+  todoList: (filter: NoteFilter, options: TodoListOptions = {}) =>
     [...noteKeys.todos(), filter, options] as const
 };
 
@@ -56,7 +62,15 @@ export function useNotes(
     queryFn: async ({ signal }) =>
       unwrap(
         await apiClient.GET("/api/v1/notes", {
-          params: { query: { ...filter, ...options, page, pageSize } },
+          // `title:asc` is proposed (NoteSortDto): the generated schema doesn't list it yet.
+          params: {
+            query: {
+              ...filter,
+              ...options,
+              page,
+              pageSize
+            } as NoteListQuery
+          },
           signal
         })
       ),
@@ -111,7 +125,7 @@ export function useDeleteNote(): UseMutationResult<void, Error, string> {
 /** API-TODO-001: open and done, newest change first unless `options.sort` says otherwise (the list filters and groups them). */
 export function useTodos(
   filter: NoteFilter,
-  options: NoteListOptions = {}
+  options: TodoListOptions = {}
 ): UseQueryResult<Todo[], Error> {
   return useQuery({
     queryKey: noteKeys.todoList(filter, options),

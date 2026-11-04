@@ -81,7 +81,11 @@ const SORT_LABELS: Record<ProjectSort, string> = {
   "createdAt:desc": "Recently created",
   "title:asc": "Title A–Z"
 };
-const SORT_ITEMS = PROJECT_SORTS.map((value) => ({
+// The default (Title A–Z) first, so the menu opens downwards: it aligns the selected item with the trigger.
+const SORT_ITEMS = [
+  "title:asc" as const,
+  ...PROJECT_SORTS.filter((value) => value !== "title:asc")
+].map((value) => ({
   value,
   label: SORT_LABELS[value]
 }));
@@ -92,7 +96,7 @@ export function ProjectsList() {
   const [{ q, sort, page }, setParams] = useQueryStates(
     {
       q: parseAsString.withDefault(""),
-      sort: parseAsStringLiteral(PROJECT_SORTS).withDefault("updatedAt:desc"),
+      sort: parseAsStringLiteral(PROJECT_SORTS).withDefault("title:asc"),
       page: parseAsInteger.withDefault(1)
     },
     { history: "replace", clearOnDefault: true }

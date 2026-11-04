@@ -15,13 +15,28 @@ export type TodoListDto = S["TodoListResponseDto"];
 /** Create (text required) and update (any subset). `done` sets or clears `doneAt`. */
 export type TodoInputDto = S["TodoInputDto"];
 
+/** The Notes tab's sorts; `title:asc` (the default) is proposed (NoteSortDto). */
 export const NOTE_SORTS = [
+  "title:asc",
   "updatedAt:desc",
   "updatedAt:asc",
   "createdAt:desc",
   "createdAt:asc"
 ] as const;
 export type NoteSort = (typeof NOTE_SORTS)[number];
+
+/**
+ * The To-dos tab's sorts. `parent:asc` (the default) is the page's own: the groups A–Z by name, General among them,
+ * oldest to-do first in a group (GET /todos with `createdAt:asc`). The date sorts keep General first.
+ */
+export const TODO_SORTS = [
+  "parent:asc",
+  "updatedAt:desc",
+  "updatedAt:asc",
+  "createdAt:desc",
+  "createdAt:asc"
+] as const;
+export type TodoSort = (typeof TODO_SORTS)[number];
 
 /** GET /notes: filter, search, sort, date range and paging. */
 export type NoteListQuery = NonNullable<

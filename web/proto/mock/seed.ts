@@ -504,6 +504,22 @@ export const seedNotes = (): NoteDto[] => [
     updatedAt: before(1)
   },
   {
+    id: "n-anthropic-brief",
+    title: "brand brief",
+    body: "Tone: calm, precise. Lowercase title on purpose: the A–Z sort ignores case.",
+    ...linkTo(undefined, "p-anthropic"),
+    createdAt: before(3),
+    updatedAt: before(0, 1)
+  },
+  {
+    id: "n-anthropic-untitled",
+    title: null,
+    body: "Call notes: move the review to Thursday.",
+    ...linkTo(undefined, "p-anthropic"),
+    createdAt: before(2),
+    updatedAt: before(0, 3)
+  },
+  {
     id: "n3",
     title: "API integration notes",
     body: API_NOTE,
