@@ -1,9 +1,9 @@
 ---
 id: api-endpoints
 title: API Endpoints
-status: approved
+status: review
 owner: Marko Angelovski
-last_updated: 2026-11-02
+last_updated: 2026-11-04
 related: [api-conventions, api-data-model, req-auth, req-projects, req-tasks, req-time-logs, req-reporting, req-integrations, req-notes]
 ---
 
@@ -473,9 +473,12 @@ Used by API-NOTE-* and API-TODO-*. Implements [req-notes](../01-requirements/not
   project, live or deleted). At most one of them, else `400` (field `projectId`, "use at most one of projectId, taskId and unlinked"); none = every
   item. An unknown or foreign id → no items. `unlinked` accepts `true` / `false`.
 - **Search, sort, range** (both lists): `q` (≤ 200, trimmed, empty = none) is a case-insensitive "contains" with wildcards literal, on the note's
-  title or body / the to-do's text. `sort` ∈ `updatedAt:desc` (default), `updatedAt:asc`, `createdAt:desc`, `createdAt:asc`; ties break on `id` in the
-  same direction. `from`, `to`: optional `YYYY-MM-DD` (each alone is allowed; `from` after `to` → `400`, field `from`, "must not be after to"),
-  inclusive, compared with the **sort's** instant as a date in the caller's stored time zone (OQ-232).
+  title or body / the to-do's text. `sort` ∈ `updatedAt:desc` (default), `updatedAt:asc`, `createdAt:desc`, `createdAt:asc` (`TodoSort`); ties break
+  on `id` in the same direction. API-NOTE-001 also takes `title:asc` (`NoteSort` = those four + `title:asc`, OQ-264): `lower(title)` A–Z, character
+  by character as the projects' and tasks' title sorts (OQ-265); notes without a title after the titled ones; equal titles and the untitled ones
+  most recently edited first (`updatedAt` desc, then `id` desc). API-TODO-001 rejects `title:asc` (`400`, field `sort`). `from`, `to`: optional
+  `YYYY-MM-DD` (each alone is allowed; `from` after `to` → `400`, field `from`, "must not be after to"), inclusive, compared with the **sort's**
+  instant (`title:asc`: `updatedAt`) as a date in the caller's stored time zone (OQ-232).
 - **Ids in paths:** not a UUID, missing or another user's → `404` `not-found`.
 
 ### API-NOTE-001: List notes
@@ -810,3 +813,4 @@ None.
 - 2026-10-26: The owner approved *Shared project and task shapes*, API-PRJ-001/004/006 and API-TSK-001/004 (as updated) for feat-prj-services.
 - 2026-11-01: Rate limits: `429` on every endpoint but `/health` and API-SYS-003; API-AUTH-001/002 redirect with `error=rate-limited` (OQ-257, feat-api-rate-limit). Still `review`.
 - 2026-11-02: API-RPT-001: `ReportDay.workedMinutes` leaves out the logs excluded from statistics, `nonprodMinutes` adds them up (OQ-261, feat-rpt-api D5). Still `review`.
+- 2026-11-04: API-NOTE-001's `sort` gains `title:asc` (`NoteSort`); API-TODO-001's `sort` is its own `TodoSort` without it (OQ-264, OQ-265, feat-prj-lists). Back to `review`.

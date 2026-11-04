@@ -1,9 +1,9 @@
 ---
 id: req-notes
 title: Notes and to-dos
-status: approved
+status: review
 owner: Marko Angelovski
-last_updated: 2026-10-25
+last_updated: 2026-11-04
 related: [req-projects, req-tasks, req-time-logs, req-integrations, api-endpoints, api-data-model, web-screens, OQ-230, OQ-231, OQ-232, OQ-233, OQ-234, OQ-235]
 ---
 
@@ -42,12 +42,17 @@ The To-dos tab shows the number of open to-dos (all of them, whatever the toolba
 
 ### FR-NOTE-002: Toolbar
 **Priority:** Must
-**Statement:** Both tabs share one toolbar, kept in the URL across tabs (OQ-232): a search (a note's title and body, a to-do's text,
-case-insensitive, applied 300 ms after typing stops); a filter **General** (default) / **All notes** or **All to-dos** / each project by title
-(a project's items include its tasks'); a sort **Last edited, newest** (default), **Last edited, oldest**, **Created, newest**, **Created, oldest**;
-and a time range: the Statistics presets plus **All time** (default), filtering on the sort's date in the user's time zone.
+**Statement:** Both tabs share one toolbar, kept in the URL (OQ-232): a search (a note's title and body, a to-do's text,
+case-insensitive, applied 300 ms after typing stops); a filter **General** / **All notes** or **All to-dos** / each project by title
+(a project's items include its tasks'); a sort; and a time range: the Statistics presets plus **All time** (default), filtering on the sort's
+date in the user's time zone. Each tab has its own default filter and sort, and switching tabs resets both (the search and range stay)
+(OQ-264). Notes: **General**; sorts **Title A–Z** (default: case-insensitive, untitled notes last, most recently edited first; its range is on
+the last edit), **Last edited, newest**, **Last edited, oldest**, **Created, newest**, **Created, oldest**. To-dos: **All to-dos**; sorts
+**Parent A–Z** (default; its range is on the creation) and the four date sorts. Title sorts compare character by character (OQ-265).
 **Acceptance criteria:**
 - Given a note created on 1 October and edited on 20 October, when the range is 1–10 October and the sort is by last edit, then it isn't listed; sorted by creation, it is.
+- Given notes "beta", "Alpha" and an untitled one, when I open the Notes tab, then they're listed Alpha, beta, the untitled one (OQ-264).
+- Given the Notes tab filtered to a project and sorted by creation, when I open the To-dos tab, then it shows all to-dos by parent (OQ-264).
 - Given a project filter, then the list shows that project's items and its tasks' items, and a new item starts linked to that project.
 
 ### FR-NOTE-003: Notes list
@@ -68,7 +73,9 @@ pickers (a task sets its project). Nothing is saved until **Save** (no autosave)
 ### FR-NOTE-005: To-do lists
 **Priority:** Must
 **Statement:** The To-dos tab shows **Open** / **Done** / **All** and groups the to-dos by link: General first, then each project A–Z, a project's
-own to-dos before each of its tasks' ("Project · Task", A–Z), deleted links last; the toolbar's sort applies inside a group, open before done.
+own to-dos before each of its tasks' ("Project · Task", A–Z), deleted links last. With **Parent A–Z**, General is sorted by its name among the
+projects, and in a group the to-dos are oldest first. Otherwise the toolbar's sort applies inside a group. Done or not, a to-do keeps its place
+in the sort, so ticking one off doesn't move it (OQ-264).
 Each group collapses and has an **Add a to-do** box (Enter adds it and keeps the box focused). A ticked-off to-do stays in view until the filter
 changes (OQ-233).
 
@@ -86,8 +93,8 @@ in place (Enter saves, Esc cancels); **⋯ → Edit** also changes the link; **�
 ### FR-NOTE-008: Project and task pages
 **Priority:** Must
 **Statement:** A project's page (SCR-021) and a task's page (SCR-031) show a **Notes** card and a **To-dos** card side by side (stacked on narrow
-screens). A project's cards include its tasks' items, each naming its task. The Notes card shows 3 notes, then **Show more** adds 10; the To-dos
-card shows the open ones with an add box. New items from these cards are linked to the page's project or task (OQ-234).
+screens). A project's cards include its tasks' items, each naming its task. The Notes card shows 3 notes by title A–Z, then **Show more** adds 10;
+the To-dos card shows the open ones, oldest first, with an add box, and **Show done** shows the done ones in their places (OQ-264). New items from these cards are linked to the page's project or task (OQ-234).
 
 ### FR-NOTE-009: New menu
 **Priority:** Must
@@ -102,3 +109,4 @@ None. OQ-230…OQ-235 are resolved.
 - 2026-10-24: Approved by the owner for feat-note-todos.
 - 2026-10-25: FR-NOTE-009: the New menu also creates projects, tasks and logs (OQ-241, feat-shell-new-menu). Back to `review`.
 - 2026-10-25: Approved by the owner.
+- 2026-11-04: FR-NOTE-002: each tab's own default filter and sort, **Title A–Z** and **Parent A–Z**; FR-NOTE-005: Parent A–Z, no open-before-done; FR-NOTE-008: the cards' order (OQ-264, OQ-265, feat-prj-lists). Back to `review`.

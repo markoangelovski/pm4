@@ -1,9 +1,9 @@
 ---
 id: req-projects
 title: Projects
-status: approved
+status: review
 owner: Marko Angelovski
-last_updated: 2026-10-26
+last_updated: 2026-11-04
 related: [req-tasks, req-time-logs, api-endpoints, api-data-model, sec]
 ---
 
@@ -84,7 +84,7 @@ and a project lead (suggested: the signed-in user).
 **Statement:** A paginated list of the user's projects. Each row shows the title, the
 project lead, the task counts per status, a small completed-percentage bar (OQ-083), the logged time
 (the project's total, FR-TLOG-012; OQ-132) and the created and updated dates (OQ-100). A project with open tasks opens to list up to 25 of its upcoming and in-progress tasks, most recently updated first (OQ-236). Can be searched by title or project lead name, with title matches listed
-first (OQ-099, OQ-102), and sorted by title, created date or updated date (default: updated, descending).
+first (OQ-099, OQ-102), and sorted by title, created date or updated date (default: title A–Z, OQ-264).
 **Acceptance criteria:**
 - Given a project with 2 upcoming, 1 in-progress and 1 completed task, its row shows 2 / 1 / 1 and 25 %.
 - Given a project with no tasks, its row shows zero counts and an empty bar (0 %).
@@ -92,6 +92,7 @@ first (OQ-099, OQ-102), and sorted by title, created date or updated date (defau
 - Given I search "web", only projects whose title or lead name contains "web" (case-insensitive) are listed (OQ-085, OQ-099).
 - Given I search "ana", projects whose title matches come before projects that match only by lead name; each group keeps the selected sort (OQ-099).
 - Given a user lead, the search matches the user's current name, never their email (OQ-102).
+- Given projects "beta", "Alpha" and "Gamma", when I open the list, then they're listed Alpha, beta, Gamma (OQ-264).
 - Given a project created on 3 Oct 2026 and updated on 4 Oct 2026 (in my time zone), its row shows "3 Oct 2026" and "4 Oct 2026" (OQ-100).
 - Given a project with 30 open tasks, opening its row lists the 25 most recently updated and a link "Show all 30 open tasks" to the project page filtered to Upcoming and In progress; a project with only completed tasks doesn't open (OQ-236).
 
@@ -181,3 +182,4 @@ None.
 - 2026-10-25: Approved by the owner.
 - 2026-10-26: FR-PRJ-009 *Project services* and the `services` field (OQ-243…OQ-246, feat-prj-services). Back to `review`.
 - 2026-10-26: Approved by the owner.
+- 2026-11-04: FR-PRJ-002: sorted by title A–Z by default (OQ-264, feat-prj-lists). Back to `review`.

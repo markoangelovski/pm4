@@ -1,9 +1,9 @@
 ---
 id: req-tasks
 title: Tasks
-status: approved
+status: review
 owner: Marko Angelovski
-last_updated: 2026-10-26
+last_updated: 2026-11-04
 related: [req-projects, req-time-logs, api-endpoints]
 ---
 
@@ -57,12 +57,12 @@ are optional, and the lead is suggested as the signed-in user.
 **Priority:** Must
 **Statement:** In the project view, a paginated list of the project's tasks with title,
 status, due date (with the indicator, FR-TSK-008), project lead and logged time (the task's total, FR-TLOG-012; OQ-132). Filter by status (multi-select,
-all statuses selected by default, OQ-081) and search by title. Sort by due date, updated date or title
-(default: updated, descending).
+upcoming and in progress selected by default, OQ-264) and search by title. Sort by title, due date or updated date
+(default: title A–Z, OQ-264). With the default statuses and no task, the list says "No open tasks".
 **Acceptance criteria:**
-- Given I open a project, then tasks of every status are listed.
+- Given I open a project, then its upcoming and in-progress tasks are listed by title A–Z, and completed ones are hidden until I select "Completed" (OQ-264).
 - Given 45 min logged on a task, its row shows 45m logged; with nothing logged, `—`.
-- Given I select only "upcoming" and "in progress", then completed tasks are hidden.
+- Given I select all three statuses, then tasks of every status are listed.
 - Given I deselect every status, then the list is empty and shows "No tasks match the filter" (OQ-085).
 - Given I sort by due date, then tasks without a due date come last (OQ-085).
 - Given I search "API", tasks whose title contains "api" in any case are listed (OQ-085).
@@ -156,3 +156,4 @@ None.
 - 2026-10-11: Approved by the owner.
 - 2026-10-26: FR-TSK-009 *Task service* and the `service` field (OQ-243, OQ-247, feat-prj-services). Back to `review`.
 - 2026-10-26: Approved by the owner.
+- 2026-11-04: FR-TSK-002 (and so FR-TSK-003): upcoming and in progress by default, sorted by title A–Z, "No open tasks" (OQ-264, feat-prj-lists). Back to `review`.
