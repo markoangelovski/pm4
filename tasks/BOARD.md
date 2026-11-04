@@ -141,5 +141,6 @@
 | [T-0135](m4-time-logs/T-0135-reminder-counts-all-logs-the-reminder.md) | Reminder counts all logs: the reminder.ts twin | M4 | web | S | done | — |
 | [T-0136](m4-time-logs/T-0136-recent-project-and-task-chips-three.md) | Recent project and task chips: three Log time twins | M4 | web | S | done | — |
 | [T-0137](m4-time-logs/T-0137-test-recent-chips-in-edit-log.md) | Test the Recent chips in Edit log | M4 | web | S | done | T-0136 |
+| [T-0138](m4-time-logs/T-0138-project-chip-clears-task-error.md) | A project chip that clears the task also clears its error | M4 | web | S | done | T-0137 |
 
 M0–M6 are done. Later follow-ups are filed under the milestone they extend.

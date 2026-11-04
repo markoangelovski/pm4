@@ -374,7 +374,10 @@ function LogForm({
               onPick={(p) => {
                 setKeepDeleted(false);
                 setValue("project", p);
-                if (task && task.project.id !== p.id) setValue("task", null);
+                if (task && task.project.id !== p.id) {
+                  setValue("task", null);
+                  clearErrors("task");
+                }
               }}
             />
           </Field>
