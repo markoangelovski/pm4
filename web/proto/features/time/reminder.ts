@@ -5,16 +5,16 @@ import type { Day } from "./types";
 export const REMINDER_STEP = 15;
 
 export interface LogReminder {
-  /** min(now − start − billable, target − billable), in minutes. */
+  /** min(now − start − logged, target − billable), in minutes. */
   unlogged: number;
-  /** Start + billable, in minutes after midnight: with the date, what a dismissal holds for (not shown). */
+  /** Start + logged (all logs), in minutes after midnight: with the date, what a dismissal holds for (not shown). */
   since: number;
 }
 
 /**
  * Today's reminder to log time: the day has a start and at least one log, and at least 15 min are unlogged, where
- * unlogged = min(now − start − billable, daily target − billable). Billable = logs not excluded from statistics;
- * excluded logs count neither as logged nor towards the target. Null otherwise.
+ * unlogged = min(now − start − logged, daily target − billable). Logged = all logs (they fill the time since the start);
+ * billable = logs not excluded from statistics (only they count towards the target). Null otherwise.
  */
 export function logReminder(
   day: Day,
@@ -23,18 +23,18 @@ export function logReminder(
 ): LogReminder | null {
   if (day.startMinute === null || day.logs.length === 0 || nowMinute === null)
     return null;
-  const { billable } = dayFigures(
+  const { logged, billable } = dayFigures(
     day.startMinute,
     day.logs,
     nowMinute,
     targetMinutes
   );
   const unlogged = Math.min(
-    nowMinute - day.startMinute - billable,
+    nowMinute - day.startMinute - logged,
     targetMinutes - billable
   );
   if (unlogged < REMINDER_STEP) return null;
-  return { unlogged, since: day.startMinute + billable };
+  return { unlogged, since: day.startMinute + logged };
 }
 
 /** The duration a log for the reminder starts with: its unlogged time in whole 15 min (15 min at least). */
@@ -45,7 +45,7 @@ export function reminderMinutes(reminder: LogReminder): number {
   );
 }
 
-/** A dismissed reminder: it stays hidden while its day and start + billable are the same and fewer than another 15 min pass. */
+/** A dismissed reminder: it stays hidden while its day and start + logged are the same and fewer than another 15 min pass. */
 export interface ReminderDismissal {
   workDate: string;
   since: number;
