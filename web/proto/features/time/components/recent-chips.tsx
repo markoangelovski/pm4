@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 /** A "Recent:" row of one-click suggestions under a picker. Renders nothing without items. */
 export function RecentChips<T extends { id: string; title: string }>({
@@ -37,11 +38,14 @@ export function RecentChips<T extends { id: string; title: string }>({
             key={item.id}
             type="button"
             size="xs"
-            variant={selected ? "secondary" : "outline"}
+            variant="outline"
             aria-pressed={selected}
             title={extra ? `${item.title} · ${extra}` : item.title}
             onClick={() => onPick(item)}
-            className="max-w-full cursor-pointer rounded-md!"
+            className={cn(
+              "max-w-full cursor-pointer rounded-md!",
+              selected && "border-primary! bg-primary/5! dark:bg-primary/15!"
+            )}
           >
             {icon?.(item)}
             <span className="truncate">{item.title}</span>
