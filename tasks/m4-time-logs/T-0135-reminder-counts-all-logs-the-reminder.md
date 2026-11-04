@@ -3,7 +3,7 @@ id: T-0135
 title: Reminder counts all logs: the reminder.ts twin
 milestone: M4
 app: web
-status: ready
+status: review
 size: S
 tier: haiku
 depends_on: []
@@ -21,11 +21,28 @@ ac_files:
 Work from the brief: `node scripts/pm4.mjs brief T-0135`. Verify with `node scripts/pm4.mjs check T-0135`.
 
 ## Implementation notes
-_Implementer: what changed, and anything the reviewer should look at._
+Copied `web/proto/features/time/reminder.ts` to `web/features/time/reminder.ts` (twin, per *Twin (T1)*), then `prettier --write`. Only change in `web/` is that file; signatures unchanged. Reviewer: `git show 5dcda69 -- web/proto/features/time/reminder.ts` is the same diff.
+
+`pm4 check T-0135` summary:
+
+```
+  ac hashes: ok (2)
+  scope: ok
+  web lint: ok (16s)
+  web format:check: ok (5s)
+  web typecheck: ok (11s)
+  web test: ok (29s)
+  web build: ok (25s)
+  check AC-3: twin equal: ok
+  twins: ok (126 equal)
+
+PASS T-0135
+```
 
 ### Attempts
 | # | Tier | Result | Summary |
 | --- | --- | --- | --- |
+| 1 | haiku | PASS | Twin copied and formatted; AC-1 and AC-2 tests pass; `pm4 check` PASS |
 
 ## Review
 _Filled in by `review-feature`._
