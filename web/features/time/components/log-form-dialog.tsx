@@ -34,9 +34,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { formatClock, nowMinute, roundToQuarter } from "@/lib/time/clock";
 import { formatDuration, today } from "@/lib/time";
 import { useMe } from "@/features/users/api";
+import { ProjectIcon } from "@/features/projects/components/project-icon";
 import { applyFieldErrors, isApiError } from "@/lib/api/problem";
 import { useCreateLog, useDay, useUpdateLog } from "../api";
 import { parseDurationInput } from "../duration";
+import { recentProjects, recentTasks } from "../recent-links";
 import { getLastLogLink, setLastLogLink, type LogLink } from "../last-log-link";
 import {
   DURATION_STEP,
@@ -49,6 +51,7 @@ import {
 import type { TimeLog } from "../types";
 import { DateField } from "./date-field";
 import { LogProjectPicker } from "./log-project-picker";
+import { RecentChips } from "./recent-chips";
 import { TaskPicker } from "./task-picker";
 
 export const START_OPTIONS = Array.from({ length: 96 }, (_, i) => ({
@@ -168,6 +171,11 @@ function LogForm({
   // Editing keeps the log's own date's start; moving it to a day without a start asks for one.
   const needsDayStart = day.data?.startMinute === null;
   const parsed = duration.trim() ? parseDurationInput(duration) : null;
+  // One-click suggestions from the logs of the form's date (the selected project's tasks, else every task).
+  const dayLogs = day.data?.logs ?? [];
+  const shownProject = task ? task.project : project;
+  const suggestedProjects = recentProjects(dayLogs);
+  const suggestedTasks = recentTasks(dayLogs, shownProject?.id ?? null);
 
   const onSubmit = handleSubmit(async (values) => {
     // The day decides whether the start is needed: wait for the request already in flight.
@@ -356,6 +364,19 @@ function LogForm({
                 />
               )}
             />
+            <RecentChips
+              label="Recent projects"
+              items={suggestedProjects}
+              selectedId={shownProject?.id ?? null}
+              icon={(p) => (
+                <ProjectIcon project={p} className="size-3 rounded-sm" />
+              )}
+              onPick={(p) => {
+                setKeepDeleted(false);
+                setValue("project", p);
+                if (task && task.project.id !== p.id) setValue("task", null);
+              }}
+            />
           </Field>
           <Field>
             <FieldLabel htmlFor="log-task">
@@ -380,6 +401,24 @@ function LogForm({
                   }}
                 />
               )}
+            />
+            <RecentChips
+              label="Recent tasks"
+              items={suggestedTasks}
+              selectedId={task?.id ?? null}
+              icon={(t) => (
+                <ProjectIcon
+                  project={t.project}
+                  className="size-3 rounded-sm"
+                />
+              )}
+              hint={shownProject ? undefined : (t) => t.project.title}
+              onPick={(t) => {
+                setKeepDeleted(false);
+                setValue("task", t);
+                setValue("project", t.project);
+                clearErrors("task");
+              }}
             />
             <FieldError errors={[errors.task]} />
           </Field>
