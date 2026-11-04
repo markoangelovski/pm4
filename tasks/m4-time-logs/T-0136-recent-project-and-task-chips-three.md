@@ -3,7 +3,7 @@ id: T-0136
 title: Recent project and task chips: three Log time twins
 milestone: M4
 app: web
-status: review
+status: done
 size: S
 tier: haiku
 depends_on: []
