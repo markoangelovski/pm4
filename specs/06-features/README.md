@@ -67,3 +67,4 @@ A feature spec links to those. It doesn't copy them.
 | Rate limiting for the API: per-route IP limits on sign-in, one per-user limit, 429 and sign-in redirects; the web's 429 toast | [api-rate-limit.md](api-rate-limit.md) | M1 | approved |
 | Log presets, the reminder to log time, Prompt Edit and wider dialogs | [tlog-reminder.md](tlog-reminder.md) | M4 | approved |
 | Billable reminder: Remaining and the reminder count billable time; Log time opens with the unlogged duration | [tlog-billable-reminder.md](tlog-billable-reminder.md) | M4 | approved |
+| Reminder counts all logs: unlogged since the start counts excluded logs, the target only billable | [tlog-reminder-all-logged.md](tlog-reminder-all-logged.md) | M4 | approved |

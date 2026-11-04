@@ -191,8 +191,23 @@ describe("NotificationsButton (feat-tlog-reminder, feat-tlog-billable-reminder, 
     ).not.toBeInTheDocument();
   });
 
-  it("AC-5 FR-TLOG-021 SCR-008 (feat-tlog-billable-reminder D3 D4): excluded logs don't count: 1h 20m unlogged, Log time opens with 1h 15m; saving 30m → Log time opens again with 45m", async () => {
-    // Start 08:00, 1h billable + 1h excluded → 1h 20m unlogged at 10:20.
+  it("AC-2 FR-TLOG-021 SCR-008 (feat-tlog-reminder-all-logged D1 D2): excluded logs fill the time since the start: 20m unlogged at 10:20", async () => {
+    // Start 08:00, 1h billable + 1h excluded → 20m unlogged at 10:20.
+    today = dayOf(480, [log("a", 60), log("b", 60, true)]);
+    renderBell();
+    await logTime();
+    await waitFor(() => expect(duration().value).toBe("15m"));
+    cancel();
+    await noDialog();
+    fireEvent.click(await bell("Notifications (1 new)"));
+    expect(
+      await screen.findByText("20m of billable time unlogged")
+    ).toBeInTheDocument();
+  });
+
+  it("AC-2 FR-TLOG-021 SCR-008 (feat-tlog-reminder-all-logged D1 D2): at 11:20 1h 20m unlogged, Log time opens with 1h 15m; saving 30m → Log time opens again with 45m", async () => {
+    // Start 08:00, 1h billable + 1h excluded → 1h 20m unlogged at 11:20.
+    vi.setSystemTime(new Date("2026-10-09T09:20:00.000Z"));
     today = dayOf(480, [log("a", 60), log("b", 60, true)]);
     const saved = log("c", 30);
     api.POST.mockImplementation(async () => {
@@ -223,7 +238,7 @@ describe("NotificationsButton (feat-tlog-reminder, feat-tlog-billable-reminder, 
       })
     );
 
-    // 1h 30m billable → 50m unlogged: it opens again with 45m.
+    // 2h 30m logged → 50m unlogged: it opens again with 45m.
     await waitFor(() => expect(duration().value).toBe("45m"));
     expect(screen.getByRole("dialog")).toBeInTheDocument();
 
