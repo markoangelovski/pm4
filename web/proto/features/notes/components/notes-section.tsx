@@ -200,7 +200,7 @@ function TodosCard({
               </p>
             )}
             <TodoAddInput link={link} />
-            {showDone || hiddenDone > 0 ? (
+            {(showDone && doneCount > 0) || hiddenDone > 0 ? (
               <>
                 <Button
                   variant="ghost"
