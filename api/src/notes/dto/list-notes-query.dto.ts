@@ -17,7 +17,8 @@ export const NOTE_SORTS = [
   "updatedAt:desc",
   "updatedAt:asc",
   "createdAt:desc",
-  "createdAt:asc"
+  "createdAt:asc",
+  "title:asc"
 ] as const;
 
 export type NoteSort = (typeof NOTE_SORTS)[number];
@@ -50,7 +51,7 @@ export class ListNotesQueryDto extends PageQueryDto {
   @IsBoolean()
   unlinked?: boolean;
 
-  /** Sort order; ties break on `id` in the same direction. */
+  /** Sort order; ties break on `id` in the same direction. `title:asc`: the title A–Z ignoring case, untitled notes last, equal titles most recently edited first. */
   @ApiProperty({
     enum: NOTE_SORTS,
     enumName: "NoteSort",

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Todo } from "./api";
-import { groupLink, groupTodos, shown } from "./group";
+import { byCreated, groupLink, groupTodos, shown } from "./group";
 
 const live = (id: string, title: string) => ({ id, title, deleted: false });
 const gone = (title: string) => ({ id: null, title, deleted: true });
@@ -55,26 +55,6 @@ describe("to-do groups (feat-note-todos)", () => {
     expect(groups.map((g) => g.todos.length)).toEqual([1, 1, 1, 1, 1, 1]);
   });
 
-  it("AC-14 FR-NOTE-001: in a group, open before done, otherwise the given order", () => {
-    const first = todo({ project: alpha });
-    const done = todo({
-      project: alpha,
-      doneAt: "2026-10-05T08:00:00.000Z"
-    });
-    const second = todo({ project: alpha });
-    const third = todo({ project: alpha });
-
-    const [group] = groupTodos([first, done, second, third]);
-
-    expect(group.todos.map((t) => t.id)).toEqual([
-      first.id,
-      second.id,
-      third.id,
-      done.id
-    ]);
-    expect(group.openCount).toBe(3);
-  });
-
   it("AC-14 FR-NOTE-006: shown keeps a to-do ticked off on the page in the open filter", () => {
     const done = todo({ doneAt: "2026-10-05T08:00:00.000Z" });
     const open = todo();
@@ -112,5 +92,103 @@ describe("to-do groups (feat-note-todos)", () => {
     });
     expect(groupLink(byLabel("Old"))).toBeNull();
     expect(groupLink(byLabel("Alpha · Gone task"))).toBeNull();
+  });
+});
+
+describe("to-do groups by parent, to-dos in place (feat-prj-lists)", () => {
+  const zeta = live("p-zeta", "Zeta");
+  const lowerAlpha = live("p-alpha-lower", "alpha");
+
+  const mixed = () => [
+    todo({ project: gone("Old") }),
+    todo({ project: zeta }),
+    todo({ project: lowerAlpha, task: live("t-task", "Task") }),
+    todo(),
+    todo({ project: lowerAlpha })
+  ];
+
+  it("AC-10 FR-NOTE-005: default → General first; byParent → General among the projects by name; deleted links last", () => {
+    expect(groupTodos(mixed()).map(label)).toEqual([
+      "General",
+      "alpha",
+      "alpha · Task",
+      "Zeta",
+      "Old"
+    ]);
+    expect(groupTodos(mixed(), { byParent: true }).map(label)).toEqual([
+      "alpha",
+      "alpha · Task",
+      "General",
+      "Zeta",
+      "Old"
+    ]);
+  });
+
+  it("AC-10 FR-NOTE-005: withGeneral adds an empty General group in its place; without it there is none", () => {
+    const noGeneral = () => mixed().filter((t) => t.project !== null);
+
+    const withGeneral = groupTodos(noGeneral(), {
+      byParent: true,
+      withGeneral: true
+    });
+    expect(withGeneral.map(label)).toEqual([
+      "alpha",
+      "alpha · Task",
+      "General",
+      "Zeta",
+      "Old"
+    ]);
+    const general = withGeneral.find((g) => g.key === "general")!;
+    expect(general.todos).toEqual([]);
+    expect(general.openCount).toBe(0);
+
+    expect(groupTodos(noGeneral(), { withGeneral: true }).map(label)[0]).toBe(
+      "General"
+    );
+    expect(
+      groupTodos(noGeneral(), { byParent: true }).map(label)
+    ).not.toContain("General");
+  });
+
+  it("AC-11 FR-NOTE-005: in a group the to-dos keep the given order, done or not", () => {
+    const first = todo({ project: alpha });
+    const done = todo({
+      project: alpha,
+      doneAt: "2026-10-05T08:00:00.000Z"
+    });
+    const second = todo({ project: alpha });
+
+    for (const opts of [{ byParent: false }, { byParent: true }]) {
+      const [group] = groupTodos([first, done, second], opts);
+      expect(group.todos.map((t) => t.id)).toEqual([
+        first.id,
+        done.id,
+        second.id
+      ]);
+      expect(group.openCount).toBe(2);
+    }
+  });
+
+  it("AC-11 FR-NOTE-008: byCreated orders by createdAt ascending, ties by id", () => {
+    const late = todo({ createdAt: "2026-10-03T08:00:00.000Z" });
+    const early = todo({
+      createdAt: "2026-10-01T08:00:00.000Z",
+      doneAt: "2026-10-04T08:00:00.000Z"
+    });
+    const tieB = {
+      ...todo({ createdAt: "2026-10-02T08:00:00.000Z" }),
+      id: "b"
+    };
+    const tieA = {
+      ...todo({ createdAt: "2026-10-02T08:00:00.000Z" }),
+      id: "a"
+    };
+
+    expect([late, tieB, early, tieA].sort(byCreated).map((t) => t.id)).toEqual([
+      early.id,
+      "a",
+      "b",
+      late.id
+    ]);
   });
 });

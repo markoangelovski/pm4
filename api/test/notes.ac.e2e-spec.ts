@@ -320,8 +320,6 @@ describe("Notes API (feat-note-todos)", () => {
       message: "must not be after to"
     });
 
-    expect((await as(a).get("/notes?sort=title:asc")).status).toBe(400);
-
     const page = await as(a).get("/notes?pageSize=1&page=2");
     expect(page.status).toBe(200);
     expect(page.body).toMatchObject({ page: 2, pageSize: 1, total: 2 });

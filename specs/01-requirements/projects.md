@@ -1,7 +1,7 @@
 ---
 id: req-projects
 title: Projects
-status: review
+status: approved
 owner: Marko Angelovski
 last_updated: 2026-11-04
 related: [req-tasks, req-time-logs, api-endpoints, api-data-model, sec]
@@ -183,3 +183,4 @@ None.
 - 2026-10-26: FR-PRJ-009 *Project services* and the `services` field (OQ-243…OQ-246, feat-prj-services). Back to `review`.
 - 2026-10-26: Approved by the owner.
 - 2026-11-04: FR-PRJ-002: sorted by title A–Z by default (OQ-264, feat-prj-lists). Back to `review`.
+- 2026-11-04: Approved by the owner for feat-prj-lists.

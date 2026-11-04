@@ -8,7 +8,7 @@ import {
   waitFor,
   within
 } from "@testing-library/react";
-import { NuqsTestingAdapter } from "nuqs/adapters/testing";
+import { NuqsTestingAdapter, type UrlUpdateEvent } from "nuqs/adapters/testing";
 import { createQueryClient } from "@/lib/query-client";
 import type { Me } from "@/features/users/api";
 import type { Project, ProjectList } from "@/features/projects/api";
@@ -113,14 +113,19 @@ function pick(option: HTMLElement) {
 
 function renderList(search = "") {
   nav.search = new URLSearchParams(search);
+  const onUrlUpdate = vi.fn<(event: UrlUpdateEvent) => void>();
   const queryClient = createQueryClient();
   queryClient.setQueryData(["users", "me"], me);
   const wrapper = ({ children }: { children: ReactNode }) => (
-    <NuqsTestingAdapter searchParams={search} hasMemory>
+    <NuqsTestingAdapter
+      searchParams={search}
+      hasMemory
+      onUrlUpdate={onUrlUpdate}
+    >
       <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
     </NuqsTestingAdapter>
   );
-  return render(<ProjectsList />, { wrapper });
+  return { onUrlUpdate, ...render(<ProjectsList />, { wrapper }) };
 }
 
 describe("ProjectsList (feat-prj-web)", () => {
@@ -183,7 +188,7 @@ describe("ProjectsList (feat-prj-web)", () => {
     const view = renderList("?page=2");
     await screen.findByRole("link", { name: "Website" });
     expect(listQueries().at(-1)).toEqual({
-      sort: "updatedAt:desc",
+      sort: "title:asc",
       page: 2,
       pageSize: 25
     });
@@ -199,17 +204,17 @@ describe("ProjectsList (feat-prj-web)", () => {
     );
     expect(listQueries().find((q) => q.q === "web")).toEqual({
       q: "web",
-      sort: "updatedAt:desc",
+      sort: "title:asc",
       page: 1,
       pageSize: 25
     });
 
     fireEvent.click(screen.getByRole("combobox", { name: "Sort" }));
-    pick(await screen.findByRole("option", { name: "Title A–Z" }));
+    pick(await screen.findByRole("option", { name: "Recently created" }));
     await waitFor(() =>
       expect(listQueries().at(-1)).toEqual({
         q: "web",
-        sort: "title:asc",
+        sort: "createdAt:desc",
         page: 1,
         pageSize: 25
       })
@@ -227,6 +232,50 @@ describe("ProjectsList (feat-prj-web)", () => {
     expect(
       screen.queryByRole("link", { name: /next/i })
     ).not.toBeInTheDocument();
+  });
+});
+
+describe("ProjectsList default sort (feat-prj-lists)", () => {
+  beforeEach(() => {
+    Object.values(api).forEach((fn) => fn.mockReset());
+    nav.push.mockReset();
+    nav.replace.mockReset();
+    routeGet();
+    listResult = () => ({ data: page([website]), response: res(200) });
+  });
+
+  it("AC-5 FR-PRJ-002 SCR-020: Title A–Z by default and first in the sort menu; picking another sort writes it to the URL, Title A–Z clears it", async () => {
+    const { onUrlUpdate } = renderList();
+    await screen.findByRole("link", { name: "Website" });
+    expect(listQueries()[0]).toEqual({
+      sort: "title:asc",
+      page: 1,
+      pageSize: 25
+    });
+
+    fireEvent.click(screen.getByRole("combobox", { name: "Sort" }));
+    await screen.findAllByRole("option");
+    expect(
+      screen.getAllByRole("option").map((o) => o.textContent?.trim())
+    ).toEqual(["Title A–Z", "Recently updated", "Recently created"]);
+
+    pick(screen.getByRole("option", { name: "Recently updated" }));
+    await waitFor(() =>
+      expect(listQueries().at(-1)).toMatchObject({ sort: "updatedAt:desc" })
+    );
+    await waitFor(() =>
+      expect(onUrlUpdate.mock.calls.at(-1)?.[0].searchParams.get("sort")).toBe(
+        "updatedAt:desc"
+      )
+    );
+
+    fireEvent.click(screen.getByRole("combobox", { name: "Sort" }));
+    pick(await screen.findByRole("option", { name: "Title A–Z" }));
+    await waitFor(() =>
+      expect(onUrlUpdate.mock.calls.at(-1)?.[0].searchParams.has("sort")).toBe(
+        false
+      )
+    );
   });
 });
 

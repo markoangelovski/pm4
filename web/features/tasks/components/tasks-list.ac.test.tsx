@@ -195,7 +195,8 @@ describe("TasksList (feat-tsk-web)", () => {
     const link = await screen.findByRole("link", { name: "Write the docs" });
     expect(listQueries()[0]).toEqual({
       projectId: "p1",
-      sort: "updatedAt:desc",
+      status: ["upcoming", "in-progress"],
+      sort: "title:asc",
       page: 1,
       pageSize: 25
     });
@@ -240,8 +241,17 @@ describe("TasksList (feat-tsk-web)", () => {
     await waitFor(() =>
       expect(listQueries().at(-1)).toEqual({
         projectId: "p1",
+        sort: "title:asc",
+        page: 1,
+        pageSize: 25
+      })
+    );
+    fireEvent.click(statusFilter().getByRole("button", { name: "Completed" }));
+    await waitFor(() =>
+      expect(listQueries().at(-1)).toEqual({
+        projectId: "p1",
         status: ["upcoming", "in-progress"],
-        sort: "updatedAt:desc",
+        sort: "title:asc",
         page: 1,
         pageSize: 25
       })
@@ -272,8 +282,9 @@ describe("TasksList (feat-tsk-web)", () => {
     );
     expect(listQueries().find((q) => q.q === "api")).toEqual({
       projectId: "p1",
+      status: ["upcoming", "in-progress"],
       q: "api",
-      sort: "updatedAt:desc",
+      sort: "title:asc",
       page: 1,
       pageSize: 25
     });
@@ -291,7 +302,7 @@ describe("TasksList (feat-tsk-web)", () => {
 
   it("AC-10 FR-TSK-002 SCR-030: no tasks yet, no match with a search, error with Retry", async () => {
     listResult = () => ({ data: page([]), response: res(200) });
-    const empty = renderList();
+    const empty = renderList({}, "?status=upcoming,in-progress,completed");
     expect(await screen.findByText("No tasks yet")).toBeInTheDocument();
     expect(
       screen.getByText("Create a task to start tracking your work.")
@@ -412,6 +423,78 @@ describe("TasksList (feat-tsk-web)", () => {
       screen.getByRole("link", { name: "Write the docs" })
     ).toBeInTheDocument();
     expect(listQueries()).toHaveLength(gets);
+  });
+});
+
+describe("TasksList defaults (feat-prj-lists)", () => {
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-10-03T10:00:00.000Z"));
+    Object.values(api).forEach((fn) => fn.mockReset());
+    nav.push.mockReset();
+    routeGet();
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("AC-6 FR-TSK-002 FR-TSK-003 SCR-021 SCR-030: open tasks, title A–Z by default; Completed adds the rest; Title A–Z first in the menu", async () => {
+    listResult = () => ({ data: page([t1, t2]), response: res(200) });
+
+    for (const props of [{}, { project: website }]) {
+      api.GET.mockClear();
+      const view = renderList(props);
+      await screen.findByRole("link", { name: "Write the docs" });
+      expect(listQueries()[0]).toEqual({
+        ...("project" in props ? { projectId: "p1" } : {}),
+        status: ["upcoming", "in-progress"],
+        sort: "title:asc",
+        page: 1,
+        pageSize: 25
+      });
+      expect(
+        statusFilter().getByRole("button", { name: "Upcoming" })
+      ).toHaveAttribute("aria-pressed", "true");
+      expect(
+        statusFilter().getByRole("button", { name: "In progress" })
+      ).toHaveAttribute("aria-pressed", "true");
+      expect(
+        statusFilter().getByRole("button", { name: "Completed" })
+      ).toHaveAttribute("aria-pressed", "false");
+
+      fireEvent.click(
+        statusFilter().getByRole("button", { name: "Completed" })
+      );
+      await waitFor(() =>
+        expect(listQueries().at(-1)).not.toHaveProperty("status")
+      );
+      expect(listQueries().at(-1)).toMatchObject({ sort: "title:asc" });
+
+      fireEvent.click(screen.getByRole("combobox", { name: "Sort" }));
+      await screen.findAllByRole("option");
+      expect(
+        screen.getAllByRole("option").map((o) => o.textContent?.trim())
+      ).toEqual(["Title A–Z", "Recently updated", "Due date"]);
+      view.unmount();
+    }
+  });
+
+  it("AC-6 FR-TSK-002 SCR-030: empty states: no open tasks by default, no tasks yet with all three, no match with only Upcoming", async () => {
+    listResult = () => ({ data: page([]), response: res(200) });
+
+    const open = renderList();
+    expect(await screen.findByText("No open tasks")).toBeInTheDocument();
+    expect(screen.queryByText("No tasks yet")).not.toBeInTheDocument();
+    open.unmount();
+
+    const all = renderList({}, "?status=upcoming,in-progress,completed");
+    expect(await screen.findByText("No tasks yet")).toBeInTheDocument();
+    all.unmount();
+
+    renderList({}, "?status=upcoming");
+    expect(
+      await screen.findByText("No tasks match the filter")
+    ).toBeInTheDocument();
   });
 });
 

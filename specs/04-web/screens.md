@@ -149,3 +149,4 @@ OQ-029
 - 2026-11-04: Prototype `5dcda69`: SCR-008's reminder counts all logs since the start and the target against billable time (FR-TLOG-021, feat-tlog-reminder-all-logged).
 - 2026-11-04: Prototype `c9c3343`: SCR-041's **Recent:** project and task chips (FR-TLOG-004, feat-tlog-recent-links).
 - 2026-11-04: Prototype `d7882d5` (feat-prj-lists): SCR-020 and SCR-030 sort by **Title A–Z** by default; SCR-030 shows Upcoming and In progress by default ("No open tasks"); SCR-070's per-tab defaults, **Title A–Z** and **Parent A–Z**; SCR-071/072 icons on links and task groups; SCR-072 and SCR-073 keep to-dos in place when done (OQ-264, OQ-265). Still `review`.
+- 2026-11-04: The owner approved SCR-020, SCR-030 and SCR-070…073 (as updated) for feat-prj-lists.

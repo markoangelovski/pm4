@@ -15,6 +15,7 @@ import type {
   NoteListDto,
   NoteListQuery,
   TodoDto,
+  TodoListQuery,
   TodoInputDto
 } from "./types";
 
@@ -26,6 +27,8 @@ export type TodoInput = TodoInputDto;
 export type NoteFilter = NoteFilterQuery;
 /** The Notes page's list query beyond the link filter (search, sort, date range); the To-dos tab's too. */
 export type NoteListOptions = Pick<NoteListQuery, "q" | "sort" | "from" | "to">;
+/** The To-dos tab's: the same without the title sort. */
+export type TodoListOptions = Pick<TodoListQuery, "q" | "sort" | "from" | "to">;
 
 export const noteKeys = {
   all: ["notes"] as const,
@@ -37,7 +40,7 @@ export const noteKeys = {
     options: NoteListOptions = {}
   ) => [...noteKeys.notes(), filter, page, pageSize, options] as const,
   todos: () => [...noteKeys.all, "todos"] as const,
-  todoList: (filter: NoteFilter, options: NoteListOptions = {}) =>
+  todoList: (filter: NoteFilter, options: TodoListOptions = {}) =>
     [...noteKeys.todos(), filter, options] as const
 };
 
@@ -111,7 +114,7 @@ export function useDeleteNote(): UseMutationResult<void, Error, string> {
 /** API-TODO-001: open and done, newest change first unless `options.sort` says otherwise (the list filters and groups them). */
 export function useTodos(
   filter: NoteFilter,
-  options: NoteListOptions = {}
+  options: TodoListOptions = {}
 ): UseQueryResult<Todo[], Error> {
   return useQuery({
     queryKey: noteKeys.todoList(filter, options),

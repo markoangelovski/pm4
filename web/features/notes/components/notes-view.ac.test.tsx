@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ComponentProps, ReactNode } from "react";
 import { QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, waitFor } from "@testing-library/react";
-import { NuqsTestingAdapter } from "nuqs/adapters/testing";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { NuqsTestingAdapter, type UrlUpdateEvent } from "nuqs/adapters/testing";
 import { createQueryClient } from "@/lib/query-client";
 import type { Me } from "@/features/users/api";
 import type { Todo } from "../api";
@@ -120,23 +120,28 @@ beforeEach(() => {
 });
 
 function renderView(search = "") {
+  const onUrlUpdate = vi.fn<(event: UrlUpdateEvent) => void>();
   const queryClient = createQueryClient();
   queryClient.setQueryData(["users", "me"], me);
   const wrapper = ({ children }: { children: ReactNode }) => (
-    <NuqsTestingAdapter searchParams={search} hasMemory>
+    <NuqsTestingAdapter
+      searchParams={search}
+      hasMemory
+      onUrlUpdate={onUrlUpdate}
+    >
       <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
     </NuqsTestingAdapter>
   );
-  return render(<NotesView />, { wrapper });
+  return { onUrlUpdate, ...render(<NotesView />, { wrapper }) };
 }
 
 describe("NotesView (feat-note-todos)", () => {
-  it("AC-15 FR-NOTE-002 SCR-070: no params → General notes, newest change first, page 1 of 20; the To-dos tab counts every open to-do", async () => {
+  it("AC-15 FR-NOTE-002 SCR-070: no params → General notes, title A–Z, page 1 of 20; the To-dos tab counts every open to-do", async () => {
     renderView();
 
     await waitFor(() =>
       expect(requested()).toContain(
-        "/api/v1/notes?unlinked=true&sort=updatedAt%3Adesc&page=1&pageSize=20"
+        "/api/v1/notes?unlinked=true&sort=title%3Aasc&page=1&pageSize=20"
       )
     );
     expect(requested()).toContain("/api/v1/todos");
@@ -149,7 +154,7 @@ describe("NotesView (feat-note-todos)", () => {
 
     await waitFor(() =>
       expect(requested()).toContain(
-        `/api/v1/notes?projectId=${P}&sort=updatedAt%3Adesc&page=1&pageSize=20`
+        `/api/v1/notes?projectId=${P}&sort=title%3Aasc&page=1&pageSize=20`
       )
     );
   });
@@ -159,7 +164,7 @@ describe("NotesView (feat-note-todos)", () => {
 
     await waitFor(() =>
       expect(requested()).toContain(
-        "/api/v1/notes?sort=updatedAt%3Adesc&page=1&pageSize=20"
+        "/api/v1/notes?sort=title%3Aasc&page=1&pageSize=20"
       )
     );
   });
@@ -170,17 +175,121 @@ describe("NotesView (feat-note-todos)", () => {
     await waitFor(() => expect(requested().length).toBeGreaterThan(0));
     await waitFor(() =>
       expect(requested()).toContain(
-        "/api/v1/notes?unlinked=true&sort=updatedAt%3Adesc&page=1&pageSize=20"
+        "/api/v1/notes?unlinked=true&sort=title%3Aasc&page=1&pageSize=20"
       )
     );
   });
 
-  it("AC-15 FR-NOTE-002 FR-NOTE-003 SCR-070: ?tab=todos&q=x&from&to → the to-dos with that search and range", async () => {
+  it("AC-15 FR-NOTE-002 FR-NOTE-003 SCR-070: ?tab=todos&q=x&from&to → all to-dos, oldest first, with that search and range", async () => {
     renderView("?tab=todos&q=x&from=2026-10-01&to=2026-10-09");
 
     await waitFor(() =>
       expect(requested()).toContain(
-        "/api/v1/todos?unlinked=true&q=x&sort=updatedAt%3Adesc&from=2026-10-01&to=2026-10-09"
+        "/api/v1/todos?q=x&sort=createdAt%3Aasc&from=2026-10-01&to=2026-10-09"
+      )
+    );
+  });
+});
+
+/** Base UI's select acts on the pointer sequence, not on a bare click. */
+function pick(option: HTMLElement) {
+  fireEvent.pointerDown(option);
+  fireEvent.mouseDown(option);
+  fireEvent.pointerUp(option);
+  fireEvent.mouseUp(option);
+  fireEvent.click(option);
+}
+
+/** Opens the sort menu named `name` and returns its option labels, top to bottom. */
+async function sortOptions(name: string) {
+  fireEvent.click(await screen.findByRole("combobox", { name }));
+  await screen.findAllByRole("option");
+  return screen.getAllByRole("option").map((o) => o.textContent?.trim());
+}
+
+const DATE_SORTS = [
+  "Last edited, newest",
+  "Last edited, oldest",
+  "Created, newest",
+  "Created, oldest"
+];
+
+/** The last URL nuqs wrote, as a plain object. */
+const lastUrl = (onUrlUpdate: ReturnType<typeof renderView>["onUrlUpdate"]) =>
+  Object.fromEntries(onUrlUpdate.mock.calls.at(-1)?.[0].searchParams ?? []);
+
+describe("NotesView sorts per tab (feat-prj-lists)", () => {
+  it("AC-7 FR-NOTE-002 SCR-070: the Notes tab defaults to Title A–Z, first in its menu; a to-dos sort in the URL falls back to it", async () => {
+    const view = renderView();
+
+    await waitFor(() =>
+      expect(requested()).toContain(
+        "/api/v1/notes?unlinked=true&sort=title%3Aasc&page=1&pageSize=20"
+      )
+    );
+    expect(await sortOptions("Sort notes")).toEqual([
+      "Title A–Z",
+      ...DATE_SORTS
+    ]);
+    view.unmount();
+
+    api.GET.mockClear();
+    renderView("?sort=parent:asc");
+    await waitFor(() =>
+      expect(requested()).toContain(
+        "/api/v1/notes?unlinked=true&sort=title%3Aasc&page=1&pageSize=20"
+      )
+    );
+  });
+
+  it("AC-8 FR-NOTE-005 SCR-070: the To-dos tab defaults to all to-dos by parent (oldest first), Parent A–Z first in its menu; its own date sorts; a notes-only sort falls back", async () => {
+    const view = renderView("?tab=todos");
+
+    await waitFor(() =>
+      expect(requested()).toContain("/api/v1/todos?sort=createdAt%3Aasc")
+    );
+    expect(await sortOptions("Sort to-dos")).toEqual([
+      "Parent A–Z",
+      ...DATE_SORTS
+    ]);
+    view.unmount();
+
+    api.GET.mockClear();
+    const dated = renderView("?tab=todos&sort=updatedAt:desc");
+    await waitFor(() =>
+      expect(requested()).toContain("/api/v1/todos?sort=updatedAt%3Adesc")
+    );
+    dated.unmount();
+
+    api.GET.mockClear();
+    renderView("?tab=todos&sort=title:asc");
+    await waitFor(() =>
+      expect(requested()).toContain("/api/v1/todos?sort=createdAt%3Aasc")
+    );
+    expect(requested()).not.toContain("/api/v1/todos?sort=title%3Aasc");
+  });
+
+  it("AC-9 FR-NOTE-002 SCR-070: switching tabs resets the filter and sort to the tab's, keeps the search", async () => {
+    const { onUrlUpdate } = renderView("?show=all&sort=createdAt:desc&q=x");
+    await waitFor(() =>
+      expect(requested()).toContain(
+        "/api/v1/notes?q=x&sort=createdAt%3Adesc&page=1&pageSize=20"
+      )
+    );
+
+    fireEvent.click(screen.getByRole("tab", { name: /To-dos/ }));
+    await waitFor(() =>
+      expect(lastUrl(onUrlUpdate)).toEqual({ tab: "todos", q: "x" })
+    );
+    await waitFor(() =>
+      expect(requested()).toContain("/api/v1/todos?q=x&sort=createdAt%3Aasc")
+    );
+
+    fireEvent.click(screen.getByRole("tab", { name: /Notes/ }));
+    await waitFor(() => expect(lastUrl(onUrlUpdate)).toEqual({ q: "x" }));
+    await waitFor(() =>
+      expect(requested()).toContain(
+        "/api/v1/notes?unlinked=true&q=x&sort=title%3Aasc&page=1&pageSize=20"
       )
     );
   });

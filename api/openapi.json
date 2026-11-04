@@ -4369,7 +4369,7 @@
             "name": "sort",
             "required": false,
             "in": "query",
-            "description": "Sort order; ties break on `id` in the same direction.",
+            "description": "Sort order; ties break on `id` in the same direction. `title:asc`: the title A–Z ignoring case, untitled notes last, equal titles most recently edited first.",
             "schema": {
               "$ref": "#/components/schemas/NoteSort"
             }
@@ -4752,15 +4752,6 @@
             }
           },
           {
-            "name": "sort",
-            "required": false,
-            "in": "query",
-            "description": "Sort order; ties break on `id` in the same direction.",
-            "schema": {
-              "$ref": "#/components/schemas/NoteSort"
-            }
-          },
-          {
             "name": "from",
             "required": false,
             "in": "query",
@@ -4810,6 +4801,15 @@
             "schema": {
               "format": "uuid",
               "type": "string"
+            }
+          },
+          {
+            "name": "sort",
+            "required": false,
+            "in": "query",
+            "description": "Sort order; ties break on `id` in the same direction.",
+            "schema": {
+              "$ref": "#/components/schemas/TodoSort"
             }
           }
         ],
@@ -7588,7 +7588,8 @@
           "updatedAt:desc",
           "updatedAt:asc",
           "createdAt:desc",
-          "createdAt:asc"
+          "createdAt:asc",
+          "title:asc"
         ]
       },
       "NoteResponseDto": {
@@ -7696,6 +7697,15 @@
         },
         "required": [
           "body"
+        ]
+      },
+      "TodoSort": {
+        "type": "string",
+        "enum": [
+          "updatedAt:desc",
+          "updatedAt:asc",
+          "createdAt:desc",
+          "createdAt:asc"
         ]
       },
       "TodoResponseDto": {

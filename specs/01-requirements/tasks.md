@@ -1,7 +1,7 @@
 ---
 id: req-tasks
 title: Tasks
-status: review
+status: approved
 owner: Marko Angelovski
 last_updated: 2026-11-04
 related: [req-projects, req-time-logs, api-endpoints]
@@ -157,3 +157,4 @@ None.
 - 2026-10-26: FR-TSK-009 *Task service* and the `service` field (OQ-243, OQ-247, feat-prj-services). Back to `review`.
 - 2026-10-26: Approved by the owner.
 - 2026-11-04: FR-TSK-002 (and so FR-TSK-003): upcoming and in progress by default, sorted by title A–Z, "No open tasks" (OQ-264, feat-prj-lists). Back to `review`.
+- 2026-11-04: Approved by the owner for feat-prj-lists.

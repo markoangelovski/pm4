@@ -39,12 +39,22 @@ export function byOpenThenDone(a: Todo, b: Todo): number {
   return a.createdAt.localeCompare(b.createdAt);
 }
 
+/** By creation, oldest first, done or not (ties on id), so ticking one off doesn't move it. */
+export function byCreated(_a: Todo, _b: Todo): number {
+  throw new Error("not implemented (feat-prj-lists)");
+}
+
 /**
  * Groups by link: General first, then by project title, a project's own to-dos before its tasks', tasks by title;
  * deleted links last. Groups with no shown to-do are left out. In a group, open to-dos come before done ones, each
  * in the given order (the toolbar's sort).
  */
-export function groupTodos(todos: Todo[]): TodoGroup[] {
+export function groupTodos(
+  todos: Todo[],
+  opts: { byParent?: boolean; withGeneral?: boolean } = {}
+): TodoGroup[] {
+  if (Object.keys(opts).length > 0)
+    throw new Error("not implemented (feat-prj-lists)");
   const groups = new Map<string, TodoGroup>();
   for (const t of todos) {
     const key = keyOf(t);

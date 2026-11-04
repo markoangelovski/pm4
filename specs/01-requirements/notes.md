@@ -1,7 +1,7 @@
 ---
 id: req-notes
 title: Notes and to-dos
-status: review
+status: approved
 owner: Marko Angelovski
 last_updated: 2026-11-04
 related: [req-projects, req-tasks, req-time-logs, req-integrations, api-endpoints, api-data-model, web-screens, OQ-230, OQ-231, OQ-232, OQ-233, OQ-234, OQ-235]
@@ -110,3 +110,4 @@ None. OQ-230…OQ-235 are resolved.
 - 2026-10-25: FR-NOTE-009: the New menu also creates projects, tasks and logs (OQ-241, feat-shell-new-menu). Back to `review`.
 - 2026-10-25: Approved by the owner.
 - 2026-11-04: FR-NOTE-002: each tab's own default filter and sort, **Title A–Z** and **Parent A–Z**; FR-NOTE-005: Parent A–Z, no open-before-done; FR-NOTE-008: the cards' order (OQ-264, OQ-265, feat-prj-lists). Back to `review`.
+- 2026-11-04: Approved by the owner for feat-prj-lists.

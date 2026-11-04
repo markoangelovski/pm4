@@ -69,4 +69,4 @@ A feature spec links to those. It doesn't copy them.
 | Billable reminder: Remaining and the reminder count billable time; Log time opens with the unlogged duration | [tlog-billable-reminder.md](tlog-billable-reminder.md) | M4 | approved |
 | Reminder counts all logs: unlogged since the start counts excluded logs, the target only billable | [tlog-reminder-all-logged.md](tlog-reminder-all-logged.md) | M4 | approved |
 | Log time: Recent project and task chips | [tlog-recent-links.md](tlog-recent-links.md) | M4 | approved |
-| Project management lists: title A–Z defaults, open tasks by default, notes and to-dos A–Z sorts | [prj-lists.md](prj-lists.md) | M2 | review |
+| Project management lists: title A–Z defaults, open tasks by default, notes and to-dos A–Z sorts | [prj-lists.md](prj-lists.md) | M2 | approved |

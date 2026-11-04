@@ -814,3 +814,4 @@ None.
 - 2026-11-01: Rate limits: `429` on every endpoint but `/health` and API-SYS-003; API-AUTH-001/002 redirect with `error=rate-limited` (OQ-257, feat-api-rate-limit). Still `review`.
 - 2026-11-02: API-RPT-001: `ReportDay.workedMinutes` leaves out the logs excluded from statistics, `nonprodMinutes` adds them up (OQ-261, feat-rpt-api D5). Still `review`.
 - 2026-11-04: API-NOTE-001's `sort` gains `title:asc` (`NoteSort`); API-TODO-001's `sort` is its own `TodoSort` without it (OQ-264, OQ-265, feat-prj-lists). Back to `review`.
+- 2026-11-04: The owner approved API-NOTE-001 and API-TODO-001 (as updated) for feat-prj-lists.

@@ -1438,7 +1438,7 @@ export interface components {
             items: components["schemas"]["PmspaCandidatesItemDto"][];
         };
         /** @enum {string} */
-        NoteSort: "updatedAt:desc" | "updatedAt:asc" | "createdAt:desc" | "createdAt:asc";
+        NoteSort: "updatedAt:desc" | "updatedAt:asc" | "createdAt:desc" | "createdAt:asc" | "title:asc";
         NoteResponseDto: {
             title: string | null;
             project: components["schemas"]["RefDto"] | null;
@@ -1467,6 +1467,8 @@ export interface components {
             /** Format: uuid */
             taskId?: string | null;
         };
+        /** @enum {string} */
+        TodoSort: "updatedAt:desc" | "updatedAt:asc" | "createdAt:desc" | "createdAt:asc";
         TodoResponseDto: {
             /** @description ISO 8601 UTC; `null` = open. */
             doneAt: string | null;
@@ -4802,7 +4804,7 @@ export interface operations {
                 pageSize?: number;
                 /** @description `true`: General only (no project, live or deleted). */
                 unlinked?: boolean;
-                /** @description Sort order; ties break on `id` in the same direction. */
+                /** @description Sort order; ties break on `id` in the same direction. `title:asc`: the title A–Z ignoring case, untitled notes last, equal titles most recently edited first. */
                 sort?: components["schemas"]["NoteSort"];
                 /** @description Inclusive; the sort's instant as a date in the user's time zone. */
                 from?: string;
@@ -5066,8 +5068,6 @@ export interface operations {
             query?: {
                 /** @description `true`: General only (no project, live or deleted). */
                 unlinked?: boolean;
-                /** @description Sort order; ties break on `id` in the same direction. */
-                sort?: components["schemas"]["NoteSort"];
                 /** @description Inclusive; the sort's instant as a date in the user's time zone. */
                 from?: string;
                 /** @description Inclusive; the sort's instant as a date in the user's time zone. */
@@ -5078,6 +5078,8 @@ export interface operations {
                 projectId?: string;
                 /** @description One task's items. */
                 taskId?: string;
+                /** @description Sort order; ties break on `id` in the same direction. */
+                sort?: components["schemas"]["TodoSort"];
             };
             header?: never;
             path?: never;

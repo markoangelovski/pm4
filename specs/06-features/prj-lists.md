@@ -1,7 +1,7 @@
 ---
 id: feat-prj-lists
 title: "Project management lists: title A–Z defaults, open tasks by default, notes and to-dos A–Z sorts"
-status: review
+status: approved
 owner: Marko Angelovski
 last_updated: 2026-11-04
 milestone: M2
@@ -61,6 +61,7 @@ and updated acceptance tests (rows with `tests`), then `pm4 hash`.
 | api | `api/src/notes/notes.repository.ts`, `api/src/notes/todos.repository.ts` | M | T1 | |
 | web | `web/lib/api/schema.d.ts` | M | tests | `npm run api:types` |
 | web | `web/features/notes/group.ts` | M | tests, T2 | Test step: the stub. T2: the twin |
+| web | `web/features/notes/api.ts` | M | tests, T2 | Test step: `TodoListOptions` (`useTodos`, `noteKeys.todoList`), so `web/` typechecks against `TodoSort`. T2: the twin |
 | web | `web/features/notes/group.ac.test.ts` | M | tests | AC-10, AC-11 (the "open before done" case becomes AC-11) |
 | web | `web/features/notes/components/notes-view.ac.test.tsx` | M | tests | AC-7…AC-9; AC-15's expected URLs get the new defaults |
 | web | `web/features/notes/components/notes-section.ac.test.tsx` | C | tests | AC-12, AC-13 |
@@ -68,7 +69,7 @@ and updated acceptance tests (rows with `tests`), then `pm4 hash`.
 | web | `web/features/tasks/components/tasks-list.ac.test.tsx` | M | tests | AC-6; AC-8…AC-10 and AC-14 get the new defaults |
 | web | `web/proto/features/notes/api.ts`, `web/proto/features/notes/types.ts` | M | T2 | Off `proposed-types.ts` (*Web (T2)*) |
 | web | `web/proto/features/notes/proposed-types.ts` | D | T2 | `rm` |
-| web | `web/features/notes/api.ts`, `web/features/notes/types.ts`, `web/features/notes/components/link-line.tsx`, `web/features/notes/components/notes-section.tsx`, `web/features/notes/components/notes-toolbar.tsx`, `web/features/notes/components/notes-view.tsx`, `web/features/notes/components/todos-board.tsx`, `web/features/projects/components/projects-list.tsx`, `web/features/tasks/components/tasks-list.tsx` | M | T2 | Twins (D6) |
+| web | `web/features/notes/types.ts`, `web/features/notes/components/link-line.tsx`, `web/features/notes/components/notes-section.tsx`, `web/features/notes/components/notes-toolbar.tsx`, `web/features/notes/components/notes-view.tsx`, `web/features/notes/components/todos-board.tsx`, `web/features/projects/components/projects-list.tsx`, `web/features/tasks/components/tasks-list.tsx` | M | T2 | Twins (D6) |
 
 ## Interfaces
 
@@ -94,7 +95,7 @@ export class ListTodosQueryDto extends OmitType(ListNotesQueryDto, ["page", "pag
 }
 ```
 Then `npm run openapi:export` (api) and `npm run api:types` (web). Both apps typecheck: `todos.repository.ts` still takes `NoteSort`,
-which `TodoSort` fits.
+which `TodoSort` fits, and `web/features/notes/api.ts` gets the prototype's `TodoListOptions` type for `useTodos` (its twin, so T2's copy keeps it).
 
 ### API (T1)
 - `notes.repository.ts`: `SORT_COLUMN` gains `title: notes.updatedAt` (it's also the range column, so `title:asc` ranges on the last
@@ -178,3 +179,5 @@ None. OQ-264 and OQ-265 are answered.
 
 ## Changelog
 - 2026-11-04: Initial draft from prototype `d7882d5`, OQ-264 and OQ-265. Status `review`.
+- 2026-11-04: Approved by the owner. Status `approved`.
+- 2026-11-04: Test step: `web/features/notes/api.ts` gets `TodoListOptions` so `web/` typechecks against `TodoSort` (row in *Files*). Tasks T-0140 (T1), T-0141 (T2).
