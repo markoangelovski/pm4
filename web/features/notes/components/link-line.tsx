@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { FolderKanban, ListTodo } from "lucide-react";
+import { ProjectIcon } from "@/features/projects/components/project-icon";
 import { DeletedName } from "@/features/time/components/deleted-marker";
 import { routes } from "@/lib/routes";
 import { cn } from "@/lib/utils";
@@ -17,7 +18,7 @@ function RefLink({ ref_, href }: { ref_: NoteRefDto; href: string }) {
   );
 }
 
-/** A note's or to-do's project and task, as links (a deleted one is plain text with the deleted marker), like a log row's. */
+/** A note's or to-do's project (with its icon; a deleted one with the folder icon) and task, as links (a deleted one is plain text with the deleted marker), like a log row's. */
 export function LinkLine({
   project,
   task,
@@ -37,7 +38,14 @@ export function LinkLine({
     >
       {project ? (
         <span className="flex min-w-0 items-center gap-1.5">
-          <FolderKanban className="size-3.5 shrink-0" />
+          {project.id && !project.deleted ? (
+            <ProjectIcon
+              project={{ id: project.id }}
+              className="size-3.5 rounded-sm"
+            />
+          ) : (
+            <FolderKanban className="size-3.5 shrink-0" />
+          )}
           <RefLink ref_={project} href={routes.app.project} />
         </span>
       ) : null}

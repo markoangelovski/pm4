@@ -50,12 +50,21 @@ export interface NoteFilter {
   timeZone?: string;
 }
 
+/** The column each sort's instant comes from. `title:asc` ranges on `updatedAt` (its last edit). */
 const SORT_COLUMN = {
   updatedAt: notes.updatedAt,
-  createdAt: notes.createdAt
+  createdAt: notes.createdAt,
+  title: notes.updatedAt
 } as const;
 
 function orderBy(sort: NoteSort): SQL[] {
+  if (sort === "title:asc") {
+    return [
+      sql`lower(${notes.title}) asc nulls last`,
+      desc(notes.updatedAt),
+      desc(notes.id)
+    ];
+  }
   const [field, direction] = sort.split(":") as [
     keyof typeof SORT_COLUMN,
     "asc" | "desc"

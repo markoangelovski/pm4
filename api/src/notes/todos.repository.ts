@@ -3,7 +3,7 @@ import { and, asc, desc, eq, ilike, isNull, sql, type SQL } from "drizzle-orm";
 import { escapeLike } from "../common/sql/escape-like.js";
 import { DRIZZLE, type DrizzleDb } from "../database/drizzle.js";
 import { projects, tasks, todos } from "../database/schema/index.js";
-import type { NoteSort } from "./dto/list-notes-query.dto.js";
+import type { TodoSort } from "./dto/list-todos-query.dto.js";
 
 /** The writable columns of a to-do. `doneAt` is set by the service. */
 export interface TodoValues {
@@ -44,7 +44,7 @@ const SORT_COLUMN = {
   createdAt: todos.createdAt
 } as const;
 
-function orderBy(sort: NoteSort): SQL[] {
+function orderBy(sort: TodoSort): SQL[] {
   const [field, direction] = sort.split(":") as [
     keyof typeof SORT_COLUMN,
     "asc" | "desc"
@@ -78,7 +78,7 @@ export class TodosRepository {
   async list(
     userId: string,
     filter: TodoFilter,
-    sort: NoteSort
+    sort: TodoSort
   ): Promise<TodoRow[]> {
     const pattern = filter.q ? `%${escapeLike(filter.q)}%` : null;
     const column = SORT_COLUMN[sort.split(":")[0] as keyof typeof SORT_COLUMN];

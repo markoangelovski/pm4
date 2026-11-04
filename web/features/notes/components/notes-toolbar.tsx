@@ -17,19 +17,27 @@ import {
 import { RangePicker } from "@/features/dashboard/components/range-picker";
 import type { DateRange } from "@/features/dashboard/range";
 import { useDebouncedValue } from "@/lib/use-debounced-value";
-import type { NoteSort } from "../types";
+import type { NoteSort, TodoSort } from "../types";
 import { NotesFilter } from "./notes-filter";
 
-const SORT_ITEMS: { value: NoteSort; label: string }[] = [
+const DATE_SORT_ITEMS = [
   { value: "updatedAt:desc", label: "Last edited, newest" },
   { value: "updatedAt:asc", label: "Last edited, oldest" },
   { value: "createdAt:desc", label: "Created, newest" },
   { value: "createdAt:asc", label: "Created, oldest" }
-];
+] as const;
+const SORT_ITEMS: Record<
+  "notes" | "to-dos",
+  { value: NoteSort | TodoSort; label: string }[]
+> = {
+  notes: [{ value: "title:asc", label: "Title A–Z" }, ...DATE_SORT_ITEMS],
+  "to-dos": [{ value: "parent:asc", label: "Parent A–Z" }, ...DATE_SORT_ITEMS]
+};
 
 /**
  * The Notes and To-dos tabs' controls: search (a note's title and body, a to-do's text; debounced), the link filter
- * (General, All, a project), the sort, and the time range (All time by default), which filters on the sort's date.
+ * (General, All, a project), the tab's sort, and the time range (All time by default), which filters on the sort's date
+ * (Title A–Z: the last edit; Parent A–Z: the creation).
  */
 export function NotesToolbar({
   noun,
@@ -51,8 +59,9 @@ export function NotesToolbar({
   projects: { id: string; title: string }[];
   show: string;
   onShow: (show: string) => void;
-  sort: NoteSort;
-  onSort: (sort: NoteSort) => void;
+  /** One of the tab's sorts (NOTE_SORTS or TODO_SORTS). */
+  sort: NoteSort | TodoSort;
+  onSort: (sort: NoteSort | TodoSort) => void;
   range: DateRange | null;
   today: string;
   onRange: (range: DateRange | null) => void;
@@ -92,7 +101,7 @@ export function NotesToolbar({
         onChange={onShow}
       />
       <Select
-        items={SORT_ITEMS}
+        items={SORT_ITEMS[noun]}
         value={sort}
         onValueChange={(v) => {
           if (v) onSort(v);
@@ -105,7 +114,7 @@ export function NotesToolbar({
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
-          {SORT_ITEMS.map((i) => (
+          {SORT_ITEMS[noun].map((i) => (
             <SelectItem
               key={i.value}
               value={i.value}

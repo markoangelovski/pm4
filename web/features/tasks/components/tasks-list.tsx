@@ -59,7 +59,11 @@ import {
   type ProjectListParams
 } from "@/features/projects/api";
 import { ProjectIcon } from "@/features/projects/components/project-icon";
-import { TASK_STATUSES, TASK_STATUS_LABELS } from "@/features/tasks/status";
+import {
+  TASK_STATUSES,
+  TASK_STATUS_LABELS,
+  type TaskStatus
+} from "@/features/tasks/status";
 import { ProjectLeadLabel } from "@/features/users/components/project-lead-label";
 import { DueDateBadge } from "@/features/tasks/components/due-date-badge";
 import { ProjectPicker } from "@/features/tasks/components/project-picker";
@@ -85,12 +89,19 @@ const PROJECT_PICKER_PARAMS: ProjectListParams = {
   pageSize: 100
 };
 
+/** Open work by default: Completed is off until picked. */
+const DEFAULT_STATUSES: TaskStatus[] = ["upcoming", "in-progress"];
+
 const SORT_LABELS: Record<TaskSort, string> = {
   "updatedAt:desc": "Recently updated",
   "dueDate:asc": "Due date",
   "title:asc": "Title A–Z"
 };
-const SORT_ITEMS = TASK_SORTS.map((value) => ({
+// The default (Title A–Z) first, so the menu opens downwards: it aligns the selected item with the trigger.
+const SORT_ITEMS = [
+  "title:asc" as const,
+  ...TASK_SORTS.filter((value) => value !== "title:asc")
+].map((value) => ({
   value,
   label: SORT_LABELS[value]
 }));
@@ -112,11 +123,11 @@ export function TasksList({
   const { data: taskLinks } = usePmspaLinks("task");
   const [params, setParams] = useQueryStates(
     {
-      status: parseAsArrayOf(parseAsStringLiteral(TASK_STATUSES)).withDefault([
-        ...TASK_STATUSES
-      ]),
+      status: parseAsArrayOf(parseAsStringLiteral(TASK_STATUSES)).withDefault(
+        DEFAULT_STATUSES
+      ),
       q: parseAsString.withDefault(""),
-      sort: parseAsStringLiteral(TASK_SORTS).withDefault("updatedAt:desc"),
+      sort: parseAsStringLiteral(TASK_SORTS).withDefault("title:asc"),
       page: parseAsInteger.withDefault(1),
       project: parseAsString.withDefault("")
     },
@@ -149,9 +160,13 @@ export function TasksList({
   const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   const showProject = !project;
+  // The default statuses (Upcoming, In progress) count as unfiltered: the empty state then says no open tasks.
+  const defaultStatuses =
+    status.length === DEFAULT_STATUSES.length &&
+    DEFAULT_STATUSES.every((s) => status.includes(s));
   const filtered = Boolean(
     q !== "" ||
-    status.length < TASK_STATUSES.length ||
+    (!defaultStatuses && status.length < TASK_STATUSES.length) ||
     (showProject && params.project)
   );
 
@@ -292,7 +307,9 @@ export function TasksList({
             <EmptyMedia variant="icon">
               <ListTodo />
             </EmptyMedia>
-            <EmptyTitle>No tasks yet</EmptyTitle>
+            <EmptyTitle>
+              {defaultStatuses ? "No open tasks" : "No tasks yet"}
+            </EmptyTitle>
             <EmptyDescription>
               Create a task to start tracking your work.
             </EmptyDescription>

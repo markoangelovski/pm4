@@ -25,7 +25,7 @@ export type NoteInput = NoteInputDto;
 export type Todo = TodoDto;
 export type TodoInput = TodoInputDto;
 export type NoteFilter = NoteFilterQuery;
-/** The Notes page's list query beyond the link filter (search, sort, date range); the To-dos tab's too. */
+/** The Notes page's list query beyond the link filter (search, sort, date range). */
 export type NoteListOptions = Pick<NoteListQuery, "q" | "sort" | "from" | "to">;
 /** The To-dos tab's: the same without the title sort. */
 export type TodoListOptions = Pick<TodoListQuery, "q" | "sort" | "from" | "to">;
@@ -59,7 +59,14 @@ export function useNotes(
     queryFn: async ({ signal }) =>
       unwrap(
         await apiClient.GET("/api/v1/notes", {
-          params: { query: { ...filter, ...options, page, pageSize } },
+          params: {
+            query: {
+              ...filter,
+              ...options,
+              page,
+              pageSize
+            }
+          },
           signal
         })
       ),

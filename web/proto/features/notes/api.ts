@@ -8,7 +8,6 @@ import {
 } from "@tanstack/react-query";
 import { apiClient } from "@/proto/mock/client";
 import { unwrap, unwrapVoid } from "@/lib/api/problem";
-import type { NoteSortDto } from "./proposed-types";
 import type {
   NoteDto,
   NoteFilterQuery,
@@ -27,9 +26,7 @@ export type Todo = TodoDto;
 export type TodoInput = TodoInputDto;
 export type NoteFilter = NoteFilterQuery;
 /** The Notes page's list query beyond the link filter (search, sort, date range). */
-export type NoteListOptions = Pick<NoteListQuery, "q" | "from" | "to"> & {
-  sort?: NoteSortDto;
-};
+export type NoteListOptions = Pick<NoteListQuery, "q" | "sort" | "from" | "to">;
 /** The To-dos tab's: the same without the title sort. */
 export type TodoListOptions = Pick<TodoListQuery, "q" | "sort" | "from" | "to">;
 
@@ -62,14 +59,13 @@ export function useNotes(
     queryFn: async ({ signal }) =>
       unwrap(
         await apiClient.GET("/api/v1/notes", {
-          // `title:asc` is proposed (NoteSortDto): the generated schema doesn't list it yet.
           params: {
             query: {
               ...filter,
               ...options,
               page,
               pageSize
-            } as NoteListQuery
+            }
           },
           signal
         })
