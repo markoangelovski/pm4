@@ -23,7 +23,7 @@ and task are still prefilled. Web only, built from the day the form already load
 | D1 | Source: the logs of the dialog's chosen date (`useDay(date)`, already used for *Day started at*); latest logged first (reverse position order), distinct, at most 5 (`RECENT_LIMIT`); logs of a deleted project or task (`id` null) are skipped. Nothing is stored. | Owner, prototype `c9c3343` |
 | D2 | Task chips: only the picked project's tasks (the task's project when a task is picked); with no project, every project's tasks, each "Task · Project". A project with no task logged that day shows no task row. | Owner, prototype `c9c3343` |
 | D3 | A project chip sets the project and clears a task of another project (and that task's field error, T-0138); a task chip sets the task and its project and clears the task field's error. Both drop a deleted name kept in the box (OQ-150), like the pickers. | Owner, prototype `c9c3343` |
-| D4 | Shown when adding and when editing. Chips are `Button size="xs"`, `outline` (`secondary` + `aria-pressed` when picked), `rounded-md!`, with the project's `ProjectIcon` (`size-3 rounded-sm`); the row is a `role="group"` labelled "Recent projects" / "Recent tasks". | Owner, prototype `c9c3343` |
+| D4 | Shown when adding and when editing. Chips are `Button size="xs"`, `outline` (picked: `aria-pressed` and `border-primary! bg-primary/5! dark:bg-primary/15!`, prototype `8a2f6a8`, T-0139), `rounded-md!`, with the project's `ProjectIcon` (`size-3 rounded-sm`); the row is a `role="group"` labelled "Recent projects" / "Recent tasks". | Owner, prototype `c9c3343` |
 | D5 | All three files are twins of the prototype's: copy + import rewrite + Prettier, so `pm4 twins` reports them equal. | Agent: as feat-tlog-reminder T1 |
 
 ## Scope
@@ -108,3 +108,4 @@ None.
 - 2026-11-04: Initial draft from prototype `c9c3343` (owner request 2026-11-04). Ready for review.
 - 2026-11-04: Approved by the owner ("proceed with the implementation", with commits authorized for this run).
 - 2026-11-04: D3: a project chip that clears the task also clears its field error (review finding on T-0136; T-0138, owner).
+- 2026-11-04: D4: the picked chip gets a primary border and tint instead of `secondary`, which barely showed (owner, prototype `8a2f6a8`, T-0139).
