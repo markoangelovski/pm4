@@ -3,7 +3,7 @@ id: T-0144
 title: Today range preset in Statistics and Bookings
 milestone: M5
 app: web
-status: review
+status: done
 size: S
 tier: haiku
 depends_on: []
@@ -44,3 +44,4 @@ Main session. Copied the prototype's change (`4cb07ca`) to the twin; updated the
 | 1 | main session (Opus) | PASS | Twin copy, AC tests and specs |
 
 ## Review
+Owner reviewed and approved (quick lane), 2026-11-06.
