@@ -3,7 +3,7 @@ id: req-bookings
 title: Bookings
 status: approved
 owner: Marko Angelovski
-last_updated: 2026-10-24
+last_updated: 2026-11-06
 related: [req-time-logs, api-endpoints, api-data-model, web-screens, OQ-122, OQ-123, OQ-124, OQ-125, OQ-212, OQ-213, OQ-214, OQ-215, OQ-225, OQ-226, OQ-227, OQ-228, OQ-229]
 ---
 
@@ -131,3 +131,4 @@ None.
 - 2026-10-23: Partial bookings (OQ-212…OQ-215): a log's time can be booked in parts to several dates, with a Booking time per line; Book all books
   the unbooked time; a duration can't drop below the booked time. Back to `review` (feat-book-partial, prototype `f3851c1`).
 - 2026-10-24: Range presets (OQ-225), FR-BOOK-007 Project filter (OQ-226), FR-BOOK-008 links between a booking's two days (OQ-228, OQ-229). Back to `review` (feat-book-web-nav, prototype `cf3052f`).
+- 2026-11-06: Prototype `4cb07ca`: a **Today** preset (today..today) between Last month and Last 7 days, in the Statistics and Bookings range selects (owner, T-0144).

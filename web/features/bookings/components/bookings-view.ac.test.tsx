@@ -758,6 +758,7 @@ describe("BookingsView (feat-book-web, feat-book-partial)", () => {
       expect(await optionNames("Range preset")).toEqual([
         "This month",
         "Last month",
+        "Today",
         "Last 7 days",
         "Last 30 days",
         "Last 90 days",

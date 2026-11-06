@@ -50,6 +50,7 @@ describe("dashboard range (feat-rpt-web)", () => {
     expect(RANGE_PRESETS.map((p) => PRESET_LABELS[p])).toEqual([
       "This month",
       "Last month",
+      "Today",
       "Last 7 days",
       "Last 30 days",
       "Last 90 days",
@@ -60,6 +61,7 @@ describe("dashboard range (feat-rpt-web)", () => {
     const expected: Record<string, DateRange> = {
       "this-month": { from: "2026-10-01", to: "2026-10-31" },
       "last-month": { from: "2026-09-01", to: "2026-09-30" },
+      today: { from: "2026-10-09", to: "2026-10-09" },
       "last-7": { from: "2026-10-03", to: "2026-10-09" },
       "last-30": { from: "2026-09-10", to: "2026-10-09" },
       "last-90": { from: "2026-07-12", to: "2026-10-09" },

@@ -3,7 +3,7 @@ id: req-reporting
 title: Dashboard and Reporting
 status: approved
 owner: Marko Angelovski
-last_updated: 2026-11-02
+last_updated: 2026-11-06
 related: [req-time-logs, req-bookings, api-endpoints, web-screens, OQ-029, OQ-126, OQ-127, OQ-128, OQ-129, OQ-130, OQ-212, OQ-250, OQ-251, OQ-258, OQ-259, OQ-260, OQ-261]
 ---
 
@@ -38,7 +38,7 @@ OQ-126); booked hours by booking date (that's the Bookings page, FR-BOOK-002).
 ### FR-RPT-001: Date range
 **Priority:** Must
 **Statement:** A preset select offers **This month** (default: the 1st to the last day of the month, also the days still
-ahead), **Last month**, **Last 7 days**, **Last 30 days**, **Last 90 days** (each ending today), **This year** (1 January to
+ahead), **Last month**, **Today**, **Last 7 days**, **Last 30 days**, **Last 90 days** (each ending today), **This year** (1 January to
 today) and **Custom range**. It shows the preset the range matches, else *Custom range*. Next to it, a button with the range's
 dates opens a two-month calendar; **Apply** applies the picked range (a start alone = one day). Apply is disabled until a start
 is picked, and while the picked range is over 366 days, with the hint "Pick at most 366 days." (OQ-130). Under the heading,
@@ -46,6 +46,7 @@ the range is named: "October 2026" for a whole calendar month, else "1 Sep 2026 
 **Acceptance criteria:**
 - Given I open `/app` on 9 October 2026 without parameters, then the range is 1–31 October 2026, the select shows *This month*
   and the heading shows "October 2026".
+- Given I pick *Today*, then the URL is `?from=2026-10-09&to=2026-10-09`.
 - Given I pick *Last 7 days*, then the URL is `?from=2026-10-03&to=2026-10-09`; picking *This month* again removes both parameters.
 - Given `?from=2025-01-01&to=2026-10-09` (over 366 days), then the dashboard shows this month.
 
@@ -132,3 +133,4 @@ None.
 - 2026-11-01: Target = the range's Monday–Friday dates × the daily target, future ones included; weekend days never add to it but their hours count in Worked and in over / under target; the running target climbs on every weekday to the range's end (OQ-258…OQ-260, prototype `bf93b65`). FR-RPT-003…005. Back to `review`.
 - 2026-11-01: Approved by the owner.
 - 2026-11-02: *Worked* leaves out the logs excluded from statistics, so do every total, tile and comparison built on it; the Workdays chart shows them as a grey Non-prod segment on top of each bar, in its tooltip and table (OQ-261, prototype `570b9cc`). Shared rules, FR-RPT-003…005. Back to `review`.
+- 2026-11-06: Prototype `4cb07ca`: a **Today** preset (today..today) between Last month and Last 7 days, in the Statistics and Bookings range selects (owner, T-0144).
