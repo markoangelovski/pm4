@@ -3,7 +3,7 @@ id: T-0143
 title: Log dialog task picker hides done tasks
 milestone: M4
 app: web
-status: review
+status: done
 size: S
 tier: haiku
 depends_on: []
@@ -43,4 +43,4 @@ Main session. Copied the prototype's change (`074b9d4`) to the twin; updated AC-
 | 1 | main session (Opus) | PASS | Twin copy, AC-11 and specs |
 
 ## Review
-_The owner's review (quick lane), or `review-feature`'s verdict._
+Owner reviewed and approved (quick lane), 2026-11-06.

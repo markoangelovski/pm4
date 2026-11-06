@@ -146,6 +146,6 @@
 | [T-0140](m2-projects/T-0140-notes-title-asc-order-and-range.md) | Notes title:asc order and range; to-dos on TodoSort | M2 | api | S | done | — |
 | [T-0141](m2-projects/T-0141-prototype-off-proposed-types-twins-of.md) | Prototype off proposed-types; twins of the 10 list files | M2 | web | S | done | — |
 | [T-0142](m2-projects/T-0142-hide-done-toggle-when-none-left.md) | Hide the done toggle when no done to-dos are left | M2 | web | S | done | — |
-| [T-0143](m4-time-logs/T-0143-log-task-picker-hides-done-tasks.md) | Log dialog task picker hides done tasks | M4 | web | S | review | — |
+| [T-0143](m4-time-logs/T-0143-log-task-picker-hides-done-tasks.md) | Log dialog task picker hides done tasks | M4 | web | S | done | — |
 
 M0–M6 are done. Later follow-ups are filed under the milestone they extend.
