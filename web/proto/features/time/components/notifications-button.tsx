@@ -13,7 +13,6 @@ import {
 import { formatDuration, today as todayIn } from "@/lib/time";
 import {
   closeDesktopNotification,
-  isPageInFocus,
   showDesktopNotification,
   turnOnDesktopNotifications,
   useDesktopNotifications
@@ -93,7 +92,8 @@ const REMINDER_TAG = "pm4-log-reminder";
 
 /**
  * A desktop notification for each new step of the reminder (the moments Log time opens by itself: a new day, start +
- * logged or 15 min unlogged), only while PM4 isn't in focus. It goes away when the reminder does.
+ * logged or 15 min unlogged), only while the user isn't looking at PM4, once per step across tabs. It goes away when
+ * the reminder does.
  */
 function useReminderNotification(workDate: string, shown: LogReminder | null) {
   const step = shown
@@ -107,11 +107,12 @@ function useReminderNotification(workDate: string, shown: LogReminder | null) {
       void closeDesktopNotification(REMINDER_TAG);
       return;
     }
-    if (isPageInFocus()) return;
     void showDesktopNotification({
       title: "Log your time",
       body: `${formatDuration(shown.unlogged)} of billable time unlogged`,
-      tag: REMINDER_TAG
+      tag: REMINDER_TAG,
+      key: step,
+      onlyWhenAway: true
     });
   }, [step, shown]);
 }

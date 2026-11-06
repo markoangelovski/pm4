@@ -80,9 +80,21 @@ export function useDesktopNotifications(): DesktopNotificationsState {
   return useSyncExternalStore(subscribe, snapshot, () => "off");
 }
 
-/** True while the user is looking at PM4: its tab is visible and its window has the focus. */
-export function isPageInFocus(): boolean {
+/** True while the user is looking at this page: its tab is visible and its window has the focus. */
+function isPageInFocus(): boolean {
   return document.visibilityState === "visible" && document.hasFocus();
+}
+
+/** The message a page posts to the service worker to show a notification (handled in `sw/service-worker.js`). */
+export interface NotifyMessage {
+  type: "pm4-notify";
+  title: string;
+  body: string;
+  tag: string;
+  /** Not shown again while a notification with the same tag and key is showing (several tabs, one step). */
+  key: string | null;
+  /** Shown only while no PM4 window has the focus. */
+  onlyWhenAway: boolean;
 }
 
 /** The notifications the page created without a worker, by tag, so they can be closed. */
@@ -90,34 +102,45 @@ const shownByPage = new Map<string, Notification>();
 
 /**
  * Shows a system notification when they are on; otherwise does nothing. One `tag` holds one notification: a new one
- * replaces it and alerts again. Clicking it brings PM4 to the front. Uses the service worker when one is active (it
- * also handles the click), the page's `Notification` otherwise.
+ * replaces it and alerts again, unless it has the same `key` as the one showing. With `onlyWhenAway`, nothing shows
+ * while the user is looking at PM4. Clicking it brings PM4 to the front.
+ * A page under the service worker hands it to the worker, which sees every PM4 window (`onlyWhenAway` covers all of
+ * them, and one step shows once across tabs). Without a worker (the dev server) the page shows it itself.
  */
 export async function showDesktopNotification({
   title,
   body,
-  tag
+  tag,
+  key = null,
+  onlyWhenAway = false
 }: {
   title: string;
   body: string;
   tag: string;
+  key?: string | null;
+  onlyWhenAway?: boolean;
 }): Promise<void> {
   if (snapshot() !== "on") return;
-  // `renotify` isn't in TypeScript's DOM types yet.
-  const options: NotificationOptions = Object.assign(
-    { body, tag, icon: ICON, badge: ICON, data: { url: "/app" } },
-    { renotify: true }
-  );
-  try {
-    const registration = await navigator.serviceWorker?.getRegistration();
-    if (registration?.active) {
-      await registration.showNotification(title, options);
-      return;
-    }
-  } catch {
-    // Fall back to the page's Notification.
+  if (onlyWhenAway && isPageInFocus()) return;
+  const worker = navigator.serviceWorker?.controller;
+  if (worker) {
+    const message: NotifyMessage = {
+      type: "pm4-notify",
+      title,
+      body,
+      tag,
+      key,
+      onlyWhenAway
+    };
+    worker.postMessage(message);
+    return;
   }
   try {
+    // `renotify` isn't in TypeScript's DOM types yet.
+    const options: NotificationOptions = Object.assign(
+      { body, tag, icon: ICON, badge: ICON },
+      { renotify: true }
+    );
     const notification = new Notification(title, options);
     shownByPage.get(tag)?.close();
     shownByPage.set(tag, notification);
