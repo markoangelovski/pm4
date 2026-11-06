@@ -3,7 +3,7 @@ id: T-0146
 title: Desktop notifications: the four twins and the worker's handlers
 milestone: M4
 app: web
-status: ready
+status: review
 size: S
 tier: haiku
 depends_on: []
@@ -25,9 +25,30 @@ Work from the brief: `node scripts/pm4.mjs brief T-0146`. Verify with `node scri
 ## Implementation notes
 _Implementer: what changed, and anything the reviewer should look at._
 
+Copied the four twins with the sed + prettier command from *Twins (T1)* (replaces the test-step stubs). Appended the
+`pm4-notify` message handler and the `notificationclick` handler to `web/sw/service-worker.js` exactly as spelled out in
+*Service worker (T1)*, then Prettier. No other files touched.
+
+`node scripts/pm4.mjs check T-0146`:
+```
+pm4 check T-0146
+  ac hashes: ok (4)
+  scope: ok
+  web lint: ok (16s)
+  web format:check: ok (5s)
+  web typecheck: ok (12s)
+  web test: ok (33s)
+  web build: ok (25s)
+  check AC-9: twins equal: ok
+  twins: ok (131 equal)
+
+PASS T-0146
+```
+
 ### Attempts
 | # | Tier | Result | Summary |
 | --- | --- | --- | --- |
+| 1 | haiku | pass | Twins copied, worker handlers appended; pm4 check PASS. Targeted vitest (sw, system, settings, time) 129/129 passed. |
 
 ## Review
 _Filled in by `review-feature`._

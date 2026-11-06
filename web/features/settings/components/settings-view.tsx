@@ -4,6 +4,7 @@ import { parseAsStringLiteral, useQueryState } from "nuqs";
 import { Blocks, UserRound, type LucideIcon } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { IntegrationsSettings } from "@/features/integrations/components/integrations-settings";
+import { DesktopNotificationsSettings } from "./desktop-notifications-settings";
 import { UserSettings } from "./user-settings";
 
 /** One entry per settings section. Add a section here and it gets its own tab. */
@@ -12,7 +13,12 @@ const SECTIONS = [
     id: "user",
     label: "User settings",
     icon: UserRound,
-    content: <UserSettings />
+    content: (
+      <div className="flex flex-col gap-4">
+        <UserSettings />
+        <DesktopNotificationsSettings />
+      </div>
+    )
   },
   {
     id: "integrations",
