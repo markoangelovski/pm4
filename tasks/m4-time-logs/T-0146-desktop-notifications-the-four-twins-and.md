@@ -3,7 +3,7 @@ id: T-0146
 title: Desktop notifications: the four twins and the worker's handlers
 milestone: M4
 app: web
-status: review
+status: done
 size: S
 tier: haiku
 depends_on: []
