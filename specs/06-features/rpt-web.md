@@ -3,7 +3,7 @@ id: feat-rpt-web
 title: "Dashboard web: the dashboard page"
 status: approved
 owner: Marko Angelovski
-last_updated: 2026-11-02
+last_updated: 2026-11-06
 milestone: M5
 requirements: [FR-RPT-001, FR-RPT-002, FR-RPT-003, FR-RPT-004, FR-RPT-005, FR-RPT-006, SCR-010]
 related: [req-reporting, web-screens, web-routing, feat-rpt-api, feat-tlog-web, OQ-126, OQ-127, OQ-128, OQ-129, OQ-130, OQ-250, OQ-251, OQ-258, OQ-259, OQ-260, OQ-261]
@@ -111,11 +111,11 @@ prototype files `stats.ts`, `hours-summary.tsx` and `workday-chart.tsx`. T5 (D9)
 ```ts
 // web/features/dashboard/range.ts — dates are YYYY-MM-DD calendar strings; no time zone arithmetic
 export interface DateRange { from: string; to: string }
-export const RANGE_PRESETS = ["this-month", "last-month", "last-7", "last-30", "last-90", "this-year"] as const;
+export const RANGE_PRESETS = ["this-month", "last-month", "today", "last-7", "last-30", "last-90", "this-year"] as const;
 export type RangePreset = (typeof RANGE_PRESETS)[number];
-export const PRESET_LABELS: Record<RangePreset, string>;   // "This month", "Last month", "Last 7 days", "Last 30 days", "Last 90 days", "This year"
+export const PRESET_LABELS: Record<RangePreset, string>;   // "This month", "Last month", "Today", "Last 7 days", "Last 30 days", "Last 90 days", "This year"
 export const MAX_RANGE_DAYS = 366;
-/** this-month: 1st–last of today's month; last-month: the previous month; last-7/30/90: today−6/29/89..today; this-year: 1 Jan..today. */
+/** this-month: 1st–last of today's month; last-month: the previous month; today: today..today; last-7/30/90: today−6/29/89..today; this-year: 1 Jan..today. */
 export function presetRange(preset: RangePreset, today: string): DateRange;
 export function matchPreset(range: DateRange, today: string): RangePreset | null;
 /** to − from > 366 days. */
@@ -268,7 +268,7 @@ tasks 2 upcoming, 3 in progress, 4 completed.
 
 | AC | Case → expected | Test | Task |
 | --- | --- | --- | --- |
-| AC-1 | `presetRange` (today 2026-10-09): this-month 10-01..10-31, last-month 09-01..09-30, last-7 10-03..10-09, last-30 09-10..10-09, last-90 07-12..10-09, this-year 01-01..10-09; `matchPreset` finds each and returns `null` for 10-02..10-09; `parseRange` keeps 2025-10-08..2026-10-09 and 2026-11-01..2026-11-30, and gives this month for a missing value, `2026-02-30`, from > to, 2025-10-07..2026-10-09; `rangeLabel` → "October 2026", "1 Sep 2026 – 9 Oct 2026", and "1 Oct 2026 – 9 Oct 2026" for part of a month; `weekdaysSoFar(1–31 Oct)` → 7 | `web/features/dashboard/stats.ac.test.ts` | tests |
+| AC-1 | `presetRange` (today 2026-10-09): this-month 10-01..10-31, last-month 09-01..09-30, today 10-09..10-09, last-7 10-03..10-09, last-30 09-10..10-09, last-90 07-12..10-09, this-year 01-01..10-09; `matchPreset` finds each and returns `null` for 10-02..10-09; `parseRange` keeps 2025-10-08..2026-10-09 and 2026-11-01..2026-11-30, and gives this month for a missing value, `2026-02-30`, from > to, 2025-10-07..2026-10-09; `rangeLabel` → "October 2026", "1 Sep 2026 – 9 Oct 2026", and "1 Oct 2026 – 9 Oct 2026" for part of a month; `weekdaysSoFar(1–31 Oct)` → 7 | `web/features/dashboard/stats.ac.test.ts` | tests |
 | AC-2 | `dayStats` of the report → 31 days, 2 Oct `{null, 0, 0}` (since T5, D9: `{null, 0, 0, nonprod 0}`; 6 Oct with `nonprodMinutes` 90 → `nonprod` 90 and `totals` nonprod 90, worked still 690); `totals` → worked 690, booked 360, workdays 3, target 1260, average 515, earliest 480, latest 555. Since T4 (D8): `totals` → worked 690, booked 360, weekdays 22, workdays 3, target 9240, average 515, earliest 480, latest 555; an empty October → weekdays 22, workdays 0, target 9240; with a start and 2h on Sat 10 Oct → workdays 4, worked 810, target still 9240 | `web/features/dashboard/stats.ac.test.ts` | tests, T4 |
 | AC-3 | `buckets` for October → by day, 22 items (the 9 weekend days without work left out), ticks `1`…, 6 Oct title "Tue, 6 Oct 2026", booked 120, unbooked 195; with 2h worked on Sat 10 Oct → 23 items; 2026-08-01..2026-10-01 (62 days) → by day with ticks `d MMM`; 2026-08-01..2026-10-02 → by week. Since T4 (D8): 6 Oct and Fri 2 Oct → target 420, weekdays 1; Sat 10 Oct with 2h worked → target 0, weekdays 0. Since T5 (D9): Sat 10 Oct with only 1h Non-prod → 23 items, its bucket worked 0, nonprod 60 | `web/features/dashboard/stats.ac.test.ts` | tests, T4, T5 |
 | AC-4 | `buckets` for 2026-01-01..2026-06-30 → by week, 27 items; the first: key `2025-12-29`, date `2026-01-01`, tick "1 Jan", title "Week of 29 Dec – 4 Jan 2026"; a week with starts 08:00 and 09:00 → start 510, target 840. Since T4 (D8): the first week (Thu 1 – Sun 4 Jan) → workdays 0, weekdays 2, target 840; the week of 5 Jan (starts 08:00, 09:00) → start 510, workdays 2, weekdays 5, target 2100 | `web/features/dashboard/stats.ac.test.ts` | tests, T4 |
@@ -324,3 +324,4 @@ None.
 - 2026-11-01: Approved by the owner.
 - 2026-11-02: D9 (owner, OQ-261): logs excluded from statistics leave *Worked* and every total; the Workdays chart shows them as a grey Non-prod segment, tooltip row, legend item and table column. Prototype `570b9cc`, T5, AC-2, AC-3, AC-11 updated, AC-19…AC-21. Back to `review`.
 - 2026-11-02: Approved by the owner.
+- 2026-11-06: Prototype `4cb07ca`: a **Today** preset (today..today) between Last month and Last 7 days, in the Statistics and Bookings range selects (owner, T-0144).

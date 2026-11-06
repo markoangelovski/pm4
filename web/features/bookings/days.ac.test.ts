@@ -394,6 +394,10 @@ describe("Bookings navigation logic (feat-book-web-nav)", () => {
       from: "2026-09-01",
       to: "2026-09-30"
     });
+    expect(bookingPresetRange("today", today)).toEqual({
+      from: "2026-10-09",
+      to: "2026-10-09"
+    });
     expect(bookingPresetRange("last-7", today)).toEqual({
       from: "2026-10-03",
       to: "2026-10-09"
