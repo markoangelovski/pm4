@@ -1,6 +1,6 @@
 # Task Board
 
-**Next free ID:** T-0144
+**Next free ID:** T-0146
 
 | ID | Title | Milestone | App | Size | Status | Depends on |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -148,5 +148,6 @@
 | [T-0142](m2-projects/T-0142-hide-done-toggle-when-none-left.md) | Hide the done toggle when no done to-dos are left | M2 | web | S | done | — |
 | [T-0143](m4-time-logs/T-0143-log-task-picker-hides-done-tasks.md) | Log dialog task picker hides done tasks | M4 | web | S | done | — |
 | [T-0144](m5-reporting/T-0144-today-range-preset.md) | Today range preset in Statistics and Bookings | M5 | web | S | done | — |
+| [T-0145](m8-notes/T-0145-header-todos-button.md) | Header To-dos button | M8 | web | S | done | — |
 
 M0–M6 are done. Later follow-ups are filed under the milestone they extend.
