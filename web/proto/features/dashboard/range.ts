@@ -18,6 +18,7 @@ export interface DateRange {
 export const RANGE_PRESETS = [
   "this-month",
   "last-month",
+  "today",
   "last-7",
   "last-30",
   "last-90",
@@ -28,6 +29,7 @@ export type RangePreset = (typeof RANGE_PRESETS)[number];
 export const PRESET_LABELS: Record<RangePreset, string> = {
   "this-month": "This month",
   "last-month": "Last month",
+  today: "Today",
   "last-7": "Last 7 days",
   "last-30": "Last 30 days",
   "last-90": "Last 90 days",
@@ -51,13 +53,15 @@ function monthOf(date: string): DateRange {
   };
 }
 
-/** this-month: 1st–last of today's month; last-month: the previous month; last-7/30/90: today−6/29/89..today; this-year: 1 Jan..today. */
+/** this-month: 1st–last of today's month; last-month: the previous month; today: today..today; last-7/30/90: today−6/29/89..today; this-year: 1 Jan..today. */
 export function presetRange(preset: RangePreset, today: string): DateRange {
   switch (preset) {
     case "this-month":
       return monthOf(today);
     case "last-month":
       return monthOf(iso(subMonths(parseISO(`${today.slice(0, 8)}01`), 1)));
+    case "today":
+      return { from: today, to: today };
     case "last-7":
       return { from: shift(today, -6), to: today };
     case "last-30":
