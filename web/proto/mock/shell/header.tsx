@@ -10,6 +10,7 @@ import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { Suspense } from "react";
 import { NewItemButton } from "@/proto/features/notes/components/new-item-button";
+import { TodosButton } from "@/proto/features/notes/components/todos-button";
 import { NotificationsButton } from "@/proto/features/time/components/notifications-button";
 
 const Header = () => {
@@ -45,6 +46,7 @@ const Header = () => {
             <Suspense fallback={null}>
               <NewItemButton />
             </Suspense>
+            <TodosButton />
             <NotificationsButton />
             <LightDark />
             <Profile />
