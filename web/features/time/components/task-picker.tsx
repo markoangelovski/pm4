@@ -11,7 +11,6 @@ import {
 import { useState } from "react";
 import { InputGroupAddon } from "@/components/ui/input-group";
 import { useTasks } from "@/features/tasks/api";
-import { TASK_STATUSES } from "@/features/tasks/status";
 import type { TaskRef } from "../types";
 import { DeletedMarker } from "./deleted-marker";
 
@@ -35,7 +34,7 @@ export function TaskPicker({
   const [q, setQ] = useState("");
   const query = useTasks({
     ...(projectId ? { projectId } : {}),
-    statuses: [...TASK_STATUSES],
+    statuses: ["upcoming", "in-progress"], // done (completed) tasks are not offered
     q: "", // never sent: the API matches titles only, so the picker filters in the browser
     sort: "title:asc",
     page: 1,
