@@ -70,3 +70,4 @@ A feature spec links to those. It doesn't copy them.
 | Reminder counts all logs: unlogged since the start counts excluded logs, the target only billable | [tlog-reminder-all-logged.md](tlog-reminder-all-logged.md) | M4 | approved |
 | Log time: Recent project and task chips | [tlog-recent-links.md](tlog-recent-links.md) | M4 | approved |
 | Project management lists: title A–Z defaults, open tasks by default, notes and to-dos A–Z sorts | [prj-lists.md](prj-lists.md) | M2 | approved |
+| Desktop notifications for the reminder to log time | [tlog-desktop-notifications.md](tlog-desktop-notifications.md) | M4 | approved |

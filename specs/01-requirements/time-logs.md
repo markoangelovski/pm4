@@ -291,6 +291,28 @@ app's icon has a badge where the browser supports it (OQ-262; owner, prototypes 
   caps it).
 - Given no start, no log, or 7h billable logged (whatever is unlogged), then there's no reminder.
 
+### FR-TLOG-022: Desktop notification for the reminder
+**Priority:** Could
+**Statement:** The user can turn on desktop notifications for the reminder to log time (FR-TLOG-021), in this browser only:
+in Settings → User settings (**Desktop notifications**, a switch "Remind me to log time") or from the bell's popover (**Turn on**,
+shown while they're off). Turning them on asks the browser for permission the first time; blocked or unsupported, the switch
+is disabled and says why. While they're on, each new step of the reminder (the moments Log time opens by itself: the reminder
+appears, another 15 min are unlogged, or a log is saved and some time is still unlogged) shows a system notification "Log your
+time" / "<unlogged> of billable time unlogged" with the system's notification sound, but only while no PM4 tab or window has the
+focus, and once per step however many PM4 tabs are open. A new step replaces the previous notification; it closes when the
+reminder goes away. Clicking it brings PM4 to the front (or opens `/app`). Notifications come from the open app (a tab or the
+installed app), not from the server: with PM4 closed there are none (OQ-266, OQ-267; owner, prototypes `bb8120d`, `06e1004`).
+No API change.
+**Acceptance criteria:**
+- Given desktop notifications are on and PM4 is in a background tab, when the reminder appears at 10:15 ("15m of billable time
+  unlogged"), then a system notification "Log your time" / "15m of billable time unlogged" shows with the system sound; at 10:16
+  no other one shows; at 10:30 one replaces it ("30m …").
+- Given PM4 is the focused window, then no notification shows (the bell and Log time still do); given two PM4 tabs in the
+  background, then one notification shows per step.
+- Given I click the notification, then PM4 comes to the front; given I log the time, then the notification closes.
+- Given the browser blocks notifications for PM4, then the Settings switch is off and disabled with "Notifications are blocked for
+  PM4 in this browser. Allow them in the browser's site settings, then turn this on."
+
 ## Out of scope
 - Ordering, inserting or repeating logs, per-log clock times, break logs, the legacy "event" level.
 - Per-day targets, a date-range view of the day screen.
@@ -326,3 +348,4 @@ None.
 - 2026-11-04: FR-TLOG-018/021: the reminder's unlogged time counts all logs since the start (excluded ones too), and the target still counts only billable time: min(now − start − logged, target − billable) (owner, prototype `5dcda69`, feat-tlog-reminder-all-logged).
 - 2026-11-04: FR-TLOG-004: **Recent:** project and task chips under the pickers, from the chosen date's logs (owner, prototype `c9c3343`, feat-tlog-recent-links).
 - 2026-11-06: FR-TLOG-004: the task picker no longer offers completed tasks (owner, OQ-118, prototype `074b9d4`, T-0143).
+- 2026-11-06: FR-TLOG-022: desktop notifications for the reminder to log time, opt-in per browser (owner, OQ-266, OQ-267, prototypes `bb8120d`, `06e1004`, feat-tlog-desktop-notifications).

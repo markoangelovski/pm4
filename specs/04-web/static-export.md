@@ -3,7 +3,7 @@ id: web-static-export
 title: Static Export Constraints
 status: approved
 owner: Marko Angelovski
-last_updated: 2026-10-25
+last_updated: 2026-11-06
 related: [ADR-0001, ADR-0012, web-template, web-routing, web-prototype, arch-deployment]
 ---
 
@@ -71,6 +71,10 @@ redirect target is the slash-free form from `web/lib/routes.ts`.
   JS they loaded, and the next load serves the new build.
 - Registered only in a production build (`NODE_ENV=production`); the dev server, and so the prototype, never
   register it.
+- It also shows the desktop notifications (FR-TLOG-022, OQ-267): a page posts it a `pm4-notify` message, and the worker
+  shows it unless a PM4 window has the focus or the same step is already showing; a click focuses a PM4 window or opens
+  `/app`. No Web Push: nothing arrives while PM4 is closed. Without a controlling worker (the dev server) the page shows
+  the notification itself.
 
 ## Not available (do not use)
 | Feature | Why | Use instead |
@@ -125,3 +129,5 @@ user-specific is fetched at build time.
 - 2026-10-11: Approved by the owner.
 - 2026-10-25: Installable app and service worker (OQ-237, OQ-238, feat-shell-pwa). Back to `review`.
 - 2026-10-25: Approved by the owner.
+- 2026-11-06: The worker shows the desktop notifications (FR-TLOG-022, OQ-267, feat-tlog-desktop-notifications). Back to `review`.
+- 2026-11-06: Approved by the owner.
