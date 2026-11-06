@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Bell, Clock, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,6 +11,13 @@ import {
   PopoverTrigger
 } from "@/components/ui/popover";
 import { formatDuration, today as todayIn } from "@/lib/time";
+import {
+  closeDesktopNotification,
+  isPageInFocus,
+  showDesktopNotification,
+  turnOnDesktopNotifications,
+  useDesktopNotifications
+} from "@/proto/features/system/desktop-notifications";
 import { useAttention } from "@/proto/features/system/use-attention";
 import { useMe, type Me } from "@/proto/features/users/api";
 import { useDay, useNowMinute } from "../api";
@@ -18,6 +25,7 @@ import {
   dismissalOf,
   isDismissed,
   logReminder,
+  REMINDER_STEP,
   reminderMinutes,
   type LogReminder,
   type ReminderDismissal
@@ -30,7 +38,7 @@ import { LogFormDialog } from "./log-form-dialog";
  * (`reminderMinutes`). Closing Log time keeps the reminder in the bell, where Log your time opens it again; Log time
  * opens by itself again once another 15 min are unlogged or a log is saved. The reminder's × dismisses it (and stops
  * Log time opening) until another 15 min are unlogged or a log is saved. While it shows, the tab's title and favicon
- * and the installed app's icon show it too.
+ * and the installed app's icon show it too, and at each new step a desktop notification while PM4 isn't in focus.
  * Today's date needs the user's time zone, so until it loads the bell has no notifications and reads no day.
  */
 export function NotificationsButton() {
@@ -56,6 +64,7 @@ function LogReminderBell({ me }: { me: Me }) {
   const open =
     shown !== null && (logging || !isDismissed(workDate, shown, closed));
   useAttention(shown ? 1 : 0);
+  useReminderNotification(workDate, shown);
   return (
     <>
       <NotificationsPopover
@@ -78,6 +87,33 @@ function LogReminderBell({ me }: { me: Me }) {
       />
     </>
   );
+}
+
+const REMINDER_TAG = "pm4-log-reminder";
+
+/**
+ * A desktop notification for each new step of the reminder (the moments Log time opens by itself: a new day, start +
+ * logged or 15 min unlogged), only while PM4 isn't in focus. It goes away when the reminder does.
+ */
+function useReminderNotification(workDate: string, shown: LogReminder | null) {
+  const step = shown
+    ? `${workDate}|${shown.since}|${Math.floor(shown.unlogged / REMINDER_STEP)}`
+    : null;
+  const notified = useRef<string | null>(null);
+  useEffect(() => {
+    if (step === notified.current) return;
+    notified.current = step;
+    if (!shown) {
+      void closeDesktopNotification(REMINDER_TAG);
+      return;
+    }
+    if (isPageInFocus()) return;
+    void showDesktopNotification({
+      title: "Log your time",
+      body: `${formatDuration(shown.unlogged)} of billable time unlogged`,
+      tag: REMINDER_TAG
+    });
+  }, [step, shown]);
 }
 
 /** The bell and its popover, listing the reminder when there is one. */
@@ -151,7 +187,29 @@ function NotificationsPopover({
             No notifications.
           </p>
         )}
+        <DesktopNotificationsOffer />
       </PopoverContent>
     </Popover>
+  );
+}
+
+/** While desktop notifications are off (and could be on), a line offering to turn them on. */
+function DesktopNotificationsOffer() {
+  const state = useDesktopNotifications();
+  if (state !== "off") return null;
+  return (
+    <div className="flex items-center gap-2 border-t px-2 pt-2">
+      <p className="flex-1 text-xs text-muted-foreground">
+        Get a desktop notification when it&apos;s time to log.
+      </p>
+      <Button
+        variant="outline"
+        size="xs"
+        className="cursor-pointer"
+        onClick={() => void turnOnDesktopNotifications()}
+      >
+        Turn on
+      </Button>
+    </div>
   );
 }
