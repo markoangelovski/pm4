@@ -384,7 +384,7 @@ describe("LogFormDialog (feat-tlog-web)", () => {
     });
   });
 
-  it("AC-11 FR-TLOG-004 FR-TLOG-006 SCR-041: the task fills and locks the project; clearing; narrowing by project; search by project name; every status", async () => {
+  it("AC-11 FR-TLOG-004 FR-TLOG-006 SCR-041: the task fills and locks the project; clearing; narrowing by project; search by project name; no completed tasks", async () => {
     renderDialog();
     change("Log text", "Specs review");
     change("Duration", "30");
@@ -415,10 +415,10 @@ describe("LogFormDialog (feat-tlog-web)", () => {
       taskId: "t1"
     });
 
-    // The task requests never filter by status.
+    // The task requests ask for upcoming and in-progress tasks only (OQ-118, 2026-11-06).
     expect(taskQueries().length).toBeGreaterThan(0);
     for (const query of taskQueries()) {
-      expect(query).not.toHaveProperty("status");
+      expect(query).toMatchObject({ status: ["upcoming", "in-progress"] });
     }
   });
 

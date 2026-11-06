@@ -27,7 +27,7 @@ Patterns: feat-tsk-web.
 | D4 | "Now" = `nowMinute(me.timeZone)`, re-read every 15 s by `useNowMinute`, only when the viewed date is today. | OQ-112 (owner) |
 | D5 | `view` ∈ `project` (default, omitted from the URL), `task`, `sequential`; `date` omitted when today. Invalid or future `date` → today. | OQ-113, OQ-120 (owner) |
 | D6 | The calendar loads `useWorkdays(monthRange(visibleMonth))` and marks the dates whose `totalMinutes` > 0 with a dot. | OQ-113 (owner) |
-| D7 | The dialog's pickers load once and filter in the browser: projects with `useProjects` (100, A–Z), tasks with `useTasks` (100, every status, `title:asc`, `projectId` when a project is chosen), listed A–Z by "Project · Task". | OQ-116, OQ-118 (owner) |
+| D7 | The dialog's pickers load once and filter in the browser: projects with `useProjects` (100, A–Z), tasks with `useTasks` (100, upcoming and in progress (2026-11-06; was every status), `title:asc`, `projectId` when a project is chosen), listed A–Z by "Project · Task". | OQ-116, OQ-118 (owner) |
 | D8 | After the day view's dialog saves a log for another date, the view moves to that date; the header's dialog doesn't navigate. | Agent |
 | D9 | Editing sends `projectId` and `taskId` only when the project or task picker changed, so a link to a deleted item (a retained name) survives an edit. | endpoints.md *Link input* |
 | D10 | Settings is a tabbed page (`?tab=`) with one section, **User settings**; the daily target is entered in hours (0.25 steps), the time zone with a select. | OQ-115 (owner) |
@@ -289,3 +289,4 @@ None.
   project and task pages move to a later feature. Ready for review.
 - 2026-10-09: Approved by the owner.
 - 2026-10-10: Acceptance tests written; AC-21's invalid example `20` → `25` (20 h is within 0.25–24).
+- 2026-11-06: D7: the task picker asks for upcoming and in-progress tasks only; AC-11 checks the `status` filter (owner, OQ-118, T-0143).

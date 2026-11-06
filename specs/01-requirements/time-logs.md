@@ -3,7 +3,7 @@ id: req-time-logs
 title: Time Capture (Workdays and Time Logs)
 status: review
 owner: Marko Angelovski
-last_updated: 2026-11-04
+last_updated: 2026-11-06
 related: [req-projects, req-tasks, req-reporting, api-endpoints, api-data-model, web-screens]
 ---
 
@@ -88,7 +88,7 @@ set) and their title. Rows in **Non-prod** show their project and task, and thei
 **Statement:** The user adds a log with the **log text** and the **duration** (required) and, optionally, a
 **title**, a **project**, a **task** and **Exclude from statistics** (FR-TLOG-018), for a date (default: the date being
 viewed, or today). Both pickers are searchable. A task is shown prefixed with its project name ("Manhatan ·
-Specifications 01"), and typing matches the task title or the project name. Tasks of every status are offered. Picking a task sets the log's project to the task's project, and locks it. Picking
+Specifications 01"), and typing matches the task title or the project name. Upcoming and in-progress tasks are offered; completed (done) tasks are not (an edited log keeps its completed task, OQ-118). Picking a task sets the log's project to the task's project, and locks it. Picking
 a project first narrows the task picker to that project's tasks. Clearing the project clears the task. When the date
 has no workday start yet, the form also asks for it (FR-TLOG-009).
 A new log's duration starts at 15 min; ArrowUp / ArrowDown in the duration box add or take 15 min, within 15 min – 24 h (from an
@@ -325,3 +325,4 @@ None.
 - 2026-11-03: FR-TLOG-016: **Remaining** is target − billable, the middle adds "<billable> of <target>"; FR-TLOG-018: excluded logs stay out of Remaining and the reminder; FR-TLOG-021: billable-based unlogged capped by the target, Log time opens by itself with the unlogged duration, new copy (owner, prototype `7977c06`, feat-tlog-billable-reminder). Back to `review`.
 - 2026-11-04: FR-TLOG-018/021: the reminder's unlogged time counts all logs since the start (excluded ones too), and the target still counts only billable time: min(now − start − logged, target − billable) (owner, prototype `5dcda69`, feat-tlog-reminder-all-logged).
 - 2026-11-04: FR-TLOG-004: **Recent:** project and task chips under the pickers, from the chosen date's logs (owner, prototype `c9c3343`, feat-tlog-recent-links).
+- 2026-11-06: FR-TLOG-004: the task picker no longer offers completed tasks (owner, OQ-118, prototype `074b9d4`, T-0143).
