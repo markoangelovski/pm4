@@ -25,6 +25,7 @@ import { format } from "date-fns";
 import { formatDuration, today } from "@/lib/time";
 import { getMockState, mock, nextId } from "./store";
 import * as pmspa from "./pmspa";
+import { changelogSeed } from "./changelog";
 import { apiRetryAfterSeconds, rateLimitedResponse } from "./rate-limit";
 
 /** Every mock response waits this long, so loading states show. */
@@ -705,6 +706,8 @@ function handle(
       return noContent();
     case "version":
       return json({ version: "proto" });
+    case "changelog":
+      return json({ items: changelogSeed.filter((r) => r.app === "api") });
     case "me":
       if (method === "PATCH") mock.updateMe(body);
       return json(getMockState().me);

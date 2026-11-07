@@ -1,5 +1,6 @@
 import {
   ArrowLeft,
+  BookOpen,
   CalendarCheck,
   ChartColumn,
   Clock,
@@ -74,6 +75,12 @@ export const protoFooterItems: MenuItem[] = [
         name: "Settings",
         icon: Settings,
         url: routes.app.settings
+      },
+      {
+        id: "documentation",
+        name: "Documentation",
+        icon: BookOpen,
+        url: routes.app.documentation
       },
       {
         id: "exit",

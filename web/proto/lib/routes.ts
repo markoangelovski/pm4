@@ -17,6 +17,7 @@ export const routes = {
     task: "/proto/app/task",
     notes: "/proto/app/notes",
     settings: "/proto/app/settings",
+    documentation: "/proto/app/documentation",
     connectors: {
       pmspa: "/proto/app/connectors/pmspa"
     },
