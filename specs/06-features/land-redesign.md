@@ -14,8 +14,9 @@ prototype: dd84712
 
 ## Goal
 The landing page `/` becomes a full marketing page covering everything PM4 does: time, bookings, dashboard, projects
-and notes, each with a picture of the screen drawn in code. It also gets a light/dark switch in the header
-(FR-LAND-001, SCR-003). The "Go to app" / "Login" button keeps its behavior (FR-LAND-002) and now appears in the
+and notes, each with a picture of the screen drawn in code. Around those five it has a hero, a "How a day works"
+section (`#day`), the PMSPA integration (`#integrations`, linked from the footer), an "Also in PM4" grid of smaller
+features and a closing section. It also gets a light/dark switch in the header (FR-LAND-001, SCR-003). The "Go to app" / "Login" button keeps its behavior (FR-LAND-002) and now appears in the
 header, the hero and the closing section.
 
 ## Decisions
@@ -159,3 +160,4 @@ None.
 - 2026-11-07: Initial draft from prototypes `4354292`, `dd84712` (M7, OQ-151; OQ-268).
 - 2026-11-07: Open questions empty; to `review`.
 - 2026-11-07: Approved by the owner.
+- 2026-11-07: *Goal* names the page's other sections from the prototype (`#day`, `#integrations`, "Also in PM4"); T-0147 review finding 1. No behavior change.
