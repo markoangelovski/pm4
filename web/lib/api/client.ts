@@ -5,6 +5,7 @@ import type { paths } from "./schema";
 /** Endpoints that never get a bearer token or a refresh-and-retry (exact pathname match). */
 export const PUBLIC_API_PATHS: readonly string[] = [
   "/api/v1/version",
+  "/api/v1/changelog",
   "/api/v1/auth/google",
   "/api/v1/auth/google/callback",
   "/api/v1/auth/token",

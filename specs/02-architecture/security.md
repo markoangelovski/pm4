@@ -3,7 +3,7 @@ id: sec
 title: Security
 status: approved
 owner: Marko Angelovski
-last_updated: 2026-11-01
+last_updated: 2026-11-07
 related: [web-routing, req-auth, arch-env, api-conventions, ADR-0007, NFR-004, NFR-005]
 ---
 
@@ -70,7 +70,7 @@ same `user_identities` table (`provider` = the configured provider key). Provide
 
 ## Authorization
 - **Default-deny (OQ-066):** a global guard requires a valid access token on every endpoint. Only handlers
-  marked `@Public()` skip it: `/health`, `GET /api/v1/version` and API-AUTH-001…005.
+  marked `@Public()` skip it: `/health`, `GET /api/v1/version`, `GET /api/v1/changelog` (API-SYS-004, OQ-272) and API-AUTH-001…005.
 - Every table carries (or inherits via its parent) `userId`. Every query filters on the
   authenticated user. Implemented in the data-access layer, not only in controllers.
 - A resource that doesn't exist or isn't owned returns **404** (existence isn't revealed).
@@ -101,7 +101,7 @@ same `user_identities` table (`provider` = the configured provider key). Provide
   Over the limit → `429` `…/errors/rate-limited` with `Retry-After` and `retryAfterSeconds`, except the two
   browser navigations (`GET /auth/google` and its callback), which redirect to the web's
   `/auth/sign-in?error=rate-limited` (OQ-257). A request rejected with `401` (missing or invalid access token)
-  isn't counted. `/health` and `GET /api/v1/version` (API-SYS-003, public, no DB/Redis) aren't limited.
+  isn't counted. `/health`, `GET /api/v1/version` (API-SYS-003) and `GET /api/v1/changelog` (API-SYS-004, OQ-272), public and without DB/Redis, aren't limited.
   **Client IP:** Express `trust proxy` = 1 (the Azure App Service front end is the one proxy), so the IP is the
   last `X-Forwarded-For` entry; a `:port` suffix is stripped and an IPv6 address counts by its /64.
   **Redis unreachable or slower than 500 ms:** the request is allowed and a warning is logged (fail open, OQ-255).
@@ -165,3 +165,4 @@ Secrets live in Azure App Settings and in GitHub Actions secrets. They are never
 - 2026-10-17: Approved by the owner.
 - 2026-11-01: Rate limiting specified: a counter per auth route, one per-user counter, the callback and logout limits, redirects for the sign-in navigations, the client IP behind Azure, fail open (OQ-253…OQ-257, feat-api-rate-limit). Back to `review`.
 - 2026-11-01: Approved by the owner with feat-api-rate-limit.
+- 2026-11-07: `GET /api/v1/changelog` (API-SYS-004) added to the public and the not-limited endpoints (OQ-272, feat-shell-documentation review).

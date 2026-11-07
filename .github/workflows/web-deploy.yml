@@ -70,6 +70,9 @@ jobs:
       - name: Stamp version
         run: npm version "${{ steps.release.outputs.version }}" --no-git-tag-version --allow-same-version
 
+      - name: Changelog
+        run: node ../scripts/changelog.mjs web public/changelog.json
+
       - name: Build (static export)
         run: npm run build
         env:

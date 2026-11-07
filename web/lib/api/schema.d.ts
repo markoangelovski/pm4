@@ -700,6 +700,22 @@ export interface paths {
         patch: operations["TodosController_update"];
         trace?: never;
     };
+    "/api/v1/changelog": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ChangelogController_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1493,6 +1509,35 @@ export interface components {
             projectId?: string | null;
             /** Format: uuid */
             taskId?: string | null;
+        };
+        /** @enum {string} */
+        ChangelogApp: "web" | "api";
+        ChangelogEntryDto: {
+            /** @description The conventional-commit scope, e.g. `web`; null when absent. */
+            scope: string | null;
+            /** @description The conventional-commit type, e.g. `feat`. */
+            type: string;
+            /** @description The commit subject after `type(scope)!: `. */
+            description: string;
+            /** @description `type!:` or a `BREAKING CHANGE:` footer. */
+            breaking: boolean;
+            /** @description Short commit hash. */
+            hash: string;
+        };
+        ChangelogReleaseDto: {
+            app: components["schemas"]["ChangelogApp"];
+            /** @description Every non-merge commit of the release for this app, hidden ones included. */
+            commitCount: number;
+            /** @description Semver without the `v`, e.g. `0.6.0`. */
+            version: string;
+            /** @description The release's git tag, e.g. `api-v0.6.0`. */
+            tag: string;
+            /** @description `YYYY-MM-DD`, the tagged commit's date. */
+            date: string;
+            changes: components["schemas"]["ChangelogEntryDto"][];
+        };
+        ChangelogResponseDto: {
+            items: components["schemas"]["ChangelogReleaseDto"][];
         };
     };
     responses: never;
@@ -5314,6 +5359,34 @@ export interface operations {
                 };
                 content: {
                     "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Unexpected error. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+        };
+    };
+    ChangelogController_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChangelogResponseDto"];
                 };
             };
             /** @description Unexpected error. */

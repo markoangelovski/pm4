@@ -5123,6 +5123,37 @@
           "Todos"
         ]
       }
+    },
+    "/api/v1/changelog": {
+      "get": {
+        "operationId": "ChangelogController_get",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChangelogResponseDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Changelog"
+        ]
+      }
     }
   },
   "info": {
@@ -7797,6 +7828,102 @@
             "format": "uuid"
           }
         }
+      },
+      "ChangelogApp": {
+        "type": "string",
+        "enum": [
+          "web",
+          "api"
+        ]
+      },
+      "ChangelogEntryDto": {
+        "type": "object",
+        "properties": {
+          "scope": {
+            "type": "string",
+            "nullable": true,
+            "description": "The conventional-commit scope, e.g. `web`; null when absent."
+          },
+          "type": {
+            "type": "string",
+            "description": "The conventional-commit type, e.g. `feat`."
+          },
+          "description": {
+            "type": "string",
+            "description": "The commit subject after `type(scope)!: `."
+          },
+          "breaking": {
+            "type": "boolean",
+            "description": "`type!:` or a `BREAKING CHANGE:` footer."
+          },
+          "hash": {
+            "type": "string",
+            "description": "Short commit hash."
+          }
+        },
+        "required": [
+          "scope",
+          "type",
+          "description",
+          "breaking",
+          "hash"
+        ]
+      },
+      "ChangelogReleaseDto": {
+        "type": "object",
+        "properties": {
+          "app": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ChangelogApp"
+              }
+            ]
+          },
+          "commitCount": {
+            "type": "number",
+            "description": "Every non-merge commit of the release for this app, hidden ones included."
+          },
+          "version": {
+            "type": "string",
+            "description": "Semver without the `v`, e.g. `0.6.0`."
+          },
+          "tag": {
+            "type": "string",
+            "description": "The release's git tag, e.g. `api-v0.6.0`."
+          },
+          "date": {
+            "type": "string",
+            "description": "`YYYY-MM-DD`, the tagged commit's date."
+          },
+          "changes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChangelogEntryDto"
+            }
+          }
+        },
+        "required": [
+          "app",
+          "commitCount",
+          "version",
+          "tag",
+          "date",
+          "changes"
+        ]
+      },
+      "ChangelogResponseDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChangelogReleaseDto"
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
       }
     }
   }

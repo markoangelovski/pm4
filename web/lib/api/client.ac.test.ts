@@ -67,6 +67,7 @@ describe("authFetch (feat-auth-web-session)", () => {
     fetchMock.mockImplementation(async () => status(401));
     const publicRequests: [string, string][] = [
       ["GET", "/api/v1/version"],
+      ["GET", "/api/v1/changelog"],
       ["GET", "/api/v1/auth/google"],
       ["GET", "/api/v1/auth/google/callback"],
       ["POST", "/api/v1/auth/token"],

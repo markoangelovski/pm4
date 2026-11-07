@@ -1,3 +1,4 @@
+import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import type { ChangelogResponseDto } from "./dto/changelog-response.dto.js";
 
@@ -8,6 +9,8 @@ export const CHANGELOG_PATH = resolve(process.cwd(), "changelog.json");
 export function readChangelog(
   path: string = CHANGELOG_PATH
 ): ChangelogResponseDto {
-  void path;
-  throw new Error("not implemented (feat-shell-documentation)");
+  if (!existsSync(path)) {
+    return { items: [] };
+  }
+  return JSON.parse(readFileSync(path, "utf8")) as ChangelogResponseDto;
 }

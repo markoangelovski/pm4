@@ -6,7 +6,7 @@ owner: Marko Angelovski
 last_updated: 2026-11-07
 milestone: M1
 requirements: [SCR-053, API-SYS-004]
-related: [arch-deployment, api-endpoints, web-screens, web-routing, feat-ops-release-versions, OQ-098, OQ-270, OQ-271, OQ-272]
+related: [arch-deployment, api-endpoints, web-screens, web-routing, feat-ops-release-versions, OQ-098, OQ-270, OQ-271, OQ-272, OQ-273]
 prototype: d1c097f
 ---
 
@@ -86,6 +86,8 @@ prototype) with its route and sidebar link.
 | web | `app/proto/app/documentation/page.dev.tsx` → `app/(dashboard-layout)/app/documentation/page.tsx` | P | T3 | |
 | web | `web/lib/api/schema.d.ts` | M | T3 | `npm run api:types` |
 | web | `web/lib/routes.ts` | M | T3 | `documentation` |
+| web | `web/lib/api/client.ts` | M | T3 | `/api/v1/changelog` in `PUBLIC_API_PATHS` (AC-17) |
+| web | `web/lib/api/client.ac.test.ts` | M | tests | AC-12 public list gains `/api/v1/changelog` (AC-17) |
 | web | `web/app/(dashboard-layout)/layout/vertical/sidebar/sidebaritems.ts` | M | T3 | Footer link |
 | web | `web/app/(dashboard-layout)/layout/vertical/sidebar/sidebaritems.test.ts` | M | T3 | Footer is Settings, Documentation |
 | web | `web/proto/features/documentation/api.ts` | M | T3 | `pm4-twin: differs` marker (D10) |
@@ -252,13 +254,15 @@ Other changes:
 | AC-5 | Both workflows: `Changelog` after `Stamp version` and before the build; the API stages `changelog.json`; both generated files are git-ignored | `check` | T1 |
 | AC-6 | `readChangelog`: a path that doesn't exist → `{items: []}`; a file with `{items: [release]}` → that object; invalid JSON → throws | `api/src/changelog/read-changelog.ac.spec.ts` | T2 |
 | AC-7 | API-SYS-004: `GET /api/v1/changelog` without a token → `200` with an `items` array; `/changelog` without the prefix → `404` | `api/test/changelog.ac.e2e-spec.ts` | T2 |
-| AC-8 | `openapi.json` has `/api/v1/changelog` with `ChangelogResponseDto`, `ChangelogReleaseDto`, `ChangelogEntryDto` and the `ChangelogApp` enum; the generated contract is current | `check` | T2 |
+| AC-8 | `openapi.json` has `/api/v1/changelog` with `ChangelogResponseDto`, `ChangelogReleaseDto`, `ChangelogEntryDto` and the `ChangelogApp` enum; `openapi.json` is current (OQ-273) | `check` | T2 |
 | AC-9 | `changelogText`: `full marketing page (T-0147)` → `full marketing page`; `sync (T-0063, push 2)` → `sync (push 2)`; `rate limiting (T-0125…T-0128, feat-api-rate-limit)` → `rate limiting`; `nonprodMinutes (T-0130, feat-rpt-api D5)` → `nonprodMinutes`; `x (OQ-196, ADR-0012)` → `x`; `keep (optional) text` unchanged. `changelogScope`: scope `web` viewing web → null; `api` viewing web → `api`; null → null; `tooling` → `tooling` | `web/features/documentation/changelog.ac.test.ts` | T3 |
 | AC-10 | `useChangelog("web")`: fetches `/changelog.json`, data = its `items`, under key `["documentation", "changelog", "web"]`; `apiClient.GET` not called | `web/features/documentation/api.ac.test.tsx` | T3 |
 | AC-11 | `useChangelog("web")`: a `404` → success with `[]` (D6); a `500` → error state | `web/features/documentation/api.ac.test.tsx` | T3 |
 | AC-12 | `useChangelog("api")`: `apiClient.GET("/api/v1/changelog", …)` → data = `items`, under `["documentation", "changelog", "api"]`; `fetch` not called | `web/features/documentation/api.ac.test.tsx` | T3 |
 | AC-13 | Sidebar: `footerItems` is Settings, then Documentation → `/app/documentation` with the BookOpen icon; both exports link every app route once (incl. `/app/documentation`); at `/app/settings` only the Settings footer link is active | `web/app/(dashboard-layout)/layout/vertical/sidebar/sidebaritems.ac.test.ts`, `web/app/(dashboard-layout)/layout/vertical/sidebar/nav-collapse/nav-collapse.ac.test.tsx` | T3 |
 | AC-14 | The build has `/app/documentation` | `check` | T3 |
+| AC-16 | `web/lib/api/schema.d.ts` is `api:types`' output for the new `openapi.json` (OQ-273) | `check` | T3 |
+| AC-17 | `authFetch`: `GET /api/v1/changelog` is a public path (no bearer token, no refresh on `401`), like `/api/v1/version` (OQ-272) | `web/lib/api/client.ac.test.ts` (feat-auth-web-session AC-12) | T3 |
 | AC-15 | After the next deploys: `/app/documentation?tab=changelog` lists the web releases with the new one marked Latest; **API** lists the API's from API-SYS-004; the Versioning tab matches deployment.md#release-versions-oq-098 | `manual` | T3 |
 
 Typed stubs (created with the tests, so lint and typecheck pass while the tests fail):
@@ -289,8 +293,12 @@ git check-ignore -q api/changelog.json
 # AC-8: the contract has the endpoint and is current
 node -e "const d=require('./api/openapi.json'); const s=d.components.schemas; if(!d.paths['/api/v1/changelog']?.get||!s.ChangelogResponseDto||!s.ChangelogReleaseDto||!s.ChangelogEntryDto||!s.ChangelogApp) process.exit(1)"
 tmp=$(mktemp -d)
-cp api/openapi.json web/lib/api/schema.d.ts "$tmp/"
+cp api/openapi.json "$tmp/"
 (cd api && npm run -s openapi:export) && cmp -s api/openapi.json "$tmp/openapi.json"
+
+# AC-16: the generated web types are current
+tmp=$(mktemp -d)
+cp web/lib/api/schema.d.ts "$tmp/"
 (cd web && npm run -s api:types) && cmp -s web/lib/api/schema.d.ts "$tmp/schema.d.ts"
 
 # AC-14: the page is built
@@ -311,3 +319,4 @@ test -f web/out/app/documentation.html
 - 2026-11-07: Initial draft from prototype `d1c097f` (OQ-270…272). Open questions empty → `review`.
 - 2026-11-07: Approved by the owner.
 - 2026-11-07: Test step: the prototype `changelog.ts` imports its types from `./api` instead of `./proposed-types` (not promoted), so the sed twin compiles.
+- 2026-11-07: Implementation (T-0150): AC-8 checked `schema.d.ts`, a T3 file, so T2 could not pass. Split (OQ-273): AC-8 keeps the `openapi.json` half, new AC-16 (T3) checks `api:types`' output, as feat-api-rate-limit AC-24. Approved by the owner.
