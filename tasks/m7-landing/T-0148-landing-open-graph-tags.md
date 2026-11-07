@@ -3,7 +3,7 @@ id: T-0148
 title: Open Graph tags on the landing page
 milestone: M7
 app: web
-status: blocked
+status: done
 size: S
 tier: haiku
 depends_on: [T-0147]
@@ -76,9 +76,28 @@ test -f web/out/images/og/pm4-card.png
 ## Implementation notes
 _Implementer: what changed, and anything the reviewer should look at._
 
+`web/app/page.tsx`: `metadata` now has `metadataBase`, `openGraph` (type, url, siteName, title, description, image 1200x630 with alt) and the unchanged `title`; the `description` const is added above it. Nothing else changed; prettier left the file unchanged. Built `web/out/index.html` has og:title "PM4 — Every hour, accounted for.", og:description, og:image `http://localhost:3000/images/og/pm4-card.png` (local build fallback), og:image:width 1200, og:image:height 630, and `<meta name="robots" content="noindex, nofollow"/>`. `out/images/og/pm4-card.png` exists.
+
+`node scripts/pm4.mjs check T-0148`:
+```
+pm4 check T-0148
+  ac hashes: none recorded
+  scope: ok
+  web lint: ok (16s)
+  web format:check: ok (5s)
+  web typecheck: ok (13s)
+  web test: ok (35s)
+  web build: ok (27s)
+  check checks: ok
+  twins: ok (135 equal)
+
+PASS T-0148
+```
+
 ### Attempts
 | # | Tier | Result | Summary |
 | --- | --- | --- | --- |
+| 1 | haiku | PASS | Added OG block to `page.tsx` metadata; check passed first time. |
 
 ## Review
 _The owner's review (quick lane)._

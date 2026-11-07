@@ -9,8 +9,29 @@ import {
   type LandingCtaSlot
 } from "@/features/landing/components/landing-page";
 
+const description =
+  "PM4 keeps your projects and tasks in one place, logs your day in 15-minute blocks with a note on each, helps you book the time, and shows where the month went.";
+
 export const metadata: Metadata = {
-  title: "PM4 — Projects, tasks and time tracking"
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"
+  ),
+  title: "PM4 — Projects, tasks and time tracking",
+  openGraph: {
+    type: "website",
+    url: "/",
+    siteName: "PM4",
+    title: "PM4 — Every hour, accounted for.",
+    description,
+    images: [
+      {
+        url: "/images/og/pm4-card.png",
+        width: 1200,
+        height: 630,
+        alt: "PM4: Every hour, accounted for."
+      }
+    ]
+  }
 };
 
 /** "Go to app" / "Login" (FR-LAND-002); reads `?returnTo=`, so it renders inside <Suspense> with a same-size fallback. */
