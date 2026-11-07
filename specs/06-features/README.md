@@ -71,3 +71,4 @@ A feature spec links to those. It doesn't copy them.
 | Log time: Recent project and task chips | [tlog-recent-links.md](tlog-recent-links.md) | M4 | approved |
 | Project management lists: title A–Z defaults, open tasks by default, notes and to-dos A–Z sorts | [prj-lists.md](prj-lists.md) | M2 | approved |
 | Desktop notifications for the reminder to log time | [tlog-desktop-notifications.md](tlog-desktop-notifications.md) | M4 | approved |
+| Landing page redesign: a full marketing page at `/` with a light/dark switch | [land-redesign.md](land-redesign.md) | M7 | approved |

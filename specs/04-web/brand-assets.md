@@ -3,7 +3,7 @@ id: web-brand-assets
 title: Brand Assets (Logo, Favicons, App Icons)
 status: approved
 owner: Marko Angelovski
-last_updated: 2026-10-25
+last_updated: 2026-11-07
 related: [web-screens, web-static-export, api-conventions]
 ---
 
@@ -61,6 +61,7 @@ Every variant comes from the source by removing or changing one part.
 | `web/public/icons/icon-192.png` | plain | 192 | `app/manifest.ts` (`purpose: "any"`) |
 | `web/public/icons/icon-512.png` | plain | 512 | `app/manifest.ts` (`purpose: "any"`) |
 | `web/public/icons/icon-maskable-512.png` | maskable | 512 | `app/manifest.ts` (`purpose: "maskable"`) |
+| `web/public/images/og/pm4-card.png` | edged, on a card | 1200 × 630 | Open Graph image of the landing page `/` (FR-LAND-003): the mark, **PM4**, the hero line and the tagline. Rebuild: [Open Graph card](#open-graph-card) |
 | `api/src/assets/favicon.ico` | edged | 16, 32, 48 | Byte-identical to `web/app/favicon.ico`. Served at `/favicon.ico` (`03-api/conventions.md#openapi`) |
 
 ## Rebuild recipe
@@ -107,9 +108,25 @@ Next), from a throwaway script **outside the repo**: don't add a script, npm com
    - In `api/`: `npm run build` must put `dist/src/assets/favicon.ico` next to `dist/src/app.setup.js`, and
      `test/favicon.e2e-spec.ts` must pass.
 
+## Open Graph card
+`web/public/images/og/pm4-card.png` is drawn with ImageMagick in Geist Regular (the copy Next ships for `next/og`), on
+`#0a0a0a`, the dark theme's background. The mark is the edged variant at 3×. From the repo root:
+```bash
+F=web/node_modules/next/dist/compiled/@vercel/og/Geist-Regular.ttf
+magick -size 1200x630 xc:'#0a0a0a' \
+ -fill '#171717' -stroke '#404040' -strokewidth 3 -draw "roundrectangle 81.5,81.5 176.5,176.5 18,18" -stroke none \
+ -fill '#fafafa' -draw "rectangle 98,104 134,116" -draw "rectangle 110,122 146,134" -draw "rectangle 122,140 158,152" \
+ -font "$F" -fill '#fafafa' -pointsize 52 -annotate +204+148 'PM4' \
+ -pointsize 92 -kerning -3 -annotate +76+368 'Every hour,' -annotate +76+470 'accounted for.' \
+ -kerning 0 -fill '#a1a1aa' -pointsize 32 -annotate +80+552 'Projects, tasks and time tracking' \
+ -depth 8 web/public/images/og/pm4-card.png
+```
+Change the hero line here when the landing page's `h1` changes.
+
 ## Open questions
 —
 
 ## Changelog
 - 2026-10-25: Initial version: the Stack mark, its variants, the icon files and the rebuild recipe (T-0109, T-0110).
 - 2026-10-25: The app icons are now listed by the web app manifest (feat-shell-pwa).
+- 2026-11-07: The Open Graph card for the landing page (FR-LAND-003, owner; T-0148).
