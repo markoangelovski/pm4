@@ -151,6 +151,6 @@
 | [T-0145](m8-notes/T-0145-header-todos-button.md) | Header To-dos button | M8 | web | S | done | — |
 | [T-0146](m4-time-logs/T-0146-desktop-notifications-the-four-twins-and.md) | Desktop notifications: the four twins and the worker's handlers | M4 | web | S | done | — |
 | [T-0147](m7-landing/T-0147-landing-page-the-four-twins-and.md) | Landing page: the four twins and app/page.tsx | M7 | web | S | done | — |
-| [T-0148](m7-landing/T-0148-landing-open-graph-tags.md) | Open Graph tags on the landing page | M7 | web | S | blocked | T-0147 |
+| [T-0148](m7-landing/T-0148-landing-open-graph-tags.md) | Open Graph tags on the landing page | M7 | web | S | done | T-0147 |
 
 M0–M6 are done. Later follow-ups are filed under the milestone they extend.
