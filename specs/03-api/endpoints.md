@@ -3,7 +3,7 @@ id: api-endpoints
 title: API Endpoints
 status: review
 owner: Marko Angelovski
-last_updated: 2026-11-04
+last_updated: 2026-11-07
 related: [api-conventions, api-data-model, req-auth, req-projects, req-tasks, req-time-logs, req-reporting, req-integrations, req-notes]
 ---
 
@@ -28,6 +28,7 @@ defines its request, response and errors. Paths are relative to `/api/v1` unless
 | --- | --- | --- | --- | --- |
 | API-SYS-001 | GET | `/health` (root) | NFR-003 | specified |
 | API-SYS-003 | GET | `/version` → `{version}` (public, no DB/Redis) | SCR-004 | specified |
+| API-SYS-004 | GET | `/changelog` → `{items: ChangelogRelease[]}` (public, no DB/Redis) | SCR-053 | specified |
 | API-AUTH-001 | GET | `/auth/google?returnTo=&timeZone=` → 302 Google | FR-AUTH-001, FR-AUTH-006 | specified |
 | API-AUTH-002 | GET | `/auth/google/callback` → 302 web `/auth/callback` (or `/auth/sign-in?error=`) | FR-AUTH-001/002 | specified |
 | API-AUTH-003 | POST | `/auth/token` `{code}` → tokens | FR-AUTH-001 | specified |
@@ -111,17 +112,33 @@ Redis, so it never wakes Neon. Not rate limited (security.md). In the OpenAPI co
 **200:** `{ version: string }`, e.g. `{ "version": "0.0.1" }`
 **Errors:** none of its own
 
+### API-SYS-004: API changelog
+`GET /changelog` · Auth: none (public) · Implements: SCR-053 (OQ-270…272)
+Returns the API's own releases, newest first, from the `changelog.json` that `api-deploy` builds into the package
+([changelog](../02-architecture/deployment.md#release-changelog-oq-270)), read once at startup. No file (local dev and builds)
+→ `{ "items": [] }`. Touches neither Postgres nor Redis. Not rate limited. In the OpenAPI contract.
+**200:** `{ items: ChangelogRelease[] }`
+- `ChangelogRelease`: `{ app: ChangelogApp, version: string, tag: string, date: string, commitCount: integer, changes: ChangelogEntry[] }`.
+  `ChangelogApp` = `"web" | "api"`. `version`: semver without the `v` (`"0.6.0"`); `tag`: its git tag (`"api-v0.6.0"`);
+  `date`: `YYYY-MM-DD`, the tagged commit's committer date (for the release being shipped, the deployed commit's);
+  `commitCount`: every non-merge commit of the release for this app, hidden ones included.
+- `ChangelogEntry`: `{ type: string, scope: string | null, description: string, breaking: boolean, hash: string }`, one
+  per `feat` or `fix` commit and per breaking commit of any type (OQ-271), newest first. `type` and `scope` are the
+  conventional-commit type and scope (`scope` null when absent or empty); `description` is the subject after
+  `type(scope)!: `; `breaking` = `!` or a `BREAKING CHANGE:` / `BREAKING-CHANGE:` footer line; `hash`: the short hash.
+**Errors:** none of its own
+
 ### Shared auth shapes
 - **Access token:** a JWT signed HS256 with `JWT_ACCESS_SECRET`, claims `sub` (user id), `iat`, `exp`
   (`iat` + `ACCESS_TOKEN_TTL`). Sent as `Authorization: Bearer <token>`.
 - **`TokenPair`:** `{ accessToken: string, accessTokenExpiresAt: string (ISO 8601 UTC), refreshToken: string }`.
   The refresh token is opaque: 32 random bytes, base64url (43 chars).
 - **Protection (OQ-066):** every endpoint needs a valid access token unless marked public: `/health`,
-  API-SYS-003, API-AUTH-001…005. A missing, malformed, badly signed or expired token → `401`
+  API-SYS-003, API-SYS-004, API-AUTH-001…005. A missing, malformed, badly signed or expired token → `401`
   `…/errors/unauthorized`.
 - **Valid `returnTo` (API rule, security.md):** a string of 1–2048 chars that starts with `/`, doesn't start
   with `//`, and has no `\` and no control characters. The web applies its stricter `/app` rule on top.
-- **Rate limits (security.md#api-hardening):** every endpoint except `/health` and API-SYS-003 can answer `429`
+- **Rate limits (security.md#api-hardening):** every endpoint except `/health`, API-SYS-003 and API-SYS-004 can answer `429`
   `rate-limited` (conventions.md#errors). API-AUTH-001 and API-AUTH-002 redirect instead (below).
 
 ### API-AUTH-001: Start Google sign-in
@@ -815,3 +832,4 @@ None.
 - 2026-11-02: API-RPT-001: `ReportDay.workedMinutes` leaves out the logs excluded from statistics, `nonprodMinutes` adds them up (OQ-261, feat-rpt-api D5). Still `review`.
 - 2026-11-04: API-NOTE-001's `sort` gains `title:asc` (`NoteSort`); API-TODO-001's `sort` is its own `TodoSort` without it (OQ-264, OQ-265, feat-prj-lists). Back to `review`.
 - 2026-11-04: The owner approved API-NOTE-001 and API-TODO-001 (as updated) for feat-prj-lists.
+- 2026-11-07: API-SYS-004 `GET /changelog`: the API's releases, public (OQ-270…272, feat-shell-documentation).

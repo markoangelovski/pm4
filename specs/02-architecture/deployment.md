@@ -1,9 +1,9 @@
 ---
 id: arch-deployment
 title: Deployment and CI/CD
-status: approved
+status: review
 owner: Marko Angelovski
-last_updated: 2026-10-14
+last_updated: 2026-11-07
 related: [arch-env, arch-repos, web-static-export, ADR-0001, ADR-0002, ADR-0006]
 ---
 
@@ -73,6 +73,25 @@ Nobody bumps a version by hand. Each deploy workflow versions its own app; web a
   the deploy (and, for the API, the `/health` smoke check) succeeds. A failed deploy uses up no version.
   An existing tag on the same commit is fine (re-runs); one on another commit gets a warning and is left alone.
 - CI pushes only tags, never commits, so it never races with the owner's pushes.
+- The Documentation → **Versioning** tab (SCR-053, `web/features/documentation/components/versioning-doc.tsx`)
+  explains this section to the user. Change both together.
+
+## Release changelog (OQ-270)
+Each deploy also builds its own app's changelog, from the same tags and commits as the release version, so the
+Documentation → **Changelog** tab (SCR-053) is current with every release.
+
+- **Generator** (`scripts/changelog.mjs <app> <out-file>`): one release per `<app>-v*` tag reachable from the commit,
+  plus the release the run ships when it bumps (its tag doesn't exist yet). A release's commits are the non-merge
+  commits that touched the app's paths since the previous tag (the first tag: all earlier history), as for the
+  version. It lists a change for each `feat` or `fix` commit and for any breaking commit (OQ-271); other commits
+  count only in `commitCount`. The file is `{ items: ChangelogRelease[] }`, newest first (shape: API-SYS-004).
+- **Web:** after `Stamp version`, `web-deploy` writes `web/public/changelog.json`, so the build serves it at
+  `/changelog.json`.
+- **API:** after `Stamp version`, `api-deploy` writes `api/changelog.json` and stages it next to `package.json`;
+  the API reads it once at startup and serves it at `GET /api/v1/changelog` (API-SYS-004). A malformed file stops
+  the API from starting, so the `/health` smoke check fails and no tag is created.
+- Neither file is committed (both are git-ignored). Without one (local dev and builds) the tab shows an empty list
+  (OQ-272), as local builds show `v0.0.0`.
 
 ## Owner checklist (before the first push)
 One-time setup outside the repo, done by the owner, not an agent:
@@ -110,3 +129,4 @@ One-time setup outside the repo, done by the owner, not an agent:
   the startup command to `node dist/src/main.js` (the build's actual output path, per `start:prod`).
   Added the post-deploy `/health` smoke check and the owner's one-time Azure/Pages setup checklist.
 - 2026-10-03: *Release versions* (OQ-098): automatic per-app versions from git tags and conventional commits; bootstrap tags in the owner checklist.
+- 2026-11-07: *Release changelog* (OQ-270…272): each deploy builds its app's changelog; the Versioning tab restates *Release versions* (feat-shell-documentation). Back to `review`.
