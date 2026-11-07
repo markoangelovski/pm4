@@ -400,7 +400,7 @@ export function LandingPage({ cta }: { cta: LandingCtaSlot }) {
           id="dashboard"
           eyebrow="Dashboard"
           title="See the month at a glance."
-          intro="Pick this month, last month, the last 7, 30 or 90 days, this year or any range. The dashboard shows when your days started, how many hours you worked against your target, and how much of it is booked."
+          intro="Pick today, this month, last month, the last 7, 30 or 90 days, this year, or a custom range of up to a year. The dashboard shows when your days started, how many hours you worked against your target, and how much of it is booked."
           points={[
             {
               title: "Workday chart",
