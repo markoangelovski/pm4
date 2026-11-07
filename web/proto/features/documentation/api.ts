@@ -1,22 +1,13 @@
 import { useQuery, type UseQueryResult } from "@tanstack/react-query";
-import type { Client } from "openapi-fetch";
-import type { paths } from "@/lib/api/schema";
 import { apiClient, MOCK_LATENCY_MS } from "@/proto/mock/client";
 import { changelogSeed } from "@/proto/mock/changelog";
-import type {
-  ChangelogApp,
-  ChangelogPaths,
-  ChangelogReleaseDto
-} from "./proposed-types";
+import type { ChangelogApp, ChangelogReleaseDto } from "./proposed-types";
 
 export type {
   ChangelogApp,
   ChangelogEntryDto,
   ChangelogReleaseDto
 } from "./proposed-types";
-
-/** Until `npm run api:types` adds GET /api/v1/changelog to `paths`. */
-const client = apiClient as unknown as Client<paths & ChangelogPaths>;
 
 export const documentationKeys = {
   all: ["documentation"] as const,
@@ -27,6 +18,7 @@ export const documentationKeys = {
 /**
  * The web app's releases, newest first. MOCK: answered from the changelog seed. In production the web deploy
  * writes them into the static site with the build, so they are current with every web release.
+ * pm4-twin: differs (the prototype can't serve the deploy's changelog.json; production fetches it)
  */
 function useWebChangelog(
   enabled: boolean
@@ -49,7 +41,7 @@ function useApiChangelog(
     queryKey: documentationKeys.changelog("api"),
     enabled,
     queryFn: async ({ signal }) => {
-      const { data } = await client.GET("/api/v1/changelog", { signal });
+      const { data } = await apiClient.GET("/api/v1/changelog", { signal });
       if (!data) throw new Error("GET /api/v1/changelog failed");
       return data.items;
     }

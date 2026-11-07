@@ -12,6 +12,7 @@ import { TasksModule } from "./tasks/tasks.module.js";
 import { TimeModule } from "./time/time.module.js";
 import { PmspaModule } from "./integrations/pmspa/pmspa.module.js";
 import { NotesModule } from "./notes/notes.module.js";
+import { ChangelogModule } from "./changelog/changelog.module.js";
 
 @Module({
   imports: [
@@ -26,7 +27,8 @@ import { NotesModule } from "./notes/notes.module.js";
     TasksModule,
     TimeModule,
     PmspaModule,
-    NotesModule
+    NotesModule,
+    ChangelogModule
   ],
   providers: [ProblemDetailsFilter]
 })

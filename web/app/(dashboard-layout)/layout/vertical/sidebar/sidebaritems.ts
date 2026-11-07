@@ -5,6 +5,7 @@ import {
   FolderKanban,
   ListTodo,
   NotebookPen,
+  BookOpen,
   Globe,
   Settings,
   type LucideIcon
@@ -101,6 +102,12 @@ export const footerItems: MenuItem[] = [
         name: "Settings",
         icon: Settings,
         url: routes.app.settings
+      },
+      {
+        id: "documentation",
+        name: "Documentation",
+        icon: BookOpen,
+        url: routes.app.documentation
       }
     ]
   }

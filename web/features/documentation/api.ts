@@ -1,29 +1,11 @@
-import type { UseQueryResult } from "@tanstack/react-query";
+import { useQuery, type UseQueryResult } from "@tanstack/react-query";
+import { apiClient } from "@/lib/api/client";
+import type { components } from "@/lib/api/schema";
 
-// Stub (feat-shell-documentation): local copies of proto/features/documentation/proposed-types.ts until
-// T-0151 replaces them with the generated schema types.
-
-/** A released app: the web app and the API are versioned separately. */
-export type ChangelogApp = "web" | "api";
-
-/** One user-visible change: a `feat` or `fix` commit, or any commit marked breaking (OQ-271). */
-export type ChangelogEntryDto = {
-  type: string;
-  scope: string | null;
-  description: string;
-  breaking: boolean;
-  hash: string;
-};
-
-/** One release of one app, newest first in the list. */
-export type ChangelogReleaseDto = {
-  app: ChangelogApp;
-  version: string;
-  tag: string;
-  date: string;
-  commitCount: number;
-  changes: ChangelogEntryDto[];
-};
+export type ChangelogApp = components["schemas"]["ChangelogApp"];
+export type ChangelogEntryDto = components["schemas"]["ChangelogEntryDto"];
+export type ChangelogReleaseDto = components["schemas"]["ChangelogReleaseDto"];
+type ChangelogResponseDto = components["schemas"]["ChangelogResponseDto"];
 
 export const documentationKeys = {
   all: ["documentation"] as const,
@@ -34,10 +16,48 @@ export const documentationKeys = {
 /** The web deploy's changelog file, at the site root (deployment.md#release-changelog-oq-270). */
 export const WEB_CHANGELOG_URL = "/changelog.json";
 
+/**
+ * The web app's releases, newest first. Read from the static file the web deploy wrote with the build. A 404
+ * means there is no file (a local build, D6): the list is empty.
+ */
+function useWebChangelog(
+  enabled: boolean
+): UseQueryResult<ChangelogReleaseDto[]> {
+  return useQuery({
+    queryKey: documentationKeys.changelog("web"),
+    enabled,
+    queryFn: async ({ signal }) => {
+      const response = await fetch(WEB_CHANGELOG_URL, { signal });
+      if (response.status === 404) return [];
+      if (!response.ok) {
+        throw new Error(`GET ${WEB_CHANGELOG_URL} failed (${response.status})`);
+      }
+      const body = (await response.json()) as ChangelogResponseDto;
+      return body.items;
+    }
+  });
+}
+
+/** GET /api/v1/changelog: the API's releases, newest first, current with every API release. */
+function useApiChangelog(
+  enabled: boolean
+): UseQueryResult<ChangelogReleaseDto[]> {
+  return useQuery({
+    queryKey: documentationKeys.changelog("api"),
+    enabled,
+    queryFn: async ({ signal }) => {
+      const { data } = await apiClient.GET("/api/v1/changelog", { signal });
+      if (!data) throw new Error("GET /api/v1/changelog failed");
+      return data.items;
+    }
+  });
+}
+
 /** One app's releases, newest first. Only the selected app's list is loaded. */
 export function useChangelog(
   app: ChangelogApp
 ): UseQueryResult<ChangelogReleaseDto[]> {
-  void app;
-  throw new Error("not implemented (feat-shell-documentation)");
+  const web = useWebChangelog(app === "web");
+  const api = useApiChangelog(app === "api");
+  return app === "web" ? web : api;
 }

@@ -12,7 +12,10 @@ describe("sidebaritems", () => {
     ]);
     expect(footerItems).toHaveLength(1);
     expect(footerItems[0].heading).toBeUndefined();
-    expect(footerItems[0].items?.map((i) => i.name)).toEqual(["Settings"]);
+    expect(footerItems[0].items?.map((i) => i.name)).toEqual([
+      "Settings",
+      "Documentation"
+    ]);
   });
 
   it("gives every item of both exports a url and an icon", () => {

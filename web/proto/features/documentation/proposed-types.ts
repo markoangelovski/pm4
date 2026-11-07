@@ -10,7 +10,8 @@ export type ChangelogApp = "web" | "api";
 
 /** One user-visible change: a `feat` or `fix` commit, or any commit marked breaking. */
 export type ChangelogEntryDto = {
-  type: "feat" | "fix";
+  /** The conventional-commit type: `feat` or `fix`, or any type when breaking (OQ-271). */
+  type: string;
   /** The conventional-commit scope, e.g. "web" in `feat(web): …`; null when absent. */
   scope: string | null;
   /** The commit subject after `type(scope): `. */

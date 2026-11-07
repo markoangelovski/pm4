@@ -3,7 +3,7 @@ id: feat-auth-web-session
 title: "Auth web: sign-in, session restore, refresh and sign-out"
 status: approved
 owner: Marko Angelovski
-last_updated: 2026-10-03
+last_updated: 2026-11-07
 milestone: M1
 requirements: [FR-AUTH-001, FR-AUTH-003, FR-AUTH-004, FR-AUTH-005, FR-LAND-002, SCR-001, SCR-002, SCR-003]
 related: [req-auth, req-landing, sec, web-routing, web-screens, web-conventions, web-static-export, feat-auth-api-session, feat-land-app-route-split, ADR-0007, ADR-0009, OQ-056, OQ-063, OQ-067, OQ-068, OQ-069, OQ-070]
@@ -210,7 +210,7 @@ export function useSignOut(): () => Promise<void>; // await signOut(); queryClie
 | AC-9 | `signOut()`: `POST …/auth/logout` with the stored token, then token removed; logout rejecting or `500` → token still removed, no throw; no stored token → no request | `web/lib/auth/session.ac.test.ts` | T1 |
 | AC-10 | A `storage` event removing the key → `onSessionEnded` called and the cached token dropped (next `getAccessToken()` → `null`) | `web/lib/auth/session.ac.test.ts` | T1 |
 | AC-11 | `googleSignInUrl("/app/projects")` with zone `Europe/Zagreb` → `<API>/api/v1/auth/google?returnTo=%2Fapp%2Fprojects&timeZone=Europe%2FZagreb`; `"/home"`, `"https://evil.example"`, `null` → no `returnTo` | `web/lib/auth/session.ac.test.ts` | T1 |
-| AC-12 | `authFetch`: `/api/v1/me` gets `Authorization: Bearer <token>`; `/api/v1/version` and the auth public paths get none and trigger no refresh; `/api/v1/auth/logout-all` gets the token | `web/lib/api/client.ac.test.ts` | T1 |
+| AC-12 | `authFetch`: `/api/v1/me` gets `Authorization: Bearer <token>`; `/api/v1/version`, `/api/v1/changelog` (feat-shell-documentation AC-17) and the auth public paths get none and trigger no refresh; `/api/v1/auth/logout-all` gets the token | `web/lib/api/client.ac.test.ts` | T1 |
 | AC-13 | `authFetch` `401` → one refresh, one retry with the new token and the same method and body; a second `401` → returned, no more refreshes; refresh rejected → the first `401` returned, no retry | `web/lib/api/client.ac.test.ts` | T1 |
 | AC-14 | `AuthGuard`: while checking → `role="status"`, children absent; token → children; no session (path `/app/tasks?x=1`) → token cleared, `router.replace("/?returnTo=%2Fapp%2Ftasks%3Fx%3D1")`, children absent; path `/app` → `router.replace("/")` | `web/features/auth/components/auth-guard.ac.test.tsx` | T2 |
 | AC-15 | `AuthGuard` with `SessionUnavailableError` → "Can't reach PM4 right now." and Retry, token kept; Retry → children once `getAccessToken` resolves | `web/features/auth/components/auth-guard.ac.test.tsx` | T2 |
@@ -245,3 +245,4 @@ None. OQ-063 and OQ-067…OQ-070 are resolved.
 - 2026-10-03: Approved by the owner.
 - 2026-10-03: "Go to app" is a `<Link>` styled with `buttonVariants`, not a `Button` with a `Link` `render` (web-conventions, links styled as buttons).
 - 2026-10-03: Review fixes: refresh paragraph covers any other status and a `200` after the session ended; Files table lists the two review-fix tests and `web/AGENTS.md`.
+- 2026-11-07: AC-12's public paths include `/api/v1/changelog` (API-SYS-004, feat-shell-documentation AC-17); test re-hashed.

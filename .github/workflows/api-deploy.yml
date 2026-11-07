@@ -91,6 +91,9 @@ jobs:
       - name: Stamp version
         run: npm version "${{ steps.release.outputs.version }}" --no-git-tag-version --allow-same-version
 
+      - name: Changelog
+        run: node ../scripts/changelog.mjs api changelog.json
+
       - name: Build
         run: npm run build
 
@@ -99,7 +102,7 @@ jobs:
           rm -rf deploy
           mkdir -p deploy
           cp -r dist deploy/dist
-          cp package.json package-lock.json deploy/
+          cp package.json package-lock.json changelog.json deploy/
           cp -r drizzle deploy/drizzle
           cd deploy
           npm ci --omit=dev
