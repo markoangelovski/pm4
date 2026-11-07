@@ -1,7 +1,7 @@
 ---
 id: feat-shell-documentation
 title: "Documentation page: Versioning and Changelog tabs, with a changelog built by every deploy"
-status: review
+status: approved
 owner: Marko Angelovski
 last_updated: 2026-11-07
 milestone: M1
@@ -78,6 +78,7 @@ prototype) with its route and sidebar link.
 | web | `web/app/(dashboard-layout)/layout/vertical/sidebar/sidebaritems.ac.test.ts` | M | tests | AC-2, AC-3 of feat-shell-sidebar-sections gain Documentation |
 | web | `web/app/(dashboard-layout)/layout/vertical/sidebar/nav-collapse/nav-collapse.ac.test.tsx` | M | tests | Its AC-6: Settings is no longer the footer's only link |
 | web | `web/features/documentation/changelog.ts` | C | tests, T3 | Stub, then the twin (sed below) |
+| web | `web/proto/features/documentation/changelog.ts` | M | tests | Types from `./api` (re-exported there), so its twin compiles |
 | web | `web/features/documentation/api.ts` | C | tests, T3 | Stub, then the real hooks |
 | web | `proto/features/documentation/components/documentation-view.tsx` → `features/documentation/components/documentation-view.tsx` | P | T3 | No `@/proto/mock/` import |
 | web | `proto/features/documentation/components/changelog-doc.tsx` → `features/documentation/components/changelog-doc.tsx` | P | T3 | No `@/proto/mock/` import |
@@ -308,3 +309,5 @@ test -f web/out/app/documentation.html
 
 ## Changelog
 - 2026-11-07: Initial draft from prototype `d1c097f` (OQ-270…272). Open questions empty → `review`.
+- 2026-11-07: Approved by the owner.
+- 2026-11-07: Test step: the prototype `changelog.ts` imports its types from `./api` instead of `./proposed-types` (not promoted), so the sed twin compiles.

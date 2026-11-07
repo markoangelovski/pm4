@@ -1,4 +1,4 @@
-import type { ChangelogApp, ChangelogEntryDto } from "./proposed-types";
+import type { ChangelogApp, ChangelogEntryDto } from "./api";
 
 /** A workflow reference in a commit subject: T-0147, T-0125…T-0128, OQ-196, feat-prj-lists (optionally " D5"). */
 const REFERENCE =

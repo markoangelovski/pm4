@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ChartColumn, NotebookPen } from "lucide-react";
+import { BookOpen, ChartColumn, NotebookPen } from "lucide-react";
 import SidebarContent, { footerItems, type MenuItem } from "./sidebaritems";
 
 const shape = (menu: MenuItem[]) =>
@@ -8,7 +8,7 @@ const shape = (menu: MenuItem[]) =>
     (section.items ?? []).map((item) => [item.id, item.name, item.url])
   ]);
 
-describe("Sidebar items (feat-shell-sidebar-sections, feat-proto-sync-logged-chart, feat-note-todos)", () => {
+describe("Sidebar items (feat-shell-sidebar-sections, feat-proto-sync-logged-chart, feat-note-todos, feat-shell-documentation)", () => {
   it("AC-1 OQ-054 (feat-book-web AC-12, feat-note-todos AC-16): the default export is grouped into Dashboard, Project management and Time; Project management lists Projects, Tasks, Notes; Time lists Logs, then Bookings", () => {
     expect(shape(SidebarContent)).toEqual([
       ["Dashboard", [["dashboard", "Statistics", "/app"]]],
@@ -30,15 +30,22 @@ describe("Sidebar items (feat-shell-sidebar-sections, feat-proto-sync-logged-cha
     ]);
   });
 
-  it("AC-2 OQ-054: footerItems is one section without a heading: Settings only", () => {
+  it("AC-2 OQ-054 (feat-shell-documentation AC-13 SCR-053): footerItems is one section without a heading: Settings, then Documentation with the BookOpen icon", () => {
     expect(footerItems).toHaveLength(1);
     expect(footerItems[0].heading).toBeUndefined();
     expect(shape(footerItems)).toEqual([
-      [undefined, [["settings", "Settings", "/app/settings"]]]
+      [
+        undefined,
+        [
+          ["settings", "Settings", "/app/settings"],
+          ["documentation", "Documentation", "/app/documentation"]
+        ]
+      ]
     ]);
+    expect(footerItems[0].items?.[1].icon).toBe(BookOpen);
   });
 
-  it("AC-3 OQ-054 (feat-book-web AC-12, feat-note-todos AC-16): both exports together link every app route exactly once", () => {
+  it("AC-3 OQ-054 (feat-book-web AC-12, feat-note-todos AC-16, feat-shell-documentation AC-13): both exports together link every app route exactly once", () => {
     const urls = [...SidebarContent, ...footerItems]
       .flatMap((section) => section.items ?? [])
       .map((item) => item.url);
@@ -50,7 +57,8 @@ describe("Sidebar items (feat-shell-sidebar-sections, feat-proto-sync-logged-cha
         "/app/notes",
         "/app/time",
         "/app/bookings",
-        "/app/settings"
+        "/app/settings",
+        "/app/documentation"
       ].sort()
     );
   });

@@ -29,7 +29,7 @@ afterEach(() => {
   nav.state = "expanded";
 });
 
-describe("NavCollapse sections (feat-shell-sidebar-sections, feat-proto-sync-logged-chart)", () => {
+describe("NavCollapse sections (feat-shell-sidebar-sections, feat-proto-sync-logged-chart, feat-shell-documentation)", () => {
   it("AC-4 OQ-054 (feat-proto-sync-logged-chart AC-8): expanded, the default export shows the three headings and the four links", () => {
     render(<NavCollapse menu={SidebarContent} />);
     for (const heading of ["Dashboard", "Project management", "Time"]) {
@@ -55,12 +55,15 @@ describe("NavCollapse sections (feat-shell-sidebar-sections, feat-proto-sync-log
     expect(screen.getAllByText("...")).toHaveLength(3);
   });
 
-  it("AC-6 OQ-054: at /app/settings the Settings footer link, the footer's only link, is active", () => {
+  it("AC-6 OQ-054 (feat-shell-documentation AC-13 SCR-053): at /app/settings the footer links Settings, then Documentation, and only Settings is active", () => {
     nav.pathname = "/app/settings";
     render(<NavCollapse menu={footerItems} />);
     const settings = screen.getByRole("link", { name: "Settings" });
-    expect(screen.getAllByRole("link")).toEqual([settings]);
+    const documentation = screen.getByRole("link", { name: "Documentation" });
+    expect(screen.getAllByRole("link")).toEqual([settings, documentation]);
     expect(settings).toHaveAttribute("href", "/app/settings");
+    expect(documentation).toHaveAttribute("href", "/app/documentation");
     expect(settings.querySelector(".bg-primary")).not.toBeNull();
+    expect(documentation.querySelector(".bg-primary")).toBeNull();
   });
 });

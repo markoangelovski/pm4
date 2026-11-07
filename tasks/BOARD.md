@@ -1,6 +1,6 @@
 # Task Board
 
-**Next free ID:** T-0149
+**Next free ID:** T-0152
 
 | ID | Title | Milestone | App | Size | Status | Depends on |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -152,5 +152,8 @@
 | [T-0146](m4-time-logs/T-0146-desktop-notifications-the-four-twins-and.md) | Desktop notifications: the four twins and the worker's handlers | M4 | web | S | done | — |
 | [T-0147](m7-landing/T-0147-landing-page-the-four-twins-and.md) | Landing page: the four twins and app/page.tsx | M7 | web | S | done | — |
 | [T-0148](m7-landing/T-0148-landing-open-graph-tags.md) | Open Graph tags on the landing page | M7 | web | S | done | T-0147 |
+| [T-0149](m1-auth/T-0149-changelog-generator-script-its-deploy-steps.md) | Changelog generator script, its deploy steps, ignored files | M1 | infra | M | ready | — |
+| [T-0150](m1-auth/T-0150-api-sys-004-dtos-reader-public.md) | API-SYS-004: DTOs, reader, public controller, contract | M1 | api | S | ready | — |
+| [T-0151](m1-auth/T-0151-documentation-page-promote-real-hooks-route.md) | Documentation page: promote, real hooks, route, sidebar link | M1 | web | S | blocked | T-0150 |
 
 M0–M6 are done. Later follow-ups are filed under the milestone they extend.
