@@ -284,7 +284,7 @@ describe("dashboard stats (feat-rpt-web)", () => {
     });
   });
 
-  it("AC-5 FR-RPT-005 OQ-250 OQ-260: running totals skip past days without logs, run flat from today, the target climbs every weekday; hour ticks", () => {
+  it("AC-5 FR-RPT-005 OQ-250 OQ-260 OQ-274: running totals on the Workdays dates (past days without logs null), flat from today, the target climbs every weekday; hour ticks", () => {
     const points = running(dayStats(october, reportDays), TARGET, TODAY);
     const flat = [
       "2026-10-09",
@@ -304,33 +304,63 @@ describe("dashboard stats (feat-rpt-web)", () => {
       "2026-10-29",
       "2026-10-30"
     ];
+    // One point per Workdays date (the weekdays); no Sat 3 or Sun 4 Oct.
     expect(points.map((p) => p.workDate)).toEqual([
+      "2026-10-01",
+      "2026-10-02",
+      "2026-10-05",
       "2026-10-06",
       "2026-10-07",
+      "2026-10-08",
       ...flat
     ]);
-    expect(points[0]).toEqual({
+    expect(points).toHaveLength(22);
+    for (const date of ["2026-10-01", "2026-10-02", "2026-10-05", "2026-10-08"]) {
+      expect(points.find((p) => p.workDate === date)).toMatchObject({
+        worked: null,
+        booked: null,
+        target: null
+      });
+    }
+    expect(points.find((p) => p.workDate === "2026-10-06")).toEqual({
       workDate: "2026-10-06",
       tick: "6 Oct",
       worked: 315,
       booked: 120,
       target: 1680 // 1, 2, 5 and 6 Oct
     });
-    expect(points[1]).toMatchObject({
-      workDate: "2026-10-07",
+    expect(points.find((p) => p.workDate === "2026-10-07")).toMatchObject({
       worked: 690,
       booked: 360,
       target: 2100
     });
     // 9 Oct: 8 and 9 Oct added; then +420 per weekday to the range's Target.
-    points.slice(2).forEach((p, i) => {
+    points.slice(6).forEach((p, i) => {
       expect(p).toMatchObject({
         worked: 690,
         booked: 360,
         target: 2940 + i * 420
       });
     });
-    expect(points.at(-1)?.target).toBe(9240);
+    expect(points.at(-1)).toMatchObject({
+      workDate: "2026-10-30",
+      worked: 690,
+      booked: 360,
+      target: 9240
+    });
+
+    // A start but no logs on Saturday 3 Oct adds a null point.
+    const withStart = running(
+      dayStats(october, [...reportDays, day("2026-10-03", 540, 0, 0)]),
+      TARGET,
+      TODAY
+    );
+    expect(withStart).toHaveLength(23);
+    expect(withStart.find((p) => p.workDate === "2026-10-03")).toMatchObject({
+      worked: null,
+      booked: null,
+      target: null
+    });
 
     // Work on Saturday 10 Oct (after today) adds that day.
     const withSaturday = running(
@@ -338,7 +368,7 @@ describe("dashboard stats (feat-rpt-web)", () => {
       TARGET,
       TODAY
     );
-    expect(withSaturday).toHaveLength(19);
+    expect(withSaturday).toHaveLength(23);
     expect(withSaturday.find((p) => p.workDate === "2026-10-10")).toMatchObject(
       { tick: "10 Oct", worked: 810, booked: 360, target: 2940 }
     );
