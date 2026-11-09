@@ -99,6 +99,11 @@ export interface Bucket {
   workdays: number;
 }
 
+/** The days the by-day axis shows (Workdays and Running totals): every weekday, and a weekend day with a start or work
+ *  (Non-prod included). */
+const onDayAxis = (d: DayStat) =>
+  d.startMinute !== null || d.worked + d.nonprod > 0 || isWeekday(d.workDate);
+
 /** Up to 62 days → one bar per day (a weekend day with no start and no work, Non-prod included, left out); longer → one per ISO week (start = the week's average). */
 export function buckets(
   days: DayStat[],
@@ -109,27 +114,20 @@ export function buckets(
       days[0]?.workDate.slice(0, 7) === days.at(-1)?.workDate.slice(0, 7);
     return {
       by: "day",
-      items: days
-        .filter(
-          (d) =>
-            d.startMinute !== null ||
-            d.worked + d.nonprod > 0 ||
-            isWeekday(d.workDate)
-        )
-        .map((d) => ({
-          key: d.workDate,
-          date: d.workDate,
-          tick: format(parseISO(d.workDate), oneMonth ? "d" : "d MMM"),
-          title: format(parseISO(d.workDate), "EEE, d MMM yyyy"),
-          startMinute: d.startMinute,
-          worked: d.worked,
-          booked: d.booked,
-          unbooked: d.worked - d.booked,
-          nonprod: d.nonprod,
-          target: isWeekday(d.workDate) ? targetMinutes : 0,
-          weekdays: isWeekday(d.workDate) ? 1 : 0,
-          workdays: d.startMinute === null ? 0 : 1
-        }))
+      items: days.filter(onDayAxis).map((d) => ({
+        key: d.workDate,
+        date: d.workDate,
+        tick: format(parseISO(d.workDate), oneMonth ? "d" : "d MMM"),
+        title: format(parseISO(d.workDate), "EEE, d MMM yyyy"),
+        startMinute: d.startMinute,
+        worked: d.worked,
+        booked: d.booked,
+        unbooked: d.worked - d.booked,
+        nonprod: d.nonprod,
+        target: isWeekday(d.workDate) ? targetMinutes : 0,
+        weekdays: isWeekday(d.workDate) ? 1 : 0,
+        workdays: d.startMinute === null ? 0 : 1
+      }))
     };
   }
   const weeks = new Map<string, DayStat[]>();
@@ -168,9 +166,10 @@ export interface RunningPoint {
 }
 
 /**
- * Cumulative worked, booked and target (+ targetMinutes per Monday–Friday date, past and future). Before today, one
- * point per day with time logged: days without logs are left out, so the lines have no flat stretches (a weekday
- * without logs still adds to the target, on the next point). From today to the range's end, every weekday and any day
+ * Cumulative worked, booked and target (+ targetMinutes per Monday–Friday date, past and future). One entry per day of
+ * the Workdays chart's by-day axis (`onDayAxis`), so the two charts' dates line up. Before today, only days with time logged have values: days
+ * without logs are null (the lines join across them, so they have no flat stretches; a weekday without logs still adds
+ * to the target, on the next point). From today to the range's end, every weekday and any day
  * with logs, as in the Workdays chart: worked and booked run flat and the target climbs to the range's total.
  */
 export function running(
@@ -187,14 +186,14 @@ export function running(
     if (isWeekday(d.workDate)) target += targetMinutes;
     const shown =
       d.worked > 0 || (d.workDate >= today && isWeekday(d.workDate));
-    if (!shown) return [];
+    if (!onDayAxis(d)) return [];
     return [
       {
         workDate: d.workDate,
         tick: format(parseISO(d.workDate), "d MMM"),
-        worked,
-        booked,
-        target
+        worked: shown ? worked : null,
+        booked: shown ? booked : null,
+        target: shown ? target : null
       }
     ];
   });

@@ -9,6 +9,7 @@ import {
   type ChartConfig
 } from "@/components/ui/chart";
 import { formatDuration } from "@/lib/time";
+import { Y_WIDTH } from "./workday-chart";
 import { hourTicks, type RunningPoint, type Totals } from "../stats";
 
 const CONFIG: ChartConfig = {
@@ -71,14 +72,17 @@ function RunningTooltip({ active, payload }: TipProps) {
 
 /**
  * Cumulative worked, booked and target through the range: are you on pace, and is booking keeping up?
- * The legend shows the range's totals (as Worked · target · booked). Nothing logged → a message in place of the chart.
+ * The legend shows the range's totals (as Worked · Target · Booked). Nothing logged → a message in place of the chart.
  */
 export function RunningTotals({
   points,
-  totals
+  totals,
+  syncId
 }: {
   points: RunningPoint[];
   totals: Pick<Totals, "worked" | "booked" | "target">;
+  /** Set (by day) to highlight the hovered date together with the Workdays chart. */
+  syncId?: string;
 }) {
   const yTicks = hourTicks(
     Math.max(
@@ -118,11 +122,14 @@ export function RunningTotals({
           <ChartContainer config={CONFIG} className="aspect-auto! w-full">
             <LineChart
               data={points}
-              margin={{ top: 8, right: 12, bottom: 0, left: 0 }}
+              syncId={syncId}
+              syncMethod="value"
+              margin={{ top: 8, right: 8, bottom: 0, left: 0 }}
             >
               <CartesianGrid vertical={false} stroke="var(--border)" />
               <XAxis
                 dataKey="workDate"
+                scale="band"
                 tickLine={false}
                 axisLine={false}
                 tickMargin={8}
@@ -132,7 +139,7 @@ export function RunningTotals({
                 tickFormatter={(date: string) => ticks.get(date) ?? ""}
               />
               <YAxis
-                width={52}
+                width={Y_WIDTH}
                 domain={[0, yTicks.at(-1)!]}
                 ticks={yTicks}
                 interval={0}
@@ -154,6 +161,7 @@ export function RunningTotals({
                   strokeWidth={2}
                   strokeDasharray={s.dash}
                   dot={false}
+                  connectNulls
                   activeDot={{
                     r: 4,
                     fill: s.color,

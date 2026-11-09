@@ -141,8 +141,8 @@ export function HoursSummary({
     <Card className="h-full gap-0! border rounded-md! py-0!">
       <CardHeader className="flex h-11 flex-row items-center border-b px-4 py-0!">
         <CardTitle className="flex items-center gap-2 text-sm">
-          <Scale size={16} className="text-muted-foreground" /> Worked · target
-          · booked
+          <Scale size={16} className="text-muted-foreground" /> Worked · Target
+          · Booked
         </CardTitle>
       </CardHeader>
       <CardContent className="flex flex-col gap-6 p-5">
