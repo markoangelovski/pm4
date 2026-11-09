@@ -18,8 +18,8 @@ function RefName({ ref_ }: { ref_: Ref }) {
   );
 }
 
-/** Elapsed axis label when the day has no start: 0h, 1h, 2h… */
-const elapsed = (m: number) => `${m / 60}h`;
+/** Without a start: time since the first log began (0h, 30m, 1h 45m…). */
+const elapsed = (m: number) => (m === 0 ? "0h" : formatDuration(m));
 
 /** SCR-040 Timeline view: the day's logs as staggered bars, each starting where the previous one ended
  *  (the landing page's hero timeline, on the real day). Today, a line marks now. */

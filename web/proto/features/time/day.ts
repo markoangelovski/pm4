@@ -188,10 +188,10 @@ export interface TimelineRow {
 
 export interface Timeline {
   rows: TimelineRow[];
-  /** Axis bounds in minutes: whole hours around the logs (and now, when given). */
+  /** Axis bounds in minutes: from the hour of the start to a whole number of ticks past the last log (or now). */
   axisStart: number;
   axisEnd: number;
-  /** Tick positions in minutes, on whole hours. */
+  /** Tick positions in minutes: every hour, or every 2, 3… hours so there are at most 7 ticks. */
   ticks: number[];
   /** True when the day has a start: ticks are clock times; otherwise elapsed time from 0. */
   clock: boolean;
@@ -213,9 +213,10 @@ export function timeline(
   });
   const last = Math.max(at, startMinute !== null && now !== null ? now : at);
   const axisStart = Math.floor(origin / 60) * 60;
-  const axisEnd = Math.max(axisStart + 60, Math.ceil(last / 60) * 60);
-  const hours = (axisEnd - axisStart) / 60;
-  const step = Math.max(1, Math.ceil(hours / 6)) * 60;
+  const hours = Math.max(1, Math.ceil((last - axisStart) / 60));
+  const step = Math.ceil(hours / 6) * 60;
+  // A whole number of steps, so the last tick is the axis end.
+  const axisEnd = axisStart + Math.ceil((hours * 60) / step) * step;
   const ticks: number[] = [];
   for (let t = axisStart; t <= axisEnd; t += step) ticks.push(t);
   return { rows, axisStart, axisEnd, ticks, clock: startMinute !== null };
