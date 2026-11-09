@@ -3,7 +3,7 @@ id: prod-glossary
 title: Glossary
 status: draft
 owner: Marko Angelovski
-last_updated: 2026-11-07
+last_updated: 2026-11-09
 related: [prod-vision, api-data-model]
 ---
 
@@ -26,7 +26,7 @@ Use these terms consistently in specs, code, UI copy and API names.
 | Note | A Markdown text (optional title, body ≤ 10,000 characters), optionally linked to a project or task | `Note`, `/notes` | — |
 | To-do | A short item to do (≤ 500 characters), open or done, optionally linked to a project or task | `Todo`, `/todos` | — |
 | General | The notes and to-dos with no project or task | `unlinked=true`, `show=unlinked` | — |
-| Group-by-project / Group-by-task / Sequential view | The ways of showing a day's logs: grouped by project (the default) or by task, or in the order entered | `view=project\|task\|sequential` | — |
+| Timeline / Group-by-project / Group-by-task / Sequential view | The ways of showing a day's logs: as bars on a time axis from the day's start (the default), grouped by project or by task, or in the order entered | `view=timeline\|project\|task\|sequential` | — |
 | Unsorted | The group of logs without a project (project view) or without a task (task view) | — | — |
 | Log text | The required plain-text description on a log | `TimeLog.text` | `Log.title` |
 | Title | An optional short name for a log | `TimeLog.title` | — |
@@ -68,3 +68,4 @@ Use these terms consistently in specs, code, UI copy and API names.
 - 2026-10-23: *Booking* is part of a log's time on a date; a log can have several (feat-book-partial).
 - 2026-10-24: Note, To-do, General (OQ-230).
 - 2026-11-07: Release, Changelog (OQ-270).
+- 2026-11-09: Timeline view (FR-TLOG-023).

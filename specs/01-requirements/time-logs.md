@@ -3,7 +3,7 @@ id: req-time-logs
 title: Time Capture (Workdays and Time Logs)
 status: review
 owner: Marko Angelovski
-last_updated: 2026-11-06
+last_updated: 2026-11-09
 related: [req-projects, req-tasks, req-reporting, api-endpoints, api-data-model, web-screens]
 ---
 
@@ -29,7 +29,8 @@ much, and whether any time is missing from the day.
   entered. A log moved to another date takes its place among that date's logs by its entry time.
 - **Dates:** a log's date is a calendar date in the user's time zone (FR-AUTH-006). It can be today or
   any past date, never a future one.
-- **Clock times:** per-log start and end times are not shown or stored. Only the day-level figures in FR-TLOG-009 exist.
+- **Clock times:** per-log start and end times are not stored. The day-level figures in FR-TLOG-009 are stored or derived;
+  the Timeline view (FR-TLOG-023) shows each log's range, derived from the day's start and the logs before it.
 - **Excluded from statistics:** a log can be marked as not productive work (e.g. a commute). It still counts as
   logged time, but not as billable time (FR-TLOG-018). The logs that aren't excluded are the day's **billable** time.
 
@@ -39,15 +40,15 @@ much, and whether any time is missing from the day.
 **Priority:** Must
 **Statement:** The day view (`/app/time`) shows one date: the workday header (FR-TLOG-009), the charts
 (FR-TLOG-016), the view switch and the day's logs. The date defaults to today in the user's time
-zone. The view switch offers **By project** (the default, FR-TLOG-003), **By task** (FR-TLOG-015) and **Sequential**
-(FR-TLOG-002), in that order. The selected date and view are kept in the URL.
+zone. The view switch offers **Timeline** (the default, FR-TLOG-023), **By project** (FR-TLOG-003), **By task**
+(FR-TLOG-015) and **Sequential** (FR-TLOG-002), in that order. The selected date and view are kept in the URL.
 The date is changed with a calendar picker, previous / next day buttons and a **Today** button. The page
 always names the date being viewed in full (e.g. "Tuesday, 6 October 2026"). The calendar marks the
 days that have logs, and future dates can't be picked.
 **Acceptance criteria:**
 - Given I pick a past date in the calendar, then the URL changes, the heading shows that date, and the list shows that day's logs.
 - Given a day with no logs, then the list shows an empty state (no view switch), and the header shows `—` for the start.
-- Given I open `/app/time` without parameters, then today is shown in the By project view.
+- Given I open `/app/time` without parameters, then today is shown in the Timeline view.
 
 ### FR-TLOG-002: Sequential view
 **Priority:** Must
@@ -82,6 +83,23 @@ set) and their title. Rows in **Non-prod** show their project and task, and thei
 **Acceptance criteria:**
 - Given the three logs above, the view shows the groups "Manhatan · Specifications 01" (30 min), "Manhatan · Specifications 02" (1 h 45 min) and "Unsorted" (15 min).
 - Given a log with only the project "Manhatan", it is listed under "Unsorted" and its row shows "Manhatan".
+
+### FR-TLOG-023: Timeline view
+**Priority:** Must
+**Statement:** Draws the day's logs as a timeline, in the order they were entered. Each log is a row: its dot (the
+FR-TLOG-002 colour), the project and task (when set; FR-TLOG-014 for deleted ones), the title in bold (when set), the
+log text, a **Non-prod** badge (when excluded from statistics), its time range and its duration; under it a bar on a
+shared time axis. The first log starts at the day's start (FR-TLOG-009) and each next one where the previous one
+ended, so the last one ends at **Start + logged**. The axis runs from the start's whole hour to a whole number of tick
+steps past the last log (on today, past now when that is later), with a tick every hour, or every 2, 3… hours so there
+are at most 7. On today, a line marks now on every bar and "Now HH:mm" is shown under the axis. A day without a start
+has an elapsed-time axis from 0 (`0h`, `1h`…), ranges as durations since the first log began (`0h–30m`,
+`30m–2h 15m`), and no now line. The rows have no actions
+(editing and deleting stay in the other views).
+**Acceptance criteria:**
+- Given start 08:00 and logs of 1 h, 15 min and 45 min, then the rows show 08:00–09:00, 09:00–09:15 and 09:15–10:00, and the axis 08:00, 09:00, 10:00.
+- Given the same day viewed at 14:20, then the axis runs 08:00 to 16:00 every 2 hours and the now line is at 14:20.
+- Given a day without a start and logs of 30 min and 1 h 45 min, then the rows show 0h–30m and 30m–2h 15m, and the axis 0h, 1h, 2h, 3h.
 
 ### FR-TLOG-004: Add log
 **Priority:** Must
@@ -349,3 +367,4 @@ None.
 - 2026-11-04: FR-TLOG-004: **Recent:** project and task chips under the pickers, from the chosen date's logs (owner, prototype `c9c3343`, feat-tlog-recent-links).
 - 2026-11-06: FR-TLOG-004: the task picker no longer offers completed tasks (owner, OQ-118, prototype `074b9d4`, T-0143).
 - 2026-11-06: FR-TLOG-022: desktop notifications for the reminder to log time, opt-in per browser (owner, OQ-266, OQ-267, prototypes `bb8120d`, `06e1004`, feat-tlog-desktop-notifications).
+- 2026-11-09: FR-TLOG-023 Timeline view, the new default and first in the view switch (FR-TLOG-001); per-log clock ranges are shown there, derived, still not stored (owner, prototypes `bf576dc`, `e850b50`, feat-tlog-timeline). Back to `review`.

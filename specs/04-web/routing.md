@@ -3,7 +3,7 @@ id: web-routing
 title: Routing and Navigation
 status: review
 owner: Marko Angelovski
-last_updated: 2026-11-07
+last_updated: 2026-11-09
 related: [web-static-export, web-screens, web-prototype, req-landing, req-auth, feat-land-app-route-split, ADR-0012]
 ---
 
@@ -38,7 +38,7 @@ and the client reads `id` with `useSearchParams` (inside `<Suspense>`).
 | `/app/project?id=&status=&q=&sort=&page=` | SCR-021 Project detail (details, task statistics, tasks) | required |
 | `/app/tasks?project=&status=&q=&sort=&page=` | SCR-030 Task list (all projects) | required |
 | `/app/task?id=` | SCR-031 Task detail (with its logged time) | required |
-| `/app/time?date=&view=project\|task\|sequential` | SCR-040 Day view (workday header, charts, logs, view switch, calendar); `view` absent = `project` | required |
+| `/app/time?date=&view=timeline\|project\|task\|sequential` | SCR-040 Day view (workday header, charts, logs, view switch, calendar); `view` absent = `timeline` | required |
 | `/app/bookings?from=&to=&project=#day-…` | SCR-045 Bookings (per-day figures, project rows, booking dates); `from`/`to` absent or invalid = the current month up to today; `project` = a project id or `deleted:<title>`, absent or not among the range's projects = all (OQ-226); hash `day-YYYY-MM-DD` or `day-<day>.log-<logId>.to-<bookingDate>` = scroll to that day / booking row (OQ-228) | required |
 | `/app/notes?tab=notes\|todos&show=&q=&sort=&from=&to=&page=` | SCR-070 Notes (FR-NOTE-001/002); `tab` absent = `notes`; `show` = `unlinked` (General, the default), `all` or a project id (unknown = General); `sort` absent = `updatedAt:desc`; `from`/`to` absent = All time, invalid = this month; `page` only on the Notes tab. The toolbar state is shared by both tabs (OQ-232) | required |
 | `/app/user-profile` | SCR-051 Profile (Google identity, sign out of all devices) | required |
@@ -135,3 +135,4 @@ and the client reads `id` with `useSearchParams` (inside `<Suspense>`).
 - 2026-10-25: The New menu gains Project, Task and Log; Log time moves from the header to a floating button (OQ-241, OQ-242, feat-shell-new-menu). Back to `review`.
 - 2026-10-25: Approved by the owner.
 - 2026-11-07: `/app/documentation` (SCR-053) and its sidebar link below Settings (OQ-270, feat-shell-documentation). Back to `review`.
+- 2026-11-09: `/app/time` has `view=timeline`, the default (FR-TLOG-023, feat-tlog-timeline). Back to `review`.
