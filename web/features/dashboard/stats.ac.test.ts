@@ -315,7 +315,12 @@ describe("dashboard stats (feat-rpt-web)", () => {
       ...flat
     ]);
     expect(points).toHaveLength(22);
-    for (const date of ["2026-10-01", "2026-10-02", "2026-10-05", "2026-10-08"]) {
+    for (const date of [
+      "2026-10-01",
+      "2026-10-02",
+      "2026-10-05",
+      "2026-10-08"
+    ]) {
       expect(points.find((p) => p.workDate === date)).toMatchObject({
         worked: null,
         booked: null,

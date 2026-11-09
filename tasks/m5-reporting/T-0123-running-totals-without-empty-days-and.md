@@ -10,7 +10,7 @@ depends_on: [T-0050]
 feature_spec: specs/06-features/rpt-web.md
 spec_row: T3
 ac_files:
-  - { path: web/features/dashboard/stats.ac.test.ts, sha256: 3888d242a774aa1d13e34c11a268f2e8ea30285513f63cb3c567a0b619bafeac }
+  - { path: web/features/dashboard/stats.ac.test.ts, sha256: 982ae0c88cf38c34b55ea4fbeae12d3e4509627723c21e01e52db236037e6f8a }
   - { path: web/features/dashboard/components/dashboard-view.ac.test.tsx, sha256: 34f3abcdc7a25ee8e6dabdf38d2569a340a992f7b922e0ce16ea9299d18661b0 }
 ---
 

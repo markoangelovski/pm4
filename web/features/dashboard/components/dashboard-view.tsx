@@ -27,7 +27,7 @@ import { KpiTiles } from "./kpi-tiles";
 import { ProjectHours } from "./project-hours";
 import { RangePicker } from "./range-picker";
 import { RunningTotals } from "./running-totals";
-import { WorkdayChart } from "./workday-chart";
+import { SYNC_ID, WorkdayChart } from "./workday-chart";
 
 /** Series colors (validated categorical slots, light and dark steps): worked blue, booked aqua, start orange; Non-prod
  *  neutral grey, as it isn't counted. */
@@ -126,8 +126,8 @@ export function DashboardView() {
         >
           <Skeleton className="h-96 xl:col-span-8" />
           <Skeleton className="h-96 xl:col-span-4" />
-          <Skeleton className="h-80 xl:col-span-7" />
-          <Skeleton className="h-80 xl:col-span-5" />
+          <Skeleton className="h-80 xl:col-span-8" />
+          <Skeleton className="h-80 xl:col-span-4" />
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
@@ -143,10 +143,14 @@ export function DashboardView() {
           <div className="min-w-0 xl:col-span-4">
             <HoursSummary t={stats.totals} targetMinutes={target} />
           </div>
-          <div className="min-w-0 xl:col-span-7">
-            <RunningTotals points={stats.running} totals={stats.totals} />
+          <div className="min-w-0 xl:col-span-8">
+            <RunningTotals
+              points={stats.running}
+              totals={stats.totals}
+              syncId={stats.buckets.by === "day" ? SYNC_ID : undefined}
+            />
           </div>
-          <div className="min-w-0 xl:col-span-5">
+          <div className="min-w-0 xl:col-span-4">
             <ProjectHours rows={data.projects} />
           </div>
         </div>

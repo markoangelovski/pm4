@@ -39,8 +39,12 @@ const CONFIG: ChartConfig = {
   unbooked: { label: "Not booked", color: "var(--dash-worked)" },
   nonprod: { label: "Non-prod", color: "var(--dash-nonprod)" }
 };
+/** Shared with Running totals (by day): hovering a date highlights it in both cards. Synced by value, not index,
+ *  because Running totals skips past days without logs. */
+export const SYNC_ID = "workdays";
 const tick = { fontSize: 12, fill: "var(--muted-foreground)" };
-const Y_WIDTH = 52;
+/** Shared with Running totals so both plot areas, and so their dates, line up. */
+export const Y_WIDTH = 52;
 const hours = (m: number) => (m === 0 ? "0h" : formatDuration(m));
 const hourTick = (m: number) => `${m / 60}h`;
 const clock = (m: number | null) => (m === null ? "—" : formatClock(m));
@@ -239,7 +243,8 @@ export function WorkdayChart({
             >
               <LineChart
                 data={items}
-                syncId="workdays"
+                syncId={SYNC_ID}
+                syncMethod="value"
                 margin={{ top: 12, right: 8, bottom: 8, left: 0 }}
               >
                 <CartesianGrid vertical={false} stroke="var(--border)" />
@@ -297,7 +302,8 @@ export function WorkdayChart({
             >
               <BarChart
                 data={items}
-                syncId="workdays"
+                syncId={SYNC_ID}
+                syncMethod="value"
                 margin={{ top: 8, right: 8, bottom: 0, left: 0 }}
               >
                 <CartesianGrid vertical={false} stroke="var(--border)" />

@@ -85,7 +85,7 @@ signature and `RunningPoint` type), then `pm4 hash`.
 | web | `web/features/dashboard/components/range-picker.tsx` | C | tests, T2 | Preset select + range calendar |
 | web | `web/features/dashboard/components/kpi-tiles.tsx` | C | tests, T2 | The four count tiles |
 | web | `web/features/dashboard/components/workday-chart.tsx` | C | tests, T2 | Start line + hours bars, table tab |
-| web | `web/features/dashboard/components/hours-summary.tsx` | C | tests, T2 | Worked · target · booked |
+| web | `web/features/dashboard/components/hours-summary.tsx` | C | tests, T2 | Worked · Target · Booked (title since T6, D10) |
 | web | `web/features/dashboard/components/running-totals.tsx` | C | tests, T2 | Cumulative lines |
 | web | `web/features/dashboard/components/project-hours.tsx` | C | tests, T2 | Hours by project |
 | web | `web/app/(dashboard-layout)/app/page.tsx` | M | tests, T2 | Renders `DashboardView` |
@@ -170,7 +170,7 @@ export function hourTicks(maxMinutes: number): number[];
   `title` "Week of `d MMM` (Monday) – `d MMM yyyy` (Sunday)"; `startMinute` = `totals(its days).avgStart`; `target` = its workdays × `targetMinutes`; since T4 (D8): `target` and
   `weekdays` = `totals(its days).target` and `.weekdays` (its Monday–Friday dates in the range).
 - Both: `worked`, `booked` = sums; `unbooked` = `worked − booked`.
-- `running`: cumulative `worked`, `booked`, and `target` (+ `targetMinutes` per day with a start); all three `null` after `today`; `tick` `d MMM`.
+- `running`: cumulative `worked`, `booked`, and `target` (+ `targetMinutes` per day with a start); all three `null` after `today` (until T3; see the *Since* lines below); `tick` `d MMM`.
   Since T3 (D6): a day is a point when `worked > 0`, or when it is `≥ today` and Monday–Friday; none `null`; the totals still accumulate over the days left out.
   Since T4 (D8): `target` adds `targetMinutes` on every Monday–Friday (not per day with a start), so the last point's target is `totals.target`
   when the range ends on a weekday.
@@ -207,7 +207,11 @@ export function WorkdayChart(props: { items: Bucket[]; by: "day" | "week"; targe
 // web/features/dashboard/components/hours-summary.tsx
 export function HoursSummary(props: { totals: Totals; targetMinutes: number }): React.JSX.Element;
 // web/features/dashboard/components/running-totals.tsx
-export function RunningTotals(props: { points: RunningPoint[] }): React.JSX.Element;
+export function RunningTotals(props: {
+  points: RunningPoint[];
+  totals: Pick<Totals, "worked" | "booked" | "target">; // since T3 (D6): the legend's range totals
+  syncId?: string; // since T6 (D10): SYNC_ID by day
+}): React.JSX.Element;
 // web/features/dashboard/components/project-hours.tsx
 export function ProjectHours(props: { rows: ReportProject[] }): React.JSX.Element;
 ```
@@ -303,7 +307,7 @@ tasks 2 upcoming, 3 in progress, 4 completed.
 | AC-6 | `useDashboardReport` calls `GET /api/v1/reports/dashboard` with `from`/`to` and returns the body; `reportKeys.all` starts with `timeKeys.all`; `useProjectCount` requests projects with `pageSize` 1 and returns `total`; `useTaskCounts` makes one request per status with `pageSize` 1 and returns the three counts | `web/features/dashboard/api.ac.test.tsx` | T1 |
 | AC-7 | `/app` without parameters: heading **Dashboard**, "October 2026", *Time range* shows "This month", the report is requested for 2026-10-01..2026-10-31; tiles: Projects `12`, "3 with time logged in this range"; Tasks `9` with Upcoming 2, In progress 3, Completed 4; Workdays `3`, "Days with a start time, of 7 weekdays so far"; Average start `08:35`, "Earliest 08:00 · latest 09:15" | `web/features/dashboard/components/dashboard-view.ac.test.tsx` | T2 |
 | AC-8 | Choosing *Last 7 days* sets `?from=2026-10-03&to=2026-10-09` and requests that range; choosing *This month* clears both; `?from=2025-01-01&to=2026-10-09` requests 1–31 Oct; picking 1 Sep and 9 Oct in *Pick dates* and **Apply** sets `?from=2026-09-01&to=2026-10-09` and the select shows "Custom range" | `web/features/dashboard/components/dashboard-view.ac.test.tsx` | T2 |
-| AC-9 | Worked · target · booked shows `11h 30m`, `21h` with "3 days × 7h", `6h`, "9h 30m under target", Worked of target `54%`, Booked of worked `52%`, "5h 30m still to book"; Running totals' legend shows `11h 30m`, `21h`, `6h`. Since T4 (D8): `154h` with "22 days × 7h", "142h 30m under target", Worked of target `7%`; the legend `11h 30m`, `154h`, `6h` | `web/features/dashboard/components/dashboard-view.ac.test.tsx` | T2, T4 |
+| AC-9 | Worked · Target · Booked shows `11h 30m`, `21h` with "3 days × 7h", `6h`, "9h 30m under target", Worked of target `54%`, Booked of worked `52%`, "5h 30m still to book"; Running totals' legend shows `11h 30m`, `21h`, `6h`. Since T4 (D8): `154h` with "22 days × 7h", "142h 30m under target", Worked of target `7%`; the legend `11h 30m`, `154h`, `6h` | `web/features/dashboard/components/dashboard-view.ac.test.tsx` | T2, T4 |
 | AC-10 | Hours by project lists Anthropic, Nvidia, PM Internal, Unsorted, Non-prod in that order; Anthropic links to `/app/project?id=…` and shows `4h 15m` and "2h booked"; PM Internal is plain text with the deleted marker (an element labelled "deleted"); Unsorted and Non-prod show `—`; a report with no projects → "Nothing logged in this range." | `web/features/dashboard/components/dashboard-view.ac.test.tsx` | T2 |
 | AC-11 | Workdays card shows "by day"; its **Table** tab has 22 rows, the 6 Oct row "Tue, 6 Oct 2026", `08:30`, `5h 15m`, `2h`, `7h`. Since T5 (D9): with the Non-prod column, `5h 15m`, `2h`, `0h`, `7h` | `web/features/dashboard/components/dashboard-view.ac.test.tsx` | T2, T5 |
 | AC-12 | Report pending → no card content, skeletons; report error → "Couldn't load the dashboard." and **Retry** requests it again; the project count failing → `—` in Projects while the rest shows | `web/features/dashboard/components/dashboard-view.ac.test.tsx` | T2 |
@@ -312,7 +316,7 @@ tasks 2 upcoming, 3 in progress, 4 completed.
 | AC-16 | In the browser (D7): hovering a Workdays bar puts the start panel's hover line through that day's start dot and the bar's centre; Running totals has no flat stretches before today and runs flat from today to the range's end | manual | T3 |
 | AC-17 | `stats.ts`, `hours-summary.tsx` and `workday-chart.tsx` equal their prototype twins | check | T4 |
 | AC-18 | In the browser (D8): this month shows the full Target ("N days × 7h", N = its Monday–Friday dates) from its first day; a weekend day's tooltip and Table row show Target `0h`; Running totals' target climbs on each weekday to the Target at the range's end | manual | T4 |
-| AC-19 | D9: the report with `nonprodMinutes` 90 on 6 Oct and a day Sat 10 Oct `{null, 0, 0, nonprod 60}` → Workdays by day has 23 items; its **Table** has a Non-prod column, the 6 Oct row "Tue, 6 Oct 2026", `08:30`, `5h 15m`, `2h`, `1h 30m`, `7h` and the 10 Oct row Non-prod `1h`, Target `0h`; Worked · target · booked still shows `11h 30m`; Workdays tile `3` | `web/features/dashboard/components/dashboard-view.ac.test.tsx` | T5 |
+| AC-19 | D9: the report with `nonprodMinutes` 90 on 6 Oct and a day Sat 10 Oct `{null, 0, 0, nonprod 60}` → Workdays by day has 23 items; its **Table** has a Non-prod column, the 6 Oct row "Tue, 6 Oct 2026", `08:30`, `5h 15m`, `2h`, `1h 30m`, `7h` and the 10 Oct row Non-prod `1h`, Target `0h`; Worked · Target · Booked still shows `11h 30m`; Workdays tile `3` | `web/features/dashboard/components/dashboard-view.ac.test.tsx` | T5 |
 | AC-20 | `stats.ts`, `dashboard-view.tsx`, `workday-chart.tsx` and `features/time/components/logged-time-chart.tsx` equal their prototype twins; no `web/proto/features/dashboard/proposed-types.ts` | check | T5 |
 | AC-21 | In the browser (D9): a day with an excluded log shows a grey Non-prod segment on top of its bar, a "Non-prod" tooltip row and legend item, in light and dark; the excluded minutes are in no tile, total or running line | manual | T5 |
 | AC-22 | `stats.ts`, `dashboard-view.tsx`, `hours-summary.tsx`, `running-totals.tsx` and `workday-chart.tsx` equal their prototype twins | check | T6 |
@@ -360,4 +364,5 @@ None.
 - 2026-11-02: Approved by the owner.
 - 2026-11-06: Prototype `4cb07ca`: a **Today** preset (today..today) between Last month and Last 7 days, in the Statistics and Bookings range selects (owner, T-0144).
 - 2026-11-09: D10 (owner, OQ-274): Running totals 8/12 and Hours by project 4/12, "Worked · Target · Booked", Running totals on the Workdays by-day dates (a past date without logs is a `null` point) with the same band axis, and one hover shared by both charts by day. Prototype `43d0868`, T6, AC-5 updated, AC-22, AC-23. Back to `review`.
+- 2026-11-09: Editorial, from the T-0153 review: the `RunningTotals` signature under *Interfaces* now shows `totals` (T3) and `syncId` (T6), the T1 `running` null rule is marked as replaced by T3, and the title is "Worked · Target · Booked" in *Files*, AC-9 and AC-19. No behaviour change.
 - 2026-11-09: Approved by the owner.
