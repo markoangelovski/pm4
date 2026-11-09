@@ -232,9 +232,7 @@ describe("Logs: Timeline view (feat-tlog-timeline)", () => {
   it("AC-6 FR-TLOG-001 SCR-040: By Project sets view=project; Timeline clears it", async () => {
     const { onUrlUpdate } = renderView();
     fireEvent.click(await screen.findByRole("tab", { name: "By Project" }));
-    await waitFor(() =>
-      expect(lastParam(onUrlUpdate, "view")).toBe("project")
-    );
+    await waitFor(() => expect(lastParam(onUrlUpdate, "view")).toBe("project"));
     fireEvent.click(screen.getByRole("tab", { name: "Timeline" }));
     await waitFor(() => expect(lastParam(onUrlUpdate, "view")).toBeNull());
   });

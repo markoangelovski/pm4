@@ -37,9 +37,11 @@ import { DayMenu } from "./day-menu";
 import { DayPicker } from "./day-picker";
 import { LogFormDialog } from "./log-form-dialog";
 import { LogRow } from "./log-row";
+import { LogTimeline } from "./log-timeline";
 
-const VIEWS = ["project", "task", "sequential"] as const;
+const VIEWS = ["timeline", "project", "task", "sequential"] as const;
 const VIEW_LABELS = {
+  timeline: "Timeline",
   project: "By Project",
   task: "By Task",
   sequential: "Sequential"
@@ -63,7 +65,7 @@ export function DayView() {
   const [params, setParams] = useQueryStates(
     {
       date: parseAsString,
-      view: parseAsStringLiteral(VIEWS).withDefault("project")
+      view: parseAsStringLiteral(VIEWS).withDefault("timeline")
     },
     { history: "replace", clearOnDefault: true }
   );
@@ -135,7 +137,8 @@ export function DayView() {
     project: groupLogs(day.logs, "project"),
     task: groupLogs(day.logs, "task")
   };
-  const keys = view === "sequential" ? [] : groups[view].map((g) => g.key);
+  const grouped = view === "project" || view === "task";
+  const keys = grouped ? groups[view].map((g) => g.key) : [];
   const allOpen =
     keys.length > 0 &&
     keys.every((k) => open[view as "project" | "task"].includes(k));
@@ -200,7 +203,7 @@ export function DayView() {
                     </TabsTrigger>
                   ))}
                 </TabsList>
-                {view !== "sequential" ? (
+                {grouped ? (
                   <Button
                     variant="ghost"
                     size="sm"
@@ -218,6 +221,14 @@ export function DayView() {
                   </Button>
                 ) : null}
               </div>
+              <TabsContent value="timeline">
+                <LogTimeline
+                  day={day}
+                  colors={colors}
+                  isToday={date === today}
+                  timeZone={timeZone}
+                />
+              </TabsContent>
               <TabsContent value="sequential">
                 <Card className="divide-y border rounded-md! py-0">
                   {day.logs.map((l) => (
