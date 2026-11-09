@@ -3,8 +3,8 @@ id: req-reporting
 title: Dashboard and Reporting
 status: approved
 owner: Marko Angelovski
-last_updated: 2026-11-06
-related: [req-time-logs, req-bookings, api-endpoints, web-screens, OQ-029, OQ-126, OQ-127, OQ-128, OQ-129, OQ-130, OQ-212, OQ-250, OQ-251, OQ-258, OQ-259, OQ-260, OQ-261]
+last_updated: 2026-11-09
+related: [req-time-logs, req-bookings, api-endpoints, web-screens, OQ-029, OQ-126, OQ-127, OQ-128, OQ-129, OQ-130, OQ-212, OQ-250, OQ-251, OQ-258, OQ-259, OQ-260, OQ-261, OQ-274]
 ---
 
 # Dashboard and Reporting
@@ -93,14 +93,17 @@ book" or "Everything is booked".
 
 ### FR-RPT-005: Running totals
 **Priority:** Must
-**Statement:** Three lines over the range: worked, target and booked, each added up day by day: before today, one point per day with
-worked time (days without logs, or with only excluded logs, are left out); from today to the end of the range, every weekday and any day with logs,
-so worked and booked run flat to the range's end. The target adds the daily target on every Monday–Friday, past and future, so it
+**Statement:** Three lines over the range: worked, target and booked, each added up day by day, on the same dates as the Workdays chart
+by day (FR-RPT-003): before today, a point on each day with worked time (a date without logs, or with only excluded logs, keeps its place on the
+axis but has no point, and the lines join across it); from today to the end of the range, every weekday and any day with logs,
+so worked and booked run flat to the range's end (OQ-274). The target adds the daily target on every Monday–Friday, past and future, so it
 climbs to the range's Target at the range's end (OQ-260). The legend shows the range's totals.
 **Acceptance criteria:**
-- Given the range is this month and today is a Wednesday, then a past weekday without logs has no point, the lines run flat
+- Given the range is this month and today is a Wednesday, then a past weekday without logs has no point (its date stays on the axis), the lines run flat
   from today through the month's remaining weekdays while the target rises on each of them, and the legend's totals equal
   FR-RPT-004's (also when a workday has a start but no logs yet).
+- Given a range shown by day, when the user hovers a date in the Workdays chart or in Running totals, then the same date is highlighted in
+  both, the two hover lines one below the other (OQ-274).
 - Given a range with no logs, or only excluded ones, then the card says "Nothing logged in this range." in place of the lines.
 
 ### FR-RPT-006: Hours by project
@@ -134,3 +137,5 @@ None.
 - 2026-11-01: Approved by the owner.
 - 2026-11-02: *Worked* leaves out the logs excluded from statistics, so do every total, tile and comparison built on it; the Workdays chart shows them as a grey Non-prod segment on top of each bar, in its tooltip and table (OQ-261, prototype `570b9cc`). Shared rules, FR-RPT-003…005. Back to `review`.
 - 2026-11-06: Prototype `4cb07ca`: a **Today** preset (today..today) between Last month and Last 7 days, in the Statistics and Bookings range selects (owner, T-0144).
+- 2026-11-09: FR-RPT-005: Running totals uses the Workdays by-day dates (a past date without logs keeps its place, without a point) and shares the hover with Workdays (OQ-274, prototype `43d0868`). Back to `review`.
+- 2026-11-09: Approved by the owner.
