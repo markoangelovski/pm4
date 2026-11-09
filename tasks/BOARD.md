@@ -1,6 +1,6 @@
 # Task Board
 
-**Next free ID:** T-0152
+**Next free ID:** T-0153
 
 | ID | Title | Milestone | App | Size | Status | Depends on |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -155,5 +155,6 @@
 | [T-0149](m1-auth/T-0149-changelog-generator-script-its-deploy-steps.md) | Changelog generator script, its deploy steps, ignored files | M1 | infra | M | done | — |
 | [T-0150](m1-auth/T-0150-api-sys-004-dtos-reader-public.md) | API-SYS-004: DTOs, reader, public controller, contract | M1 | api | S | done | — |
 | [T-0151](m1-auth/T-0151-documentation-page-promote-real-hooks-route.md) | Documentation page: promote, real hooks, route, sidebar link | M1 | web | S | done | T-0150 |
+| [T-0152](m4-time-logs/T-0152-timeline-view-on-the-logs-page.md) | Timeline view on the Logs page: the three prototype twins | M4 | web | S | ready | — |
 
 M0–M6 are done. Later follow-ups are filed under the milestone they extend.

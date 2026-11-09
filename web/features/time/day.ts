@@ -178,3 +178,30 @@ export function barBars(logs: TimeLog[], by: "project" | "task"): Bar[] {
     minutes: g.totalMinutes
   }));
 }
+
+export interface TimelineRow {
+  log: TimeLog;
+  /** Minutes after midnight (or after the first log when the day has no start). */
+  from: number;
+  to: number;
+}
+
+export interface Timeline {
+  rows: TimelineRow[];
+  /** Axis bounds in minutes: from the hour of the start to a whole number of ticks past the last log (or now). */
+  axisStart: number;
+  axisEnd: number;
+  /** Tick positions in minutes: every hour, or every 2, 3… hours so there are at most 7 ticks. */
+  ticks: number[];
+  /** True when the day has a start: ticks are clock times; otherwise elapsed time from 0. */
+  clock: boolean;
+}
+
+/** The Timeline view (FR-TLOG-023). Stub: feat-tlog-timeline T1 implements it. */
+export function timeline(
+  startMinute: number | null,
+  logs: TimeLog[],
+  now: number | null
+): Timeline {
+  throw new Error("not implemented (feat-tlog-timeline)");
+}

@@ -281,7 +281,7 @@ describe("DayView (feat-tlog-web, feat-proto-sync-logged-chart)", () => {
   });
 
   it("AC-16 FR-TLOG-003 FR-TLOG-015 SCR-040: By Project groups collapsed, Expand all / Collapse all, By Task, Sequential in API order, tabs set view", async () => {
-    const { onUrlUpdate, unmount } = renderView();
+    const { onUrlUpdate, unmount } = renderView("?view=project");
     await loaded();
     expect(
       await screen.findByRole("tab", { name: "By Project" })
@@ -320,10 +320,14 @@ describe("DayView (feat-tlog-web, feat-proto-sync-logged-chart)", () => {
         expect(t).toHaveAttribute("aria-expanded", "false");
     });
 
-    // Clicking a tab sets view; By Project clears it.
+    // Clicking a tab sets view; By Project sets project, Timeline clears it.
     fireEvent.click(screen.getByRole("tab", { name: "By Task" }));
     await waitFor(() => expect(lastParam(onUrlUpdate, "view")).toBe("task"));
     fireEvent.click(screen.getByRole("tab", { name: "By Project" }));
+    await waitFor(() =>
+      expect(lastParam(onUrlUpdate, "view")).toBe("project")
+    );
+    fireEvent.click(screen.getByRole("tab", { name: "Timeline" }));
     await waitFor(() => expect(lastParam(onUrlUpdate, "view")).toBeNull());
     unmount();
 
@@ -359,7 +363,7 @@ describe("DayView (feat-tlog-web, feat-proto-sync-logged-chart)", () => {
   });
 
   it("AC-17 FR-TLOG-003 FR-TLOG-008 SCR-042: rows per view, links, delete with confirmation", async () => {
-    const byProject = renderView();
+    const byProject = renderView("?view=project");
     await loaded();
     fireEvent.click(await screen.findByRole("button", { name: /^Manhatan/ }));
     await screen.findByText("Specs review");
@@ -440,7 +444,7 @@ describe("DayView (feat-tlog-web, feat-proto-sync-logged-chart)", () => {
         })
       ])
     };
-    const { onUrlUpdate } = renderView("?date=2026-10-06");
+    const { onUrlUpdate } = renderView("?date=2026-10-06&view=project");
     await screen.findByText("Tuesday, 6 October 2026");
     // The day has loaded once its groups show.
     await screen.findByRole("button", { name: /^Manhatan/ });
@@ -507,7 +511,7 @@ describe("DayView (feat-tlog-web, feat-proto-sync-logged-chart)", () => {
     });
     days["2026-10-07"] = dayOf("2026-10-07", 480, [...ownerLogs, gone]);
 
-    const byProject = renderView();
+    const byProject = renderView("?view=project");
     await loaded();
     const projectIcons = (trigger: HTMLElement) =>
       trigger.querySelectorAll('span[aria-hidden="true"].rounded-md').length;
@@ -680,7 +684,7 @@ describe("DayView (feat-tlog-web, feat-proto-sync-logged-chart)", () => {
   });
 
   it("AC-8 FR-TLOG-016 SCR-043 (feat-tlog-billable-reminder D2): the pie legend (Remaining of target − billable) and middle (logged, billable of target), the bar card title per view, Expand opens a dialog", async () => {
-    const first = renderView();
+    const first = renderView("?view=project");
     await loaded();
     for (const label of [
       "Manhatan - Specifications 01 - Specs review",
@@ -726,7 +730,7 @@ describe("DayView (feat-tlog-web, feat-proto-sync-logged-chart)", () => {
       ) as HTMLInputElement;
 
     // By Project: only Manhatan's group has a +.
-    const byProject = renderView();
+    const byProject = renderView("?view=project");
     await loaded();
     const plus = await screen.findByRole("button", {
       name: "Log time to Manhatan"
