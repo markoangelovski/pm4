@@ -1,6 +1,6 @@
 # Task Board
 
-**Next free ID:** T-0154
+**Next free ID:** T-0155
 
 | ID | Title | Milestone | App | Size | Status | Depends on |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -157,5 +157,6 @@
 | [T-0151](m1-auth/T-0151-documentation-page-promote-real-hooks-route.md) | Documentation page: promote, real hooks, route, sidebar link | M1 | web | S | done | T-0150 |
 | [T-0152](m4-time-logs/T-0152-timeline-view-on-the-logs-page.md) | Timeline view on the Logs page: the three prototype twins | M4 | web | S | ready | — |
 | [T-0153](m5-reporting/T-0153-card-widths-worked-target-booked-running.md) | Card widths, "Worked · Target · Booked", Running totals on the Workdays dates with a shared hover (D10): five prototype twins | M5 | web | S | ready | T-0131 |
+| [T-0154](m4-time-logs/T-0154-exclude-from-statistics-empties-project-task.md) | Exclude from statistics empties and disables Project and Task | M4 | web | S | done | — |
 
 M0–M6 are done. Later follow-ups are filed under the milestone they extend.

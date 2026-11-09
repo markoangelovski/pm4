@@ -157,9 +157,16 @@ function LogForm({
       };
     })()
   });
-  const [date, dayStart, duration, project, task] = useWatch({
+  const [date, dayStart, duration, project, task, excluded] = useWatch({
     control,
-    name: ["date", "dayStart", "duration", "project", "task"]
+    name: [
+      "date",
+      "dayStart",
+      "duration",
+      "project",
+      "task",
+      "excludeFromStats"
+    ]
   });
   // OQ-150: a deleted project/task stays in its box until another one is picked or the box is cleared.
   const [keepDeleted, setKeepDeleted] = useState(true);
@@ -354,7 +361,7 @@ function LogForm({
                   id="log-project"
                   value={task ? task.project : field.value}
                   deletedTitle={deletedProject}
-                  disabled={!!task}
+                  disabled={!!task || excluded}
                   onChange={(p) => {
                     setKeepDeleted(false);
                     field.onChange(p);
@@ -364,22 +371,24 @@ function LogForm({
                 />
               )}
             />
-            <RecentChips
-              label="Recent projects"
-              items={suggestedProjects}
-              selectedId={shownProject?.id ?? null}
-              icon={(p) => (
-                <ProjectIcon project={p} className="size-3 rounded-sm" />
-              )}
-              onPick={(p) => {
-                setKeepDeleted(false);
-                setValue("project", p);
-                if (task && task.project.id !== p.id) {
-                  setValue("task", null);
-                  clearErrors("task");
-                }
-              }}
-            />
+            {excluded ? null : (
+              <RecentChips
+                label="Recent projects"
+                items={suggestedProjects}
+                selectedId={shownProject?.id ?? null}
+                icon={(p) => (
+                  <ProjectIcon project={p} className="size-3 rounded-sm" />
+                )}
+                onPick={(p) => {
+                  setKeepDeleted(false);
+                  setValue("project", p);
+                  if (task && task.project.id !== p.id) {
+                    setValue("task", null);
+                    clearErrors("task");
+                  }
+                }}
+              />
+            )}
           </Field>
           <Field>
             <FieldLabel htmlFor="log-task">
@@ -397,6 +406,7 @@ function LogForm({
                   value={field.value}
                   deletedTitle={deletedTask}
                   projectId={project?.id ?? null}
+                  disabled={excluded}
                   onChange={(t) => {
                     setKeepDeleted(false);
                     field.onChange(t);
@@ -405,24 +415,26 @@ function LogForm({
                 />
               )}
             />
-            <RecentChips
-              label="Recent tasks"
-              items={suggestedTasks}
-              selectedId={task?.id ?? null}
-              icon={(t) => (
-                <ProjectIcon
-                  project={t.project}
-                  className="size-3 rounded-sm"
-                />
-              )}
-              hint={shownProject ? undefined : (t) => t.project.title}
-              onPick={(t) => {
-                setKeepDeleted(false);
-                setValue("task", t);
-                setValue("project", t.project);
-                clearErrors("task");
-              }}
-            />
+            {excluded ? null : (
+              <RecentChips
+                label="Recent tasks"
+                items={suggestedTasks}
+                selectedId={task?.id ?? null}
+                icon={(t) => (
+                  <ProjectIcon
+                    project={t.project}
+                    className="size-3 rounded-sm"
+                  />
+                )}
+                hint={shownProject ? undefined : (t) => t.project.title}
+                onPick={(t) => {
+                  setKeepDeleted(false);
+                  setValue("task", t);
+                  setValue("project", t.project);
+                  clearErrors("task");
+                }}
+              />
+            )}
             <FieldError errors={[errors.task]} />
           </Field>
         </div>
@@ -430,7 +442,16 @@ function LogForm({
           <input
             id="log-exclude"
             type="checkbox"
-            {...register("excludeFromStats")}
+            {...register("excludeFromStats", {
+              // Excluded time has no project or task: checking the box empties both and locks them.
+              onChange: (e: React.ChangeEvent<HTMLInputElement>) => {
+                if (!e.target.checked) return;
+                setKeepDeleted(false);
+                setValue("project", null);
+                setValue("task", null);
+                clearErrors(["project", "task"]);
+              }
+            })}
             className="size-4 cursor-pointer accent-primary"
           />
           <FieldLabel

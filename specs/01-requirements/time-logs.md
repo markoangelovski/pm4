@@ -246,8 +246,14 @@ day's *Logged*, *Start + logged* and *Unlogged* figures and has its slice in the
 *Overtime*, the pie's **Remaining** and its "<billable> of <target>" (FR-TLOG-016), or the reminder's target (FR-TLOG-021). In the
 grouped views and the bar chart it belongs to **Non-prod** (FR-TLOG-003/015/016), and its row shows an **Excluded from
 statistics** badge.
+In the add / edit form (FR-TLOG-004/006), ticking **Exclude from statistics** empties the project and the task (a deleted one's
+name too) and disables both pickers; their **Recent:** chips are hidden while it's ticked. Unticking it enables the pickers again,
+still empty. Only the form does this: the API still accepts an excluded log with a project or task, and an edited log that already
+has them keeps them (shown in the disabled pickers) until the box is unticked and ticked again (owner, 2026-11-09).
 **Acceptance criteria:**
 - Given a day with 7 h on projects and 1 h excluded, and a target of 7 h, then *Logged* is `8h`, *% billable* `100%`, *Overtime* `0h`, and the bar chart has a "Non-prod" bar of 1 h.
+- Given the Log time form with a project and a task picked, when I tick *Exclude from statistics*, then both pickers are empty and
+  disabled and the Recent chips are gone; when I untick it, both are enabled and still empty, and saving sends no project or task.
 
 ### FR-TLOG-019: Delete day
 **Priority:** Must
@@ -368,3 +374,4 @@ None.
 - 2026-11-06: FR-TLOG-004: the task picker no longer offers completed tasks (owner, OQ-118, prototype `074b9d4`, T-0143).
 - 2026-11-06: FR-TLOG-022: desktop notifications for the reminder to log time, opt-in per browser (owner, OQ-266, OQ-267, prototypes `bb8120d`, `06e1004`, feat-tlog-desktop-notifications).
 - 2026-11-09: FR-TLOG-023 Timeline view, the new default and first in the view switch (FR-TLOG-001); per-log clock ranges are shown there, derived, still not stored (owner, prototypes `bf576dc`, `e850b50`, feat-tlog-timeline). Back to `review`.
+- 2026-11-09: FR-TLOG-018: ticking *Exclude from statistics* in the log form empties and disables Project and Task (owner, prototype `fc51579`, T-0154).

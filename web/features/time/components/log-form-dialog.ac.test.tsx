@@ -711,4 +711,42 @@ describe("LogFormDialog (feat-tlog-web)", () => {
     await waitFor(() => expect(projectField().value).toBe("Tesla"));
     expect(taskField().value).toBe("");
   });
+
+  it("T-0154 FR-TLOG-018 SCR-041: ticking Exclude from statistics empties and disables Project and Task; unticking enables them, still empty", async () => {
+    renderDialog();
+    change("Log text", "Commute");
+    change("Duration", "30");
+    type(taskField(), "Spec");
+    pick(
+      await screen.findByRole("option", {
+        name: "Manhatan · Specifications 01"
+      })
+    );
+    await waitFor(() => expect(projectField().value).toBe("Manhatan"));
+
+    const exclude = screen.getByRole("checkbox", {
+      name: "Exclude from statistics"
+    });
+    fireEvent.click(exclude);
+    await waitFor(() => expect(projectField().value).toBe(""));
+    expect(taskField().value).toBe("");
+    expect(projectField()).toBeDisabled();
+    expect(taskField()).toBeDisabled();
+
+    fireEvent.click(exclude);
+    await waitFor(() => expect(taskField()).not.toBeDisabled());
+    expect(projectField()).not.toBeDisabled();
+    expect(projectField().value).toBe("");
+    expect(taskField().value).toBe("");
+
+    fireEvent.click(exclude);
+    api.POST.mockResolvedValueOnce({ data: editedLog, response: res(201) });
+    submit();
+    await waitFor(() => expect(api.POST).toHaveBeenCalledTimes(1));
+    expect(lastBody(api.POST)).toMatchObject({
+      projectId: null,
+      taskId: null,
+      excludeFromStats: true
+    });
+  });
 });
