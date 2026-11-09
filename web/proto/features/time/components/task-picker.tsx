@@ -22,7 +22,8 @@ export function TaskPicker({
   value,
   deletedTitle,
   onChange,
-  projectId
+  projectId,
+  disabled
 }: {
   id?: string;
   value: TaskRef | null;
@@ -30,6 +31,7 @@ export function TaskPicker({
   deletedTitle?: string | null;
   onChange: (t: TaskRef | null) => void;
   projectId: string | null;
+  disabled?: boolean;
 }) {
   const [q, setQ] = useState("");
   const query = useTasks({
@@ -69,11 +71,13 @@ export function TaskPicker({
         else if (details.reason === "item-press") setQ("");
       }}
       autoHighlight
+      disabled={disabled}
     >
       <ComboboxInput
         id={id}
         placeholder="No task"
-        showClear={!!(value ?? deleted)}
+        showClear={!!(value ?? deleted) && !disabled}
+        disabled={disabled}
         className="w-full rounded-md! [&_button]:cursor-pointer"
       >
         {deleted ? (
