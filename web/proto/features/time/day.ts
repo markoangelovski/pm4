@@ -178,3 +178,45 @@ export function barBars(logs: TimeLog[], by: "project" | "task"): Bar[] {
     minutes: g.totalMinutes
   }));
 }
+
+export interface TimelineRow {
+  log: TimeLog;
+  /** Minutes after midnight (or after the first log when the day has no start). */
+  from: number;
+  to: number;
+}
+
+export interface Timeline {
+  rows: TimelineRow[];
+  /** Axis bounds in minutes: whole hours around the logs (and now, when given). */
+  axisStart: number;
+  axisEnd: number;
+  /** Tick positions in minutes, on whole hours. */
+  ticks: number[];
+  /** True when the day has a start: ticks are clock times; otherwise elapsed time from 0. */
+  clock: boolean;
+}
+
+/** The Timeline view: each log starts where the previous one ended, from the day's start (FR-TLOG-009's
+ *  Start + logged, drawn). Without a start the axis is elapsed time from 0. `now` stretches the axis to now. */
+export function timeline(
+  startMinute: number | null,
+  logs: TimeLog[],
+  now: number | null
+): Timeline {
+  const origin = startMinute ?? 0;
+  let at = origin;
+  const rows = logs.map((log) => {
+    const from = at;
+    at += log.durationMinutes;
+    return { log, from, to: at };
+  });
+  const last = Math.max(at, startMinute !== null && now !== null ? now : at);
+  const axisStart = Math.floor(origin / 60) * 60;
+  const axisEnd = Math.max(axisStart + 60, Math.ceil(last / 60) * 60);
+  const hours = (axisEnd - axisStart) / 60;
+  const step = Math.max(1, Math.ceil(hours / 6)) * 60;
+  const ticks: number[] = [];
+  for (let t = axisStart; t <= axisEnd; t += step) ticks.push(t);
+  return { rows, axisStart, axisEnd, ticks, clock: startMinute !== null };
+}
