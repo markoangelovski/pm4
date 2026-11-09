@@ -197,11 +197,27 @@ export interface Timeline {
   clock: boolean;
 }
 
-/** The Timeline view (FR-TLOG-023). Stub: feat-tlog-timeline T1 implements it. */
+/** The Timeline view: each log starts where the previous one ended, from the day's start (FR-TLOG-009's
+ *  Start + logged, drawn). Without a start the axis is elapsed time from 0. `now` stretches the axis to now. */
 export function timeline(
   startMinute: number | null,
   logs: TimeLog[],
   now: number | null
 ): Timeline {
-  throw new Error("not implemented (feat-tlog-timeline)");
+  const origin = startMinute ?? 0;
+  let at = origin;
+  const rows = logs.map((log) => {
+    const from = at;
+    at += log.durationMinutes;
+    return { log, from, to: at };
+  });
+  const last = Math.max(at, startMinute !== null && now !== null ? now : at);
+  const axisStart = Math.floor(origin / 60) * 60;
+  const hours = Math.max(1, Math.ceil((last - axisStart) / 60));
+  const step = Math.ceil(hours / 6) * 60;
+  // A whole number of steps, so the last tick is the axis end.
+  const axisEnd = axisStart + Math.ceil((hours * 60) / step) * step;
+  const ticks: number[] = [];
+  for (let t = axisStart; t <= axisEnd; t += step) ticks.push(t);
+  return { rows, axisStart, axisEnd, ticks, clock: startMinute !== null };
 }

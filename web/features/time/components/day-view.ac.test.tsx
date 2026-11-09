@@ -324,9 +324,7 @@ describe("DayView (feat-tlog-web, feat-proto-sync-logged-chart)", () => {
     fireEvent.click(screen.getByRole("tab", { name: "By Task" }));
     await waitFor(() => expect(lastParam(onUrlUpdate, "view")).toBe("task"));
     fireEvent.click(screen.getByRole("tab", { name: "By Project" }));
-    await waitFor(() =>
-      expect(lastParam(onUrlUpdate, "view")).toBe("project")
-    );
+    await waitFor(() => expect(lastParam(onUrlUpdate, "view")).toBe("project"));
     fireEvent.click(screen.getByRole("tab", { name: "Timeline" }));
     await waitFor(() => expect(lastParam(onUrlUpdate, "view")).toBeNull());
     unmount();
