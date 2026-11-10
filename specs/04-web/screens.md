@@ -162,8 +162,5 @@ OQ-029
 - 2026-11-09: Prototypes `bf576dc`, `e850b50`: SCR-040's **Timeline** view, first and the default (FR-TLOG-023, feat-tlog-timeline).
 - 2026-11-09: Prototype `43d0868`: SCR-010 Running totals 8/12 and Hours by project 4/12, "Worked · Target · Booked", Running totals on the Workdays by-day dates with a shared hover (FR-RPT-005, OQ-274, feat-rpt-web D10).
 - 2026-11-09: Prototype `fc51579`: SCR-041's *Exclude from statistics* empties and disables Project and Task (FR-TLOG-018, T-0154).
-<<<<<<< HEAD
 - 2026-11-10: Prototype `db46306`: a **So far** preset (the 1st of the month..today), first in the Statistics range select and its default; absent, invalid or too-long URL ranges fall back to it. Notes and Bookings keep their presets (owner, T-0155).
-=======
 - 2026-11-10: Prototype `ccad52f`: SCR-040's Timeline grouped by project, collapsible, with per-project sums (FR-TLOG-023, feat-tlog-timeline-groups).
->>>>>>> task/T-0156
