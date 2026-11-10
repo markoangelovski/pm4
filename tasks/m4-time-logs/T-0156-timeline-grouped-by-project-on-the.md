@@ -3,7 +3,7 @@ id: T-0156
 title: Timeline grouped by project on the Logs page: the three prototype twins
 milestone: M4
 app: web
-status: ready
+status: done
 size: S
 tier: haiku
 depends_on: []
@@ -24,9 +24,35 @@ Work from the brief: `node scripts/pm4.mjs brief T-0156`. Verify with `node scri
 ## Implementation notes
 _Implementer: what changed, and anything the reviewer should look at._
 
+Copied the three prototype twins (`day.ts`, `day-view.tsx`, `log-timeline.tsx`) with `@/proto/` → `@/` and
+prettier, as the brief's commands say. `timelineGroups()` replaces the test-step stub. No other change.
+Reviewer: `web/AGENTS.md` is the dev-server change, not part of this task.
+
+`pm4 check T-0156` summary:
+```
+ac hashes: ok (3)
+scope: FAIL (1 file(s)): web/AGENTS.md (not in the Files table; dev-server change, not from this task)
+web lint: ok
+web format:check: ok
+web typecheck: ok
+web test: ok
+web build: ok
+check AC-8: twins equal: ok
+twins: ok (140 equal)
+```
+AC-1 to AC-7 pass (`day-timeline-groups`, `log-timeline-groups`, `log-timeline` tests: 12 passed).
+Lint reports one warning in `features/time/components/log-form-recent.test.tsx` (unused `projectField`), not in this task.
+
 ### Attempts
 | # | Tier | Result | Summary |
 | --- | --- | --- | --- |
+| 1 | haiku | done | Twin copy and prettier; ACs pass; check fails only on the out-of-scope `web/AGENTS.md` |
 
 ## Review
-_Filled in by `review-feature`._
+**Verdict: approve** (Opus reviewer, 2026-11-10). The implementation matches the spec (an exact twin copy), and D1–D4,
+the non-goals and the Definition of Done all check out. Every gate passes, and twins are 140 equal.
+- Minor (process): the scope FAIL is only `web/AGENTS.md`, the `next dev` agent-rules block. It stays out of the feature commit.
+- Note, not a defect: the open groups stay set when the date changes, as in By Project.
+- Manual checks for the owner: the heading at 360 px, light and dark themes, keyboard toggling, and the bars in an
+  open group lining up with the axis.
+- Tier feedback: haiku was right (a mechanical copy, one attempt).

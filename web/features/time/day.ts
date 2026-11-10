@@ -228,11 +228,15 @@ export interface TimelineGroup {
   rows: TimelineRow[];
 }
 
+/** The Timeline view by project: each group (`groupLogs(…, "project")`) with its logs' rows from `t`, so a collapsed
+ *  group draws its logs where they fall on the day's axis. */
 export function timelineGroups(
   t: Timeline,
   groups: LogGroup[]
 ): TimelineGroup[] {
-  void t;
-  void groups;
-  throw new Error("not implemented (feat-tlog-timeline-groups)");
+  const rowOf = new Map(t.rows.map((r) => [r.log.id, r]));
+  return groups.map((group) => ({
+    group,
+    rows: group.logs.flatMap((l) => rowOf.get(l.id) ?? [])
+  }));
 }
