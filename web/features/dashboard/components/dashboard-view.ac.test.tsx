@@ -165,6 +165,9 @@ const lastParam = (
   name: string
 ) => onUrlUpdate.mock.calls.at(-1)?.[0].searchParams.get(name);
 
+/** The whole of October 2026: the URL the tests about a full month open. */
+const OCTOBER = "?from=2026-10-01&to=2026-10-31";
+
 /** The ranges GET /reports/dashboard was asked for, as "from..to". */
 const requestedRanges = () =>
   api.GET.mock.calls
@@ -246,15 +249,32 @@ describe("DashboardView (feat-rpt-web)", () => {
     vi.useRealTimers();
   });
 
-  it("AC-7 FR-RPT-001 FR-RPT-002 SCR-010: heading, this month by default, the four tiles", async () => {
+  it("AC-7 FR-RPT-001 FR-RPT-002 SCR-010: heading, So far by default, the four tiles", async () => {
     renderView();
     await loaded();
     expect(
       screen.getByRole("heading", { name: "Dashboard" })
     ).toBeInTheDocument();
-    expect(screen.getByText("October 2026")).toBeInTheDocument();
-    expect(screen.getByLabelText("Time range")).toHaveTextContent("This month");
-    expect(requestedRanges()).toEqual(["2026-10-01..2026-10-31"]);
+    expect(screen.getByText("1 Oct 2026 – 9 Oct 2026")).toBeInTheDocument();
+    expect(screen.getByLabelText("Time range")).toHaveTextContent("So far");
+    expect(requestedRanges()).toEqual(["2026-10-01..2026-10-09"]);
+    fireEvent.click(screen.getByLabelText("Time range"));
+    expect(
+      (await screen.findAllByRole("option")).map((o) => o.textContent?.trim())
+    ).toEqual([
+      "So far",
+      "This month",
+      "Last month",
+      "Today",
+      "Last 7 days",
+      "Last 30 days",
+      "Last 90 days",
+      "This year",
+      "Custom range"
+    ]);
+    fireEvent.keyDown(document.activeElement ?? document.body, {
+      key: "Escape"
+    });
 
     await waitFor(() => expect(projectsTile()).toHaveTextContent("12"));
     expect(projectsTile()).toHaveTextContent("Projects");
@@ -275,7 +295,7 @@ describe("DashboardView (feat-rpt-web)", () => {
     expect(avgStartTile()).toHaveTextContent("Earliest 08:00 · latest 09:15");
   });
 
-  it("AC-8 FR-RPT-001 OQ-130 SCR-010: presets and a picked range in the URL, this month clears it, a too-long URL range falls back", async () => {
+  it("AC-8 FR-RPT-001 OQ-130 SCR-010: presets and a picked range in the URL, So far clears it, a too-long URL range falls back", async () => {
     const view = renderView();
     await loaded();
 
@@ -292,16 +312,23 @@ describe("DashboardView (feat-rpt-web)", () => {
     ).toBeInTheDocument();
 
     await chooseRange("This month");
+    await waitFor(() =>
+      expect(lastParam(view.onUrlUpdate, "from")).toBe("2026-10-01")
+    );
+    expect(lastParam(view.onUrlUpdate, "to")).toBe("2026-10-31");
+    expect(await screen.findByText("October 2026")).toBeInTheDocument();
+
+    await chooseRange("So far");
     await waitFor(() => expect(lastParam(view.onUrlUpdate, "from")).toBeNull());
     expect(lastParam(view.onUrlUpdate, "to")).toBeNull();
     view.unmount();
 
-    // Over 366 days in the URL → this month.
+    // Over 366 days in the URL → So far.
     api.GET.mockClear();
     const tooLong = renderView("?from=2025-01-01&to=2026-10-09");
     await loaded();
-    expect(requestedRanges()).toEqual(["2026-10-01..2026-10-31"]);
-    expect(screen.getByText("October 2026")).toBeInTheDocument();
+    expect(requestedRanges()).toEqual(["2026-10-01..2026-10-09"]);
+    expect(screen.getByText("1 Oct 2026 – 9 Oct 2026")).toBeInTheDocument();
     tooLong.unmount();
 
     // Pick dates: 1 Sep and 9 Oct, then Apply.
@@ -334,7 +361,7 @@ describe("DashboardView (feat-rpt-web)", () => {
   });
 
   it("AC-9 FR-RPT-004 FR-RPT-005 SCR-010 OQ-258 OQ-259: worked, target (the range's weekdays) and booked; the running totals' legend", async () => {
-    renderView();
+    renderView(OCTOBER);
     await loaded();
     const summary = summaryCard();
     expect(summary).toHaveTextContent("11h 30m");
@@ -353,7 +380,7 @@ describe("DashboardView (feat-rpt-web)", () => {
   });
 
   it("AC-14 FR-RPT-005 OQ-250 OQ-251 OQ-258 SCR-010: running totals' legend shows the range totals; nothing logged", async () => {
-    const first = renderView();
+    const first = renderView(OCTOBER);
     await loaded();
     const running = runningCard();
     expect(running).toHaveTextContent(/Worked\s*11h 30m/);
@@ -374,7 +401,7 @@ describe("DashboardView (feat-rpt-web)", () => {
       ],
       projects: []
     };
-    renderView();
+    renderView(OCTOBER);
     await loaded();
     const empty = runningCard();
     expect(empty).toHaveTextContent(/Worked\s*0h/);
@@ -386,7 +413,7 @@ describe("DashboardView (feat-rpt-web)", () => {
   });
 
   it("AC-10 FR-RPT-006 SCR-010: hours by project in API order, links, deleted and the two buckets; nothing logged", async () => {
-    const first = renderView();
+    const first = renderView(OCTOBER);
     await loaded();
     const card = projectsCard();
     const text = card.textContent ?? "";
@@ -427,14 +454,14 @@ describe("DashboardView (feat-rpt-web)", () => {
     first.unmount();
 
     report = { ...ownerReport, projects: [] };
-    renderView();
+    renderView(OCTOBER);
     expect(
       await screen.findByText("Nothing logged in this range.")
     ).toBeInTheDocument();
   });
 
   it("AC-11 FR-RPT-003 SCR-010 OQ-261: the Workdays card by day and its table, with the Non-prod column", async () => {
-    renderView();
+    renderView(OCTOBER);
     await loaded();
     expect(screen.getByText(/by day/)).toBeInTheDocument();
 
@@ -470,7 +497,7 @@ describe("DashboardView (feat-rpt-web)", () => {
         }
       ]
     };
-    renderView();
+    renderView(OCTOBER);
     await loaded();
 
     fireEvent.click(screen.getByRole("tab", { name: "Table" }));
@@ -508,7 +535,7 @@ describe("DashboardView (feat-rpt-web)", () => {
 
   it("AC-12 SCR-010: report pending → skeletons; report error → Retry; a failed project count → —", async () => {
     reportState = "pending";
-    const pending = renderView();
+    const pending = renderView(OCTOBER);
     await waitFor(() =>
       expect(requestedRanges()).toEqual(["2026-10-01..2026-10-31"])
     );
@@ -522,7 +549,7 @@ describe("DashboardView (feat-rpt-web)", () => {
 
     reportState = "fail";
     api.GET.mockClear();
-    const failed = renderView();
+    const failed = renderView(OCTOBER);
     expect(
       await screen.findByText(
         "Couldn't load the dashboard.",
@@ -539,7 +566,7 @@ describe("DashboardView (feat-rpt-web)", () => {
     failed.unmount();
 
     projectsFail = true;
-    renderView();
+    renderView(OCTOBER);
     await loaded();
     await waitFor(() => expect(projectsTile()).toHaveTextContent("—"), {
       timeout: 4000

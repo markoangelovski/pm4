@@ -26,7 +26,12 @@ export const RANGE_PRESETS = [
 ] as const;
 export type RangePreset = (typeof RANGE_PRESETS)[number];
 
-export const PRESET_LABELS: Record<RangePreset, string> = {
+/** Statistics' presets: So far (the default) first, then the shared presets. Notes and Bookings use RANGE_PRESETS. */
+export const STATS_PRESETS = ["so-far", ...RANGE_PRESETS] as const;
+export type StatsPreset = (typeof STATS_PRESETS)[number];
+
+export const PRESET_LABELS: Record<StatsPreset, string> = {
+  "so-far": "So far",
   "this-month": "This month",
   "last-month": "Last month",
   today: "Today",
@@ -53,9 +58,11 @@ function monthOf(date: string): DateRange {
   };
 }
 
-/** this-month: 1st–last of today's month; last-month: the previous month; today: today..today; last-7/30/90: today−6/29/89..today; this-year: 1 Jan..today. */
-export function presetRange(preset: RangePreset, today: string): DateRange {
+/** so-far: the 1st of today's month..today; this-month: 1st–last of today's month; last-month: the previous month; today: today..today; last-7/30/90: today−6/29/89..today; this-year: 1 Jan..today. */
+export function presetRange(preset: StatsPreset, today: string): DateRange {
   switch (preset) {
+    case "so-far":
+      return { from: `${today.slice(0, 8)}01`, to: today };
     case "this-month":
       return monthOf(today);
     case "last-month":
@@ -73,13 +80,14 @@ export function presetRange(preset: RangePreset, today: string): DateRange {
   }
 }
 
-/** The preset a range equals, or null for a custom range. */
+/** The first of `presets` a range equals, or null for a custom range. */
 export function matchPreset(
   range: DateRange,
-  today: string
-): RangePreset | null {
+  today: string,
+  presets: readonly StatsPreset[] = RANGE_PRESETS
+): StatsPreset | null {
   return (
-    RANGE_PRESETS.find((p) => {
+    presets.find((p) => {
       const r = presetRange(p, today);
       return r.from === range.from && r.to === range.to;
     }) ?? null
@@ -100,17 +108,18 @@ const isWorkDate = (value: string | null): value is string => {
   return isValid(date) && format(date, "yyyy-MM-dd") === value;
 };
 
-/** Real dates, from ≤ to, not too long → that range; anything else (also a missing value) → presetRange("this-month", today). Future dates are allowed. */
+/** Real dates, from ≤ to, not too long → that range; anything else (also a missing value) → presetRange(fallback, today). Future dates are allowed. */
 export function parseRange(
   from: string | null,
   to: string | null,
-  today: string
+  today: string,
+  fallback: StatsPreset = "this-month"
 ): DateRange {
   if (isWorkDate(from) && isWorkDate(to) && from <= to) {
     const range = { from, to };
     if (!isRangeTooLong(range)) return range;
   }
-  return presetRange("this-month", today);
+  return presetRange(fallback, today);
 }
 
 /** Every calendar day of the range, oldest first. */

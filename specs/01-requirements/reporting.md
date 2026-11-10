@@ -3,7 +3,7 @@ id: req-reporting
 title: Dashboard and Reporting
 status: approved
 owner: Marko Angelovski
-last_updated: 2026-11-09
+last_updated: 2026-11-10
 related: [req-time-logs, req-bookings, api-endpoints, web-screens, OQ-029, OQ-126, OQ-127, OQ-128, OQ-129, OQ-130, OQ-212, OQ-250, OQ-251, OQ-258, OQ-259, OQ-260, OQ-261, OQ-274]
 ---
 
@@ -21,7 +21,7 @@ OQ-126); booked hours by booking date (that's the Bookings page, FR-BOOK-002).
 
 ## Shared rules
 - A range is an **inclusive work-date range** (`from`, `to`, `YYYY-MM-DD`), at most 366 days apart. "Today" is in the user's
-  time zone (FR-AUTH-006). The range is kept in the URL (`?from=&to=`); absent, invalid or too long → **this month**.
+  time zone (FR-AUTH-006). The range is kept in the URL (`?from=&to=`); absent, invalid or too long → **so far** (the 1st of this month to today).
 - **Worked**: the sum of the durations of the logs whose work date is in the range, **leaving out the logs excluded from
   statistics** (FR-TLOG-018). Their minutes are **Non-prod**: shown in the Workdays chart (FR-RPT-003) and in Hours by project
   (FR-RPT-006), counted in no total, tile, target comparison or running total (OQ-261).
@@ -37,18 +37,20 @@ OQ-126); booked hours by booking date (that's the Bookings page, FR-BOOK-002).
 
 ### FR-RPT-001: Date range
 **Priority:** Must
-**Statement:** A preset select offers **This month** (default: the 1st to the last day of the month, also the days still
+**Statement:** A preset select offers **So far** (default: the 1st of this month to today; weekdays without work and
+weekends are treated as in any other range), **This month** (the 1st to the last day of the month, also the days still
 ahead), **Last month**, **Today**, **Last 7 days**, **Last 30 days**, **Last 90 days** (each ending today), **This year** (1 January to
 today) and **Custom range**. It shows the preset the range matches, else *Custom range*. Next to it, a button with the range's
 dates opens a two-month calendar; **Apply** applies the picked range (a start alone = one day). Apply is disabled until a start
 is picked, and while the picked range is over 366 days, with the hint "Pick at most 366 days." (OQ-130). Under the heading,
 the range is named: "October 2026" for a whole calendar month, else "1 Sep 2026 – 9 Oct 2026".
 **Acceptance criteria:**
-- Given I open `/app` on 9 October 2026 without parameters, then the range is 1–31 October 2026, the select shows *This month*
-  and the heading shows "October 2026".
+- Given I open `/app` on 9 October 2026 without parameters, then the range is 1–9 October 2026, the select shows *So far*
+  and the heading shows "1 Oct 2026 – 9 Oct 2026". Picking *This month* sets `?from=2026-10-01&to=2026-10-31` and the heading
+  shows "October 2026".
 - Given I pick *Today*, then the URL is `?from=2026-10-09&to=2026-10-09`.
-- Given I pick *Last 7 days*, then the URL is `?from=2026-10-03&to=2026-10-09`; picking *This month* again removes both parameters.
-- Given `?from=2025-01-01&to=2026-10-09` (over 366 days), then the dashboard shows this month.
+- Given I pick *Last 7 days*, then the URL is `?from=2026-10-03&to=2026-10-09`; picking *So far* again removes both parameters.
+- Given `?from=2025-01-01&to=2026-10-09` (over 366 days), then the dashboard shows so far.
 
 ### FR-RPT-002: Count tiles
 **Priority:** Must
@@ -139,3 +141,4 @@ None.
 - 2026-11-06: Prototype `4cb07ca`: a **Today** preset (today..today) between Last month and Last 7 days, in the Statistics and Bookings range selects (owner, T-0144).
 - 2026-11-09: FR-RPT-005: Running totals uses the Workdays by-day dates (a past date without logs keeps its place, without a point) and shares the hover with Workdays (OQ-274, prototype `43d0868`). Back to `review`.
 - 2026-11-09: Approved by the owner.
+- 2026-11-10: Prototype `db46306`: a **So far** preset (the 1st of the month..today), first in the Statistics range select and its default; absent, invalid or too-long URL ranges fall back to it. Notes and Bookings keep their presets (owner, T-0155).

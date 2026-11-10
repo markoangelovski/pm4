@@ -44,7 +44,7 @@ The To-dos tab shows the number of open to-dos (all of them, whatever the toolba
 **Priority:** Must
 **Statement:** Both tabs share one toolbar, kept in the URL (OQ-232): a search (a note's title and body, a to-do's text,
 case-insensitive, applied 300 ms after typing stops); a filter **General** / **All notes** or **All to-dos** / each project by title
-(a project's items include its tasks'); a sort; and a time range: the Statistics presets plus **All time** (default), filtering on the sort's
+(a project's items include its tasks'); a sort; and a time range: the Statistics presets except So far, plus **All time** (default), filtering on the sort's
 date in the user's time zone. Each tab has its own default filter and sort, and switching tabs resets both (the search and range stay)
 (OQ-264). Notes: **General**; sorts **Title A–Z** (default: case-insensitive, untitled notes last, most recently edited first; its range is on
 the last edit), **Last edited, newest**, **Last edited, oldest**, **Created, newest**, **Created, oldest**. To-dos: **All to-dos**; sorts

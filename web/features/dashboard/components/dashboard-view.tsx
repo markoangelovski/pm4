@@ -18,6 +18,7 @@ import {
   parseRange,
   presetRange,
   rangeLabel,
+  STATS_PRESETS,
   weekdaysSoFar,
   type DateRange
 } from "../range";
@@ -35,7 +36,7 @@ const COLORS =
   "[--dash-worked:#2a78d6] [--dash-booked:#1baf7a] [--dash-start:#eb6834] [--dash-nonprod:#a1a1aa] " +
   "dark:[--dash-worked:#3987e5] dark:[--dash-booked:#199e70] dark:[--dash-start:#d95926] dark:[--dash-nonprod:#71717a]";
 
-/** The dashboard page body (SCR-010): counts, then the range's workdays and hours. The range is in the URL (`from`, `to`); default this month. */
+/** The dashboard page body (SCR-010): counts, then the range's workdays and hours. The range is in the URL (`from`, `to`); default So far (the 1st of this month..today). */
 export function DashboardView() {
   const me = useMe();
   const timeZone = me.data?.timeZone ?? "UTC";
@@ -46,7 +47,7 @@ export function DashboardView() {
     { history: "replace" }
   );
   const range = useMemo(
-    () => parseRange(query.from, query.to, today),
+    () => parseRange(query.from, query.to, today, "so-far"),
     [query.from, query.to, today]
   );
   const report = useDashboardReport(range.from, range.to);
@@ -65,7 +66,7 @@ export function DashboardView() {
   }, [data, range, target, today]);
 
   const onChange = (next: DateRange) => {
-    const def = presetRange("this-month", today);
+    const def = presetRange("so-far", today);
     void setQuery(
       next.from === def.from && next.to === def.to
         ? { from: null, to: null }
@@ -83,7 +84,12 @@ export function DashboardView() {
           <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
           <p className="text-sm text-muted-foreground">{rangeLabel(range)}</p>
         </div>
-        <RangePicker value={range} today={today} onChange={onChange} />
+        <RangePicker
+          value={range}
+          today={today}
+          presets={STATS_PRESETS}
+          onChange={onChange}
+        />
       </div>
       <KpiTiles
         projects={projectCount.count}

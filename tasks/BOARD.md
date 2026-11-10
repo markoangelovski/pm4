@@ -158,5 +158,6 @@
 | [T-0152](m4-time-logs/T-0152-timeline-view-on-the-logs-page.md) | Timeline view on the Logs page: the three prototype twins | M4 | web | S | done | — |
 | [T-0153](m5-reporting/T-0153-card-widths-worked-target-booked-running.md) | Card widths, "Worked · Target · Booked", Running totals on the Workdays dates with a shared hover (D10): five prototype twins | M5 | web | S | done | T-0131 |
 | [T-0154](m4-time-logs/T-0154-exclude-from-statistics-empties-project-task.md) | Exclude from statistics empties and disables Project and Task | M4 | web | S | done | — |
+| [T-0155](m5-reporting/T-0155-so-far-range-preset.md) | So far range preset, first and default in Statistics | M5 | web | S | review | — |
 
 M0–M6 are done. Later follow-ups are filed under the milestone they extend.
