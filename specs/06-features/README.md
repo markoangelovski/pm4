@@ -74,3 +74,4 @@ A feature spec links to those. It doesn't copy them.
 | Landing page redesign: a full marketing page at `/` with a light/dark switch | [land-redesign.md](land-redesign.md) | M7 | approved |
 | Documentation page: Versioning and Changelog tabs, with a changelog built by every deploy | [shell-documentation.md](shell-documentation.md) | M1 | review |
 | Logs: Timeline view, the new default | [tlog-timeline.md](tlog-timeline.md) | M4 | approved |
+| Logs: Timeline grouped by project | [tlog-timeline-groups.md](tlog-timeline-groups.md) | M4 | approved |

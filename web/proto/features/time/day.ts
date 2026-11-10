@@ -221,3 +221,22 @@ export function timeline(
   for (let t = axisStart; t <= axisEnd; t += step) ticks.push(t);
   return { rows, axisStart, axisEnd, ticks, clock: startMinute !== null };
 }
+
+export interface TimelineGroup {
+  group: LogGroup;
+  /** The group's logs' rows, in API order, with their places on the day's axis. */
+  rows: TimelineRow[];
+}
+
+/** The Timeline view by project: each group (`groupLogs(…, "project")`) with its logs' rows from `t`, so a collapsed
+ *  group draws its logs where they fall on the day's axis. */
+export function timelineGroups(
+  t: Timeline,
+  groups: LogGroup[]
+): TimelineGroup[] {
+  const rowOf = new Map(t.rows.map((r) => [r.log.id, r]));
+  return groups.map((group) => ({
+    group,
+    rows: group.logs.flatMap((l) => rowOf.get(l.id) ?? [])
+  }));
+}

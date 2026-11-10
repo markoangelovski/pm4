@@ -3,7 +3,7 @@ id: req-time-logs
 title: Time Capture (Workdays and Time Logs)
 status: review
 owner: Marko Angelovski
-last_updated: 2026-11-09
+last_updated: 2026-11-10
 related: [req-projects, req-tasks, req-reporting, api-endpoints, api-data-model, web-screens]
 ---
 
@@ -86,8 +86,13 @@ set) and their title. Rows in **Non-prod** show their project and task, and thei
 
 ### FR-TLOG-023: Timeline view
 **Priority:** Must
-**Statement:** Draws the day's logs as a timeline, in the order they were entered. Each log is a row: its dot (the
-FR-TLOG-002 colour), the project and task (when set; FR-TLOG-014 for deleted ones), the title in bold (when set), the
+**Statement:** Draws the day's logs as a timeline, grouped by project as in By project (FR-TLOG-003: the projects
+in first-log order, then **Unsorted**, then **Non-prod**). Each group is collapsible, all collapsed when the page
+opens, with an **Expand all** / **Collapse all** button as the other grouped views; its heading shows the project's
+icon (not for Unsorted, Non-prod or a deleted project), the name (FR-TLOG-014 for a deleted one), the number of logs
+and the sum of all its logs. A collapsed group draws all its logs on one bar under the heading, each where it falls on
+the day's axis, in its own colour; an open one shows its logs, in the order they were entered. Each log is a row: its dot (the
+FR-TLOG-002 colour), the project (only outside a project's group) and task (when set; FR-TLOG-014 for deleted ones), the title in bold (when set), the
 log text, a **Non-prod** badge (when excluded from statistics), its time range and its duration; under it a bar on a
 shared time axis. The first log starts at the day's start (FR-TLOG-009) and each next one where the previous one
 ended, so the last one ends at **Start + logged**. The axis runs from the start's whole hour to a whole number of tick
@@ -100,6 +105,7 @@ has an elapsed-time axis from 0 (`0h`, `1h`…), ranges as durations since the f
 - Given start 08:00 and logs of 1 h, 15 min and 45 min, then the rows show 08:00–09:00, 09:00–09:15 and 09:15–10:00, and the axis 08:00, 09:00, 10:00.
 - Given the same day viewed at 14:20, then the axis runs 08:00 to 16:00 every 2 hours and the now line is at 14:20.
 - Given a day without a start and logs of 30 min and 1 h 45 min, then the rows show 0h–30m and 30m–2h 15m, and the axis 0h, 1h, 2h, 3h.
+- Given start 08:00 and logs of 1 h on Manhatan, 30 min on Nvidia and 15 min on Manhatan, then the Timeline shows Manhatan (1h 15m, 2 logs) then Nvidia (30m, 1 log), both collapsed; Manhatan's bar has 08:00–09:00 and 09:30–09:45, with a gap where the Nvidia log was.
 
 ### FR-TLOG-004: Add log
 **Priority:** Must
@@ -375,3 +381,4 @@ None.
 - 2026-11-06: FR-TLOG-022: desktop notifications for the reminder to log time, opt-in per browser (owner, OQ-266, OQ-267, prototypes `bb8120d`, `06e1004`, feat-tlog-desktop-notifications).
 - 2026-11-09: FR-TLOG-023 Timeline view, the new default and first in the view switch (FR-TLOG-001); per-log clock ranges are shown there, derived, still not stored (owner, prototypes `bf576dc`, `e850b50`, feat-tlog-timeline). Back to `review`.
 - 2026-11-09: FR-TLOG-018: ticking *Exclude from statistics* in the log form empties and disables Project and Task (owner, prototype `fc51579`, T-0154).
+- 2026-11-10: FR-TLOG-023 Timeline grouped by project: collapsible groups with icon, log count and sum; a collapsed group draws its logs on one bar (owner, prototype `ccad52f`, feat-tlog-timeline-groups).

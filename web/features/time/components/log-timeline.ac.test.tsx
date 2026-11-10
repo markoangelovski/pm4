@@ -167,9 +167,10 @@ const lastParam = (
   name: string
 ) => onUrlUpdate.mock.calls.at(-1)?.[0].searchParams.get(name);
 
-/** The Timeline panel's rows, once the day has loaded. */
+/** The Timeline panel's rows, once the day has loaded and its groups are open (feat-tlog-timeline-groups). */
 async function timelineRows() {
   const panel = await screen.findByRole("tabpanel");
+  fireEvent.click(await screen.findByRole("button", { name: "Expand all" }));
   const rows = await within(panel).findAllByRole("listitem");
   return { panel, rows };
 }
@@ -202,7 +203,7 @@ describe("Logs: Timeline view (feat-tlog-timeline)", () => {
     vi.useRealTimers();
   });
 
-  it("AC-5 FR-TLOG-001 FR-TLOG-023 SCR-040: the tabs, Timeline first and the default, no Expand all; ?view=project selects By Project", async () => {
+  it("AC-5 FR-TLOG-001 FR-TLOG-023 SCR-040: the tabs, Timeline first and the default, with Expand all (feat-tlog-timeline-groups); ?view=project selects By Project", async () => {
     const first = renderView();
     await screen.findByText("Wednesday, 7 October 2026");
     const timelineTab = await screen.findByRole("tab", { name: "Timeline" });
@@ -213,10 +214,9 @@ describe("Logs: Timeline view (feat-tlog-timeline)", () => {
       "Sequential"
     ]);
     expect(timelineTab).toHaveAttribute("aria-selected", "true");
-    await timelineRows();
     expect(
-      screen.queryByRole("button", { name: "Expand all" })
-    ).not.toBeInTheDocument();
+      await screen.findByRole("button", { name: "Expand all" })
+    ).toBeInTheDocument();
     first.unmount();
 
     renderView("?view=project");
@@ -253,9 +253,12 @@ describe("Logs: Timeline view (feat-tlog-timeline)", () => {
       expect(within(row).getByText(range)).toBeInTheDocument();
       expect(within(row).getByText(duration)).toBeInTheDocument();
     });
-    expect(rows[0]).toHaveTextContent("Manhatan · Specifications 01");
+    expect(rows[0]).toHaveTextContent("Specifications 01");
+    expect(rows[0]).not.toHaveTextContent("Manhatan");
     expect(within(rows[0]).getByText(/^Review\s*$/)).toBeInTheDocument();
-    expect(within(panel).getAllByText("Non-prod")).toHaveLength(1);
+    expect(
+      rows.filter((r) => within(r).queryByText("Non-prod") !== null)
+    ).toHaveLength(1);
     expect(within(rows[3]).getByText("Non-prod")).toBeInTheDocument();
     expect(ticks(panel, /^\d\d:\d\d$/)).toEqual([
       "08:00",
@@ -304,7 +307,7 @@ describe("Logs: Timeline view (feat-tlog-timeline)", () => {
     renderView();
     const { panel, rows } = await timelineRows();
     expect(rows).toHaveLength(5);
-    const row = rows[4];
+    const row = rows.find((r) => r.textContent?.includes("Old fixes"))!;
     expect(row).toHaveTextContent("Old fixes");
     expect(row).toHaveTextContent("Old site");
     expect(row).toHaveTextContent("Old task");

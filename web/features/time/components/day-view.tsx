@@ -90,7 +90,10 @@ export function DayView() {
     label: `the logs of ${formatWorkDate(date)}`,
     disabled: !day || day.logs.length === 0
   });
-  const [open, setOpen] = useState<Record<"project" | "task", string[]>>({
+  const [open, setOpen] = useState<
+    Record<"timeline" | "project" | "task", string[]>
+  >({
+    timeline: [],
     project: [],
     task: []
   });
@@ -137,11 +140,16 @@ export function DayView() {
     project: groupLogs(day.logs, "project"),
     task: groupLogs(day.logs, "task")
   };
-  const grouped = view === "project" || view === "task";
-  const keys = grouped ? groups[view].map((g) => g.key) : [];
+  // Timeline groups by project too (its own open groups).
+  const grouped = view !== "sequential";
+  const keys = grouped
+    ? groups[view === "task" ? "task" : "project"].map((g) => g.key)
+    : [];
   const allOpen =
     keys.length > 0 &&
-    keys.every((k) => open[view as "project" | "task"].includes(k));
+    keys.every((k) =>
+      open[view as "timeline" | "project" | "task"].includes(k)
+    );
 
   return (
     <div className="space-y-4">
@@ -224,9 +232,12 @@ export function DayView() {
               <TabsContent value="timeline">
                 <LogTimeline
                   day={day}
+                  groups={groups.project}
                   colors={colors}
                   isToday={date === today}
                   timeZone={timeZone}
+                  open={open.timeline}
+                  onOpenChange={(v) => setOpen((o) => ({ ...o, timeline: v }))}
                 />
               </TabsContent>
               <TabsContent value="sequential">
