@@ -3,7 +3,7 @@ id: T-0155
 title: So far range preset, first and default in Statistics
 milestone: M5
 app: web
-status: review
+status: done
 size: S
 tier: haiku
 depends_on: []
@@ -49,4 +49,4 @@ Main session. Copied the prototype's change (`db46306`) to the app; updated the 
 | --- | --- | --- | --- |
 
 ## Review
-_The owner's review (quick lane)._
+Owner reviewed and approved the diff (2026-11-10); committed `c665c09`.
