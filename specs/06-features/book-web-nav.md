@@ -20,7 +20,7 @@ Production's Bookings page (SCR-045) catches up with the confirmed prototype (`c
 ## Decisions
 | # | Decision | Source |
 | --- | --- | --- |
-| D1 | Presets = the Statistics presets (`features/dashboard/range.ts`) with their end cut at today, plus **Custom range**. A preset applies at once; Custom range opens the calendar; the calendar and **Submit** stay. | OQ-225 (owner, 2026-10-24) |
+| D1 | Presets = the Statistics presets (`RANGE_PRESETS` in `features/dashboard/range.ts`; not So far, which is Statistics-only since T-0155) with their end cut at today, plus **Custom range**. A preset applies at once; Custom range opens the calendar; the calendar and **Submit** stay. | OQ-225 (owner, 2026-10-24) |
 | D2 | `?project=` = the project id, or `deleted:<title>` for a deleted one. Options: All projects, then the projects with logs or bookings in the range (deleted too), by title. Filtered, days and all six cards count only that project's logs. A value not among the options counts as All projects. Filtered in the browser. | OQ-226 (owner, 2026-10-24) |
 | D3 | **Expand all** / **Collapse all** at the right of each day's date bar; the first column header always reads **Project**. | OQ-227 (owner, 2026-10-24) |
 | D4 | Day sections have the id `day-YYYY-MM-DD`; both ends of a booking link to each other with `#day-<day>.log-<logId>.to-<bookingDate>`. Listed day → only the hash changes; else that day's month up to today, keeping `project`. | OQ-228 (owner, 2026-10-24) |

@@ -26,14 +26,14 @@ import {
   matchPreset,
   presetRange,
   type DateRange,
-  type RangePreset
+  type StatsPreset
 } from "../range";
 
 const iso = (d: Date) => format(d, "yyyy-MM-dd");
 const CUSTOM = "custom";
 const ALL_TIME = "all-time";
-const ITEMS = [
-  ...RANGE_PRESETS.map((p) => ({
+const presetItems = (presets: readonly StatsPreset[]) => [
+  ...presets.map((p) => ({
     value: p as string,
     label: PRESET_LABELS[p]
   })),
@@ -41,12 +41,13 @@ const ITEMS = [
 ];
 
 /**
- * The range control (SCR-010): a preset select (This month by default) and the range as a calendar popover; the
+ * The range control (SCR-010): a preset select and the range as a calendar popover; the
  * calendar applies a custom range of at most 366 days (OQ-130). With `allowAll`, the select starts with All time
- * (`value` null: no range, the calendar button reads "Any date").
+ * (`value` null: no range, the calendar button reads "Any date"). `presets` defaults to the shared RANGE_PRESETS;
+ * Statistics passes STATS_PRESETS (So far first).
  */
 export function RangePicker(
-  props: { today: string } & (
+  props: { today: string; presets?: readonly StatsPreset[] } & (
     | {
         allowAll?: false;
         value: DateRange;
@@ -59,15 +60,15 @@ export function RangePicker(
       }
   )
 ) {
-  const { today, allowAll, value: range } = props;
+  const { today, allowAll, value: range, presets = RANGE_PRESETS } = props;
   const emit = (next: DateRange | null) => {
     if (props.allowAll) props.onChange(next);
     else if (next) props.onChange(next);
   };
   const items = allowAll
-    ? [{ value: ALL_TIME, label: "All time" }, ...ITEMS]
-    : ITEMS;
-  const preset = range ? matchPreset(range, today) : null;
+    ? [{ value: ALL_TIME, label: "All time" }, ...presetItems(presets)]
+    : presetItems(presets);
+  const preset = range ? matchPreset(range, today, presets) : null;
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState<DayPickerRange | undefined>();
   const start = draft?.from ? iso(draft.from) : null;
@@ -93,7 +94,7 @@ export function RangePicker(
         onValueChange={(v) => {
           if (v === CUSTOM) openCalendar(true);
           else if (v === ALL_TIME) emit(null);
-          else if (v) emit(presetRange(v as RangePreset, today));
+          else if (v) emit(presetRange(v as StatsPreset, today));
         }}
       >
         <SelectTrigger aria-label="Time range" className="w-40 cursor-pointer">

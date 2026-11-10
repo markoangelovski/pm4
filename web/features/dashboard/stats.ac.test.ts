@@ -3,6 +3,7 @@ import {
   MAX_RANGE_DAYS,
   PRESET_LABELS,
   RANGE_PRESETS,
+  STATS_PRESETS,
   isRangeTooLong,
   matchPreset,
   parseRange,
@@ -56,6 +57,16 @@ describe("dashboard range (feat-rpt-web)", () => {
       "Last 90 days",
       "This year"
     ]);
+    expect(STATS_PRESETS.map((p) => PRESET_LABELS[p])).toEqual([
+      "So far",
+      "This month",
+      "Last month",
+      "Today",
+      "Last 7 days",
+      "Last 30 days",
+      "Last 90 days",
+      "This year"
+    ]);
     expect(MAX_RANGE_DAYS).toBe(366);
 
     const expected: Record<string, DateRange> = {
@@ -75,6 +86,24 @@ describe("dashboard range (feat-rpt-web)", () => {
       matchPreset({ from: "2026-10-02", to: "2026-10-09" }, TODAY)
     ).toBeNull();
 
+    // So far (Statistics only): the 1st of the month..today; RANGE_PRESETS (Notes, Bookings) don't match it.
+    const soFar = { from: "2026-10-01", to: "2026-10-09" };
+    expect(presetRange("so-far", TODAY)).toEqual(soFar);
+    expect(presetRange("so-far", "2026-11-01")).toEqual({
+      from: "2026-11-01",
+      to: "2026-11-01"
+    });
+    expect(matchPreset(soFar, TODAY)).toBeNull();
+    expect(matchPreset(soFar, TODAY, STATS_PRESETS)).toBe("so-far");
+    // On a month's last day So far and This month are one range: the first in the list wins.
+    expect(
+      matchPreset(
+        { from: "2026-10-01", to: "2026-10-31" },
+        "2026-10-31",
+        STATS_PRESETS
+      )
+    ).toBe("so-far");
+
     // parseRange: kept as given.
     expect(parseRange("2025-10-08", "2026-10-09", TODAY)).toEqual({
       from: "2025-10-08",
@@ -90,6 +119,11 @@ describe("dashboard range (feat-rpt-web)", () => {
     expect(parseRange("2026-02-30", "2026-03-05", TODAY)).toEqual(october);
     expect(parseRange("2026-10-09", "2026-10-01", TODAY)).toEqual(october);
     expect(parseRange("2025-10-07", "2026-10-09", TODAY)).toEqual(october);
+    // parseRange with a fallback (Statistics: so-far).
+    expect(parseRange(null, null, TODAY, "so-far")).toEqual(soFar);
+    expect(parseRange("2025-10-07", "2026-10-09", TODAY, "so-far")).toEqual(
+      soFar
+    );
 
     expect(isRangeTooLong({ from: "2025-10-08", to: "2026-10-09" })).toBe(
       false

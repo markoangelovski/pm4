@@ -35,7 +35,7 @@ bookings on the Logs day view.
 ### FR-BOOK-001: Bookings page and time range
 **Priority:** Must
 **Statement:** `/app/bookings` lists, oldest first, every date in the selected range that has logs, or that a booking of a log worked on another
-day is dated. The range is picked with a preset (the Statistics presets, each ending today at the latest), applied at once, or with a start and
+day is dated. The range is picked with a preset (the Statistics presets except So far, each ending today at the latest), applied at once, or with a start and
 end date in one calendar (future dates disabled) applied with **Submit** (**Custom range** opens it, OQ-225). It defaults to
 the current month up to today and is kept in the URL (OQ-125). The heading names the month ("October 2026") when the range is within one month,
 else both dates. A range with no such dates shows an empty state.
