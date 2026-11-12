@@ -18,10 +18,13 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import { formatDuration } from "@/lib/time";
+import { cn } from "@/lib/utils";
 import { SyncFlag } from "@/features/integrations/components/sync-flag";
 import { routes } from "@/lib/routes";
+import type { LogLink } from "../last-log-link";
 import type { Ref, TimeLog } from "../types";
 import { DeletedName } from "./deleted-marker";
+import { LogLinkButton, logLink } from "./group-log-button";
 import { DeleteLogDialog } from "./delete-log-dialog";
 import { LogFormDialog } from "./log-form-dialog";
 
@@ -37,23 +40,25 @@ function RefLink({ ref_, href }: { ref_: Ref; href: string }) {
   );
 }
 
-/** SCR-042: one log. `show` (from `rowFields`) hides what the surrounding group already names. */
+/** SCR-042: one log. `show` (from `rowFields`) hides what the surrounding group already names. With `onLog`, a live
+ *  task gets a + beside its name: a new log preset to that task. */
 export function LogRow({
   log,
   color,
   nested,
-  show = { title: true, project: true, task: true }
+  show = { title: true, project: true, task: true },
+  onLog
 }: {
   log: TimeLog;
   color?: string;
   nested?: boolean;
   show?: { title: boolean; project: boolean; task: boolean };
+  onLog?: (link: LogLink) => void;
 }) {
-  const [editing, setEditing] = useState(false);
-  const [deleting, setDeleting] = useState(false);
   const project = show.project ? log.project : null;
   const task = show.task ? log.task : null;
   const title = show.title ? log.title : null;
+  const taskLink = task && onLog ? logLink(log, "task") : null;
   return (
     <div
       className={
@@ -110,6 +115,13 @@ export function LogRow({
               <span className="flex items-center gap-1.5">
                 <ListTodo className="size-3.5 shrink-0" />
                 <RefLink ref_={task} href={routes.app.task} />
+                {taskLink && onLog ? (
+                  <LogLinkButton
+                    link={taskLink}
+                    onLog={onLog}
+                    className="-my-1"
+                  />
+                ) : null}
               </span>
             ) : null}
           </p>
@@ -118,6 +130,23 @@ export function LogRow({
       <span className="shrink-0 pt-0.5 text-sm font-medium tabular-nums">
         {formatDuration(log.durationMinutes)}
       </span>
+      <LogActions log={log} className="-mr-2" />
+    </div>
+  );
+}
+
+/** A log's ⋯ menu: Edit (the log form) and Delete (with confirmation). Used by LogRow and the Timeline's rows. */
+export function LogActions({
+  log,
+  className
+}: {
+  log: TimeLog;
+  className?: string;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  return (
+    <>
       <DropdownMenu>
         <DropdownMenuTrigger
           render={
@@ -125,7 +154,7 @@ export function LogRow({
               variant="ghost"
               size="icon-sm"
               aria-label="Log actions"
-              className="-mr-2 shrink-0 cursor-pointer"
+              className={cn("shrink-0 cursor-pointer", className)}
             />
           }
         >
@@ -154,6 +183,6 @@ export function LogRow({
         defaultDate={log.workDate}
       />
       <DeleteLogDialog log={log} open={deleting} onOpenChange={setDeleting} />
-    </div>
+    </>
   );
 }
