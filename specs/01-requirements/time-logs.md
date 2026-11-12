@@ -3,7 +3,7 @@ id: req-time-logs
 title: Time Capture (Workdays and Time Logs)
 status: review
 owner: Marko Angelovski
-last_updated: 2026-11-10
+last_updated: 2026-11-12
 related: [req-projects, req-tasks, req-reporting, api-endpoints, api-data-model, web-screens]
 ---
 
@@ -69,6 +69,8 @@ and one button expands or collapses them all. A row in a group doesn't repeat wh
   recognisable by its project and text);
 - in **Unsorted**, rows show their title;
 - in **Non-prod**, rows show their project and task, and their title only when they have no project.
+A row that shows a task that isn't deleted has a **+** after it: a new log preset to that task and its project
+(FR-TLOG-004). The same holds in By task (FR-TLOG-015).
 **Acceptance criteria:**
 - Given the three logs above (the first two in project "Manhatan"), the view shows the group "Manhatan" (2 h 15 min) with two logs, and the group "Unsorted" (15 min) with one.
 - Given a log in "Manhatan" marked as excluded from statistics, it is listed under "Non-prod", not under "Manhatan".
@@ -76,7 +78,8 @@ and one button expands or collapses them all. A row in a group doesn't repeat wh
 
 ### FR-TLOG-015: Group-by-task view
 **Priority:** Must
-**Statement:** As FR-TLOG-003, but grouped by **task**. A group's heading shows the project name, then the task name.
+**Statement:** As FR-TLOG-003, but grouped by **task**. A group's heading shows the project name, then the task name
+after a task (list) icon.
 Logs without a task (including logs that only have a project) go into **Unsorted**; excluded logs go into **Non-prod**.
 Rows in a task group show neither the project, the task nor the title. Rows in **Unsorted** show their project (when
 set) and their title. Rows in **Non-prod** show their project and task, and their title only when they have no task.
@@ -89,18 +92,19 @@ set) and their title. Rows in **Non-prod** show their project and task, and thei
 **Statement:** Draws the day's logs as a timeline, grouped by project as in By project (FR-TLOG-003: the projects
 in first-log order, then **Unsorted**, then **Non-prod**). Each group is collapsible, all collapsed when the page
 opens, with an **Expand all** / **Collapse all** button as the other grouped views; its heading shows the project's
-icon (not for Unsorted, Non-prod or a deleted project), the name (FR-TLOG-014 for a deleted one), the number of logs
-and the sum of all its logs. A collapsed group draws all its logs on one bar under the heading, each where it falls on
+icon (not for Unsorted, Non-prod or a deleted project), the name (FR-TLOG-014 for a deleted one), the group's **+**
+(as By project's, FR-TLOG-004), the number of logs and the sum of all its logs. A collapsed group draws all its logs on one bar under the heading, each where it falls on
 the day's axis, in its own colour; an open one shows its logs, in the order they were entered. Each log is a row: its dot (the
-FR-TLOG-002 colour), the project (only outside a project's group) and task (when set; FR-TLOG-014 for deleted ones), the title in bold (when set), the
-log text, a **Non-prod** badge (when excluded from statistics), its time range and its duration; under it a bar on a
+FR-TLOG-002 colour), the project (only outside a project's group; folder icon) and task (when set; list icon; FR-TLOG-014 for deleted ones), a
+**+** after a task that isn't deleted (a new log preset to that task and its project, FR-TLOG-004), the title in bold (when set), the
+log text, a **Non-prod** badge (when excluded from statistics), its time range, its duration and a **⋯** menu (**Edit**,
+FR-TLOG-006; **Delete**, FR-TLOG-008); under it a bar on a
 shared time axis. The first log starts at the day's start (FR-TLOG-009) and each next one where the previous one
 ended, so the last one ends at **Start + logged**. The axis runs from the start's whole hour to a whole number of tick
 steps past the last log (on today, past now when that is later), with a tick every hour, or every 2, 3… hours so there
 are at most 7. On today, a line marks now on every bar and "Now HH:mm" is shown under the axis. A day without a start
 has an elapsed-time axis from 0 (`0h`, `1h`…), ranges as durations since the first log began (`0h–30m`,
-`30m–2h 15m`), and no now line. The rows have no actions
-(editing and deleting stay in the other views).
+`30m–2h 15m`), and no now line.
 **Acceptance criteria:**
 - Given start 08:00 and logs of 1 h, 15 min and 45 min, then the rows show 08:00–09:00, 09:00–09:15 and 09:15–10:00, and the axis 08:00, 09:00, 10:00.
 - Given the same day viewed at 14:20, then the axis runs 08:00 to 16:00 every 2 hours and the now line is at 14:20.
@@ -382,3 +386,4 @@ None.
 - 2026-11-09: FR-TLOG-023 Timeline view, the new default and first in the view switch (FR-TLOG-001); per-log clock ranges are shown there, derived, still not stored (owner, prototypes `bf576dc`, `e850b50`, feat-tlog-timeline). Back to `review`.
 - 2026-11-09: FR-TLOG-018: ticking *Exclude from statistics* in the log form empties and disables Project and Task (owner, prototype `fc51579`, T-0154).
 - 2026-11-10: FR-TLOG-023 Timeline grouped by project: collapsible groups with icon, log count and sum; a collapsed group draws its logs on one bar (owner, prototype `ccad52f`, feat-tlog-timeline-groups).
+- 2026-11-12: FR-TLOG-023: Timeline groups get the **+**, its rows the task and project icons, a **+** after a live task and the **⋯** menu (Edit, Delete); FR-TLOG-003/015: a **+** after a row's live task, the task icon in By task headings (owner, prototype `a28a67f`, feat-tlog-views-actions).

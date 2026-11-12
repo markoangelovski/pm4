@@ -126,3 +126,4 @@ None.
 - 2026-11-10: Initial draft from prototype `ccad52f` (owner's answers 2026-11-10: D1–D3). To `review`.
 - 2026-11-10: Approved by the owner.
 - 2026-11-10: Test step: the old AC-7's Non-prod count and AC-10's row lookup also change (the grouping moves them); *Scope* lists them.
+- 2026-11-12: D3 superseded by feat-tlog-views-actions: Timeline groups get the **+** (owner, prototype `a28a67f`).

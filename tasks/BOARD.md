@@ -1,6 +1,6 @@
 # Task Board
 
-**Next free ID:** T-0158
+**Next free ID:** T-0159
 
 | ID | Title | Milestone | App | Size | Status | Depends on |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -160,5 +160,6 @@
 | [T-0154](m4-time-logs/T-0154-exclude-from-statistics-empties-project-task.md) | Exclude from statistics empties and disables Project and Task | M4 | web | S | done | — |
 | [T-0155](m5-reporting/T-0155-so-far-range-preset.md) | So far range preset, first and default in Statistics | M5 | web | S | done | — |
 | [T-0156](m4-time-logs/T-0156-timeline-grouped-by-project-on-the.md) | Timeline grouped by project on the Logs page: the three prototype twins | M4 | web | S | done | — |
+| [T-0158](m4-time-logs/T-0158-logs-views-and-in-timeline-after.md) | Logs views: + and ⋯ in Timeline, + after a row's task, task icons: the four prototype twins | M4 | web | S | ready | — |
 
 M0–M6 are done. Later follow-ups are filed under the milestone they extend.

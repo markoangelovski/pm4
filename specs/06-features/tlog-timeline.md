@@ -124,3 +124,4 @@ None.
 - 2026-11-09: Initial draft from prototype `bf576dc`; D4's two prototype fixes in `e850b50`, the spec's `prototype:`. To `review`.
 - 2026-11-09: Approved by the owner.
 - 2026-11-10: feat-tlog-timeline-groups groups the Timeline by project; it changes AC-5 (Expand all) and AC-7 (row 1 without the project) here, and the rows need the groups open.
+- 2026-11-12: D2 superseded by feat-tlog-views-actions: Timeline rows get the ⋯ menu and a **+** (owner, prototype `a28a67f`).

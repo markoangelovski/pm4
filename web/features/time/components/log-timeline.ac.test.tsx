@@ -295,7 +295,7 @@ describe("Logs: Timeline view (feat-tlog-timeline)", () => {
     expect(within(panel).queryByText(/^Now /)).not.toBeInTheDocument();
   });
 
-  it("AC-10 FR-TLOG-014 FR-TLOG-023 SCR-040: a deleted project and task show with the deleted marker; rows have no actions", async () => {
+  it("AC-10 FR-TLOG-014 FR-TLOG-023 SCR-040: a deleted project and task show with the deleted marker; each row has the ⋯ menu, the deleted row no + (feat-tlog-views-actions D5)", async () => {
     const gone = log({
       id: "l5",
       durationMinutes: 15,
@@ -305,7 +305,7 @@ describe("Logs: Timeline view (feat-tlog-timeline)", () => {
     });
     days["2026-10-07"] = dayOf("2026-10-07", 480, [...ownerLogs, gone]);
     renderView();
-    const { panel, rows } = await timelineRows();
+    const { rows } = await timelineRows();
     expect(rows).toHaveLength(5);
     const row = rows.find((r) => r.textContent?.includes("Old fixes"))!;
     expect(row).toHaveTextContent("Old fixes");
@@ -314,8 +314,13 @@ describe("Logs: Timeline view (feat-tlog-timeline)", () => {
     expect(within(row).getAllByRole("img", { name: "deleted" })).toHaveLength(
       2
     );
+    rows.forEach((r) =>
+      expect(
+        within(r).getByRole("button", { name: "Log actions" })
+      ).toBeInTheDocument()
+    );
     expect(
-      within(panel).queryAllByRole("button", { name: "Log actions" })
+      within(row).queryAllByRole("button", { name: /^Log time to / })
     ).toHaveLength(0);
   });
 });

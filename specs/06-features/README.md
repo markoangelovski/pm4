@@ -75,3 +75,4 @@ A feature spec links to those. It doesn't copy them.
 | Documentation page: Versioning and Changelog tabs, with a changelog built by every deploy | [shell-documentation.md](shell-documentation.md) | M1 | review |
 | Logs: Timeline view, the new default | [tlog-timeline.md](tlog-timeline.md) | M4 | approved |
 | Logs: Timeline grouped by project | [tlog-timeline-groups.md](tlog-timeline-groups.md) | M4 | approved |
+| Logs: + and ⋯ in Timeline, + after a row's task, task icons | [tlog-views-actions.md](tlog-views-actions.md) | M4 | approved |
