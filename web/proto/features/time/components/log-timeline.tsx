@@ -1,5 +1,6 @@
 "use client";
 
+import { FolderKanban, ListTodo } from "lucide-react";
 import { ProjectIcon } from "@/proto/features/projects/components/project-icon";
 import {
   Accordion,
@@ -19,8 +20,11 @@ import {
   type LogGroup,
   type TimelineRow
 } from "../day";
+import type { LogLink } from "../last-log-link";
 import type { Day, Ref } from "../types";
 import { DeletedName } from "./deleted-marker";
+import { LogActions } from "./log-row";
+import { GroupLogButton, LogLinkButton, logLink } from "./group-log-button";
 
 function RefName({ ref_ }: { ref_: Ref }) {
   return !ref_.id || ref_.deleted ? (
@@ -47,7 +51,8 @@ export function LogTimeline({
   isToday,
   timeZone,
   open,
-  onOpenChange
+  onOpenChange,
+  onLog
 }: {
   day: Day;
   /** `groupLogs(day.logs, "project")`. */
@@ -58,6 +63,8 @@ export function LogTimeline({
   /** Keys of the open groups. */
   open: string[];
   onOpenChange: (open: string[]) => void;
+  /** Log time preset to a group's project (its +). */
+  onLog: (link: LogLink) => void;
 }) {
   const now = useNowMinute(timeZone, isToday);
   const t = timeline(day.startMinute, day.logs, now);
@@ -107,21 +114,29 @@ export function LogTimeline({
           const isOpen = open.includes(g.key);
           return (
             <AccordionItem key={g.key} value={g.key}>
-              <AccordionTrigger className="cursor-pointer items-center gap-2 py-3 hover:no-underline sm:gap-3">
+              {/* A div, not a button, so the group's + (a button) can sit inside it. */}
+              <AccordionTrigger
+                nativeButton={false}
+                render={<div />}
+                className="cursor-pointer items-center gap-2 py-3 hover:no-underline sm:gap-3"
+              >
                 {isProject(g.key) ? (
                   <ProjectIcon
                     project={{ id: g.key }}
                     className="size-5 rounded-md"
                   />
                 ) : null}
-                <span className="min-w-0 flex-1 truncate text-sm font-semibold">
-                  {g.key === "unsorted" ? (
-                    "Unsorted"
-                  ) : g.key === "nonprod" ? (
-                    "Non-prod"
-                  ) : project ? (
-                    <RefName ref_={project} />
-                  ) : null}
+                <span className="flex min-w-0 flex-1 items-center gap-1">
+                  <span className="min-w-0 truncate text-sm font-semibold">
+                    {g.key === "unsorted" ? (
+                      "Unsorted"
+                    ) : g.key === "nonprod" ? (
+                      "Non-prod"
+                    ) : project ? (
+                      <RefName ref_={project} />
+                    ) : null}
+                  </span>
+                  <GroupLogButton group={g} by="project" onLog={onLog} />
                 </span>
                 <span className="hidden text-xs font-normal text-muted-foreground sm:inline">
                   {g.logs.length} {g.logs.length === 1 ? "log" : "logs"}
@@ -145,7 +160,11 @@ export function LogTimeline({
                           className="size-2.5 shrink-0 rounded-full"
                           style={{ background: colors[log.id] }}
                         />
-                        <LogText log={log} withProject={!isProject(g.key)} />
+                        <LogText
+                          log={log}
+                          withProject={!isProject(g.key)}
+                          onLog={onLog}
+                        />
                         {log.excludeFromStats ? (
                           <Badge variant="outline" className="shrink-0">
                             Non-prod
@@ -157,6 +176,7 @@ export function LogTimeline({
                         <span className="shrink-0 font-medium tabular-nums sm:w-16 sm:text-right">
                           {formatDuration(log.durationMinutes)}
                         </span>
+                        <LogActions log={log} className="-my-1.5" />
                       </div>
                       {track([{ log, from, to }], i)}
                     </li>
@@ -197,27 +217,50 @@ export function LogTimeline({
   );
 }
 
-/** A log's "Project · Task · Title text": the project only outside a project's group (Unsorted, Non-prod, deleted). */
+/** A log's "Project · Task + · Title text": the project only outside a project's group (Unsorted, Non-prod, deleted).
+ *  A live task gets a + beside its name (as on By Task), so the "Project · Task" part stays whole and the rest truncates. */
 function LogText({
   log,
-  withProject
+  withProject,
+  onLog
 }: {
   log: TimelineRow["log"];
   withProject: boolean;
+  onLog: (link: LogLink) => void;
 }) {
   const project = withProject ? log.project : null;
+  const link = log.task ? logLink(log, "task") : null;
   return (
-    <span className="min-w-0 truncate">
+    <span className="flex min-w-0 items-center gap-1">
       {project || log.task ? (
-        <span className="text-muted-foreground">
-          {project ? <RefName ref_={project} /> : null}
-          {project && log.task ? " · " : null}
-          {log.task ? <RefName ref_={log.task} /> : null}
-          {" · "}
+        <span className="flex max-w-[60%] shrink-0 items-center gap-1.5 text-muted-foreground">
+          {project ? (
+            <span className="flex min-w-0 items-center gap-1.5">
+              <FolderKanban className="size-3.5 shrink-0" />
+              <span className="truncate">
+                <RefName ref_={project} />
+              </span>
+            </span>
+          ) : null}
+          {project && log.task ? <span aria-hidden>·</span> : null}
+          {log.task ? (
+            <span className="flex min-w-0 items-center gap-1.5">
+              <ListTodo className="size-3.5 shrink-0" />
+              <span className="truncate">
+                <RefName ref_={log.task} />
+              </span>
+            </span>
+          ) : null}
         </span>
       ) : null}
-      {log.title ? <span className="font-semibold">{log.title} </span> : null}
-      {log.text}
+      {link ? <LogLinkButton link={link} onLog={onLog} /> : null}
+      <span className="min-w-0 truncate">
+        {project || log.task ? (
+          <span className="text-muted-foreground">· </span>
+        ) : null}
+        {log.title ? <span className="font-semibold">{log.title} </span> : null}
+        {log.text}
+      </span>
     </span>
   );
 }

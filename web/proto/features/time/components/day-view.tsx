@@ -3,7 +3,13 @@
 import { useState } from "react";
 import { format, isValid, parseISO } from "date-fns";
 import { parseAsString, parseAsStringLiteral, useQueryStates } from "nuqs";
-import { ChevronsDownUp, ChevronsUpDown, ClockPlus, Plus } from "lucide-react";
+import {
+  ChevronsDownUp,
+  ChevronsUpDown,
+  ClockPlus,
+  ListTodo,
+  Plus
+} from "lucide-react";
 import { ProjectIcon } from "@/proto/features/projects/components/project-icon";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -37,6 +43,7 @@ import { DayMenu } from "./day-menu";
 import { DayPicker } from "./day-picker";
 import { LogFormDialog } from "./log-form-dialog";
 import { LogRow } from "./log-row";
+import { GroupLogButton } from "./group-log-button";
 import { LogTimeline } from "./log-timeline";
 
 const VIEWS = ["timeline", "project", "task", "sequential"] as const;
@@ -238,6 +245,7 @@ export function DayView() {
                   timeZone={timeZone}
                   open={open.timeline}
                   onOpenChange={(v) => setOpen((o) => ({ ...o, timeline: v }))}
+                  onLog={logTime}
                 />
               </TabsContent>
               <TabsContent value="sequential">
@@ -307,6 +315,7 @@ export function DayView() {
                                   nested
                                   color={colors[l.id]}
                                   show={rowFields(l, by, g.key)}
+                                  onLog={logTime}
                                 />
                               ))}
                             </div>
@@ -337,53 +346,6 @@ export function DayView() {
   );
 }
 
-/** A group's project, or its task and the task's project; null for Unsorted, Non-prod and deleted ones. */
-function groupLink(group: LogGroup, by: "project" | "task"): LogLink | null {
-  const project = group.logs[0].project;
-  if (!project?.id) return null;
-  const projectRef = { id: project.id, title: project.title };
-  if (by === "project") return { project: projectRef, task: null };
-  const task = group.logs[0].task;
-  return task?.id
-    ? {
-        project: projectRef,
-        task: { id: task.id, title: task.title, project: projectRef }
-      }
-    : null;
-}
-
-/** The + beside a group's name: a new log preset to its project or task. It doesn't open or close the group. */
-function GroupLogButton({
-  group,
-  by,
-  onLog
-}: {
-  group: LogGroup;
-  by: "project" | "task";
-  onLog: (link: LogLink) => void;
-}) {
-  if (group.key === "unsorted" || group.key === "nonprod") return null;
-  const link = groupLink(group, by);
-  if (!link) return null;
-  const label = `Log time to ${link.task?.title ?? link.project?.title}`;
-  return (
-    <Button
-      variant="ghost"
-      size="icon-xs"
-      aria-label={label}
-      title={label}
-      className="shrink-0 cursor-pointer text-muted-foreground hover:text-foreground"
-      onClick={(e) => {
-        e.stopPropagation();
-        onLog(link);
-      }}
-      onKeyDown={(e) => e.stopPropagation()}
-    >
-      <Plus />
-    </Button>
-  );
-}
-
 /** A deleted project or task: its name with the deleted marker (FR-TLOG-014). */
 function GroupPart({ ref_, title }: { ref_: Ref | null; title: string }) {
   return ref_ && !ref_.id ? <DeletedName title={title} /> : <>{title}</>;
@@ -403,6 +365,7 @@ function GroupName({ group, by }: { group: LogGroup; by: "project" | "task" }) {
           <span className="text-muted-foreground">·</span>{" "}
         </>
       ) : null}
+      <ListTodo className="inline size-3.5 align-[-0.125em] text-muted-foreground" />{" "}
       <GroupPart ref_={first.task} title={group.task ?? ""} />
     </>
   );
