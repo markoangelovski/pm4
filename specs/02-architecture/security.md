@@ -1,9 +1,9 @@
 ---
 id: sec
 title: Security
-status: approved
+status: review
 owner: Marko Angelovski
-last_updated: 2026-11-07
+last_updated: 2026-11-12
 related: [web-routing, req-auth, arch-env, api-conventions, ADR-0007, NFR-004, NFR-005]
 ---
 
@@ -77,9 +77,10 @@ same `user_identities` table (`provider` = the configured provider key). Provide
 - Linking checks ownership: a log's `taskId`/`projectId` must be an existing task/project of the same user.
 - Linking a task to a project checks ownership the same way: the `projectId` must be an existing project of the caller's.
 - **The one cross-user read (OQ-076, OQ-077):** a project or task may name **any registered user** as its
-  project lead. To support that, API-USR-003 returns other users' `id`, `displayName`, `email` and
-  `avatarUrl` for the lead picker (search only: at least 2 characters, at most 10 results, OQ-089), and
-  project/task responses include the lead user's `id`, `displayName` and `avatarUrl` (never the email).
+  project lead. To support that, API-USR-003 returns other users' `id`, `displayName` and `avatarUrl` for
+  the lead picker (search by name only: at least 2 characters, at most 10 results, OQ-089, OQ-277), and
+  project/task responses include the lead user's `id`, `displayName` and `avatarUrl`. No endpoint returns or
+  matches another user's email (OQ-277).
   Naming someone as lead gives them **no access**: every project/task query stays scoped to the owner, and
   nothing tells a user which items name them (FR-PRJ-007). No other endpoint reads another user's data.
 - Tests: every endpoint has a cross-user test (NFR-005).
@@ -128,6 +129,9 @@ same `user_identities` table (`provider` = the configured provider key). Provide
 - Nothing secret in `NEXT_PUBLIC_*`.
 
 ## Accepted risks
+- **A deleted account's access tokens live on for up to 15 minutes** (OQ-281). API-USR-004 revokes every session,
+  but the access-token guard doesn't look the user up, so another device's access token still passes it until it
+  expires: reads see no data, writes fail, and the next refresh answers `401` and signs that device out.
 - **Redis traffic isn't encrypted.** The Redis Cloud free tier has TLS off, so the API connects with plain
   `redis://` (owner decision, 2026-09-27). The Redis password and the values in transit (OAuth state and PKCE
   verifiers, refresh-token hashes, login-code hashes, rate-limit counters) could be read by
@@ -166,3 +170,4 @@ Secrets live in Azure App Settings and in GitHub Actions secrets. They are never
 - 2026-11-01: Rate limiting specified: a counter per auth route, one per-user counter, the callback and logout limits, redirects for the sign-in navigations, the client IP behind Azure, fail open (OQ-253…OQ-257, feat-api-rate-limit). Back to `review`.
 - 2026-11-01: Approved by the owner with feat-api-rate-limit.
 - 2026-11-07: `GET /api/v1/changelog` (API-SYS-004) added to the public and the not-limited endpoints (OQ-272, feat-shell-documentation review).
+- 2026-11-12: The lead picker exposes no emails (OQ-277); a deleted account's access tokens are an accepted risk (OQ-281). Back to `review`.

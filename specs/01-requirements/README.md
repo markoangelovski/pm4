@@ -16,6 +16,7 @@ Explains how requirements are written, and indexes the requirement specs.
 | Area | Code | File |
 | --- | --- | --- |
 | Auth and accounts | AUTH | [auth.md](auth.md) |
+| Privacy policy and terms | LEGAL | [legal.md](legal.md) |
 | Public landing page | LAND | [landing.md](landing.md) |
 | Projects | PRJ | [projects.md](projects.md) |
 | Tasks | TSK | [tasks.md](tasks.md) |

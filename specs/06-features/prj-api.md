@@ -264,8 +264,8 @@ All e2e cases sign in as user A unless stated; B and C are other registered user
 | AC-14 | FR-PRJ-007: A's project with lead B; signed in as B, `GET /projects` doesn't list it and `GET /projects/{id}` → `404 not-found` | `api/test/projects.ac.e2e-spec.ts` | T2 |
 | AC-15 | Every `/projects` endpoint and `GET /users` without a token → `401` | `api/test/projects.ac.e2e-spec.ts`, `api/test/users-search.ac.e2e-spec.ts` | T2, T3 |
 | AC-16 | `escapeLike`: `a%b_c\d` → `a\%b\_c\\d`; `plain` unchanged | `api/src/common/sql/escape-like.ac.spec.ts` | T2 |
-| AC-17 | `GET /users?q=an` (users "Ana", "Dan", "Bob" with email `bob@han.dev`, "Zed"): returns Ana, Bob, Dan in name order, not Zed; each item exactly `{id, displayName, email, avatarUrl}`; when A matches, A is first | `api/test/users-search.ac.e2e-spec.ts` | T3 |
-| AC-18 | 12 matching users → 10 items; `q` missing, `a`, `" a "`, 101 chars → `400`; `q=%%` matches only names/emails containing `%%` | `api/test/users-search.ac.e2e-spec.ts` | T3 |
+| AC-17 | `GET /users?q=an` (users "Ana", "Dan", "Bob" with email `bob@han.dev`, "Zed"): returns Ana, Dan in name order, not Bob (an email match, OQ-277) or Zed; each item exactly `{id, displayName, avatarUrl}`; when A matches, A is first | `api/test/users-search.ac.e2e-spec.ts` | T3 |
+| AC-18 | 12 matching users → 10 items; `q` missing, `a`, `" a "`, 101 chars → `400`; `q=%%` matches only names containing `%%` | `api/test/users-search.ac.e2e-spec.ts` | T3 |
 | AC-19 | The migration creates `task_status`, `projects` and `tasks` with `uuidv7()`, the indexes, `ON DELETE cascade` for `tasks.project_id` and `ON DELETE set null` for both `project_lead_user_id` | `check` | T1 |
 | AC-20 | `api/openapi.json` has `/api/v1/projects` (get, post), `/api/v1/projects/{id}` (get, patch, delete) and `/api/v1/users` (get), all requiring `bearer` | `check` | T3 |
 
@@ -304,3 +304,4 @@ None. OQ-076…OQ-080, OQ-085, OQ-088, OQ-089 and OQ-091 are resolved.
 ## Changelog
 - 2026-10-03: Initial draft (OQ-076…OQ-089, OQ-091).
 - 2026-10-03: Approved by the owner.
+- 2026-11-12: AC-17/AC-18 follow OQ-277 (no emails, name only); implemented by feat-acct-api T1.

@@ -26,9 +26,10 @@ Either way, fix the disagreement. Never ignore it.
 | Scope and milestones | [00-product/scope.md](00-product/scope.md) | approved |
 | Glossary | [00-product/glossary.md](00-product/glossary.md) | draft |
 | Requirements overview | [01-requirements/README.md](01-requirements/README.md) | draft |
-| Auth and accounts | [01-requirements/auth.md](01-requirements/auth.md) | draft |
-| Public landing page | [01-requirements/landing.md](01-requirements/landing.md) | approved |
-| Projects | [01-requirements/projects.md](01-requirements/projects.md) | approved |
+| Auth and accounts | [01-requirements/auth.md](01-requirements/auth.md) | review |
+| Public landing page | [01-requirements/landing.md](01-requirements/landing.md) | review |
+| Privacy policy and terms | [01-requirements/legal.md](01-requirements/legal.md) | review |
+| Projects | [01-requirements/projects.md](01-requirements/projects.md) | review |
 | Tasks | [01-requirements/tasks.md](01-requirements/tasks.md) | approved |
 | Time capture | [01-requirements/time-logs.md](01-requirements/time-logs.md) | review |
 | Bookings | [01-requirements/bookings.md](01-requirements/bookings.md) | approved |
@@ -40,14 +41,14 @@ Either way, fix the disagreement. Never ignore it.
 | Repository layout | [02-architecture/repositories.md](02-architecture/repositories.md) | approved |
 | Environments and config | [02-architecture/environments.md](02-architecture/environments.md) | approved |
 | Deployment and CI/CD | [02-architecture/deployment.md](02-architecture/deployment.md) | approved |
-| Security | [02-architecture/security.md](02-architecture/security.md) | approved |
+| Security | [02-architecture/security.md](02-architecture/security.md) | review |
 | API conventions | [03-api/conventions.md](03-api/conventions.md) | approved |
 | Data model | [03-api/data-model.md](03-api/data-model.md) | draft |
 | API endpoints | [03-api/endpoints.md](03-api/endpoints.md) | approved |
 | Static export constraints | [04-web/static-export.md](04-web/static-export.md) | approved |
 | Template adaptation | [04-web/template-adaptation.md](04-web/template-adaptation.md) | approved |
 | Web conventions | [04-web/conventions.md](04-web/conventions.md) | approved |
-| Routing and navigation | [04-web/routing.md](04-web/routing.md) | approved |
+| Routing and navigation | [04-web/routing.md](04-web/routing.md) | review |
 | Screens | [04-web/screens.md](04-web/screens.md) | review |
 | UI prototype | [04-web/prototype.md](04-web/prototype.md) | approved |
 | Brand assets (logo, favicons, icons) | [04-web/brand-assets.md](04-web/brand-assets.md) | approved |
@@ -92,7 +93,7 @@ related: [api-endpoints, ADR-0001]
 | Open question | `OQ-###` | `OQ-004` | `open-questions.md` |
 | Task | `T-####` | `T-0012` | `../tasks/` |
 
-Area codes: `AUTH` auth/accounts · `LAND` public landing page · `PRJ` projects · `TSK` tasks · `TLOG` time capture (workdays, time logs) · `BOOK` bookings · `RPT` reporting · `INT` integrations and connectors · `SYS` system.
+Area codes: `AUTH` auth/accounts · `LAND` public landing page · `LEGAL` privacy policy and terms · `PRJ` projects · `TSK` tasks · `TLOG` time capture (workdays, time logs) · `BOOK` bookings · `RPT` reporting · `INT` integrations and connectors · `SYS` system.
 IDs are never reused or renumbered. Removed items are marked `(removed)`.
 
 ### Placeholders

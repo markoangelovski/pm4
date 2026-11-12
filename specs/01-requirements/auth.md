@@ -1,10 +1,10 @@
 ---
 id: req-auth
 title: Auth and Accounts
-status: approved
+status: review
 owner: Marko Angelovski
-last_updated: 2026-10-14
-related: [sec, api-endpoints, req-landing, web-routing, ADR-0007, feat-land-app-route-split]
+last_updated: 2026-11-12
+related: [req-legal, sec, api-endpoints, req-landing, web-routing, ADR-0007, feat-land-app-route-split]
 ---
 
 # Auth and Accounts
@@ -14,15 +14,15 @@ Covers how users sign in (Google OAuth), how sessions are kept, and the user pro
 
 ## Scope
 **In:** sign in with Google, automatic account creation on first sign-in, session persistence and
-refresh, sign out, protected routes, and a profile (name, avatar, email, time zone).
+refresh, sign out, protected routes, a profile (name, avatar, email, time zone), and deleting the account (FR-AUTH-008).
 **Out (MVP):** email/password, other providers (the design allows adding them), account linking UI,
-account deletion (no UI or endpoint), MFA (delegated to Google).
+a self-serve data export (on request by email, OQ-279), MFA (delegated to Google).
 
 ## Deleting a user
-Deleting a user (outside the app, there is no account deletion UI) deletes all of their data: projects,
-tasks, time logs, workdays, bookings, settings, integration connections and identities, through
-`ON DELETE CASCADE` foreign keys (data-model.md), and their sessions in Redis. A project lead in another
-user's project that points at the deleted user keeps its saved name (FR-PRJ-006).
+Deleting a user (FR-AUTH-008) deletes all of their data: projects, tasks, services, time logs, workdays, bookings,
+notes, to-dos, settings, integration connections and links, and identities, through `ON DELETE CASCADE` foreign keys
+(data-model.md), and their sessions and cached PMSPA data in Redis. A project or task of another user whose lead was
+the deleted user ends up with **no lead**: the saved name is removed too (OQ-280).
 
 ## Requirements
 
@@ -71,6 +71,20 @@ shows the sign-in screen (`/auth/sign-in`, with no `returnTo`, so signing in aga
 revoked. Other tabs and devices are signed out at their next refresh (at the latest, within 15 minutes).
 **Acceptance criteria:**
 - Given I'm signed in on two devices, when I choose "Sign out of all devices" on one, then that device shows the sign-in screen (`/auth/sign-in`). Within 15 minutes, the other device fails to refresh, removes its stored refresh token, and goes to `/?returnTo=<the page it was on>` (OQ-049, FR-AUTH-005).
+
+### FR-AUTH-008: Delete account
+**Priority:** Must
+**Statement:** From the profile, the user can permanently delete their account and all of its data (*Deleting a
+user* above), after confirming it by typing their own email (OQ-278). It can't be undone. Afterwards, the client
+clears its tokens and shows the landing page `/`. Data in an external app (PMSPA) isn't touched.
+**Acceptance criteria:**
+- Given I'm on my profile, when I choose **Delete account**, then a dialog lists what will be deleted, and its delete
+  button stays disabled until I type my email (letter case and surrounding spaces don't matter).
+- Given I confirm, then my account and all of its data are gone, I'm signed out on this device, and I'm on `/`.
+- Given I was also signed in on another device, then within 15 minutes that device fails to refresh and is signed out
+  (OQ-281).
+- Given another user's project named me as its lead, then after my deletion it has no lead.
+- Given I sign in with the same Google account afterwards (and it's still allowed), then I get a new, empty account.
 
 ### FR-AUTH-005: Protected routes
 **Priority:** Must
@@ -134,3 +148,4 @@ the user changes it.
 - 2026-10-03: The owner approved FR-AUTH-006 and FR-AUTH-007 (as updated) for feat-shell-user-menu.
 - 2026-10-03: The "not allowed" message gets a hint to choose another account (OQ-075).
 - 2026-10-03: The owner approved the FR-AUTH-001/002 wording change (OQ-075).
+- 2026-11-12: FR-AUTH-008 Delete account (OQ-278, OQ-280, OQ-281); account deletion moves into scope, data export stays out (OQ-279). Back to `review`.

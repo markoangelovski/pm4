@@ -1,9 +1,9 @@
 ---
 id: req-projects
 title: Projects
-status: approved
+status: review
 owner: Marko Angelovski
-last_updated: 2026-11-04
+last_updated: 2026-11-12
 related: [req-tasks, req-time-logs, api-endpoints, api-data-model, sec]
 ---
 
@@ -38,22 +38,23 @@ Projects and tasks (FR-TSK-001) share these rules. The project lead is **informa
 - **Two kinds.** The lead is either a reference to a registered PM4 user or a plain-text name. An
   empty lead is allowed.
 - **Any registered user can be picked** (OQ-076), not only the signed-in user. This is the one place
-  where a user sees other users: their name, avatar and email, in the picker only (OQ-077).
+  where a user sees other users: their name and avatar, never their email (OQ-077, OQ-277).
 - **Suggested on create** (OQ-078): a new project or task starts with the signed-in user as its lead.
   The user can change or clear it before saving. Editing an existing item never changes its lead on
   its own.
 - **Display** (OQ-077): a user lead shows that user's **current** avatar and name (it follows their
-  Google profile, FR-AUTH-002). A text lead shows the text. If the referenced account no longer exists,
-  the lead becomes a text lead with the last known name.
+  Google profile, FR-AUTH-002). A text lead shows the text. If the referenced account is deleted, the item
+  has no lead (FR-AUTH-008, OQ-280).
 
 ### FR-PRJ-006: Project lead input
 **Priority:** Must
 **Statement:** The lead is entered in one combobox (OQ-078). Typing searches registered users by name
-and email. Picking a user sets a user lead; keeping the typed text sets a text lead. A clear button
+(never by email, OQ-277). Picking a user sets a user lead; keeping the typed text sets a text lead. A clear button
 removes the lead.
 **Acceptance criteria:**
 - Given I open the create form, then the lead shows me (my avatar and name) as a user lead.
-- Given I type "ana", then the picker lists registered users whose name or email contains "ana", each with avatar, name and email, plus an option to use "ana" as a name.
+- Given I type "ana", then the picker lists registered users whose name contains "ana", each with avatar and name (no email, OQ-277), plus an option to use "ana" as a name.
+- Given the lead is user X and X deletes their account, then the item has no lead (OQ-280).
 - Given I pick a user, then the saved lead is that user; given I choose the typed text, then the saved lead is the text "ana", even if a user is called Ana.
 - Given I clear the lead and save, then the item has no lead.
 - Given I type 101 characters as a text lead, then I see a field error and nothing is saved.
@@ -184,3 +185,4 @@ None.
 - 2026-10-26: Approved by the owner.
 - 2026-11-04: FR-PRJ-002: sorted by title A–Z by default (OQ-264, feat-prj-lists). Back to `review`.
 - 2026-11-04: Approved by the owner for feat-prj-lists.
+- 2026-11-12: FR-PRJ-006: the picker searches and shows names only, no emails (OQ-277); a deleted account's lead becomes no lead (OQ-280). Back to `review`.

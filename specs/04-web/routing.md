@@ -3,7 +3,7 @@ id: web-routing
 title: Routing and Navigation
 status: review
 owner: Marko Angelovski
-last_updated: 2026-11-09
+last_updated: 2026-11-12
 related: [web-static-export, web-screens, web-prototype, req-landing, req-auth, feat-land-app-route-split, ADR-0012]
 ---
 
@@ -32,6 +32,8 @@ and the client reads `id` with `useSearchParams` (inside `<Suspense>`).
 | --- | --- | --- |
 | `/?returnTo=` | SCR-003 Landing page (marketing, "Go to app" / "Login" header button) | public |
 | `/auth/sign-in?returnTo=` | SCR-001 Sign in (Google) | public |
+| `/privacy` | SCR-080 Privacy policy (FR-LEGAL-001) | public |
+| `/terms` | SCR-081 Terms (FR-LEGAL-002) | public |
 | `/auth/callback?code=&returnTo=` | SCR-002 OAuth callback (token exchange, then redirect) | public |
 | `/app?from=&to=` | SCR-010 Dashboard (count tiles, workday chart, worked / target / booked, running totals, hours by project); `from`/`to` absent, invalid or over 366 days apart = this month | required |
 | `/app/projects?q=&sort=&page=` | SCR-020 Project list | required |
@@ -136,3 +138,4 @@ and the client reads `id` with `useSearchParams` (inside `<Suspense>`).
 - 2026-10-25: Approved by the owner.
 - 2026-11-07: `/app/documentation` (SCR-053) and its sidebar link below Settings (OQ-270, feat-shell-documentation). Back to `review`.
 - 2026-11-09: `/app/time` has `view=timeline`, the default (FR-TLOG-023, feat-tlog-timeline). Back to `review`.
+- 2026-11-12: Public routes `/privacy` and `/terms` (SCR-080, SCR-081, OQ-275).

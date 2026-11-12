@@ -3,7 +3,7 @@ id: api-endpoints
 title: API Endpoints
 status: review
 owner: Marko Angelovski
-last_updated: 2026-11-07
+last_updated: 2026-11-12
 related: [api-conventions, api-data-model, req-auth, req-projects, req-tasks, req-time-logs, req-reporting, req-integrations, req-notes]
 ---
 
@@ -37,7 +37,8 @@ defines its request, response and errors. Paths are relative to `/api/v1` unless
 | API-AUTH-006 | POST | `/auth/logout-all` (bearer) → revokes all of the user's sessions | FR-AUTH-007 | specified |
 | API-USR-001 | GET | `/me` | FR-AUTH-006 | specified |
 | API-USR-002 | PATCH | `/me` `{timeZone?, dailyTargetMinutes?}` (with the settings screen, OQ-064) | FR-AUTH-006, FR-TLOG-017 | specified |
-| API-USR-003 | GET | `/users?q=` (project-lead picker, OQ-089) | FR-PRJ-006 | specified |
+| API-USR-003 | GET | `/users?q=` (project-lead picker, OQ-089, OQ-277) | FR-PRJ-006 | specified |
+| API-USR-004 | DELETE | `/me` (the account and all of its data) | FR-AUTH-008 | specified |
 | API-PRJ-001 | POST | `/projects` | FR-PRJ-001 | specified |
 | API-PRJ-002 | GET | `/projects?q=&sort=&page=&pageSize=` (with task counts and logged minutes) | FR-PRJ-002 | specified |
 | API-PRJ-003 | GET | `/projects/{id}` | FR-PRJ-003, FR-PRJ-008 | specified |
@@ -251,10 +252,10 @@ Used by API-USR-003, API-PRJ-* and API-TSK-*. Implements the field tables in
 ### API-USR-003: Search users for the project lead
 `GET /users?q=` · Auth: bearer · Implements: FR-PRJ-006 (OQ-076, OQ-077, OQ-089)
 **Query:** `q`: 2–100 chars after trimming, else `400`.
-**200:** `{ items: UserSummary[] }`, at most 10, where `UserSummary` = `{ id, displayName, email, avatarUrl: string | null }`.
-Matches registered users whose `displayName` or `email` contains `q` (case-insensitive, wildcards literal).
-Order: the caller first (when they match), then `displayName` (case-insensitive), then `email`. No pagination.
-This is the only endpoint that returns other users' emails (security.md *Authorization*).
+**200:** `{ items: UserSummary[] }`, at most 10, where `UserSummary` = `{ id, displayName, avatarUrl: string | null }` (no email, OQ-277).
+Matches registered users whose `displayName` contains `q` (case-insensitive, wildcards literal); the email is never
+matched. Order: the caller first (when they match), then `displayName` (case-insensitive), then `id`. No pagination.
+No endpoint returns another user's email (security.md *Authorization*).
 **Errors:** 400 validation · 401
 
 ### API-PRJ-001: Create project
@@ -345,6 +346,19 @@ then deletes it; the FK unlinks the logs from the task, and they keep their proj
 `Intl.DateTimeFormat`, be ≤ 64 chars and not be a fixed UTC offset; it is stored in the canonical form `Intl` resolves, as at sign-in. `dailyTargetMinutes`: 15–1440, a multiple of 15.
 **200:** `Me`
 **Errors:** 400 validation · 401
+
+### API-USR-004: Delete the account
+`DELETE /me` · Auth: bearer · Implements: FR-AUTH-008 (OQ-278, OQ-280, OQ-281)
+**204:** the caller's account is deleted, permanently:
+1. In one transaction: `project_lead` is set to `NULL` on **other users'** projects and tasks whose
+   `project_lead_user_id` is the caller (`updated_at` unchanged), then the `users` row is deleted. The foreign keys
+   delete everything the user owns and clear `project_lead_user_id` on those items (data-model.md).
+2. Then, in Redis: every session of the user is revoked (as API-AUTH-006), and the cached PMSPA token and account
+   are removed. A Redis failure here is logged as a warning and the answer is still `204`: the remaining entries
+   point at a user that no longer exists (a refresh answers `401`) and expire on their own.
+Access tokens already issued stay valid until they expire (OQ-281); with them, `GET /me` answers `401`.
+No request body. Calls to PMSPA aren't made.
+**Errors:** 401 (also when the token's user no longer exists)
 
 ### Shared time-capture shapes
 Used by API-WD-* and API-TLOG-*. Implements [req-time-logs](../01-requirements/time-logs.md).
@@ -833,3 +847,4 @@ None.
 - 2026-11-04: API-NOTE-001's `sort` gains `title:asc` (`NoteSort`); API-TODO-001's `sort` is its own `TodoSort` without it (OQ-264, OQ-265, feat-prj-lists). Back to `review`.
 - 2026-11-04: The owner approved API-NOTE-001 and API-TODO-001 (as updated) for feat-prj-lists.
 - 2026-11-07: API-SYS-004 `GET /changelog`: the API's releases, public (OQ-270…272, feat-shell-documentation).
+- 2026-11-12: API-USR-003 returns and matches no emails (OQ-277); new API-USR-004 `DELETE /me` (FR-AUTH-008, OQ-280, OQ-281) (feat-acct-privacy).

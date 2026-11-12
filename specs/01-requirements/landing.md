@@ -1,9 +1,9 @@
 ---
 id: req-landing
 title: Public Landing Page
-status: approved
+status: review
 owner: Marko Angelovski
-last_updated: 2026-11-07
+last_updated: 2026-11-12
 related: [prod-scope, req-auth, web-routing, web-screens, web-static-export, feat-land-app-route-split]
 ---
 
@@ -30,7 +30,7 @@ a marketing page that describes everything PM4 does (OQ-045, OQ-151):
 - a **hero** with the product name, a tagline and the same call to action;
 - a section each for **time** logging (the required log text, durations, the reminder to log time), **bookings**,
   the **dashboard**, **projects** and tasks, and **notes** and to-dos, each with a picture of the screen;
-- a closing call to action and a **footer**.
+- a closing call to action and a **footer**, which links the Privacy policy and the Terms (FR-LEGAL-003).
 
 The screen pictures are drawn in code with fictional sample projects, not screenshots, and follow light/dark. The
 agent drafts the copy, and the owner edits it. The confirmed design is the prototype (feat-land-redesign).
@@ -108,3 +108,4 @@ description, and the 1200 × 630 card `web/public/images/og/pm4-card.png` (brand
 - 2026-11-07: M7 (OQ-151, feat-land-redesign): FR-LAND-001 is the full marketing page from prototypes `4354292`, `dd84712`: sections for time, bookings, dashboard, projects and notes with drawn screen pictures, and a light/dark switch in the header. Back to `review`.
 - 2026-11-07: Approved by the owner.
 - 2026-11-07: OQ-269: FR-LAND-003's Open Graph title, description and image on `/` (owner; quick-lane T-0148).
+- 2026-11-12: The footer links the Privacy policy and the Terms (FR-LEGAL-003, OQ-276). Back to `review`.
