@@ -35,6 +35,25 @@ export default function SignInPage() {
         </Suspense>
 
         <SocialButtons />
+
+        {/* FR-LEGAL-003, OQ-276 */}
+        <p className="text-center text-xs text-muted-foreground">
+          By continuing, you agree to the{" "}
+          <Link
+            href={routes.terms}
+            className="underline underline-offset-4 hover:text-foreground"
+          >
+            Terms
+          </Link>{" "}
+          and acknowledge the{" "}
+          <Link
+            href={routes.privacy}
+            className="underline underline-offset-4 hover:text-foreground"
+          >
+            Privacy policy
+          </Link>
+          .
+        </p>
       </Card>
     </div>
   );

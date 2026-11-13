@@ -3,7 +3,7 @@ id: T-0161
 title: Legal pages: promote the three legal components, the two routes, routes.ts, the landing footer twin, the sign-in note
 milestone: M1
 app: web
-status: ready
+status: review
 size: S
 tier: haiku
 depends_on: []
@@ -24,9 +24,38 @@ Work from the brief: `node scripts/pm4.mjs brief T-0161`. Verify with `node scri
 ## Implementation notes
 _Implementer: what changed, and anything the reviewer should look at._
 
+- `lib/routes.ts`: `privacy: "/privacy"`, `terms: "/terms"` after `authCallback`.
+- `app/privacy/page.tsx`, `app/terms/page.tsx`: twins of the `page.dev.tsx` files, importing from `@/features/legal/components/…`, functions `PrivacyPage` / `TermsPage`. Outside `(dashboard-layout)`.
+- `features/legal/components/{legal-page,privacy-policy,terms-of-service}.tsx`: promoted, no delta needed (already import `@/lib/routes`).
+- `features/landing/components/landing-page.tsx`: D4 footer twin. Adds `Link` and `routes` imports and the Privacy / Terms list items. Import order matches the prototype so the twin check passes.
+- `app/auth/sign-in/page.tsx`: D2 sign-in note after `<SocialButtons />`, copied from the brief.
+
+Check summary (`node scripts/pm4.mjs check T-0161`):
+```
+pm4 check T-0161
+  ac hashes: ok (3)
+  scope: ok
+  pending ACs (later tasks, excluded): AC-6, AC-7, AC-8, AC-9, AC-10, AC-11, AC-12, AC-13
+  web lint: ok (20s)
+  web format:check: ok (6s)
+  web typecheck: ok (16s)
+  web test: ok (44s)
+  web build: ok (10s)
+  check AC-14: both legal pages are in the export, without a prototype trace (postbuild): ok
+  twins: ok (141 equal)
+  twins warning: features/users/api.ts
+  twins warning: features/users/components/delete-account-card.tsx
+  twins warning: features/users/components/project-lead-field.tsx
+  twins warning: features/users/components/user-profile.tsx
+
+PASS T-0161
+```
+The four `features/users` twin warnings are T2+ files, not this change.
+
 ### Attempts
 | # | Tier | Result | Summary |
 | --- | --- | --- | --- |
+| 1 | haiku | pass | Promoted legal pages, routes, footer twin, sign-in note. Twin check failed once on import order in landing-page.tsx; fixed. `pm4 check` PASS. |
 
 ## Review
 _Filled in by `review-feature`._
