@@ -76,4 +76,5 @@ A feature spec links to those. It doesn't copy them.
 | Logs: Timeline view, the new default | [tlog-timeline.md](tlog-timeline.md) | M4 | approved |
 | Logs: Timeline grouped by project | [tlog-timeline-groups.md](tlog-timeline-groups.md) | M4 | approved |
 | Logs: + and ⋯ in Timeline, + after a row's task, task icons | [tlog-views-actions.md](tlog-views-actions.md) | M4 | approved |
-| Account deletion and no emails in the lead search (API) | [acct-api.md](acct-api.md) | M1 | review |
+| Account deletion and no emails in the lead search (API) | [acct-api.md](acct-api.md) | M1 | approved |
+| Legal pages, account deletion and no emails in the lead picker (web) | [acct-web.md](acct-web.md) | M1 | approved |

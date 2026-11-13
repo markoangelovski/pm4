@@ -1,9 +1,9 @@
 ---
 id: feat-acct-api
 title: "Account deletion and no emails in the lead search (API)"
-status: review
+status: approved
 owner: Marko Angelovski
-last_updated: 2026-11-12
+last_updated: 2026-11-13
 milestone: M1
 requirements: [FR-AUTH-008, FR-PRJ-006, API-USR-003, API-USR-004]
 related: [req-auth, req-legal, req-projects, api-endpoints, api-data-model, sec, feat-prj-api, OQ-277, OQ-278, OQ-280, OQ-281]
@@ -189,3 +189,4 @@ cp api/openapi.json "$tmp/"
 
 ## Changelog
 - 2026-11-12: Initial draft (OQ-277…OQ-281). The web half follows its prototype.
+- 2026-11-13: Approved by the owner.
