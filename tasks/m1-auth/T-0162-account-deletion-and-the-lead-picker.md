@@ -3,7 +3,7 @@ id: T-0162
 title: Account deletion and the lead picker: api:types, D3 type switch, D1 sign-out target, the four twins
 milestone: M1
 app: web
-status: blocked
+status: done
 size: S
 tier: haiku
 depends_on: [T-0161, T-0160]
@@ -26,9 +26,38 @@ Work from the brief: `node scripts/pm4.mjs brief T-0162`. Verify with `node scri
 ## Implementation notes
 _Implementer: what changed, and anything the reviewer should look at._
 
+- `web/lib/api/schema.d.ts` regenerated (`npm run api:types`): `UserSummaryDto` has no `email`, `DELETE /api/v1/me` is typed.
+- D3: `proto/features/users/proposed-types.ts` removed; `proto/mock/client.ts` uses `createClient<paths>` (no `MockPaths`); `proto/features/users/api.ts` imports `UserSummary` from the schema.
+- D1: `useSignOut(to = routes.signIn)` in `features/auth/use-sign-out.ts`; the prototype twin defaults to `routes.landing`, `useDeleteAccount` calls `useSignOut(routes.landing)`.
+- Twins (D4) copied with the twin rule (prototype text, `@/proto/` → `@/`, Prettier): `features/users/api.ts`, `components/delete-account-card.tsx` (stub replaced), `components/user-profile.tsx` (card below Sessions), `components/project-lead-field.tsx` (no emails).
+- Reviewer: the prototype mock already answers `DELETE /me` with 204 (`proto/mock/client.ts`), so the prototype delete flow works unchanged.
+
+`node scripts/pm4.mjs check T-0162` (2026-11-13):
+```
+pm4 check T-0162
+  ac hashes: ok (5)
+  scope: ok
+  web lint: ok (17s)
+  web format:check: ok (5s)
+  web typecheck: ok (3s)
+  web test: ok (39s)
+  web build: ok (7s)
+  web api:types: ok (1s)
+  check AC-14: both legal pages are in the export, without a prototype trace (postbuild): ok
+  twins: ok (145 equal)
+
+PASS T-0162
+```
+
 ### Attempts
 | # | Tier | Result | Summary |
 | --- | --- | --- | --- |
+| 1 | haiku | pass | api:types, D3 type switch, D1 sign-out target, four twins; 29 AC tests pass; pm4 check PASS |
 
 ## Review
-_Filled in by `review-feature`._
+**Verdict: approve** (Opus reviewer, 2026-11-13, feature review of `acct-web` with T-0161; `pm4 check --feature` PASS).
+
+- D1, D3, `useDeleteAccount`, the delete dialog (AC-9 to AC-11), the profile card placement and the lead picker without emails all match the spec. No production import of `@/proto/*`; nothing in production reads `UserSummary.email`.
+- Noted, harmless: the sign-out after the delete posts `/auth/logout` with a refresh token that is no longer valid; `lib/auth/session.ts` signs out locally whatever the API answers.
+- Minor finding: the `pm4 check` output was paraphrased instead of pasted. Fixed: the real output is now under *Implementation notes*.
+- Tier feedback: haiku was right (every edit listed in the spec, first-attempt pass).

@@ -16,6 +16,7 @@ import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ProfileIntegrations } from "@/features/integrations/components/profile-integrations";
 import { useMe, useSignOutEverywhere } from "@/features/users/api";
+import { DeleteAccountCard } from "@/features/users/components/delete-account-card";
 import { UserAvatar } from "@/features/users/components/user-avatar";
 import { formatDate } from "@/lib/time";
 import { routes } from "@/lib/routes";
@@ -148,6 +149,8 @@ export function UserProfile(): React.JSX.Element {
           </AlertDialogContent>
         </AlertDialog>
       </Card>
+
+      <DeleteAccountCard me={me} />
     </div>
   );
 }

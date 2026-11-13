@@ -8,6 +8,7 @@ import {
 import { apiClient } from "@/lib/api/client";
 import { unwrap } from "@/lib/api/problem";
 import { useSignOut } from "@/features/auth/use-sign-out";
+import { routes } from "@/lib/routes";
 import type { components } from "@/lib/api/schema";
 
 export type Me = components["schemas"]["MeResponseDto"];
@@ -44,9 +45,18 @@ export function useSignOutEverywhere(): UseMutationResult<void, Error, void> {
   });
 }
 
-/** API-USR-004, then the local sign-out to the landing page `/` (FR-AUTH-008). Stub until feat-acct-web T2. */
+/**
+ * API-USR-004, then the local sign-out to the landing page `/` (FR-AUTH-008, D1). No retry (mutation default).
+ */
 export function useDeleteAccount(): UseMutationResult<void, Error, void> {
-  throw new Error("not implemented (feat-acct-web)");
+  const signOut = useSignOut(routes.landing);
+  return useMutation({
+    mutationFn: async () => {
+      const { response } = await apiClient.DELETE("/api/v1/me");
+      if (response.status !== 204) throw new Error("DELETE /api/v1/me failed");
+    },
+    onSuccess: () => signOut()
+  });
 }
 
 /** API-USR-002: PATCH /me, then setQueryData(userKeys.me()). */
