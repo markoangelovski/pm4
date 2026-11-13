@@ -68,7 +68,7 @@ export class UsersService {
     return toMe(user);
   }
 
-  /** Users whose name or email contains `q`; the caller first (API-USR-003). */
+  /** Users whose name contains `q`, the caller first (API-USR-003). */
   async search(callerId: string, q: string): Promise<UserSearchResponseDto> {
     return {
       items: await this.usersRepository.search(q, callerId, SEARCH_LIMIT)

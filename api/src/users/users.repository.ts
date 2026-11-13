@@ -1,5 +1,5 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { and, desc, eq, ilike, or, sql } from "drizzle-orm";
+import { and, desc, eq, ilike, sql } from "drizzle-orm";
 import { escapeLike } from "../common/sql/escape-like.js";
 import type { GoogleProfile } from "../auth/google-oidc.js";
 import { DRIZZLE, type DrizzleDb } from "../database/drizzle.js";
@@ -67,7 +67,7 @@ export class UsersRepository {
     return user ?? null;
   }
 
-  /** Users whose name or email contains `q`, the caller first (API-USR-003). */
+  /** Users whose name contains `q`, the caller first (API-USR-003). */
   async search(
     q: string,
     callerId: string,
@@ -78,15 +78,14 @@ export class UsersRepository {
       .select({
         id: users.id,
         displayName: users.displayName,
-        email: users.email,
         avatarUrl: users.avatarUrl
       })
       .from(users)
-      .where(or(ilike(users.displayName, pattern), ilike(users.email, pattern)))
+      .where(ilike(users.displayName, pattern))
       .orderBy(
         desc(sql`${users.id} = ${callerId}`),
         sql`lower(${users.displayName})`,
-        sql`lower(${users.email})`
+        users.id
       )
       .limit(limit);
   }

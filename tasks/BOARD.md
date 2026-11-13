@@ -161,8 +161,8 @@
 | [T-0155](m5-reporting/T-0155-so-far-range-preset.md) | So far range preset, first and default in Statistics | M5 | web | S | done | — |
 | [T-0156](m4-time-logs/T-0156-timeline-grouped-by-project-on-the.md) | Timeline grouped by project on the Logs page: the three prototype twins | M4 | web | S | done | — |
 | [T-0158](m4-time-logs/T-0158-logs-views-and-in-timeline-after.md) | Logs views: + and ⋯ in Timeline, + after a row's task, task icons: the four prototype twins | M4 | web | S | done | — |
-| [T-0159](m1-auth/T-0159-api-usr-003-without-email-dto.md) | API-USR-003 without email: DTO, query, order, ordinary tests, openapi.json | M1 | api | S | ready | — |
-| [T-0160](m1-auth/T-0160-api-usr-004-deleteaccount-in-the.md) | API-USR-004: deleteAccount in the repository, AccountService, store exports | M1 | api | S | blocked | T-0159 |
+| [T-0159](m1-auth/T-0159-api-usr-003-without-email-dto.md) | API-USR-003 without email: DTO, query, order, ordinary tests, openapi.json | M1 | api | S | review | — |
+| [T-0160](m1-auth/T-0160-api-usr-004-deleteaccount-in-the.md) | API-USR-004: deleteAccount in the repository, AccountService, store exports | M1 | api | S | ready | T-0159 |
 | [T-0161](m1-auth/T-0161-legal-pages-promote-the-three-legal.md) | Legal pages: promote the three legal components, the two routes, routes.ts, the landing footer twin, the sign-in note | M1 | web | S | ready | — |
 | [T-0162](m1-auth/T-0162-account-deletion-and-the-lead-picker.md) | Account deletion and the lead picker: api:types, D3 type switch, D1 sign-out target, the four twins | M1 | web | S | blocked | T-0161, T-0160 |
 

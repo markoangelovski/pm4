@@ -3,7 +3,7 @@ id: T-0160
 title: API-USR-004: deleteAccount in the repository, AccountService, store exports
 milestone: M1
 app: api
-status: blocked
+status: ready
 size: S
 tier: sonnet
 depends_on: [T-0159]
