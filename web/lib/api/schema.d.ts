@@ -132,7 +132,8 @@ export interface paths {
         get: operations["UsersController_get"];
         put?: never;
         post?: never;
-        delete?: never;
+        /** Delete the account and all of its data, permanently. */
+        delete: operations["AccountController_remove"];
         options?: never;
         head?: never;
         /** Change the profile settings (API-USR-002). */
@@ -783,7 +784,6 @@ export interface components {
             avatarUrl: string | null;
             id: string;
             displayName: string;
-            email: string;
         };
         UserSearchResponseDto: {
             items: components["schemas"]["UserSummaryDto"][];
@@ -1880,6 +1880,50 @@ export interface operations {
             };
         };
     };
+    AccountController_remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing, invalid or expired credentials. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Rate limited: `retryAfterSeconds` and `Retry-After`. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Unexpected error. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+        };
+    };
     UsersController_update: {
         parameters: {
             query?: never;
@@ -1942,7 +1986,7 @@ export interface operations {
     UserSearchController_search: {
         parameters: {
             query: {
-                /** @description Matched against display name and email, case-insensitive, as a substring. */
+                /** @description Matched against the display name only, case-insensitive, as a substring (OQ-277). */
                 q: string;
             };
             header?: never;

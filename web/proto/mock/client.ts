@@ -20,10 +20,6 @@ import type {
   SavePmspaConnectionDto
 } from "@/proto/features/integrations/types";
 import type { NoteDto, TodoDto } from "@/proto/features/notes/types";
-import type {
-  DeleteMeOperation,
-  UserSummaryDto
-} from "@/proto/features/users/proposed-types";
 import { TZDate } from "@date-fns/tz";
 import { format } from "date-fns";
 import { formatDuration, today } from "@/lib/time";
@@ -721,7 +717,7 @@ function handle(
       // API-USR-003 without emails (OQ-277): the name is the only field matched and returned.
       const me = getMockState().me;
       const s = (q.get("q") ?? "").trim().toLowerCase();
-      const users: UserSummaryDto[] = [
+      const users: components["schemas"]["UserSummaryDto"][] = [
         { id: me.id, displayName: me.displayName, avatarUrl: null },
         ...OTHER_USERS
       ];
@@ -1057,21 +1053,14 @@ async function mockFetch(request: Request): Promise<Response> {
 }
 
 /** Other PM4 users the lead search finds (API-USR-003). */
-const OTHER_USERS: UserSummaryDto[] = [
+const OTHER_USERS: components["schemas"]["UserSummaryDto"][] = [
   { id: "u-jane", displayName: "Jane Doe", avatarUrl: null },
   { id: "u-john", displayName: "John Doe", avatarUrl: null },
   { id: "u-anna", displayName: "Anna Smith", avatarUrl: null }
 ];
 
-/** `paths` plus the endpoints the API doesn't serve yet (`proposed-types.ts`). */
-type MockPaths = Omit<paths, "/api/v1/me"> & {
-  "/api/v1/me": Omit<paths["/api/v1/me"], "delete"> & {
-    delete: DeleteMeOperation;
-  };
-};
-
 /** Same surface as `apiClient` in `lib/api/client`; the base URL is never requested. */
-export const apiClient = createClient<MockPaths>({
+export const apiClient = createClient<paths>({
   baseUrl: "http://proto.localhost",
   fetch: mockFetch
 });

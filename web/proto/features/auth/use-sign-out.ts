@@ -14,12 +14,12 @@ import { routes } from "@/proto/lib/routes";
  * Twin of `features/auth/use-sign-out`. The prototype is always signed in: signing out clears the query
  * cache and the last log's project and task, and goes to the landing page; the mock data stays until a reload.
  */
-export function useSignOut(): () => Promise<void> {
+export function useSignOut(to: string = routes.landing): () => Promise<void> {
   const router = useRouter();
   const queryClient = useQueryClient();
   return async () => {
     queryClient.clear();
     setLastLogLink(NO_LOG_LINK);
-    router.replace(routes.landing);
+    router.replace(to);
   };
 }

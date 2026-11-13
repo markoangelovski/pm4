@@ -3,7 +3,7 @@ id: T-0161
 title: Legal pages: promote the three legal components, the two routes, routes.ts, the landing footer twin, the sign-in note
 milestone: M1
 app: web
-status: review
+status: done
 size: S
 tier: haiku
 depends_on: []
@@ -58,4 +58,8 @@ The four `features/users` twin warnings are T2+ files, not this change.
 | 1 | haiku | pass | Promoted legal pages, routes, footer twin, sign-in note. Twin check failed once on import order in landing-page.tsx; fixed. `pm4 check` PASS. |
 
 ## Review
-_Filled in by `review-feature`._
+**Verdict: approve** (Opus reviewer, 2026-11-13, feature review of `acct-web` with T-0162; `pm4 check --feature` PASS).
+
+- The sign-in note (D2, AC-4) matches the spec word for word. `routes.ts` has `privacy` and `terms`. Both legal pages are static, outside `(dashboard-layout)`, with no AuthGuard, and they are in the export. The legal components and the landing footer are twin-equal.
+- No findings for this task.
+- Tier feedback: haiku was right (a promotion plus a paragraph the spec spelled out).
