@@ -152,7 +152,8 @@ Like every page, it carries `noindex` (FR-LAND-003); Google's reviewers open it 
 >
 > **Children**
 >
-> PM4 is not meant for anyone under 16.
+> PM4 is not meant for anyone under 16. An account found to belong to someone under 16 is deleted, together with all
+> of its data.
 >
 > **Changes to this policy**
 >
@@ -228,3 +229,5 @@ Like every page, it carries `noindex` (FR-LAND-003); Google's reviewers open it 
   data*, the Art. 6(1)(f) basis and *How long data is kept* (OQ-282).
 - 2026-11-13: The contact address is `pm4@angelovski.top`, a PM4-only address, so the owner's personal address isn't
   published on the pages or in the repo (owner).
+- 2026-11-13: The policy's *Children* section says an account found to belong to someone under 16 is deleted with
+  its data (owner).
