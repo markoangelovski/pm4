@@ -13,6 +13,7 @@ import { TimeModule } from "./time/time.module.js";
 import { PmspaModule } from "./integrations/pmspa/pmspa.module.js";
 import { NotesModule } from "./notes/notes.module.js";
 import { ChangelogModule } from "./changelog/changelog.module.js";
+import { AccountModule } from "./account/account.module.js";
 
 @Module({
   imports: [
@@ -28,7 +29,8 @@ import { ChangelogModule } from "./changelog/changelog.module.js";
     TimeModule,
     PmspaModule,
     NotesModule,
-    ChangelogModule
+    ChangelogModule,
+    AccountModule
   ],
   providers: [ProblemDetailsFilter]
 })

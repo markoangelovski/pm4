@@ -467,6 +467,54 @@
         "tags": [
           "Users"
         ]
+      },
+      "delete": {
+        "operationId": "AccountController_remove",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "401": {
+            "description": "Missing, invalid or expired credentials.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited: `retryAfterSeconds` and `Retry-After`.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Delete the account and all of its data, permanently.",
+        "tags": [
+          "Account"
+        ]
       }
     },
     "/api/v1/users": {
@@ -477,7 +525,7 @@
             "name": "q",
             "required": true,
             "in": "query",
-            "description": "Matched against display name and email, case-insensitive, as a substring.",
+            "description": "Matched against the display name only, case-insensitive, as a substring (OQ-277).",
             "schema": {
               "minLength": 2,
               "maxLength": 100,
@@ -5354,16 +5402,12 @@
           },
           "displayName": {
             "type": "string"
-          },
-          "email": {
-            "type": "string"
           }
         },
         "required": [
           "avatarUrl",
           "id",
-          "displayName",
-          "email"
+          "displayName"
         ]
       },
       "UserSearchResponseDto": {

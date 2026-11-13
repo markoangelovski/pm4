@@ -14,7 +14,6 @@ import {
 interface UserSummary {
   id: string;
   displayName: string;
-  email: string;
   avatarUrl: string | null;
 }
 
@@ -25,7 +24,7 @@ interface Body {
 
 const errorType = (slug: string) => `${process.env.WEB_APP_URL}/errors/${slug}`;
 
-describe("GET /api/v1/users user search (feat-prj-api)", () => {
+describe("GET /api/v1/users user search (feat-prj-api, feat-acct-api)", () => {
   let app: NestExpressApplication;
   /** Emails outside the test domain, deleted in `afterAll`. */
   const extraEmails: string[] = [];
@@ -48,7 +47,7 @@ describe("GET /api/v1/users user search (feat-prj-api)", () => {
     return { status: response.status, body: response.body as Body };
   };
 
-  it("AC-17 API-USR-003: name or email contains q, sorted by name, exactly the summary fields; the caller first", async () => {
+  it("AC-1 API-USR-003: name contains q (never the email), sorted by name, exactly {id, displayName, avatarUrl}; the caller first", async () => {
     const caller = await insertUser({ display_name: "Caller" });
     const ana = await insertUser({ display_name: "Ana" });
     const dan = await insertUser({ display_name: "Dan" });
@@ -64,22 +63,20 @@ describe("GET /api/v1/users user search (feat-prj-api)", () => {
     const items = response.body.items;
     expect(items.filter((u) => seeded.has(u.id)).map((u) => u.id)).toEqual([
       ana.id,
-      bob.id,
       dan.id
     ]);
+    expect(items.map((u) => u.id)).not.toContain(bob.id);
     expect(items.map((u) => u.id)).not.toContain(zed.id);
     expect(items.map((u) => u.id)).not.toContain(caller.id);
-    expect(items.find((u) => u.id === bob.id)).toEqual({
-      id: bob.id,
-      displayName: "Bob",
-      email: bobEmail,
-      avatarUrl: bob.avatar_url
+    expect(items.find((u) => u.id === ana.id)).toEqual({
+      id: ana.id,
+      displayName: "Ana",
+      avatarUrl: ana.avatar_url
     });
     for (const item of items) {
       expect(Object.keys(item).sort()).toEqual([
         "avatarUrl",
         "displayName",
-        "email",
         "id"
       ]);
     }
@@ -90,7 +87,7 @@ describe("GET /api/v1/users user search (feat-prj-api)", () => {
     expect(own.body.items[0].id).toBe(zoran.id);
   });
 
-  it("AC-18 API-USR-003: at most 10 results; q shorter than 2 (after trimming) or over 100 → 400; % is literal", async () => {
+  it("AC-2 API-USR-003: at most 10 results; q shorter than 2 (after trimming) or over 100 → 400; % is literal, names only", async () => {
     const caller = await insertUser({ display_name: "Caller" });
     const token = `qx${randomUUID().slice(0, 6)}`;
     for (let i = 0; i < 12; i++) {
@@ -112,13 +109,20 @@ describe("GET /api/v1/users user search (feat-prj-api)", () => {
       email: uniqueEmail("percent")
     });
     const single = await insertUser({ display_name: "100% sure" });
+    const percentEmail = `x%%${randomUUID().slice(0, 8)}@han.dev`;
+    extraEmails.push(percentEmail);
+    const byEmail = await insertUser({
+      display_name: "Email only",
+      email: percentEmail
+    });
     const literal = await search(caller, "%%");
     expect(literal.status).toBe(200);
     const items = literal.body.items;
     expect(items.map((u) => u.id)).toContain(percent.id);
     expect(items.map((u) => u.id)).not.toContain(single.id);
+    expect(items.map((u) => u.id)).not.toContain(byEmail.id);
     for (const item of items) {
-      expect(`${item.displayName} ${item.email}`).toContain("%%");
+      expect(item.displayName).toContain("%%");
     }
   });
 
