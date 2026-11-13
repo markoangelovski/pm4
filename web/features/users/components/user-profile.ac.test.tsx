@@ -46,13 +46,16 @@ const me: Me = {
 
 const hooks = vi.hoisted(() => ({
   me: {} as MeState,
-  everywhere: {} as MutationState
+  everywhere: {} as MutationState,
+  // feat-acct-web: the Delete account card's mutation, idle.
+  remove: { mutate: () => {}, isPending: false }
 }));
 
 vi.mock("@/features/users/api", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/features/users/api")>()),
   useMe: () => hooks.me,
-  useSignOutEverywhere: () => hooks.everywhere
+  useSignOutEverywhere: () => hooks.everywhere,
+  useDeleteAccount: () => hooks.remove
 }));
 
 vi.mock("@/features/auth/use-sign-out", () => ({
@@ -195,5 +198,21 @@ describe("UserProfile (feat-shell-user-menu)", () => {
     expect(screen.getByText("Couldn't load your profile.")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Retry" }));
     expect(refetch).toHaveBeenCalledTimes(1);
+  });
+
+  it("AC-12 SCR-051 (feat-acct-web): the Delete account card follows Sessions", () => {
+    loaded();
+    idleMutation();
+    render(<UserProfile />);
+
+    const sessions = screen.getByRole("heading", { name: "Sessions" });
+    const remove = screen.getByRole("heading", { name: "Delete account" });
+    expect(
+      sessions.compareDocumentPosition(remove) &
+        Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy();
+    expect(
+      screen.getByRole("button", { name: "Delete account" })
+    ).toBeEnabled();
   });
 });

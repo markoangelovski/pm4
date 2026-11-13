@@ -44,6 +44,11 @@ export function useSignOutEverywhere(): UseMutationResult<void, Error, void> {
   });
 }
 
+/** API-USR-004, then the local sign-out to the landing page `/` (FR-AUTH-008). Stub until feat-acct-web T2. */
+export function useDeleteAccount(): UseMutationResult<void, Error, void> {
+  throw new Error("not implemented (feat-acct-web)");
+}
+
 /** API-USR-002: PATCH /me, then setQueryData(userKeys.me()). */
 export function useUpdateMe(): UseMutationResult<
   Me,

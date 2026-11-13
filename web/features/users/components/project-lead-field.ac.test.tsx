@@ -30,17 +30,18 @@ const me: Me = {
   createdAt: "2026-10-02T22:30:00.000Z"
 };
 
-const found: components["schemas"]["UserSummaryDto"][] = [
+/** A search result: name and picture only (OQ-277). `Omit` keeps this typed before and after T2's api:types. */
+type Found = Omit<components["schemas"]["UserSummaryDto"], "email">;
+
+const found: Found[] = [
   {
     id: "1d0c7d2e-1f3a-4c5b-9d8e-7f6a5b4c3d2e",
     displayName: "Ana Horvat",
-    email: "ana@example.com",
     avatarUrl: null
   },
   {
     id: "2d0c7d2e-1f3a-4c5b-9d8e-7f6a5b4c3d2e",
     displayName: "Ivana Novak",
-    email: "ivana@example.com",
     avatarUrl: null
   }
 ];
@@ -93,7 +94,7 @@ function type(input: HTMLInputElement, text: string) {
   fireEvent.keyDown(input, { key: "ArrowDown" });
 }
 
-/** Option texts; a user option's text also holds its avatar initials and email. */
+/** Option texts; a user option's text also holds its avatar initials. */
 const options = () =>
   screen.queryAllByRole("option").map((o) => o.textContent ?? "");
 
@@ -103,7 +104,7 @@ describe("ProjectLeadField (feat-prj-web)", () => {
     routeGet();
   });
 
-  it("AC-7 FR-PRJ-006: empty → me (me); 1 char → only Use; 2 chars → one debounced search, users then Use", async () => {
+  it("AC-7 FR-PRJ-006, AC-13 OQ-277 (feat-acct-web): empty → me (me); 1 char → only Use; 2 chars → one debounced search, users (no emails) then Use", async () => {
     const { input } = renderField();
     await waitFor(() =>
       expect(GET).toHaveBeenCalledWith("/api/v1/me", expect.anything())
@@ -118,9 +119,11 @@ describe("ProjectLeadField (feat-prj-web)", () => {
 
     type(input, "an");
     await waitFor(() => expect(options()).toHaveLength(3), { timeout: 2000 });
-    expect(options()[0]).toMatch(/Ana Horvat.*ana@example\.com/);
-    expect(options()[1]).toMatch(/Ivana Novak.*ivana@example\.com/);
+    expect(options()[0]).toMatch(/Ana Horvat/);
+    expect(options()[1]).toMatch(/Ivana Novak/);
     expect(options()[2]).toBe('Use "an"');
+    // feat-acct-web AC-13 (OQ-277): no option shows an email.
+    for (const text of options()) expect(text).not.toContain("@");
     expect(searchCalls()).toHaveLength(1);
     expect(searchCalls()[0][1]).toEqual(
       expect.objectContaining({ params: { query: { q: "an" } } })

@@ -39,3 +39,25 @@ describe("Internal links (feat-land-app-route-split)", () => {
     );
   });
 });
+
+describe("Sign-in legal note (feat-acct-web)", () => {
+  it("AC-4 FR-LEGAL-003: the sign-in page links the terms and the privacy policy", () => {
+    render(<SignInPage />);
+
+    expect(
+      screen.getByText(
+        (_, el) =>
+          el?.tagName === "P" &&
+          el.textContent ===
+            "By continuing, you agree to the Terms and acknowledge the Privacy policy."
+      )
+    ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Terms" })).toHaveAttribute(
+      "href",
+      "/terms"
+    );
+    expect(
+      screen.getByRole("link", { name: "Privacy policy" })
+    ).toHaveAttribute("href", "/privacy");
+  });
+});

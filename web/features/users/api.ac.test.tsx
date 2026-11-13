@@ -3,19 +3,29 @@ import type { ReactNode } from "react";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { createQueryClient } from "@/lib/query-client";
-import { useMe, useSignOutEverywhere, type Me } from "./api";
+import { useDeleteAccount, useMe, useSignOutEverywhere, type Me } from "./api";
 
 const GET = vi.hoisted(() => vi.fn());
 const POST = vi.hoisted(() => vi.fn());
+const DELETE = vi.hoisted(() => vi.fn());
 
 vi.mock("@/lib/api/client", () => ({
-  apiClient: { GET, POST }
+  apiClient: { GET, POST, DELETE }
 }));
 
+// The real useSignOut runs (feat-acct-web AC-7 checks its target); the session and the router are mocked.
 const signOut = vi.hoisted(() => vi.fn<() => Promise<void>>());
 
-vi.mock("@/features/auth/use-sign-out", () => ({
-  useSignOut: () => signOut
+vi.mock("@/lib/auth/session", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/auth/session")>()),
+  signOut
+}));
+
+const replace = vi.hoisted(() => vi.fn());
+
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ replace, push: vi.fn() }),
+  useSearchParams: () => new URLSearchParams()
 }));
 
 const me: Me = {
@@ -91,4 +101,56 @@ describe("useSignOutEverywhere (feat-shell-user-menu)", () => {
     expect(POST).toHaveBeenCalledTimes(1);
     expect(signOut).not.toHaveBeenCalled();
   });
+});
+
+describe("useDeleteAccount (feat-acct-web)", () => {
+  beforeEach(() => {
+    DELETE.mockReset();
+    signOut.mockReset();
+    signOut.mockResolvedValue(undefined);
+    replace.mockReset();
+  });
+
+  it('AC-7 API-USR-004 FR-AUTH-008: one DELETE /api/v1/me; 204 → signs out, clears the query cache, then replace("/")', async () => {
+    DELETE.mockResolvedValue({
+      response: new Response(null, { status: 204 })
+    });
+    const { result, queryClient } = setup(() => useDeleteAccount());
+    queryClient.setQueryData(["projects"], ["data"]);
+    const clear = vi.spyOn(queryClient, "clear");
+
+    act(() => result.current.mutate());
+    await waitFor(() => expect(replace).toHaveBeenCalled());
+
+    expect(DELETE).toHaveBeenCalledTimes(1);
+    expect(DELETE.mock.calls[0][0]).toBe("/api/v1/me");
+    expect(signOut).toHaveBeenCalledTimes(1);
+    expect(queryClient.getQueryData(["projects"])).toBeUndefined();
+    expect(replace).toHaveBeenCalledTimes(1);
+    expect(replace).toHaveBeenCalledWith("/");
+    expect(signOut.mock.invocationCallOrder[0]).toBeLessThan(
+      clear.mock.invocationCallOrder[0]
+    );
+    expect(clear.mock.invocationCallOrder[0]).toBeLessThan(
+      replace.mock.invocationCallOrder[0]
+    );
+  });
+
+  it.each([500, 401])(
+    "AC-8 FR-AUTH-008: %i → error state, one request (no retry), no sign-out, no navigation",
+    async (status) => {
+      DELETE.mockResolvedValue({
+        error: { status },
+        response: new Response(null, { status })
+      });
+      const { result } = setup(() => useDeleteAccount());
+
+      act(() => result.current.mutate());
+      await waitFor(() => expect(result.current.isError).toBe(true));
+
+      expect(DELETE).toHaveBeenCalledTimes(1);
+      expect(signOut).not.toHaveBeenCalled();
+      expect(replace).not.toHaveBeenCalled();
+    }
+  );
 });

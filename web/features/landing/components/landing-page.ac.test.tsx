@@ -7,6 +7,14 @@ vi.mock("next/font/google", () => ({
   Geist_Mono: () => ({ variable: "font-geist-mono" })
 }));
 
+// next/link applies its own href normalization outside a Next build (next.config isn't loaded in
+// Vitest). A plain anchor keeps the exact href the component passes.
+vi.mock("next/link", () => ({
+  default: ({ href, ...props }: { href: string } & ComponentProps<"a">) => (
+    <a href={href} {...props} />
+  )
+}));
+
 vi.mock("next/image", () => ({
   default: ({
     src,
@@ -96,5 +104,18 @@ describe("LandingPage (feat-land-redesign)", () => {
       screen.getByRole("button", { name: "Switch to light mode" })
     );
     expect(setTheme).toHaveBeenCalledWith("light");
+  });
+
+  it("AC-5 FR-LEGAL-003 (feat-acct-web): the footer links Privacy and Terms", () => {
+    render(<LandingPage cta={ctaSpy} />);
+    const footer = screen.getByRole("contentinfo");
+
+    expect(
+      within(footer).getByRole("link", { name: "Privacy" })
+    ).toHaveAttribute("href", "/privacy");
+    expect(within(footer).getByRole("link", { name: "Terms" })).toHaveAttribute(
+      "href",
+      "/terms"
+    );
   });
 });
