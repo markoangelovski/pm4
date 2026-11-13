@@ -1,5 +1,6 @@
 import type { ComponentProps, ReactNode } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { Geist_Mono } from "next/font/google";
 import {
   ArrowDown,
@@ -13,6 +14,7 @@ import {
 } from "lucide-react";
 import type { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { routes } from "@/lib/routes";
 import { TombstoneIcon } from "@/features/time/components/deleted-marker";
 import {
   BookingDay,
@@ -566,6 +568,23 @@ export function LandingPage({ cta }: { cta: LandingCtaSlot }) {
                   </li>
                 )
               )}
+              {/* FR-LEGAL-003, OQ-276 */}
+              <li>
+                <Link
+                  href={routes.privacy}
+                  className="transition-colors hover:text-foreground"
+                >
+                  Privacy
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href={routes.terms}
+                  className="transition-colors hover:text-foreground"
+                >
+                  Terms
+                </Link>
+              </li>
             </ul>
           </nav>
         </div>
