@@ -11,19 +11,14 @@ import {
 import { XIcon } from "lucide-react";
 import { InputGroupAddon, InputGroupButton } from "@/components/ui/input-group";
 import { Spinner } from "@/components/ui/spinner";
-import {
-  useMe,
-  useUserSearch,
-  type UserSummary
-} from "@/proto/features/users/api";
+import { useMe, useUserSearch } from "@/proto/features/users/api";
 import { UserAvatar } from "@/proto/features/users/components/user-avatar";
 import type { LeadUser, LeadValue } from "@/proto/features/users/lead";
 import { useDebouncedValue } from "@/lib/use-debounced-value";
 
-/** A lead, where a user may carry the email shown in search results. */
+/** A lead option: a registered user (name and picture only, OQ-277) or free text. */
 type LeadOption =
-  | { kind: "user"; user: LeadUser & Partial<Pick<UserSummary, "email">> }
-  | { kind: "text"; name: string };
+  { kind: "user"; user: LeadUser } | { kind: "text"; name: string };
 
 function display(value: LeadValue): string {
   if (!value) return "";
@@ -171,17 +166,10 @@ export function ProjectLeadField({
                 className="cursor-pointer"
               >
                 <UserAvatar user={item.user} className="h-6 w-6 text-[10px]" />
-                <span className="flex min-w-0 flex-col">
-                  <span className="truncate">
-                    {item.user.displayName}
-                    {me && item.user.id === me.id ? (
-                      <span className="text-muted-foreground"> (me)</span>
-                    ) : null}
-                  </span>
-                  {item.user.email ? (
-                    <span className="truncate text-xs text-muted-foreground">
-                      {item.user.email}
-                    </span>
+                <span className="truncate">
+                  {item.user.displayName}
+                  {me && item.user.id === me.id ? (
+                    <span className="text-muted-foreground"> (me)</span>
                   ) : null}
                 </span>
               </ComboboxItem>

@@ -20,6 +20,10 @@ import type {
   SavePmspaConnectionDto
 } from "@/proto/features/integrations/types";
 import type { NoteDto, TodoDto } from "@/proto/features/notes/types";
+import type {
+  DeleteMeOperation,
+  UserSummaryDto
+} from "@/proto/features/users/proposed-types";
 import { TZDate } from "@date-fns/tz";
 import { format } from "date-fns";
 import { formatDuration, today } from "@/lib/time";
@@ -709,19 +713,20 @@ function handle(
     case "changelog":
       return json({ items: changelogSeed.filter((r) => r.app === "api") });
     case "me":
+      // API-USR-004: the prototype keeps its data (it resets on reload); only the answer is mocked.
+      if (method === "DELETE") return noContent();
       if (method === "PATCH") mock.updateMe(body);
       return json(getMockState().me);
     case "users": {
+      // API-USR-003 without emails (OQ-277): the name is the only field matched and returned.
       const me = getMockState().me;
-      const s = (q.get("q") ?? "").toLowerCase();
-      const u = {
-        id: me.id,
-        displayName: me.displayName,
-        email: me.email,
-        avatarUrl: null
-      };
+      const s = (q.get("q") ?? "").trim().toLowerCase();
+      const users: UserSummaryDto[] = [
+        { id: me.id, displayName: me.displayName, avatarUrl: null },
+        ...OTHER_USERS
+      ];
       return json({
-        items: !s || u.displayName.toLowerCase().includes(s) ? [u] : []
+        items: users.filter((u) => u.displayName.toLowerCase().includes(s))
       });
     }
     case "projects":
@@ -1051,8 +1056,22 @@ async function mockFetch(request: Request): Promise<Response> {
   return handle(request.method, url.pathname, url.searchParams, body);
 }
 
+/** Other PM4 users the lead search finds (API-USR-003). */
+const OTHER_USERS: UserSummaryDto[] = [
+  { id: "u-jane", displayName: "Jane Doe", avatarUrl: null },
+  { id: "u-john", displayName: "John Doe", avatarUrl: null },
+  { id: "u-anna", displayName: "Anna Smith", avatarUrl: null }
+];
+
+/** `paths` plus the endpoints the API doesn't serve yet (`proposed-types.ts`). */
+type MockPaths = Omit<paths, "/api/v1/me"> & {
+  "/api/v1/me": Omit<paths["/api/v1/me"], "delete"> & {
+    delete: DeleteMeOperation;
+  };
+};
+
 /** Same surface as `apiClient` in `lib/api/client`; the base URL is never requested. */
-export const apiClient = createClient<paths>({
+export const apiClient = createClient<MockPaths>({
   baseUrl: "http://proto.localhost",
   fetch: mockFetch
 });

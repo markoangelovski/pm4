@@ -9,9 +9,10 @@ import { apiClient } from "@/proto/mock/client";
 import { unwrap } from "@/lib/api/problem";
 import { useSignOut } from "@/proto/features/auth/use-sign-out";
 import type { components } from "@/lib/api/schema";
+import type { UserSummaryDto } from "./proposed-types";
 
 export type Me = components["schemas"]["MeResponseDto"];
-export type UserSummary = components["schemas"]["UserSummaryDto"];
+export type { UserSummaryDto as UserSummary } from "./proposed-types";
 
 export const userKeys = {
   all: ["users"] as const,
@@ -44,6 +45,21 @@ export function useSignOutEverywhere(): UseMutationResult<void, Error, void> {
   });
 }
 
+/**
+ * API-USR-004, then the local sign-out to the landing page `/` (FR-AUTH-008). No retry (mutation default).
+ * Unlike FR-AUTH-007's sign-out (to sign-in), production clears the tokens and opens `routes.landing`.
+ */
+export function useDeleteAccount(): UseMutationResult<void, Error, void> {
+  const signOut = useSignOut();
+  return useMutation({
+    mutationFn: async () => {
+      const { response } = await apiClient.DELETE("/api/v1/me");
+      if (response.status !== 204) throw new Error("DELETE /api/v1/me failed");
+    },
+    onSuccess: () => signOut()
+  });
+}
+
 /** API-USR-002: PATCH /me, then setQueryData(userKeys.me()). */
 export function useUpdateMe(): UseMutationResult<
   Me,
@@ -63,7 +79,7 @@ export function useUpdateMe(): UseMutationResult<
 }
 
 /** API-USR-003. Enabled only when q.trim().length >= 2; the key uses the trimmed q; staleTime 60 s. */
-export function useUserSearch(q: string): UseQueryResult<UserSummary[]> {
+export function useUserSearch(q: string): UseQueryResult<UserSummaryDto[]> {
   const term = q.trim();
   return useQuery({
     queryKey: userKeys.search(term),

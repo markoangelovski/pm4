@@ -7,6 +7,8 @@ export const routes = {
   landing: "/",
   signIn: "/auth/sign-in",
   authCallback: "/auth/callback",
+  privacy: "/proto/privacy",
+  terms: "/proto/terms",
   app: {
     dashboard: "/proto/app",
     time: "/proto/app/time",
