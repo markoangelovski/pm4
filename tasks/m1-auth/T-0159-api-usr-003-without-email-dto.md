@@ -3,7 +3,7 @@ id: T-0159
 title: API-USR-003 without email: DTO, query, order, ordinary tests, openapi.json
 milestone: M1
 app: api
-status: review
+status: done
 size: S
 tier: haiku
 depends_on: []
@@ -34,3 +34,6 @@ _Implementer: what changed, and anything the reviewer should look at._
 
 ## Review
 _Filled in by `review-feature`._
+
+**Verdict: approve** (Opus review, 2026-11-13). `pm4 check --feature` passed. The query selects `{id, displayName, avatarUrl}` and filters on display name only. The order is the caller first, then the lowercased display name, then id. The doc comments match the spec. There is no drift and no finding for this task.
+**Tier feedback:** haiku was right. There were three edits and it passed on the first attempt.

@@ -59,7 +59,7 @@ add the stubs (*Contract stubs*), run `npm run openapi:export`. Then `pm4 hash`.
 | api | `api/src/users/dto/user-search.dto.ts`, `api/src/users/users.repository.ts`, `api/src/users/users.service.ts` | M | T1, T2 | T1: search; T2: `deleteAccount` in the repository |
 | api | `api/src/users/users.repository.spec.ts`, `api/src/users/users.service.spec.ts` | M | T1 | Ordinary tests, if they assert the email in a search |
 | api | `api/src/auth/auth.module.ts`, `api/src/integrations/pmspa/pmspa.module.ts` | M | T2 | Export `SessionStore` / `PmspaStore` |
-| api | `api/src/account/account.service.spec.ts` | C | T2 | Ordinary unit tests of D3 (optional) |
+| api | `api/src/account/account.service.spec.ts` | C | T2 | Ordinary unit tests of D3: a failing cleanup still runs the other and resolves with a warning; a missing user throws `UnauthorizedException`; the happy path calls both cleanups |
 
 ## Interfaces
 
@@ -119,11 +119,16 @@ export class AccountService {
     if (!(await this.usersRepository.deleteAccount(userId))) {
       throw new UnauthorizedException("Missing or invalid access token.");
     }
+    // Each cleanup on its own, so one Redis failure doesn't skip the other (D3).
+    await this.cleanUp(userId, "sessions", () => this.sessions.revokeAll(userId));
+    await this.cleanUp(userId, "PMSPA data", () => this.pmspaStore.clear(userId));
+  }
+
+  private async cleanUp(userId: string, what: string, run: () => Promise<unknown>): Promise<void> {
     try {
-      await this.sessions.revokeAll(userId);
-      await this.pmspaStore.clear(userId);
+      await run();
     } catch (error) {
-      this.logger.warn(`Account ${userId} deleted, but its Redis cleanup failed: ${String(error)}`);
+      this.logger.warn(`Account ${userId} deleted, but clearing its ${what} failed: ${String(error)}`);
     }
   }
 }
@@ -190,3 +195,4 @@ cp api/openapi.json "$tmp/"
 ## Changelog
 - 2026-11-12: Initial draft (OQ-277…OQ-281). The web half follows its prototype.
 - 2026-11-13: Approved by the owner.
+- 2026-11-13: Review of T-0160: each Redis cleanup gets its own try/catch, so a failed session revoke no longer skips clearing the PMSPA cache. `account.service.spec.ts` is no longer optional.

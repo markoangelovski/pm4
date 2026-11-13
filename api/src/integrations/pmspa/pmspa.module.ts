@@ -60,6 +60,6 @@ import { PmspaTimeSyncService } from "./pmspa-time-sync.service.js";
     { provide: DNS_LOOKUP, useValue: defaultDnsLookup },
     PmspaTimeSyncService
   ],
-  exports: [PmspaClient]
+  exports: [PmspaClient, PmspaStore]
 })
 export class PmspaModule {}

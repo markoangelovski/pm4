@@ -1,10 +1,16 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { and, desc, eq, ilike, sql } from "drizzle-orm";
+import { and, desc, eq, ilike, ne, sql } from "drizzle-orm";
 import { escapeLike } from "../common/sql/escape-like.js";
 import type { GoogleProfile } from "../auth/google-oidc.js";
 import { DRIZZLE, type DrizzleDb } from "../database/drizzle.js";
 import type { UserSummaryDto } from "./dto/user-search.dto.js";
-import { User, userIdentities, users } from "../database/schema/index.js";
+import {
+  projects,
+  tasks,
+  User,
+  userIdentities,
+  users
+} from "../database/schema/index.js";
 
 const DISPLAY_NAME_MAX = 100;
 const AVATAR_URL_MAX = 500;
@@ -65,6 +71,33 @@ export class UsersRepository {
       .where(eq(users.id, id))
       .limit(1);
     return user ?? null;
+  }
+
+  /**
+   * Deletes the user and, by the FKs, everything they own (API-USR-004). Other users' items that name them as
+   * lead lose the saved name too (OQ-280). false = no such user.
+   */
+  async deleteAccount(id: string): Promise<boolean> {
+    return this.db.transaction(async (tx) => {
+      const [user] = await tx
+        .select({ id: users.id })
+        .from(users)
+        .where(eq(users.id, id))
+        .for("update");
+      if (!user) return false;
+      await tx
+        .update(projects)
+        .set({ projectLead: null })
+        .where(
+          and(eq(projects.projectLeadUserId, id), ne(projects.userId, id))
+        );
+      await tx
+        .update(tasks)
+        .set({ projectLead: null })
+        .where(and(eq(tasks.projectLeadUserId, id), ne(tasks.userId, id)));
+      await tx.delete(users).where(eq(users.id, id));
+      return true;
+    });
   }
 
   /** Users whose name contains `q`, the caller first (API-USR-003). */

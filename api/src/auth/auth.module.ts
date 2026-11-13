@@ -40,6 +40,6 @@ import { SessionStore } from "./session.store.js";
     GoogleOidc,
     SessionStore
   ],
-  exports: [AccessTokenService]
+  exports: [AccessTokenService, SessionStore]
 })
 export class AuthModule {}
