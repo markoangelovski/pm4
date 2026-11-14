@@ -54,6 +54,7 @@ rewrite of the existing landing acceptance tests.
 | App | File | C/M | Task | Notes |
 | --- | --- | --- | --- | --- |
 | web | `web/features/landing/components/landing-page.ac.test.tsx` | M | tests | Acceptance tests (AC-1…AC-8) |
+| web | `web/vitest.setup.ts` | M | tests | `matchMedia` stand-in when jsdom has none, so `app/page.ac.test.tsx` still passes with `SmoothScroll` |
 | web | `web/features/landing/components/landing-page.tsx` | M | T1 | Twin |
 | web | `web/features/landing/components/landing-sample.ts` | M | T1 | Twin |
 | web | `web/features/landing/components/landing-screens.tsx` | C | T1 | Twin |
@@ -115,5 +116,6 @@ node scripts/pm4.mjs twins
 None.
 
 ## Changelog
+- 2026-11-14: T1 attempt 1: `web/vitest.setup.ts` gets a `matchMedia` stand-in (owner's choice) so `app/page.ac.test.tsx` passes with the unguarded `SmoothScroll` twin.
 - 2026-11-14: Test step: AC-6 names the tour tab "Statistics" as the prototype does; the tests stub `matchMedia`.
 - 2026-11-14: Initial draft from prototype `8ad4bac` (M7). Supersedes the page and ACs 1–4 of `feat-land-redesign`.

@@ -165,6 +165,6 @@
 | [T-0160](m1-auth/T-0160-api-usr-004-deleteaccount-in-the.md) | API-USR-004: deleteAccount in the repository, AccountService, store exports | M1 | api | S | done | T-0159 |
 | [T-0161](m1-auth/T-0161-legal-pages-promote-the-three-legal.md) | Legal pages: promote the three legal components, the two routes, routes.ts, the landing footer twin, the sign-in note | M1 | web | S | done | — |
 | [T-0162](m1-auth/T-0162-account-deletion-and-the-lead-picker.md) | Account deletion and the lead picker: api:types, D3 type switch, D1 sign-out target, the four twins | M1 | web | S | done | T-0161, T-0160 |
-| [T-0163](m7-landing/T-0163-landing-page-v2-the-six-twins.md) | Landing page v2: the six twins, delete landing-vignettes.tsx | M7 | web | S | ready | — |
+| [T-0163](m7-landing/T-0163-landing-page-v2-the-six-twins.md) | Landing page v2: the six twins, delete landing-vignettes.tsx | M7 | web | S | done | — |
 
 M0–M6 are done. Later follow-ups are filed under the milestone they extend.

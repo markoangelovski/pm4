@@ -1,7 +1,6 @@
 import type { ComponentProps, ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Geist_Mono } from "next/font/google";
 import {
   ArrowDown,
   BellRing,
@@ -10,33 +9,42 @@ import {
   KeyRound,
   ListPlus,
   MoonStar,
-  ShieldCheck
+  UserX
 } from "lucide-react";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger
+} from "@/components/ui/accordion";
 import type { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { routes } from "@/lib/routes";
-import { TombstoneIcon } from "@/features/time/components/deleted-marker";
-import {
-  BookingDay,
-  BookingPrompt,
-  DashboardChart,
-  DayTimeline,
-  DurationParser,
-  NotesTodos,
-  PmspaSync,
-  ProjectRows
-} from "./landing-vignettes";
 import { LandingThemeToggle } from "./landing-theme-toggle";
-
-const geistMono = Geist_Mono({
-  subsets: ["latin"],
-  display: "swap",
-  variable: "--font-geist-mono"
-});
+import { TombstoneIcon } from "@/features/time/components/deleted-marker";
+import { ProductTour, PromptCopy } from "./landing-interactive";
+import { SmoothScroll } from "./smooth-scroll";
+import {
+  BookingsScreen,
+  DashboardScreen,
+  LogsScreen,
+  ProjectsScreen
+} from "./landing-screens";
+import {
+  BookingSplit,
+  HoursByProject,
+  LogTimeForm,
+  NotesPicture,
+  Panel,
+  PmspaPicture,
+  ReminderCard,
+  RunningTotals,
+  TasksPicture
+} from "./landing-visuals";
 
 type ButtonProps = ComponentProps<typeof Button>;
 
-/** Renders the header's "Go to app" / "Login" call to action (FR-LAND-002) in the given style. */
+/** Renders the "Go to app" / "Login" call to action (FR-LAND-002) in the given style. */
 export type LandingCtaSlot = (props: {
   variant?: ButtonProps["variant"];
   size?: ButtonProps["size"];
@@ -44,21 +52,17 @@ export type LandingCtaSlot = (props: {
 
 /** Chart colours, the dashboard's own (features/dashboard). */
 const CHART_VARS =
-  "[--landing-worked:#2a78d6] [--landing-booked:#1baf7a] [--landing-start:#eb6834] [--landing-nonprod:#a1a1aa] " +
-  "dark:[--landing-worked:#3987e5] dark:[--landing-booked:#199e70] dark:[--landing-start:#d95926] dark:[--landing-nonprod:#71717a]";
+  "[--lp-worked:#2a78d6] [--lp-booked:#1baf7a] [--lp-start:#eb6834] [--lp-nonprod:#a1a1aa] " +
+  "dark:[--lp-worked:#3987e5] dark:[--lp-booked:#199e70] dark:[--lp-start:#d95926] dark:[--lp-nonprod:#71717a]";
 
 const NAV = [
   { href: "#time", label: "Time" },
   { href: "#bookings", label: "Bookings" },
   { href: "#dashboard", label: "Dashboard" },
   { href: "#projects", label: "Projects" },
-  { href: "#notes", label: "Notes" }
+  { href: "#notes", label: "Notes" },
+  { href: "#faq", label: "FAQ" }
 ];
-
-/** 15-minute ruling, stronger every hour: the grid every duration in PM4 snaps to. */
-const QUARTER_HOUR_GRID =
-  "bg-[linear-gradient(to_right,var(--border)_1px,transparent_1px),linear-gradient(to_right,color-mix(in_oklab,var(--border)_45%,transparent)_1px,transparent_1px)] " +
-  "bg-[size:96px_100%,24px_100%]";
 
 function Logo() {
   return (
@@ -75,14 +79,14 @@ function Logo() {
   );
 }
 
-function Eyebrow({ children }: { children: ReactNode }) {
+function Eyebrow({ color, children }: { color: string; children: ReactNode }) {
   return (
-    <p className="flex items-center gap-2 font-mono text-[11px] tracking-[0.14em] text-muted-foreground uppercase">
-      <span aria-hidden className="flex flex-col gap-[2px]">
-        <span className="h-[2px] w-2 bg-foreground" />
-        <span className="ml-[3px] h-[2px] w-2 bg-foreground" />
-        <span className="ml-[6px] h-[2px] w-2 bg-foreground" />
-      </span>
+    <p className="flex w-fit items-center gap-2 rounded-full border border-border bg-background px-3 py-1 text-xs font-medium">
+      <span
+        aria-hidden
+        className="size-2 rounded-full"
+        style={{ background: color }}
+      />
       {children}
     </p>
   );
@@ -93,37 +97,56 @@ interface Point {
   text: string;
 }
 
+function Points({ points }: { points: Point[] }) {
+  return (
+    <dl className="grid gap-x-8 gap-y-5 sm:grid-cols-2">
+      {points.map((p) => (
+        <div
+          key={p.title}
+          className="flex flex-col gap-1 border-l border-border pl-4"
+        >
+          <dt className="text-sm font-semibold">{p.title}</dt>
+          <dd className="text-sm leading-relaxed text-muted-foreground">
+            {p.text}
+          </dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
 function FeatureSection({
   id,
   eyebrow,
+  color,
   title,
   intro,
   points,
   visual,
-  reverse
+  reverse,
+  muted
 }: {
   id: string;
   eyebrow: string;
+  color: string;
   title: string;
   intro: string;
   points: Point[];
   visual: ReactNode;
   reverse?: boolean;
+  muted?: boolean;
 }) {
   return (
     <section
       id={id}
       aria-labelledby={`${id}-title`}
-      className="scroll-mt-20 border-t border-border"
+      className={cn("scroll-mt-16", muted && "bg-muted/40")}
     >
-      <div className="mx-auto grid max-w-6xl gap-10 px-4 py-16 sm:px-6 sm:py-24 lg:grid-cols-12 lg:gap-12">
+      <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-16 sm:px-6 sm:py-24 lg:grid-cols-2 lg:gap-16">
         <div
-          className={cn(
-            "flex min-w-0 flex-col gap-5 lg:col-span-5",
-            reverse && "lg:order-2"
-          )}
+          className={cn("flex min-w-0 flex-col gap-5", reverse && "lg:order-2")}
         >
-          <Eyebrow>{eyebrow}</Eyebrow>
+          <Eyebrow color={color}>{eyebrow}</Eyebrow>
           <h2
             id={`${id}-title`}
             className="text-3xl font-semibold tracking-[-0.03em] text-balance sm:text-4xl"
@@ -133,22 +156,12 @@ function FeatureSection({
           <p className="max-w-prose text-base leading-relaxed text-muted-foreground">
             {intro}
           </p>
-          <dl className="mt-2 grid gap-x-6 gap-y-5 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
-            {points.map((p) => (
-              <div key={p.title} className="flex flex-col gap-1">
-                <dt className="text-sm font-semibold">{p.title}</dt>
-                <dd className="text-sm leading-relaxed text-muted-foreground">
-                  {p.text}
-                </dd>
-              </div>
-            ))}
-          </dl>
+          <div className="mt-2">
+            <Points points={points} />
+          </div>
         </div>
         <div
-          className={cn(
-            "flex min-w-0 flex-col gap-4 lg:col-span-7",
-            reverse && "lg:order-1"
-          )}
+          className={cn("flex min-w-0 flex-col gap-4", reverse && "lg:order-1")}
         >
           {visual}
         </div>
@@ -160,19 +173,19 @@ function FeatureSection({
 const STEPS = [
   {
     title: "Start the day",
-    text: "Set when you started. PM4 suggests the current time, rounded to the nearest quarter hour."
+    text: "Set when you started. PM4 suggests the current time, rounded to the quarter hour."
   },
   {
     title: "Log as you go",
-    text: "Each block of work gets a duration and a note saying what you did. A project and task are optional."
+    text: "A duration and a note per block of work. Project and task are optional."
   },
   {
     title: "Book it",
-    text: "Book each log to one or more dates, all of it or part, and copy the day as a prompt for Slack."
+    text: "Book each log to one or more dates, or copy the day as a prompt."
   },
   {
     title: "See the month",
-    text: "The dashboard shows hours worked against your target, what's booked, and where the time went."
+    text: "Hours worked against your target, what's booked, and where the time went."
   }
 ];
 
@@ -182,14 +195,14 @@ const EXTRAS: {
   text: string;
 }[] = [
   {
-    icon: BellRing,
-    title: "Reminders to log",
-    text: "A bell in the header shows how much of today is still unlogged, with desktop notifications if you want them."
-  },
-  {
     icon: ListPlus,
     title: "New from anywhere",
-    text: "The New menu creates a project, task, note, to-do or log from any screen. The Log time button is always one tap away."
+    text: "The New menu creates a project, task, note, to-do or log from any screen. Log time is always one tap away."
+  },
+  {
+    icon: BellRing,
+    title: "Reminders to log",
+    text: "The bell shows how much of today is still unlogged, with desktop notifications if you turn them on."
   },
   {
     icon: TombstoneIcon,
@@ -198,34 +211,66 @@ const EXTRAS: {
   },
   {
     icon: CalendarClock,
-    title: "Your time zone",
-    text: "Days follow your own calendar. Set your time zone and daily target once, in your profile and settings."
+    title: "Your time zone, your target",
+    text: "Days follow your own calendar. Set your time zone and daily target once, in Settings."
   },
   {
     icon: Download,
     title: "Installs as an app",
-    text: "Add PM4 to your home screen or desktop. It opens even offline and tells you when it can't reach the server."
-  },
-  {
-    icon: ShieldCheck,
-    title: "Private to you",
-    text: "Every project, task and log belongs to your account alone. Nothing is shared with other users."
+    text: "Add PM4 to your home screen or desktop. It opens offline and tells you when it can't reach the server."
   },
   {
     icon: KeyRound,
     title: "Google sign-in",
-    text: "Sign in with your Google account. Sign out on one device, or on all of them at once."
+    text: "No password to remember. Sign out on one device, or on all of them at once."
   },
   {
     icon: MoonStar,
     title: "Light and dark",
     text: "PM4 follows your system's theme, and you can switch it from the header."
+  },
+  {
+    icon: UserX,
+    title: "Leave any time",
+    text: "Delete your account from your profile. Your projects, logs, notes and settings go with it."
+  }
+];
+
+const FAQ: { q: string; a: string }[] = [
+  {
+    q: "Who can see my data?",
+    a: "Only you. Every project, task, log and note belongs to your account alone. PM4 has no teams and no sharing, so nothing you write is visible to another user."
+  },
+  {
+    q: "How do I sign in?",
+    a: "With your Google account. PM4 never sees or stores a password. From your profile you can sign out of every device at once."
+  },
+  {
+    q: "Why does every log need a note?",
+    a: "Because a duration alone is useless a month later. The note is what you paste into your booking system, and what tells you where the time went when you look back."
+  },
+  {
+    q: "Why 15-minute steps?",
+    a: "They keep days easy to add up and book. Type a duration any way you like (1.5, 90, 1:15, 1h 30m) and PM4 stores it in quarter hours, from 15 minutes to 24 hours."
+  },
+  {
+    q: "Do I need PMSPA?",
+    a: "No. PM4 works on its own. If your team runs projects in PMSPA, you can connect your account in Settings to import projects and tasks and push your time back."
+  },
+  {
+    q: "Does it work on my phone?",
+    a: "Yes. PM4 runs in the browser on any screen size and can be installed to your home screen. Your data stays on the server, so it needs a connection to load and save."
+  },
+  {
+    q: "Can I delete my account?",
+    a: "Yes, from your profile. Deleting your account permanently removes your projects, tasks, time logs, bookings, notes, to-dos, settings and integrations."
   }
 ];
 
 /**
- * The public landing page (SCR-003, FR-LAND-001): what PM4 is and what it can do. Fully static: the
- * illustrations are drawn from sample content, and only the call to action reads the browser (`cta`).
+ * The public landing page (SCR-003, FR-LAND-001): what PM4 is and what it can do. The pictures are drawn from
+ * sample content; the product tour, the duration field and the prompt's copy button run in the browser on that
+ * sample content alone. Only the call to action reads the browser's session (`cta`).
  */
 export function LandingPage({ cta }: { cta: LandingCtaSlot }) {
   return (
@@ -233,11 +278,11 @@ export function LandingPage({ cta }: { cta: LandingCtaSlot }) {
       id="top"
       className={cn(
         "flex min-h-screen flex-col bg-background text-foreground",
-        geistMono.variable,
         CHART_VARS
       )}
     >
-      <header className="sticky top-0 z-40 border-b border-border bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/70">
+      <SmoothScroll />
+      <header className="sticky top-0 z-40 border-b border-border/60 bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/70">
         <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
           <Logo />
           <nav aria-label="Sections" className="hidden md:block">
@@ -256,7 +301,7 @@ export function LandingPage({ cta }: { cta: LandingCtaSlot }) {
           </nav>
           <div className="flex items-center gap-1">
             <LandingThemeToggle />
-            {cta({ variant: "outline", size: "sm" })}
+            {cta({ size: "lg" })}
           </div>
         </div>
       </header>
@@ -268,50 +313,55 @@ export function LandingPage({ cta }: { cta: LandingCtaSlot }) {
         >
           <div
             aria-hidden
-            className={cn(
-              "pointer-events-none absolute inset-0 opacity-70 [mask-image:linear-gradient(to_bottom,black,transparent_85%)]",
-              QUARTER_HOUR_GRID
-            )}
+            className="pointer-events-none absolute inset-x-0 top-0 h-[38rem] bg-[radial-gradient(60rem_28rem_at_50%_-8rem,color-mix(in_oklab,var(--lp-worked)_22%,transparent),transparent),radial-gradient(40rem_24rem_at_85%_0,color-mix(in_oklab,var(--lp-booked)_16%,transparent),transparent)]"
           />
-          <div className="relative mx-auto grid max-w-6xl items-center gap-12 px-4 pt-14 pb-16 sm:px-6 sm:pt-20 sm:pb-24 lg:grid-cols-12">
-            <div className="flex min-w-0 flex-col gap-6 lg:col-span-5">
-              <Eyebrow>Projects · Tasks · Time</Eyebrow>
-              <h1
-                id="hero-title"
-                className="text-5xl leading-[0.95] font-semibold tracking-[-0.045em] text-balance sm:text-6xl lg:text-[3.75rem] xl:text-[4rem]"
+          <div className="relative mx-auto flex max-w-6xl flex-col items-center gap-6 px-4 pt-16 text-center sm:px-6 sm:pt-24">
+            <Eyebrow color="var(--lp-booked)">Projects · Tasks · Time</Eyebrow>
+            <h1
+              id="hero-title"
+              className="max-w-4xl text-5xl leading-[1] font-semibold tracking-[-0.045em] text-balance sm:text-6xl lg:text-7xl"
+            >
+              Every hour, accounted for.
+            </h1>
+            <p className="max-w-2xl text-lg leading-relaxed text-pretty text-muted-foreground">
+              PM4 keeps your projects and tasks in one place, logs your day in
+              15-minute blocks with a note on each, helps you book the time, and
+              shows where the month went.
+            </p>
+            <div className="flex flex-wrap items-center justify-center gap-3">
+              {cta({ size: "lg" })}
+              <a
+                href="#day"
+                className="flex items-center gap-1.5 px-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
               >
-                Every hour, accounted for.
-              </h1>
-              <p className="max-w-md text-lg leading-relaxed text-muted-foreground">
-                PM4 keeps your projects and tasks in one place, logs your day in
-                15-minute blocks with a note on each, helps you book the time,
-                and shows where the month went.
-              </p>
-              <div className="flex flex-wrap items-center gap-3">
-                {cta({ size: "lg" })}
-                <a
-                  href="#day"
-                  className="flex items-center gap-1.5 px-1 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
-                >
-                  How a day works
-                  <ArrowDown className="size-3.5" aria-hidden />
-                </a>
-              </div>
+                How a day works
+                <ArrowDown className="size-3.5" aria-hidden />
+              </a>
             </div>
-            <div className="min-w-0 lg:col-span-7">
-              <DayTimeline />
-            </div>
+            <p className="text-xs text-muted-foreground">
+              Sign in with Google · Private to your account · Installs as an app
+            </p>
+          </div>
+          <div className="relative mx-auto mt-12 max-w-6xl px-4 pb-16 sm:px-6 sm:pb-24">
+            <ProductTour
+              screens={{
+                logs: <LogsScreen />,
+                bookings: <BookingsScreen />,
+                dashboard: <DashboardScreen />,
+                projects: <ProjectsScreen />
+              }}
+            />
           </div>
         </section>
 
         <section
           id="day"
           aria-labelledby="day-title"
-          className="scroll-mt-20 border-t border-border bg-muted/40"
+          className="scroll-mt-16 border-y border-border bg-muted/40"
         >
           <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
-            <div className="flex flex-col gap-4">
-              <Eyebrow>How a day works</Eyebrow>
+            <div className="flex flex-col items-center gap-4 text-center">
+              <Eyebrow color="var(--lp-start)">How a day works</Eyebrow>
               <h2
                 id="day-title"
                 className="max-w-2xl text-3xl font-semibold tracking-[-0.03em] text-balance sm:text-4xl"
@@ -319,15 +369,21 @@ export function LandingPage({ cta }: { cta: LandingCtaSlot }) {
                 From the first standup to the monthly report.
               </h2>
             </div>
-            <ol className="mt-10 grid gap-px bg-border sm:grid-cols-2 lg:grid-cols-4">
+            <ol className="mt-12 grid gap-8 sm:grid-cols-2 lg:grid-cols-4 lg:gap-6">
               {STEPS.map((s, i) => (
-                <li
-                  key={s.title}
-                  className="flex flex-col gap-3 bg-background p-6"
-                >
-                  <span className="font-mono text-xs text-muted-foreground tabular-nums">
-                    {String(i + 1).padStart(2, "0")}
-                  </span>
+                <li key={s.title} className="flex flex-col gap-3">
+                  <div className="flex items-center gap-3">
+                    <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-foreground text-sm font-semibold text-background tabular-nums">
+                      {i + 1}
+                    </span>
+                    <span
+                      aria-hidden
+                      className={cn(
+                        "hidden h-px flex-1 bg-border lg:block",
+                        i === STEPS.length - 1 && "lg:hidden"
+                      )}
+                    />
+                  </div>
                   <h3 className="text-lg font-semibold tracking-tight">
                     {s.title}
                   </h3>
@@ -343,34 +399,41 @@ export function LandingPage({ cta }: { cta: LandingCtaSlot }) {
         <FeatureSection
           id="time"
           eyebrow="Time logs"
+          color="var(--lp-worked)"
           title="Type durations the way you think them."
-          intro="Write 1.5, 90, 1:15 or 1h 30m; PM4 stores it in 15-minute steps. Every log needs a note, so at the end of the month you still know what the time was for."
+          intro="Write 1.5, 90, 1:15 or 1h 30m and PM4 stores it in 15-minute steps. Every log needs a note, so at the end of the month you still know what the time was for. Go on, try the field."
           points={[
             {
-              title: "Three ways to read a day",
-              text: "Group logs by project or by task, or list them in the order you worked."
+              title: "Four ways to read a day",
+              text: "A timeline from your start time, groups by project or by task, or the plain order you worked in."
             },
             {
               title: "Against your target",
-              text: "A chart of the day's logs shows what's left of your daily target, with billable share and overtime in the header."
+              text: "Start, logged, billable share and overtime sit at the top of the day, next to a chart of its logs."
             },
             {
               title: "Non-prod time",
-              text: "Mark workshops or admin as excluded from statistics. They still count as logged, but not as billable."
+              text: "Mark workshops or admin as excluded from statistics. They count as logged, not as billable."
             },
             {
-              title: "Logged where it belongs",
-              text: "Every project and task page shows its logged time, how much of it is booked, and the logs themselves."
+              title: "A nudge when you forget",
+              text: "The bell tells you how much of today is unlogged, and can send a desktop notification."
             }
           ]}
-          visual={<DurationParser />}
+          visual={
+            <>
+              <LogTimeForm />
+              <ReminderCard />
+            </>
+          }
         />
 
         <FeatureSection
           id="bookings"
           eyebrow="Bookings"
+          color="var(--lp-booked)"
           title="Book what you worked, day by day."
-          intro="The Bookings page lists every day in a range with what you logged, what's billable and what's booked. Book a log to the day you worked it, split it across other dates, or book a whole project's day at once."
+          intro="The Bookings page lists every day in a range with what you logged, what's billable and what's booked. Book a log to the day you worked it, split it across other dates, or book a whole project's day in one click."
           points={[
             {
               title: "Part or all",
@@ -385,48 +448,58 @@ export function LandingPage({ cta }: { cta: LandingCtaSlot }) {
               text: "A log booked to another day shows where it went, and that day shows where it came from."
             },
             {
-              title: "A prompt for Slack",
-              text: "Copy the day's logs as Markdown, per project and task, with the service and duration filled in."
+              title: "A prompt, ready to paste",
+              text: "Copy the day as Markdown, per project and task, with the service and duration filled in."
             }
           ]}
           visual={
             <>
-              <BookingDay />
-              <BookingPrompt />
+              <BookingSplit />
+              <Panel label="PM4's booking prompt">
+                <PromptCopy />
+              </Panel>
             </>
           }
           reverse
+          muted
         />
 
         <FeatureSection
           id="dashboard"
           eyebrow="Dashboard"
+          color="var(--lp-start)"
           title="See the month at a glance."
-          intro="Pick today, this month, last month, the last 7, 30 or 90 days, this year, or a custom range of up to a year. The dashboard shows when your days started, how many hours you worked against your target, and how much of it is booked."
+          intro="Pick today, this month, last month, the last 7, 30 or 90 days, this year, or a custom range. The dashboard shows when your days started, how many hours you worked against your target, and how much of it is booked."
           points={[
             {
               title: "Workday chart",
-              text: "Start times above, hours worked per day below, split into booked, not booked and non-prod."
+              text: "Start times above, hours per day below, split into booked, not booked and non-prod. Click a bar to open that day."
             },
             {
               title: "Worked, target, booked",
-              text: "How far you are over or under your target for the range, and how much is still to book."
+              text: "How far you are over or under your target, and how much is still to book."
             },
             {
               title: "Running totals",
-              text: "Worked, target and booked added up day by day, running on to the end of the range."
+              text: "Worked, target and booked added up day by day across the range."
             },
             {
               title: "Hours by project",
               text: "Every project with hours in the range, most first, with its booked share."
             }
           ]}
-          visual={<DashboardChart />}
+          visual={
+            <>
+              <RunningTotals />
+              <HoursByProject />
+            </>
+          }
         />
 
         <FeatureSection
           id="projects"
           eyebrow="Projects and tasks"
+          color="#8b5cf6"
           title="Projects and tasks, without the overhead."
           intro="A project has a lead, a description, an external link and the services it offers. Its tasks have a status, a due date and a lead. Lists show progress and logged time, and you can search, filter and sort them."
           points={[
@@ -439,62 +512,66 @@ export function LandingPage({ cta }: { cta: LandingCtaSlot }) {
               text: "Overdue and due-soon tasks are marked in every list, using your own time zone."
             },
             {
-              title: "Move tasks between projects",
-              text: "A task's time logs move with it, so project totals stay right."
+              title: "Time where it belongs",
+              text: "Every project and task page charts its logged time by week, booked and not booked."
             },
             {
               title: "Services",
               text: "Give a project its services, link each task to one, and the booking prompt names it."
             }
           ]}
-          visual={<ProjectRows />}
+          visual={<TasksPicture />}
           reverse
+          muted
         />
 
         <FeatureSection
           id="notes"
           eyebrow="Notes and to-dos"
+          color="#e0a106"
           title="Notes next to the work they're about."
-          intro="Write notes in Markdown and keep to-do lists, each linked to a project, a task or nothing at all. Project and task pages show their own notes and open to-dos."
+          intro="Write notes in Markdown, with a preview as you go, and keep to-do lists. Link each one to a project, a task or nothing at all. Project and task pages show their own notes and open to-dos."
           points={[
             {
               title: "Grouped to-dos",
-              text: "To-dos are grouped by project and task. Tick one off and it stays in place, struck through."
+              text: "To-dos are grouped by project and task. Tick one off, or add the next one in place."
             },
             {
               title: "Search and filter",
               text: "Find a note by its title or text, and filter by project or by date."
             }
           ]}
-          visual={<NotesTodos />}
+          visual={<NotesPicture />}
         />
 
         <FeatureSection
           id="integrations"
           eyebrow="Integrations"
+          color="#0ea5a4"
           title="Connect PMSPA."
-          intro="If your team runs projects in PMSPA, connect your account in Settings. Import its projects and tasks into PM4, keep them in sync, and push your own work back."
+          intro="If your team runs projects in PMSPA, connect your account in Settings. Import its projects, tasks and time into PM4, link them to what you already have, and push your own work back."
           points={[
             {
               title: "Import what you need",
-              text: "Browse your PMSPA records and pick which ones to bring into PM4."
+              text: "Browse your PMSPA projects and tasks, pick the ones to bring in, and review what will change first."
             },
             {
               title: "Sync and push",
-              text: "From a project or task page, sync it with PMSPA or push it there."
+              text: "Sync a project or task from its page, or push a whole day's logs to PMSPA."
             }
           ]}
-          visual={<PmspaSync />}
+          visual={<PmspaPicture />}
           reverse
+          muted
         />
 
         <section
           aria-labelledby="extras-title"
-          className="border-t border-border bg-muted/40"
+          className="border-t border-border"
         >
-          <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
+          <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-24">
             <div className="flex flex-col gap-4">
-              <Eyebrow>Also in PM4</Eyebrow>
+              <Eyebrow color="var(--foreground)">Also in PM4</Eyebrow>
               <h2
                 id="extras-title"
                 className="max-w-2xl text-3xl font-semibold tracking-[-0.03em] text-balance sm:text-4xl"
@@ -502,13 +579,15 @@ export function LandingPage({ cta }: { cta: LandingCtaSlot }) {
                 The details that keep a timesheet honest.
               </h2>
             </div>
-            <ul className="mt-10 grid gap-px bg-border sm:grid-cols-2 lg:grid-cols-4">
+            <ul className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {EXTRAS.map(({ icon: Icon, title, text }) => (
                 <li
                   key={title}
-                  className="flex flex-col gap-2 bg-background p-6"
+                  className="flex flex-col gap-2 rounded-xl border border-border bg-card p-5"
                 >
-                  <Icon className="size-5" aria-hidden />
+                  <span className="flex size-9 items-center justify-center rounded-lg bg-muted">
+                    <Icon className="size-4" aria-hidden />
+                  </span>
                   <h3 className="mt-2 text-sm font-semibold">{title}</h3>
                   <p className="text-sm leading-relaxed text-muted-foreground">
                     {text}
@@ -520,28 +599,71 @@ export function LandingPage({ cta }: { cta: LandingCtaSlot }) {
         </section>
 
         <section
-          aria-labelledby="cta-title"
-          className="relative overflow-hidden border-t border-border"
+          id="faq"
+          aria-labelledby="faq-title"
+          className="scroll-mt-16 border-t border-border bg-muted/40"
         >
-          <div
-            aria-hidden
-            className={cn(
-              "pointer-events-none absolute inset-0 opacity-60 [mask-image:radial-gradient(ellipse_at_center,black,transparent_70%)]",
-              QUARTER_HOUR_GRID
-            )}
-          />
-          <div className="relative mx-auto flex max-w-6xl flex-col items-start gap-6 px-4 py-20 sm:px-6 sm:py-28">
-            <h2
-              id="cta-title"
-              className="max-w-3xl text-4xl leading-[1] font-semibold tracking-[-0.04em] text-balance sm:text-6xl"
-            >
-              Start with today.
-            </h2>
-            <p className="max-w-md text-lg leading-relaxed text-muted-foreground">
-              Sign in with Google, set when your day started, and write your
-              first log.
-            </p>
-            {cta({ size: "lg" })}
+          <div className="mx-auto grid max-w-6xl gap-10 px-4 py-16 sm:px-6 sm:py-24 lg:grid-cols-[1fr_1.6fr] lg:gap-16">
+            <div className="flex flex-col gap-4">
+              <Eyebrow color="var(--lp-worked)">FAQ</Eyebrow>
+              <h2
+                id="faq-title"
+                className="text-3xl font-semibold tracking-[-0.03em] text-balance sm:text-4xl"
+              >
+                Questions, answered.
+              </h2>
+              <p className="text-base leading-relaxed text-muted-foreground">
+                The details are in the{" "}
+                <Link
+                  href={routes.privacy}
+                  className="font-medium text-foreground underline underline-offset-4"
+                >
+                  Privacy policy
+                </Link>{" "}
+                and the{" "}
+                <Link
+                  href={routes.terms}
+                  className="font-medium text-foreground underline underline-offset-4"
+                >
+                  Terms
+                </Link>
+                .
+              </p>
+            </div>
+            <Accordion className="rounded-xl border border-border bg-card px-5">
+              {FAQ.map(({ q, a }) => (
+                <AccordionItem key={q} value={q}>
+                  <AccordionTrigger className="text-base">{q}</AccordionTrigger>
+                  <AccordionContent className="text-sm leading-relaxed text-muted-foreground">
+                    {a}
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
+          </div>
+        </section>
+
+        <section aria-labelledby="cta-title" className="border-t border-border">
+          <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-24">
+            <div className="relative flex flex-col items-center gap-6 overflow-hidden rounded-3xl bg-foreground px-6 py-16 text-center text-background sm:py-20">
+              <div
+                aria-hidden
+                className="pointer-events-none absolute inset-0 bg-[radial-gradient(40rem_20rem_at_20%_0,color-mix(in_oklab,var(--lp-worked)_45%,transparent),transparent),radial-gradient(36rem_18rem_at_90%_100%,color-mix(in_oklab,var(--lp-booked)_40%,transparent),transparent)] opacity-60"
+              />
+              <h2
+                id="cta-title"
+                className="relative max-w-3xl text-4xl leading-[1] font-semibold tracking-[-0.04em] text-balance sm:text-6xl"
+              >
+                Start with today.
+              </h2>
+              <p className="relative max-w-md text-lg leading-relaxed opacity-80">
+                Sign in with Google, set when your day started, and write your
+                first log.
+              </p>
+              <div className="relative">
+                {cta({ size: "lg", variant: "secondary" })}
+              </div>
+            </div>
           </div>
         </section>
       </main>
