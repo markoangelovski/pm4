@@ -34,3 +34,5 @@ coverage/
 # Misc
 /.ori
 /docs-pmspa
+# Security assessments: findings, reports and session notes (kept local)
+/security/
