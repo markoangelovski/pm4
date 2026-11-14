@@ -161,3 +161,4 @@ None.
 - 2026-11-07: Open questions empty; to `review`.
 - 2026-11-07: Approved by the owner.
 - 2026-11-07: *Goal* names the page's other sections from the prototype (`#day`, `#integrations`, "Also in PM4"); T-0147 review finding 1. No behavior change.
+- 2026-11-14: Superseded by feat-land-page-v2 (prototype `8ad4bac`): the page and ACs 1–4 change there.

@@ -3,7 +3,7 @@ id: req-landing
 title: Public Landing Page
 status: review
 owner: Marko Angelovski
-last_updated: 2026-11-12
+last_updated: 2026-11-14
 related: [prod-scope, req-auth, web-routing, web-screens, web-static-export, feat-land-app-route-split]
 ---
 
@@ -27,13 +27,13 @@ link (`?returnTo=`) on to sign-in.
 **Statement:** PM4 has a public landing page at `/`. Anyone can open it without signing in. It is
 a marketing page that describes everything PM4 does (OQ-045, OQ-151):
 - a **header** with the logo, links to the page's sections, a light/dark switch and the "Go to app" / "Login" call to action;
-- a **hero** with the product name, a tagline and the same call to action;
+- a **hero** with the product name, a tagline, the same call to action and a **product tour** (pictures of the Logs, Bookings, Dashboard and Projects screens the visitor can switch between);
 - a section each for **time** logging (the required log text, durations, the reminder to log time), **bookings**,
-  the **dashboard**, **projects** and tasks, and **notes** and to-dos, each with a picture of the screen;
+  the **dashboard**, **projects** and tasks, and **notes** and to-dos, each with a picture of the screen, plus a "How a day works" section, the PMSPA integration, an "Also in PM4" grid and an **FAQ**;
 - a closing call to action and a **footer**, which links the Privacy policy and the Terms (FR-LEGAL-003).
 
 The screen pictures are drawn in code with fictional sample projects, not screenshots, and follow light/dark. The
-agent drafts the copy, and the owner edits it. The confirmed design is the prototype (feat-land-redesign).
+agent drafts the copy, and the owner edits it. The page also has two small interactive pieces that run in the browser on sample content only: a duration box (using the app's duration rules) and a copyable booking prompt. The confirmed design is the prototype (feat-land-page-v2).
 **Rules:**
 - The page is fully static. Its content is rendered at build time and needs no API call to display
   (static-export.md). The page must render even when the API is unreachable or cold-starting.
@@ -109,3 +109,4 @@ description, and the 1200 × 630 card `web/public/images/og/pm4-card.png` (brand
 - 2026-11-07: Approved by the owner.
 - 2026-11-07: OQ-269: FR-LAND-003's Open Graph title, description and image on `/` (owner; quick-lane T-0148).
 - 2026-11-12: The footer links the Privacy policy and the Terms (FR-LEGAL-003, OQ-276). Back to `review`.
+- 2026-11-14: FR-LAND-001 is the v2 page from prototype `8ad4bac`: product tour, duration box and prompt button, FAQ (feat-land-page-v2). Back to `review`.
