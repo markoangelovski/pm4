@@ -1,7 +1,7 @@
 ---
 id: req-landing
 title: Public Landing Page
-status: review
+status: approved
 owner: Marko Angelovski
 last_updated: 2026-11-14
 related: [prod-scope, req-auth, web-routing, web-screens, web-static-export, feat-land-app-route-split]
@@ -110,3 +110,4 @@ description, and the 1200 × 630 card `web/public/images/og/pm4-card.png` (brand
 - 2026-11-07: OQ-269: FR-LAND-003's Open Graph title, description and image on `/` (owner; quick-lane T-0148).
 - 2026-11-12: The footer links the Privacy policy and the Terms (FR-LEGAL-003, OQ-276). Back to `review`.
 - 2026-11-14: FR-LAND-001 is the v2 page from prototype `8ad4bac`: product tour, duration box and prompt button, FAQ (feat-land-page-v2). Back to `review`.
+- 2026-11-14: Approved by the owner (v2 page merged in `5897def`).
