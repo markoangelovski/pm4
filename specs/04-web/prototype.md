@@ -109,8 +109,9 @@ acceptance tests; lint and typecheck cover it.
 ## Workflow
 1. **Build** (main session with the owner, `prototype` skill): the screen, its mock hooks, seed and proposed types.
    The owner tries it at `http://localhost:3000/proto/app/...`.
-2. **Confirm**: the owner says the screen is confirmed. The owner commits it (`proto(web): …`). The commit SHA goes
-   into the feature spec's `prototype:` field.
+2. **Confirm**: the owner says the screen is confirmed. The owner commits it (`proto(web): …`) on a `proto/<screen>`
+   branch and its pull request is squash-merged. The squash commit's SHA on `master` goes into the feature spec's
+   `prototype:` field.
 3. **Spec** (`write-spec`): the feature spec takes the UI from the prototype and states only the delta (see
    `specs/06-features/_TEMPLATE.md`).
 4. **Promote** (`implement-task`): before delegating a web task, the orchestrator runs

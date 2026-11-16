@@ -14,7 +14,8 @@ argument-hint: <specs/06-features/file.md | T-####>
    that task, and the tier feedback.
 4. Then, per task:
    - `approve` → leave it in `review`. Tell the owner the feature is ready for their review. After
-     reviewing, the owner sets `done` (`pm4 status <T> done`) and commits the feature.
+     reviewing, the owner sets `done` (`pm4 status <T> done`) and says to commit the feature on its branch.
+     Then push the branch and open its pull request (AGENTS.md §6 *Branches and pull requests*).
    - `changes-requested` → `pm4 status <T> in-progress`, and offer `implement-task <T>` with the
      findings, at the same tier, or one tier up if a finding is a design problem. A finding that changes UI
      is fixed in the prototype twin too (add it to *Files* if it isn't there), so the prototype stays ahead.

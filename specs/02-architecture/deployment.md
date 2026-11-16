@@ -15,7 +15,7 @@ How each app is built, tested and deployed **independently** from the monorepo (
 ## Workflows
 | Workflow | Triggers | Does |
 | --- | --- | --- |
-| `ci.yml` | `pull_request` | Detects changed paths (`dorny/paths-filter` or equivalent). Runs the web checks and/or the api checks. |
+| `ci.yml` | `pull_request` | Detects changed paths (`dorny/paths-filter` or equivalent). Runs the web checks and/or the api checks; `.github/**` changes run both. `ci-ok` aggregates them and is the one required check of the `master` ruleset (passes when each job passed or was skipped). |
 | `web-deploy.yml` | `push` to `master` with `paths: [web/**, api/openapi.json, .github/workflows/web-deploy.yml]`, plus `workflow_dispatch` | Build and deploy web to Pages |
 | `api-deploy.yml` | `push` to `master` with `paths: [api/**, .github/workflows/api-deploy.yml]`, plus `workflow_dispatch` | Test, migrate and deploy the api to Azure |
 

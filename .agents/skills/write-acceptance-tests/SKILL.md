@@ -30,5 +30,7 @@ already in context: don't re-read it.
    ACs, and moves tasks with no unmet dependencies to `ready`.
 6. If the spec doesn't say enough to write a test without guessing, stop and ask the owner (`OQ-###`).
 7. Report: the files written, each AC with its failure reason, and the gate results. Then ask the
-   owner to review and **commit the test-first step** (spec, tasks, tests, stubs), so each
-   implementation diff contains only implementation. Never stage or commit yourself.
+   owner to review and **commit the test-first step** (spec, tasks, tests, stubs) as the first commit
+   on the feature's `task/T-####` branch, so each implementation diff contains only implementation. It
+   isn't pushed to `master` on its own: its tests fail until the implementation lands in the same pull
+   request. Never stage or commit yourself.
