@@ -1,7 +1,7 @@
 name: ci
 
 # Verifies pull requests. Detects which app(s) changed and runs that app's checks
-# (build, but never deploy) (arch-deployment).
+# (build, but never deploy) (arch-deployment). `ci-ok` is the required check for merging into master.
 on:
   pull_request:
     branches: [master]
@@ -30,8 +30,10 @@ jobs:
             web:
               - 'web/**'
               - 'api/openapi.json'
+              - '.github/**'
             api:
               - 'api/**'
+              - '.github/**'
 
   web:
     needs: changes
@@ -144,3 +146,17 @@ jobs:
 
       - name: Build
         run: npm run build
+
+  # The one required status check in the `master` ruleset. It passes when every app job passed or was
+  # skipped (no changes in its paths), so a docs-only pull request can still merge, and jobs can be
+  # added here without touching the ruleset.
+  ci-ok:
+    needs: [changes, web, api]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: All checks passed or were skipped
+        run: |
+          if [ "${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}" = "true" ]; then
+            exit 1
+          fi

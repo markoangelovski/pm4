@@ -39,5 +39,6 @@ yourself unless something goes wrong. The script and the subagent's report are e
 - `node scripts/pm4.mjs status $ARGUMENTS review`. This unblocks dependent tasks.
 - Tell the owner in a few lines: the files changed, the check summary, and the attempts.
 - Next: the next `ready` task of the feature. After the last one, suggest `review-feature <spec>`.
-  A quick-lane task goes straight to the owner's review.
-- Don't commit. The owner commits after their review (AGENTS.md §3).
+  A quick-lane task goes straight to the owner's review, then its own pull request.
+- Don't commit. The owner commits after their review (AGENTS.md §3). Work happens on the feature's
+  `task/T-####` branch, never on `master` (AGENTS.md §6 *Branches and pull requests*).

@@ -22,7 +22,7 @@ single-user-per-account project management app. Users create **projects** and **
 | `web/` | Frontend: Next.js static export + shadcn (own `AGENTS.md`) | GitHub Pages (`https://pm4.angelovski.top`) |
 | `web/proto/`, `web/app/proto/` | UI prototype at `/proto/app/**`: mocked session and data, dev server only (ADR-0012) | never deployed |
 | `api/` | Backend: NestJS + Drizzle (own `AGENTS.md`) | Azure Web App (`*.azurewebsites.net`) |
-| `.github/workflows/` | `ci.yml` (PR checks), `web-deploy.yml`, `api-deploy.yml` (path-filtered + manual) | — |
+| `.github/workflows/` | `ci.yml` (PR checks, required `ci-ok`), `web-deploy.yml`, `api-deploy.yml` (path-filtered + manual) | — |
 | `frontend_old/`, `backend_old/` | **Legacy** PM4 (own git repos, git-ignored). **Read-only reference.** | — |
 | `next-shadcn-dashboard-main.zip` | Dashboard template, the base of `web/` (git-ignored) | — |
 
@@ -50,10 +50,12 @@ behavior. Add an entry to `specs/open-questions.md` and ask the user (implemente
 - **The owner reviews before anything is committed.** Leave every change as an uncommitted,
   unstaged working-tree change. Commit only when the owner explicitly asks you to in the current
   conversation, after they have reviewed the diff, and then commit only the reviewed changes.
-  **Subagents never commit. No agent ever pushes** (the owner pushes). Never run `git stash`,
-  `git reset`, `git rebase`, `git merge`, `git checkout -- …`, `git restore` or `git clean`; if one
-  seems necessary, ask the owner to run it. "Committed" in the specs (e.g. migrations,
-  `openapi.json`) means "a tracked file in the repo".
+  **Subagents never commit or push.** Only the main session pushes, and only a work branch (never
+  `master`, never `--force`), to open its pull request (§6 *Branches and pull requests*). `master`
+  changes only by a squash merge of a pull request on GitHub. Never run `git stash`, `git reset`,
+  `git rebase`, `git merge`, `git checkout -- …`, `git restore` or `git clean`; if one seems
+  necessary, ask the owner to run it. "Committed" in the specs (e.g. migrations, `openapi.json`)
+  means "a tracked file in the repo".
 - **Single user per account.** Nothing is shared between users. Every row belongs to exactly one
   user, and every API query is scoped to the authenticated user. → `specs/02-architecture/security.md`
 - **Frontend is a static site** (`output: "export"`) on GitHub Pages, served from the domain root.
@@ -128,6 +130,32 @@ task file, no feature spec, no Opus review). Details: `specs/05-quality/task-rou
 Commit points keep each diff reviewable: the confirmed prototype is its own commit, the working tree is clean before the first task, tasks of
 one feature build up uncommitted (`pm4 check` allows earlier tasks' files), and the owner commits the
 feature after the review.
+
+### Branches and pull requests
+
+`master` is protected on GitHub: no direct pushes, no force pushes. Every change reaches it through a pull
+request that passes the `ci-ok` check, merged with **squash** (one commit on `master` per pull request).
+`.github/pull_request_template.md` is the pull request body.
+
+| Work | Branch (worktree under `.worktrees/`) | Pull request |
+| --- | --- | --- |
+| Confirmed prototype | `proto/<screen>` | Its own, merged before `write-spec`. The spec's `prototype:` is the **squash commit's SHA on `master`** |
+| Feature (spec approval, tasks, acceptance tests, implementation) | `task/T-####` (the feature's first task) | One for the feature. The test-first commit is the branch's first commit; the acceptance tests fail until the implementation commit, so it never goes to `master` alone |
+| Quick-lane task | `task/T-####` | Its own |
+| Docs, specs, config, chores | `docs/<slug>`, `chore/<slug>`, `fix/<slug>` | Its own, or ride along with the feature it belongs to |
+
+1. Branch from an up-to-date `master`: `git worktree add .worktrees/<name> -b <branch> github/master`
+   (after `git fetch github`).
+2. Commit on the branch only when the owner says so, after their review (rule above).
+3. When the owner says the branch is ready: `git push -u github <branch>`, then `gh pr create --base master`
+   with a conventional-commit **title** (it becomes the squash commit's message, from which the release
+   version and changelog are computed, `specs/02-architecture/deployment.md`) and the template filled in.
+   Set the tasks to `done` in a commit on the branch before that, so the board lands with the work.
+4. `gh pr merge --squash --auto --delete-branch`: it merges once `ci-ok` passes. A red check is fixed with
+   another commit on the branch, never by bypassing protection.
+5. After the merge: in the main checkout `git pull --ff-only github master`, then
+   `git worktree remove .worktrees/<name>` and `git branch -D <branch>` (squashed branches aren't
+   "merged" in git's eyes, so `-d` refuses).
 
 ## 7. Commands
 

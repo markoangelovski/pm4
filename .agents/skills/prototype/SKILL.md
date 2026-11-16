@@ -35,5 +35,7 @@ Run this inline in the main (Opus) session, with the owner. No subagents. The ru
 
 ## 4. Confirm
 - The owner confirms the screen in words ("confirmed"). Then list the changed files and suggest a commit message
-  `proto(web): <screen>: <what>`. The owner commits (AGENTS.md §3).
-- Next step: `write-spec` for the feature, with the prototype commit's SHA for its `prototype:` field.
+  `proto(web): <screen>: <what>`. The owner commits on a `proto/<screen>` branch (AGENTS.md §3), which goes
+  to its own pull request, squash-merged into `master` (AGENTS.md §6 *Branches and pull requests*).
+- Next step: `write-spec` for the feature, with the **squash commit's SHA on `master`** for its `prototype:` field
+  (the branch commit's SHA doesn't survive the squash).

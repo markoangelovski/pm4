@@ -7,7 +7,7 @@ last_updated: YYYY-MM-DD
 milestone: M<N>
 requirements: []                # [FR-PRJ-001, NFR-005]
 related: []                     # [api-endpoints, api-data-model, ADR-000X]
-prototype: —                    # SHA of the owner's prototype commit (web UI features), e.g. 1a2b3c4
+prototype: —                    # master SHA of the squash-merged prototype commit (web UI features), e.g. 1a2b3c4
 ---
 
 <!--

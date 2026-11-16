@@ -44,4 +44,6 @@ editing acceptance tests, specs, agent config, the board and the other app.
   The `pm4` output and the subagent's report are enough.
 - Before claiming a task is done, run `node scripts/pm4.mjs check <T-####>` and put its summary in
   the task's *Implementation notes*.
-- Commit only when the owner says so, after they've reviewed the diff (AGENTS.md §3). Never push.
+- Commit only when the owner says so, after they've reviewed the diff (AGENTS.md §3).
+- Push only a work branch, from the main session, to open its pull request; never `master`, never
+  `--force` (AGENTS.md §6 *Branches and pull requests*). `gh` must be logged in (`! gh auth login`).

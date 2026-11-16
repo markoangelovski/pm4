@@ -39,9 +39,13 @@ pm4/                               # git root. Remote: a new GitHub repo (OQ-033
 - Each app's `AGENTS.md` holds app-specific commands and structure, and links to `../specs`. It must not contradict the root docs.
 - Legacy folders keep their own `.git`, and are ignored by the monorepo.
 
-## Branching and PRs (proposed)
-- Default branch `master`. Short-lived `feat/T-####-slug` branches, with PRs into `master`.
-- `ci.yml` must pass before merge. A merge deploys only the app(s) whose paths changed. Either app can be redeployed manually.
+## Branching and PRs
+- Default branch `master`, protected by a ruleset: changes only through pull requests, required check `ci-ok`,
+  branch up to date before merging, linear history, no force pushes or deletion.
+- Short-lived branches (`task/T-####`, `proto/<screen>`, `docs/…`, `chore/…`, `fix/…`), each a pull request into
+  `master`, **squash-merged** with the pull request title (a conventional commit) as the commit message. Head
+  branches are deleted on merge. The workflow is in `AGENTS.md` §6 *Branches and pull requests*.
+- A merge deploys only the app(s) whose paths changed. Either app can be redeployed manually.
 
 ## Legacy reference: what's useful
 | Legacy path | Worth looking at for |
@@ -60,4 +64,5 @@ pm4/                               # git root. Remote: a new GitHub repo (OQ-033
 - 2026-09-26: Updated with owner answers to OQ-001–018.
 - 2026-09-26: OQ-033 resolved: a new GitHub repo.
 - 2026-09-27: Default branch is `master`.
+- 2026-11-16: Pull requests into a protected `master`, squash merge, `ci-ok` required check.
 - 2026-09-27: Approved by the owner.
