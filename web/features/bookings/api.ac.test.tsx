@@ -82,7 +82,17 @@ describe("booking hooks (feat-book-web, feat-book-partial)", () => {
     // useSetBooking → API-BOOK-002, then bookingKeys.all and timeKeys.logs() are invalidated.
     const rangeKey = bookingKeys.range("2026-10-01", "2026-10-09");
     const otherRangeKey = bookingKeys.range("2026-09-01", "2026-09-30");
-    const logListKey = timeKeys.logList({ projectId: "p1" }, 1);
+    // `timeKeys.logList(filter, range, page)` (feat-tlog-logged-range): called through this type until its T2.
+    const logList = timeKeys.logList as unknown as (
+      filter: { projectId: string },
+      range: { from: string; to: string },
+      page: number
+    ) => readonly unknown[];
+    const logListKey = logList(
+      { projectId: "p1" },
+      { from: "2026-10-01", to: "2026-10-31" },
+      1
+    );
     api.PUT.mockResolvedValueOnce({
       data: { items: [log] },
       response: res(200)

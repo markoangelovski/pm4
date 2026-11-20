@@ -3,7 +3,7 @@ id: req-time-logs
 title: Time Capture (Workdays and Time Logs)
 status: review
 owner: Marko Angelovski
-last_updated: 2026-11-12
+last_updated: 2026-11-20
 related: [req-projects, req-tasks, req-reporting, api-endpoints, api-data-model, web-screens]
 ---
 
@@ -199,8 +199,8 @@ remembered: each page load shows the button (OQ-242). The header's **New ▾** m
 
 ### FR-TLOG-012: Logs on project and task pages
 **Priority:** Must
-**Statement:** The task page and the project page each have a **Logged time** section with the total hours logged
-(across all days), the booked part of it (the minutes of the logs' bookings, FR-BOOK-004), and the logs, newest date first (entry
+**Statement:** The task page and the project page each have a **Logged time** section for a date range (the Statistics range control, FR-RPT-001, default **So far**; every range is
+bounded, OQ-286) with the total hours logged in that range, the booked part of it (the minutes of the logs' bookings, FR-BOOK-004), and the logs, newest date first (entry
 order within a day), 25 per page. A row shows the work date (a link that opens that day), the log text (OQ-135), on the
 project page the task, its bookings (one line each, "6 Oct 2026 · 30m", then "30m unbooked" while part of it is left; "-" when it has none,
 OQ-214) and the duration.
@@ -210,6 +210,9 @@ directly **and** the logs of all its tasks (a log with a task always carries the
 - Given 1 h logged on project P directly and 30 min on a task of P, P's page shows 1 h 30 min and the task's page 30 min.
 - Given a task moved to another project, its logs count towards the new project from then on.
 - Given 1 h 30 min on P of which a 1 h log is booked, P's section shows the total 1 h 30 min and booked 1 h, and the booked row shows its booking date.
+- Given 1 h on P on 6 Oct and 30 min on 7 Oct, the range 7 Oct–7 Oct shows 30 min and only the 7 Oct log; a range without logs shows "No time logged in this range."
+- Given a log dated 6 Oct booked on 7 Oct, the range 6 Oct–6 Oct counts it as booked (the log's date decides, not the booking's).
+- The Projects and Tasks lists' **Logged** column stays the all-time total whatever the section's range (OQ-286).
 - Given a 1 h log with 30 min booked to 6 October, then its row shows "6 Oct 2026 · 30m" and "30m unbooked", and the section's *Booked* counts 30 min.
 
 ### FR-TLOG-014: Logs keep deleted task/project names
@@ -387,3 +390,4 @@ None.
 - 2026-11-09: FR-TLOG-018: ticking *Exclude from statistics* in the log form empties and disables Project and Task (owner, prototype `fc51579`, T-0154).
 - 2026-11-10: FR-TLOG-023 Timeline grouped by project: collapsible groups with icon, log count and sum; a collapsed group draws its logs on one bar (owner, prototype `ccad52f`, feat-tlog-timeline-groups).
 - 2026-11-12: FR-TLOG-023: Timeline groups get the **+**, its rows the task and project icons, a **+** after a live task and the **⋯** menu (Edit, Delete); FR-TLOG-003/015: a **+** after a row's live task, the task icon in By task headings (owner, prototype `a28a67f`, feat-tlog-views-actions).
+- 2026-11-20: FR-TLOG-012: the Logged time section shows one date range, the Statistics control with default So far (OQ-286, prototype `b2d6976`, feat-tlog-logged-range).

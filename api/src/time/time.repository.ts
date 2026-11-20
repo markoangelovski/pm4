@@ -2,6 +2,7 @@ import { Inject, Injectable } from "@nestjs/common";
 import {
   and,
   asc,
+  between,
   count,
   desc,
   eq,
@@ -271,10 +272,11 @@ export class TimeRepository {
     return this.withBookings(this.db, userId, rows);
   }
 
-  /** API-TLOG-001: one page of a project's or task's logs (workDate desc, then id asc) and the totals over all of them. */
+  /** API-TLOG-001: one page of a project's or task's logs in `[from, to]` (workDate desc, then id asc) and the totals over all of them. */
   async listLogs(
     userId: string,
     filter: { projectId: string } | { taskId: string },
+    range: { from: string; to: string },
     page: number,
     pageSize: number
   ): Promise<{
@@ -288,7 +290,11 @@ export class TimeRepository {
       "projectId" in filter
         ? eq(timeLogs.projectId, filter.projectId)
         : eq(timeLogs.taskId, filter.taskId);
-    const where = and(eq(timeLogs.userId, userId), link);
+    const where = and(
+      eq(timeLogs.userId, userId),
+      link,
+      between(timeLogs.workDate, range.from, range.to)
+    );
     const [rawRows, [totals], [booked], dayRows] = await Promise.all([
       this.selectRows(this.db)
         .where(where)
@@ -324,7 +330,7 @@ export class TimeRepository {
           SELECT work_date, duration_minutes,
                  (SELECT SUM(bk.minutes) FROM bookings bk WHERE bk.time_log_id = time_logs.id) AS booked_minutes
           FROM time_logs
-          WHERE user_id = ${userId} AND ${"projectId" in filter ? sql`project_id = ${filter.projectId}` : sql`task_id = ${filter.taskId}`}
+          WHERE user_id = ${userId} AND ${"projectId" in filter ? sql`project_id = ${filter.projectId}` : sql`task_id = ${filter.taskId}`} AND work_date BETWEEN ${range.from}::date AND ${range.to}::date
         ) per_log
         GROUP BY work_date
         ORDER BY work_date

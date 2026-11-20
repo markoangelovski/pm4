@@ -2946,11 +2946,15 @@ export interface operations {
     };
     TimeLogsController_list: {
         parameters: {
-            query?: {
+            query: {
                 /** @description 1-based page number. */
                 page?: number;
                 /** @description Items per page, 1–100. */
                 pageSize?: number;
+                /** @description First work date of the range (`YYYY-MM-DD`). */
+                from: string;
+                /** @description Last work date of the range, inclusive: from ≤ to ≤ from + 366 days. */
+                to: string;
                 /** @description The project whose logs (its tasks' too) to list. */
                 projectId?: string;
                 /** @description The task whose logs to list. */

@@ -1892,6 +1892,28 @@
             }
           },
           {
+            "name": "from",
+            "required": true,
+            "in": "query",
+            "description": "First work date of the range (`YYYY-MM-DD`).",
+            "schema": {
+              "format": "date",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": true,
+            "in": "query",
+            "description": "Last work date of the range, inclusive: from ≤ to ≤ from + 366 days.",
+            "schema": {
+              "format": "date",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+              "type": "string"
+            }
+          },
+          {
             "name": "projectId",
             "required": false,
             "in": "query",

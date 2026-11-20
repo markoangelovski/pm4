@@ -14,6 +14,7 @@ import {
 import { clearRefreshToken } from "@/lib/auth/token-store";
 import { OfflineBanner } from "@/features/system/components/offline-banner";
 import { NO_LOG_LINK, setLastLogLink } from "@/features/time/last-log-link";
+import { clearFormDrafts } from "@/features/system/form-drafts";
 
 type GuardState = "checking" | "ready" | "unavailable";
 
@@ -72,6 +73,7 @@ export function AuthGuard({
       onSessionEnded(() => {
         queryClient.clear();
         setLastLogLink(NO_LOG_LINK);
+        clearFormDrafts();
         router.replace(
           landingHref(window.location.pathname + window.location.search)
         );

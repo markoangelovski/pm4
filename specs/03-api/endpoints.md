@@ -3,7 +3,7 @@ id: api-endpoints
 title: API Endpoints
 status: review
 owner: Marko Angelovski
-last_updated: 2026-11-12
+last_updated: 2026-11-20
 related: [api-conventions, api-data-model, req-auth, req-projects, req-tasks, req-time-logs, req-reporting, req-integrations, req-notes]
 ---
 
@@ -54,7 +54,7 @@ defines its request, response and errors. Paths are relative to `/api/v1` unless
 | API-WD-002 | PUT | `/workdays/{date}` `{startMinute}` | FR-TLOG-009 | specified |
 | API-WD-003 | GET | `/workdays/{date}` → `Day` (the start, the total and the day's logs in entry order) | FR-TLOG-001/002/003/009/015/016 | specified |
 | API-WD-004 | DELETE | `/workdays/{date}` (the day's start and its logs, with their bookings) | FR-TLOG-019 | specified |
-| API-TLOG-001 | GET | `/time-logs?projectId=&taskId=&page=&pageSize=` → logs of one project or task (`BookingLog`), with `totalMinutes`, `bookedMinutes` and the minutes per date (`days`) | FR-TLOG-012 | specified |
+| API-TLOG-001 | GET | `/time-logs?projectId=&taskId=&from=&to=&page=&pageSize=` → logs of one project or task in a date range (`BookingLog`), with `totalMinutes`, `bookedMinutes` and the minutes per date (`days`) | FR-TLOG-012 | specified |
 | API-TLOG-002 | POST | `/time-logs` `{workDate, durationMinutes, text, title?, projectId?, taskId?, dayStartMinute?}` | FR-TLOG-004/009 | specified |
 | API-TLOG-003 | — | (removed) | — | — |
 | API-TLOG-004 | PATCH | `/time-logs/{id}` | FR-TLOG-006 | specified |
@@ -409,10 +409,12 @@ bookings go with them (FK cascade). Logs of other dates with a booking dated `da
 **Errors:** 400 invalid date · 401 · 404 `not-found` when the caller has no workday and no logs on `date` (so also any future date)
 
 ### API-TLOG-001: List the logs of a project or task
-`GET /time-logs?projectId=&taskId=&page=&pageSize=` · Auth: bearer · Implements: FR-TLOG-012
+`GET /time-logs?projectId=&taskId=&from=&to=&page=&pageSize=` · Auth: bearer · Implements: FR-TLOG-012
 **Query:** exactly one of `projectId`, `taskId` (a UUID), else `400` (both or neither: field `projectId`, "exactly one of projectId and taskId is
-required"). `page`, `pageSize` as in *Lists* above (`q` isn't accepted).
-**200:** `{ items: BookingLog[], page, pageSize, total, totalMinutes, bookedMinutes, days: LoggedDay[] }`: the caller's logs with that project (which includes the logs of its
+required"). `from`, `to` (required): work dates, `from` ≤ `to` ≤ `from` + 366 days, else `400` (missing or malformed: its own field; out of
+order or longer: field `to`, "must not be before from and at most 366 days after it"); future dates are allowed. A log matches only when its
+`workDate` is in the range (OQ-286). `page`, `pageSize` as in *Lists* above (`q` isn't accepted).
+**200:** `{ items: BookingLog[], page, pageSize, total, totalMinutes, bookedMinutes, days: LoggedDay[] }`: the caller's logs in the range with that project (which includes the logs of its
 tasks) or that task, ordered by `workDate` descending, then entry order (`id` ascending). `totalMinutes` sums **all** matching logs, not only the page;
 `bookedMinutes` sums their bookings' `minutes`. `days`: one `LoggedDay` = `{ workDate, workedMinutes, bookedMinutes }` per date with a matching log
 (**all** of them, not only the page's; excluded logs too), oldest first; `workedMinutes` sums that date's matching logs, `bookedMinutes` their bookings'
@@ -848,3 +850,4 @@ None.
 - 2026-11-04: The owner approved API-NOTE-001 and API-TODO-001 (as updated) for feat-prj-lists.
 - 2026-11-07: API-SYS-004 `GET /changelog`: the API's releases, public (OQ-270…272, feat-shell-documentation).
 - 2026-11-12: API-USR-003 returns and matches no emails (OQ-277); new API-USR-004 `DELETE /me` (FR-AUTH-008, OQ-280, OQ-281) (feat-acct-privacy).
+- 2026-11-20: API-TLOG-001 takes a required `from`/`to` (at most 366 days); the list, totals and `days` cover only that range (OQ-286, feat-tlog-logged-range).

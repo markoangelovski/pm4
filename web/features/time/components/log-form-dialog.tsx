@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Controller, useForm, useWatch } from "react-hook-form";
+import { Controller, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { toastError } from "@/features/system/rate-limit";
@@ -34,6 +34,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { formatClock, nowMinute, roundToQuarter } from "@/lib/time/clock";
 import { formatDuration, today } from "@/lib/time";
 import { useMe } from "@/features/users/api";
+import { draftKey, useDraftForm } from "@/features/system/form-drafts";
+import { DraftNotice } from "@/features/system/components/draft-notice";
 import { ProjectIcon } from "@/features/projects/components/project-icon";
 import { applyFieldErrors, isApiError } from "@/lib/api/problem";
 import { useCreateLog, useDay, useUpdateLog } from "../api";
@@ -133,14 +135,17 @@ function LogForm({
   const update = useUpdateLog(log?.id ?? "");
   const save = log ? update : create;
   const {
-    control,
-    register,
-    handleSubmit,
-    setValue,
-    setError,
-    clearErrors,
-    formState: { errors }
-  } = useForm<LogFormValues>({
+    form: {
+      control,
+      register,
+      handleSubmit,
+      setValue,
+      setError,
+      clearErrors,
+      formState: { errors }
+    },
+    draft
+  } = useDraftForm<LogFormValues>(draftKey("log", log?.id), {
     resolver: zodResolver(logFormSchema),
     defaultValues: (() => {
       const base = logFormDefaults(
@@ -169,7 +174,13 @@ function LogForm({
     ]
   });
   // OQ-150: a deleted project/task stays in its box until another one is picked or the box is cleared.
-  const [keepDeleted, setKeepDeleted] = useState(true);
+  // A restored draft that relinked the log has already dropped the deleted names.
+  const [keepDeleted, setKeepDeleted] = useState(
+    () =>
+      !draft.restored ||
+      ((project?.id ?? null) === (log?.project?.id ?? null) &&
+        (task?.id ?? null) === (log?.task?.id ?? null))
+  );
   const deletedProject =
     keepDeleted && log?.project && !log.project.id ? log.project.title : null;
   const deletedTask =
@@ -215,6 +226,7 @@ function LogForm({
           project: values.task?.project ?? values.project,
           task: values.task
         });
+      draft.clear();
       toast.success(log ? "Log saved" : "Log added");
       onDone(values.date);
     } catch (error) {
@@ -235,6 +247,7 @@ function LogForm({
           {log ? "Change this log." : "Record time you worked."}
         </DialogDescription>
       </DialogHeader>
+      <DraftNotice draft={draft} />
       <FieldGroup>
         <div className="grid gap-4 sm:grid-cols-2">
           <Field data-invalid={!!errors.date}>
@@ -469,6 +482,7 @@ function LogForm({
               variant="outline"
               type="button"
               className="cursor-pointer"
+              onClick={draft.clear}
             />
           }
         >

@@ -79,3 +79,6 @@ A feature spec links to those. It doesn't copy them.
 | Logs: + and ⋯ in Timeline, + after a row's task, task icons | [tlog-views-actions.md](tlog-views-actions.md) | M4 | approved |
 | Account deletion and no emails in the lead search (API) | [acct-api.md](acct-api.md) | M1 | approved |
 | Legal pages, account deletion and no emails in the lead picker (web) | [acct-web.md](acct-web.md) | M1 | approved |
+| API loading bar at the top of the window | [shell-api-progress.md](shell-api-progress.md) | M0 | approved |
+| Unsaved drafts in form dialogs | [shell-form-drafts.md](shell-form-drafts.md) | M0 | approved |
+| Date range on the Logged time section | [tlog-logged-range.md](tlog-logged-range.md) | M4 | approved |
