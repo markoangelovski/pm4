@@ -357,7 +357,7 @@ const recent: TimeSeed = {
 };
 
 /**
- * ~11 weeks of weekday history before the hand-written days above (the Dashboard needs a filled month).
+ * ~11 weeks of weekday history (plus ~2 years of weekly logs on one task) before the hand-written days above (the Dashboard needs a filled month).
  * Older logs are mostly booked to their own day, recent ones mostly not.
  */
 function withHistory(s: TimeSeed): TimeSeed {
@@ -415,6 +415,22 @@ function withHistory(s: TimeSeed): TimeSeed {
               : [{ date, minutes }];
       }
     }
+  }
+  // A long-running task: one booked Monday log a week for ~2 years before the history above (the Logged time
+  // section's ranges: This year, Last 90 days and custom ranges show different slices of it).
+  for (let back = 730; back > 80; back--) {
+    const date = ago(back);
+    if (new Date(date + "T12:00:00").getDay() !== 1) continue;
+    starts[date] ??= 9 * 60;
+    const log = seed(
+      date,
+      (2 + Math.floor(rand() * 15)) * 15,
+      "Maintenance and support.",
+      null,
+      "t-nvidia-dev"
+    );
+    logs.push(log);
+    bookings[log.id] = [{ date, minutes: log.durationMinutes }];
   }
   return { starts, bookings, logs };
 }

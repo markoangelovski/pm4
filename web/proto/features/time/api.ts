@@ -14,6 +14,8 @@ import { apiClient } from "@/proto/mock/client";
 import { unwrap, unwrapVoid } from "@/lib/api/problem";
 import type { components } from "@/lib/api/schema";
 import { nowMinute } from "@/lib/time/clock";
+import type { DateRange } from "@/proto/features/dashboard/range";
+import type { TimeLogListQuery } from "./proposed-types";
 import type { Day, TimeLog, TimeLogInput } from "./types";
 
 export type {
@@ -30,7 +32,7 @@ export interface WorkdayList {
   items: { workDate: string; startMinute: number; totalMinutes: number }[];
 }
 
-/** API-TLOG-001: one page of a project's or task's logs, with their booking dates and the totals. */
+/** API-TLOG-001: one page of a project's or task's logs in a work-date range, with their booking dates and the range's totals. */
 export type TimeLogList = components["schemas"]["TimeLogListResponseDto"];
 export type TimeLogFilter = { projectId: string } | { taskId: string };
 
@@ -48,24 +50,33 @@ export const timeKeys = {
   workdayRange: (from: string, to: string) =>
     [...timeKeys.workdays(), from, to] as const,
   logs: () => [...timeKeys.all, "logs"] as const,
-  logList: (filter: TimeLogFilter, page: number) =>
-    [...timeKeys.logs(), filter, page] as const
+  logList: (filter: TimeLogFilter, range: DateRange, page: number) =>
+    [...timeKeys.logs(), filter, range.from, range.to, page] as const
 };
 
-/** API-TLOG-001, TIME_LOG_PAGE_SIZE per page, keepPreviousData. Under timeKeys.all, so every log mutation refreshes it. */
+/** API-TLOG-001 for the logs dated in `range`, TIME_LOG_PAGE_SIZE per page, keepPreviousData. Under timeKeys.all, so every log mutation refreshes it. */
 export function useTimeLogs(
   filter: TimeLogFilter,
+  range: DateRange,
   page: number
 ): UseQueryResult<TimeLogList, Error> {
   return useQuery({
-    queryKey: timeKeys.logList(filter, page),
-    queryFn: async ({ signal }) =>
-      unwrap(
+    queryKey: timeKeys.logList(filter, range, page),
+    queryFn: async ({ signal }) => {
+      const query: TimeLogListQuery = {
+        ...filter,
+        from: range.from,
+        to: range.to,
+        page,
+        pageSize: TIME_LOG_PAGE_SIZE
+      };
+      return unwrap(
         await apiClient.GET("/api/v1/time-logs", {
-          params: { query: { ...filter, page, pageSize: TIME_LOG_PAGE_SIZE } },
+          params: { query },
           signal
         })
-      ),
+      );
+    },
     placeholderData: keepPreviousData
   });
 }

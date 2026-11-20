@@ -33,6 +33,7 @@ export const MOCK_LATENCY_MS = 150;
 
 import type { Project, ProjectService } from "@/proto/features/projects/api";
 import type { Task } from "@/proto/features/tasks/api";
+import { isRangeTooLong } from "@/proto/features/dashboard/range";
 
 type Status = components["schemas"]["TaskStatus"];
 type Body = Record<string, unknown>;
@@ -362,12 +363,21 @@ function listLogs(q: URLSearchParams) {
       "Bad Request",
       "Pass exactly one of projectId, taskId."
     );
+  // TimeLogListQuery: from and to are required, from ≤ to, at most 366 days apart (as the dashboard report).
+  const from = q.get("from");
+  const to = q.get("to");
+  if (!from) return validation("from", "from is required.");
+  if (!to) return validation("to", "to is required.");
+  if (from > to) return validation("to", "to must not be before from.");
+  if (isRangeTooLong({ from, to }))
+    return validation("to", "The range is at most 366 days.");
   const s = getMockState();
   const all = s.logs
     .map((l, i) => ({ l, i }))
     .filter(({ l }) =>
       taskId ? l.task?.id === taskId : l.project?.id === projectId
     )
+    .filter(({ l }) => l.workDate >= from && l.workDate <= to)
     .sort((a, b) =>
       a.l.workDate === b.l.workDate
         ? a.i - b.i

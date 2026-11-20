@@ -8,7 +8,7 @@ import {
   type ChartConfig
 } from "@/components/ui/chart";
 import { formatDuration } from "@/lib/time";
-import { eachDay } from "@/proto/features/dashboard/range";
+import { eachDay, type DateRange } from "@/proto/features/dashboard/range";
 import {
   buckets,
   hourTicks,
@@ -29,11 +29,9 @@ export const LOGGED_COLORS =
   "[--dash-worked:#2a78d6] [--dash-booked:#1baf7a] " +
   "dark:[--dash-worked:#3987e5] dark:[--dash-booked:#199e70]";
 
-/** Every date from the first to the last logged one, as the dashboard buckets them (by day up to 62 days, else by week). */
-export function loggedBuckets(days: LoggedDay[]) {
-  if (!days.length) return { by: "day" as const, items: [] };
+/** Every date of the range, as the dashboard buckets them (by day up to 62 days, else by week). */
+export function loggedBuckets(days: LoggedDay[], range: DateRange) {
   const byDate = new Map(days.map((d) => [d.workDate, d]));
-  const range = { from: days[0].workDate, to: days.at(-1)!.workDate };
   return buckets(
     eachDay(range).map((workDate) => ({
       workDate,
@@ -72,10 +70,16 @@ function LoggedTooltip({ active, payload }: TipProps) {
   );
 }
 
-/** SCR-044 Chart view: hours worked on the project or task (booked + not booked), over every date it was logged. */
-export function LoggedTimeChart({ days }: { days: LoggedDay[] }) {
+/** SCR-044 Chart view: hours worked on the project or task (booked + not booked), over every date of the range. */
+export function LoggedTimeChart({
+  days,
+  range
+}: {
+  days: LoggedDay[];
+  range: DateRange;
+}) {
   const router = useRouter();
-  const { by, items } = loggedBuckets(days);
+  const { by, items } = loggedBuckets(days, range);
   const yTicks = hourTicks(Math.max(0, ...items.map((b) => b.worked)));
   const ticks = new Map(items.map((b) => [b.key, b.tick]));
   const openDay = (b?: Bucket) => {
