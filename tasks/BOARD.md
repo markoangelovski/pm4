@@ -167,9 +167,9 @@
 | [T-0162](m1-auth/T-0162-account-deletion-and-the-lead-picker.md) | Account deletion and the lead picker: api:types, D3 type switch, D1 sign-out target, the four twins | M1 | web | S | done | T-0161, T-0160 |
 | [T-0163](m7-landing/T-0163-landing-page-v2-the-six-twins.md) | Landing page v2: the six twins, delete landing-vignettes.tsx | M7 | web | S | done | — |
 | [T-0164](m0-foundation/T-0164-next-16-4-6-security-update.md) | Upgrade next and eslint-config-next to 16.4.6 (security advisories) | M0 | web | S | done | — |
-| [T-0165](m0-foundation/T-0165-promote-apiprogressbar-render-it-in-the.md) | Promote ApiProgressBar, render it in the app layout | M0 | web | S | review | — |
-| [T-0166](m0-foundation/T-0166-promote-form-drafts-ts-and-draftnotice.md) | Promote form-drafts.ts and DraftNotice, replace the five dialogs and three api.ts with their twins, clearFormDrafts() in sign-out and session end | M0 | web | S | review | — |
-| [T-0167](m4-time-logs/T-0167-from-to-on-get-time-logs.md) | from/to on GET /time-logs (API-TLOG-001): the range check and the filter, openapi:export | M4 | api | S | review | — |
-| [T-0168](m4-time-logs/T-0168-web-from-the-prototype-usetimelogs-with.md) | Web from the prototype: useTimeLogs with the range, the Logged time section's range control and chart; drop proposed-types.ts | M4 | web | S | review | T-0167, T-0166 |
+| [T-0165](m0-foundation/T-0165-promote-apiprogressbar-render-it-in-the.md) | Promote ApiProgressBar, render it in the app layout | M0 | web | S | done | — |
+| [T-0166](m0-foundation/T-0166-promote-form-drafts-ts-and-draftnotice.md) | Promote form-drafts.ts and DraftNotice, replace the five dialogs and three api.ts with their twins, clearFormDrafts() in sign-out and session end | M0 | web | S | done | — |
+| [T-0167](m4-time-logs/T-0167-from-to-on-get-time-logs.md) | from/to on GET /time-logs (API-TLOG-001): the range check and the filter, openapi:export | M4 | api | S | done | — |
+| [T-0168](m4-time-logs/T-0168-web-from-the-prototype-usetimelogs-with.md) | Web from the prototype: useTimeLogs with the range, the Logged time section's range control and chart; drop proposed-types.ts | M4 | web | S | done | T-0167, T-0166 |
 
 M0–M6 are done. Later follow-ups are filed under the milestone they extend.

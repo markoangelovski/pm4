@@ -3,7 +3,7 @@ id: T-0168
 title: Web from the prototype: useTimeLogs with the range, the Logged time section's range control and chart; drop proposed-types.ts
 milestone: M4
 app: web
-status: review
+status: done
 size: S
 tier: haiku
 implementer: opencode/opencode/hy4-flash-free

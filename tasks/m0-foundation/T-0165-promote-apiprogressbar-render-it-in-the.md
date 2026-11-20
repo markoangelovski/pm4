@@ -3,7 +3,7 @@ id: T-0165
 title: Promote ApiProgressBar, render it in the app layout
 milestone: M0
 app: web
-status: review
+status: done
 size: S
 tier: haiku
 implementer: opencode/opencode/mimo-v2.6-flash-free

@@ -3,7 +3,7 @@ id: T-0167
 title: from/to on GET /time-logs (API-TLOG-001): the range check and the filter, openapi:export
 milestone: M4
 app: api
-status: review
+status: done
 size: S
 tier: haiku
 implementer: opencode/opencode/longcat-2.5-free

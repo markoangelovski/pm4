@@ -3,7 +3,7 @@ id: T-0166
 title: Promote form-drafts.ts and DraftNotice, replace the five dialogs and three api.ts with their twins, clearFormDrafts() in sign-out and session end
 milestone: M0
 app: web
-status: review
+status: done
 size: S
 tier: haiku
 implementer: opencode/opencode/deepseek-v4.1-flash-free
