@@ -1,0 +1,37 @@
+{
+  "permission": {
+    "bash": {
+      "*": "allow",
+      "*git add*": "deny",
+      "*git commit*": "deny",
+      "*git push*": "deny",
+      "*git stash*": "deny",
+      "*git reset*": "deny",
+      "*git rebase*": "deny",
+      "*git merge*": "deny",
+      "*git checkout*": "deny",
+      "*git switch*": "deny",
+      "*git restore*": "deny",
+      "*git clean*": "deny",
+      "*git rm*": "deny",
+      "*git mv*": "deny",
+      "*pm4.mjs tasks*": "deny",
+      "*pm4.mjs hash*": "deny",
+      "*pm4.mjs status*": "deny",
+      "*pm4.mjs promote*": "deny"
+    },
+    "edit": {
+      "*": "allow",
+      "*.ac.*": "deny",
+      "**/*.ac.*": "deny",
+      "specs/**": "deny",
+      ".claude/**": "deny",
+      ".agents/**": "deny",
+      "AGENTS.md": "deny",
+      "**/AGENTS.md": "deny",
+      "CLAUDE.md": "deny",
+      "tasks/BOARD.md": "deny",
+      ".pm4-brief.md": "deny"
+    }
+  }
+}

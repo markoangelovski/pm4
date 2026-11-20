@@ -36,3 +36,6 @@ coverage/
 /docs-pmspa
 # Security assessments: findings, reports and session notes (kept local)
 /security/
+
+# OpenCode implementer brief, written by implement-task
+/.pm4-brief.md
