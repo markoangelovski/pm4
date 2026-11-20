@@ -1,7 +1,21 @@
-import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi
+} from "vitest";
 import type { ComponentProps, ReactNode } from "react";
 import { QueryClientProvider } from "@tanstack/react-query";
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within
+} from "@testing-library/react";
 import { NuqsTestingAdapter, type UrlUpdateEvent } from "nuqs/adapters/testing";
 import { createQueryClient } from "@/lib/query-client";
 import type { TimeLogList } from "@/features/time/api";
@@ -75,7 +89,21 @@ const projectLogs: TimeLogList = {
 
 const res = (status: number) => new Response(null, { status });
 
-/** GET router: /time-logs → `listResult` (a function of the query). */
+/** The signed-in user: "today" is computed in this zone (feat-tlog-logged-range). */
+const me = {
+  id: "u1",
+  email: "marko@example.com",
+  displayName: "Marko Angelovski",
+  avatarUrl: null,
+  timeZone: "UTC",
+  dailyTargetMinutes: 420,
+  createdAt: "2026-10-02T22:30:00.000Z"
+};
+
+/** So far on 2026-10-20 (the faked "now"): the 1st of the month to today. */
+const SO_FAR = { from: "2026-10-01", to: "2026-10-20" };
+
+/** GET router: /me → `me`; /time-logs → `listResult` (a function of the query). */
 let listResult: (query: Record<string, unknown>) => unknown;
 function routeGet() {
   api.GET.mockImplementation(
@@ -83,6 +111,7 @@ function routeGet() {
       path: string,
       init?: { params?: { query?: Record<string, unknown> } }
     ) => {
+      if (path === "/api/v1/me") return { data: me, response: res(200) };
       if (path === "/api/v1/time-logs")
         return listResult(init?.params?.query ?? {});
       throw new Error(`unexpected GET ${path}`);
@@ -145,8 +174,14 @@ describe("LoggedTimeSection (feat-proto-sync-web, feat-book-partial, feat-proto-
   });
 
   beforeEach(() => {
+    // "Now" is 2026-10-20 in UTC; only Date is faked, timers stay real.
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-10-20T12:00:00.000Z"));
     api.GET.mockReset();
     routeGet();
+  });
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it("AC-11 FR-TLOG-012 SCR-044: a project's section shows the totals, the columns, links to the day and the task, and the booking date or -", async () => {
@@ -167,6 +202,7 @@ describe("LoggedTimeSection (feat-proto-sync-web, feat-book-partial, feat-proto-
     ]);
     expect(listQueries()[0]).toEqual({
       projectId: "p1",
+      ...SO_FAR,
       page: 1,
       pageSize: 25
     });
@@ -280,7 +316,12 @@ describe("LoggedTimeSection (feat-proto-sync-web, feat-book-partial, feat-proto-
       "Booked date",
       "Duration"
     ]);
-    expect(listQueries()[0]).toEqual({ taskId: "t1", page: 1, pageSize: 25 });
+    expect(listQueries()[0]).toEqual({
+      taskId: "t1",
+      ...SO_FAR,
+      page: 1,
+      pageSize: 25
+    });
     expect(screen.getByText("Page 1 of 2")).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Next" }));
@@ -289,6 +330,7 @@ describe("LoggedTimeSection (feat-proto-sync-web, feat-book-partial, feat-proto-
     expect(url.get("logsPage")).toBe("2");
     expect(listQueries().at(-1)).toEqual({
       taskId: "t1",
+      ...SO_FAR,
       page: 2,
       pageSize: 25
     });
@@ -308,7 +350,9 @@ describe("LoggedTimeSection (feat-proto-sync-web, feat-book-partial, feat-proto-
       response: res(200)
     });
     const empty = renderSection({ taskId: "t1" });
-    expect(await screen.findByText("No time logged yet.")).toBeInTheDocument();
+    expect(
+      await screen.findByText("No time logged in this range.")
+    ).toBeInTheDocument();
     empty.unmount();
 
     // A failed request, then Retry.
@@ -359,7 +403,7 @@ describe("LoggedTimeSection (feat-proto-sync-web, feat-book-partial, feat-proto-
       expect(screen.getByText("Weekly sync")).toBeInTheDocument();
     });
 
-    it("AC-5 FR-TLOG-012 SCR-044: all booked → Everything is booked; no logs → No time logged yet. and no totals", async () => {
+    it("AC-5 FR-TLOG-012 SCR-044: all booked → Everything is booked; no logs → No time logged in this range. and no totals", async () => {
       listResult = () => ({
         data: {
           items: [item({ bookings: [{ date: "2026-10-07", minutes: 60 }] })],
@@ -395,7 +439,7 @@ describe("LoggedTimeSection (feat-proto-sync-web, feat-book-partial, feat-proto-
       });
       renderSection({ projectId: "p1" });
       expect(
-        await screen.findByText("No time logged yet.")
+        await screen.findByText("No time logged in this range.")
       ).toBeInTheDocument();
       expect(screen.queryByText("Total worked")).toBeNull();
       expect(screen.queryByText("Everything is booked")).toBeNull();
@@ -421,13 +465,138 @@ describe("LoggedTimeSection (feat-proto-sync-web, feat-book-partial, feat-proto-
         response: res(200)
       });
 
-      renderSection({ projectId: "p1" });
+      renderSection({ projectId: "p1" }, "?from=2026-10-01&to=2026-12-15");
 
       expect(await screen.findByText("· by week")).toBeInTheDocument();
       expect(screen.queryByText("· by day")).toBeNull();
       expect(
         screen.queryByText("Click a bar to open that day in Logs.")
       ).toBeNull();
+    });
+  });
+
+  describe("date range (feat-tlog-logged-range)", () => {
+    const emptyList = {
+      items: [],
+      page: 1,
+      pageSize: 25,
+      total: 0,
+      totalMinutes: 0,
+      bookedMinutes: 0,
+      days: []
+    };
+
+    function pick(option: HTMLElement) {
+      fireEvent.pointerDown(option);
+      fireEvent.mouseDown(option);
+      fireEvent.pointerUp(option);
+      fireEvent.mouseUp(option);
+      fireEvent.click(option);
+    }
+
+    /** Opens the Time range select and picks an entry. */
+    async function chooseRange(label: string) {
+      fireEvent.click(screen.getByLabelText("Time range"));
+      pick(await screen.findByRole("option", { name: label }));
+    }
+
+    /** The URL after nuqs' last (asynchronous) update, once one has happened. */
+    const lastUrl = (onUrlUpdate: ReturnType<typeof vi.fn>) =>
+      (onUrlUpdate.mock.calls.at(-1)?.[0] as UrlUpdateEvent | undefined)
+        ?.searchParams ?? new URLSearchParams();
+
+    it("AC-6 FR-TLOG-012 SCR-044: without from/to in the URL the section asks for So far, and the select shows So far", async () => {
+      listResult = () => ({ data: projectLogs, response: res(200) });
+
+      renderSection({ projectId: "p1" });
+
+      expect(
+        await screen.findByText("57% booked · 45m still to book")
+      ).toBeInTheDocument();
+      expect(listQueries()[0]).toEqual({
+        projectId: "p1",
+        from: "2026-10-01",
+        to: "2026-10-20",
+        page: 1,
+        pageSize: 25
+      });
+      expect(screen.getByLabelText("Time range")).toHaveTextContent("So far");
+    });
+
+    it("AC-7 FR-TLOG-012 SCR-044: the URL range is requested; a preset writes from/to and drops logsPage; So far clears from/to", async () => {
+      listResult = (query) => ({
+        data: { ...projectLogs, page: query.page },
+        response: res(200)
+      });
+
+      const { onUrlUpdate } = renderSection(
+        { projectId: "p1" },
+        "?from=2026-01-01&to=2026-03-31&logsPage=2"
+      );
+
+      expect(
+        await screen.findByText("57% booked · 45m still to book")
+      ).toBeInTheDocument();
+      expect(listQueries()[0]).toEqual({
+        projectId: "p1",
+        from: "2026-01-01",
+        to: "2026-03-31",
+        page: 2,
+        pageSize: 25
+      });
+
+      await chooseRange("Last 7 days");
+      await waitFor(() =>
+        expect(lastUrl(onUrlUpdate).get("from")).toBe("2026-10-14")
+      );
+      let url = lastUrl(onUrlUpdate);
+      expect(url.get("to")).toBe("2026-10-20");
+      expect(url.has("logsPage")).toBe(false);
+      await waitFor(() =>
+        expect(listQueries().at(-1)).toMatchObject({ from: "2026-10-14" })
+      );
+      expect(listQueries().at(-1)).toEqual({
+        projectId: "p1",
+        from: "2026-10-14",
+        to: "2026-10-20",
+        page: 1,
+        pageSize: 25
+      });
+
+      await chooseRange("So far");
+      await waitFor(() => expect(lastUrl(onUrlUpdate).has("from")).toBe(false));
+      url = lastUrl(onUrlUpdate);
+      expect(url.has("to")).toBe(false);
+    });
+
+    it("AC-8 FR-TLOG-012 SCR-044: no logs in the range → No time logged in this range. and no totals", async () => {
+      listResult = () => ({ data: emptyList, response: res(200) });
+
+      renderSection({ taskId: "t1" }, "?from=2026-09-01&to=2026-09-30");
+
+      expect(
+        await screen.findByText("No time logged in this range.")
+      ).toBeInTheDocument();
+      expect(screen.queryByText("Total worked")).toBeNull();
+      expect(listQueries()[0]).toMatchObject({
+        from: "2026-09-01",
+        to: "2026-09-30"
+      });
+    });
+
+    it("AC-9 FR-TLOG-012 SCR-044: the range, not the logged dates, sets the chart's buckets", async () => {
+      listResult = () => ({ data: projectLogs, response: res(200) });
+
+      const long = renderSection(
+        { projectId: "p1" },
+        "?from=2026-10-01&to=2026-12-15"
+      );
+      expect(await screen.findByText("· by week")).toBeInTheDocument();
+      expect(screen.queryByText("· by day")).toBeNull();
+      long.unmount();
+
+      renderSection({ projectId: "p1" });
+      expect(await screen.findByText("· by day")).toBeInTheDocument();
     });
   });
 });

@@ -98,7 +98,27 @@ const invalidated = (queryClient: QueryClient, key: readonly unknown[]) =>
 
 /** A cached query under each key root, so each invalidation can be observed. */
 const dayKey = timeKeys.day("2026-10-07");
-const logListKey = timeKeys.logList({ projectId: "p1" }, 1);
+type TimeLogFilter = { projectId: string } | { taskId: string };
+type DateRange = { from: string; to: string };
+
+/**
+ * `timeKeys.logList(filter, range, page)` and `useTimeLogs(filter, range, page)` (feat-tlog-logged-range). Called
+ * through these types until its T2 adds the range.
+ */
+const logList = timeKeys.logList as unknown as (
+  filter: TimeLogFilter,
+  range: DateRange,
+  page: number
+) => readonly unknown[];
+const useTimeLogsIn = useTimeLogs as unknown as (
+  filter: TimeLogFilter,
+  range: DateRange,
+  page: number
+) => ReturnType<typeof useTimeLogs>;
+
+const OCTOBER: DateRange = { from: "2026-10-01", to: "2026-10-31" };
+
+const logListKey = logList({ projectId: "p1" }, OCTOBER, 1);
 const bookingRangeKey = bookingKeys.range("2026-10-01", "2026-10-31");
 const projectListKey = [...projectKeys.lists(), { page: 1 }];
 const projectDetailKey = projectKeys.detail("p1");
@@ -125,13 +145,14 @@ describe("logged time hooks (feat-proto-sync-web)", () => {
       response: res(200)
     });
     const query = setup(
-      ({ page }: { page: number }) => useTimeLogs({ projectId: "p1" }, page),
+      ({ page }: { page: number }) =>
+        useTimeLogsIn({ projectId: "p1" }, OCTOBER, page),
       { initialProps: { page: 1 } }
     );
     await waitFor(() => expect(query.result.current.isSuccess).toBe(true));
     expect(query.result.current.data).toEqual(list(1, "First page"));
     expect(
-      query.queryClient.getQueryData(["time", "logs", { projectId: "p1" }, 1])
+      query.queryClient.getQueryData(logList({ projectId: "p1" }, OCTOBER, 1))
     ).toEqual(list(1, "First page"));
 
     let resolveNext: (value: unknown) => void = () => {};
@@ -145,7 +166,15 @@ describe("logged time hooks (feat-proto-sync-web)", () => {
     expect(api.GET).toHaveBeenLastCalledWith(
       "/api/v1/time-logs",
       expect.objectContaining({
-        params: { query: { projectId: "p1", page: 2, pageSize: 25 } }
+        params: {
+          query: {
+            projectId: "p1",
+            from: "2026-10-01",
+            to: "2026-10-31",
+            page: 2,
+            pageSize: 25
+          }
+        }
       })
     );
     expect(query.result.current.data).toEqual(list(1, "First page"));
@@ -158,7 +187,7 @@ describe("logged time hooks (feat-proto-sync-web)", () => {
       expect(query.result.current.data).toEqual(list(2, "Second page"))
     );
     expect(
-      query.queryClient.getQueryData(["time", "logs", { projectId: "p1" }, 2])
+      query.queryClient.getQueryData(logList({ projectId: "p1" }, OCTOBER, 2))
     ).toEqual(list(2, "Second page"));
 
     // By task: the query has taskId instead of projectId.
@@ -166,12 +195,20 @@ describe("logged time hooks (feat-proto-sync-web)", () => {
       data: list(1, "Task page"),
       response: res(200)
     });
-    const byTask = setup(() => useTimeLogs({ taskId: "t1" }, 1));
+    const byTask = setup(() => useTimeLogsIn({ taskId: "t1" }, OCTOBER, 1));
     await waitFor(() => expect(byTask.result.current.isSuccess).toBe(true));
     expect(api.GET).toHaveBeenLastCalledWith(
       "/api/v1/time-logs",
       expect.objectContaining({
-        params: { query: { taskId: "t1", page: 1, pageSize: 25 } }
+        params: {
+          query: {
+            taskId: "t1",
+            from: "2026-10-01",
+            to: "2026-10-31",
+            page: 1,
+            pageSize: 25
+          }
+        }
       })
     );
   });
@@ -238,5 +275,42 @@ describe("logged time hooks (feat-proto-sync-web)", () => {
       })
     );
     expect(invalidated(update.queryClient, logListKey)).toBe(true);
+  });
+});
+
+describe("logged time hooks with a range (feat-tlog-logged-range)", () => {
+  beforeEach(() => {
+    Object.values(api).forEach((fn) => fn.mockReset());
+  });
+
+  it("AC-5 FR-TLOG-012 API-TLOG-001: useTimeLogs sends the range, keys by it, and a log mutation invalidates it", async () => {
+    api.GET.mockResolvedValue({ data: list(1, "October"), response: res(200) });
+    const query = setup(() => useTimeLogsIn({ projectId: "p1" }, OCTOBER, 1));
+    await waitFor(() => expect(query.result.current.isSuccess).toBe(true));
+    expect(api.GET).toHaveBeenCalledWith(
+      "/api/v1/time-logs",
+      expect.objectContaining({
+        params: {
+          query: {
+            projectId: "p1",
+            from: "2026-10-01",
+            to: "2026-10-31",
+            page: 1,
+            pageSize: 25
+          }
+        }
+      })
+    );
+    expect(
+      query.queryClient.getQueryData(logList({ projectId: "p1" }, OCTOBER, 1))
+    ).toEqual(list(1, "October"));
+    expect(
+      logList({ projectId: "p1" }, { from: "2026-09-01", to: "2026-09-30" }, 1)
+    ).not.toEqual(logList({ projectId: "p1" }, OCTOBER, 1));
+
+    api.DELETE.mockResolvedValueOnce({ response: res(204) });
+    const remove = setup(() => useDeleteLog(), { seed: seedAll });
+    await act(() => remove.result.current.mutateAsync(log));
+    expect(invalidated(remove.queryClient, logListKey)).toBe(true);
   });
 });

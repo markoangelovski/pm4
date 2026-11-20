@@ -311,7 +311,13 @@ describe("TaskDetail logged time (feat-proto-sync-web)", () => {
     expect(await screen.findByText("Logged time")).toBeInTheDocument();
     await waitFor(() =>
       expect(timeLogQueries()).toContainEqual(
-        expect.objectContaining({ taskId: "t1", page: 1 })
+        expect.objectContaining({
+          taskId: "t1",
+          // So far on 2026-10-03 (feat-tlog-logged-range).
+          from: "2026-10-01",
+          to: "2026-10-03",
+          page: 1
+        })
       )
     );
     expect(timeLogQueries().every((q) => !("projectId" in q))).toBe(true);

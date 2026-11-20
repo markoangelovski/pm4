@@ -5,6 +5,7 @@ import {
   act,
   fireEvent,
   render,
+  renderHook,
   screen,
   waitFor
 } from "@testing-library/react";
@@ -139,5 +140,70 @@ describe("AuthGuard (feat-auth-web-session)", () => {
 
     unmount();
     expect(session.listeners.size).toBe(0);
+  });
+});
+
+/**
+ * feat-shell-form-drafts promotes `form-drafts.ts` in its T1. It is loaded at run time, through this local type,
+ * so this file's other tests run before it exists.
+ */
+interface FormDrafts {
+  draftKey: (form: string, id?: string) => string;
+  useDraftForm: (
+    key: string,
+    options: { defaultValues: { title: string } }
+  ) => {
+    form: { setValue: (name: "title", value: string) => void };
+    draft: { restored: boolean };
+  };
+}
+const FORM_DRAFTS = "@/features/system/form-drafts";
+const loadFormDrafts = () =>
+  import(/* @vite-ignore */ FORM_DRAFTS) as Promise<FormDrafts>;
+
+/** Leaves a draft of a new project, as a dialog closed by Escape does. */
+async function leaveProjectDraft(): Promise<() => boolean> {
+  const { draftKey, useDraftForm } = await loadFormDrafts();
+  const key = draftKey("project");
+  const useProjectForm = () =>
+    useDraftForm(key, { defaultValues: { title: "" } });
+  const typed = renderHook(useProjectForm);
+  act(() => typed.result.current.form.setValue("title", "Draft"));
+  typed.unmount();
+  /** True while a dialog opening now would restore the draft. */
+  return () => {
+    const view = renderHook(useProjectForm);
+    const restored = view.result.current.draft.restored;
+    view.unmount();
+    return restored;
+  };
+}
+
+describe("AuthGuard drops the form drafts (feat-shell-form-drafts)", () => {
+  beforeEach(() => {
+    replace.mockReset();
+    session.getAccessToken.mockReset();
+    session.listeners.clear();
+    window.history.replaceState(null, "", "/app/projects");
+  });
+
+  afterEach(() => {
+    window.history.replaceState(null, "", "/");
+  });
+
+  it("AC-9 OQ-285: a session that ends while ready drops the unsaved form drafts", async () => {
+    session.getAccessToken.mockResolvedValue("A1");
+    renderGuard();
+    expect(await screen.findByText("Private content")).toBeInTheDocument();
+
+    const draftRestores = await leaveProjectDraft();
+    expect(draftRestores()).toBe(true);
+
+    act(() => {
+      for (const listener of [...session.listeners]) listener();
+    });
+
+    expect(replace).toHaveBeenCalledWith("/?returnTo=%2Fapp%2Fprojects");
+    expect(draftRestores()).toBe(false);
   });
 });

@@ -3,7 +3,7 @@ id: web-conventions
 title: Web Conventions
 status: approved
 owner: Marko Angelovski
-last_updated: 2026-11-01
+last_updated: 2026-11-20
 related: [web-static-export, web-template, web-routing, web-prototype, qa-code-style, ADR-0009, ADR-0010, ADR-0012, feat-land-app-route-split]
 ---
 
@@ -78,6 +78,13 @@ proto/                         # UI prototype code, mirroring this tree; never i
 - Client rules mirror the API limits (from data-model.md). The API is authoritative, and Problem
   Details `errors[]` are mapped to fields with `setError`.
 - Submit buttons show a pending state and prevent double submission.
+- **Unsaved drafts** (OQ-284, OQ-285, prototype `b2d6976`): the form dialogs of logs (SCR-041), projects (SCR-022), tasks (SCR-032),
+  notes (SCR-071) and to-dos (SCR-072), new and edit, build their form with `useDraftForm(draftKey(form, id?))`
+  (`features/system/form-drafts.ts`). Closing by click outside, Escape or the X keeps what was typed; the same dialog (same form and item)
+  opens again with it and "Unsaved draft restored · Discard" (`DraftNotice`), where **Discard** returns to the starting values. **Cancel**
+  and a successful submit drop the draft; values equal to the starting ones leave none; deleting an item drops its edit drafts
+  (`forgetDraftsOf`). Drafts live in memory only: a reload, sign-out or session end (`AuthGuard`'s session-ended handler) drops them all
+  (`clearFormDrafts`). Inline forms and the day prompt don't keep drafts.
 
 ## Time and dates
 - Always use `lib/time`, with the user's time zone from the profile (FR-AUTH-006). Never
@@ -114,3 +121,5 @@ proto/                         # UI prototype code, mirroring this tree; never i
 - 2026-10-11: Approved by the owner.
 - 2026-11-01: A `429` is never retried; failure toasts go through `toastError` (OQ-256, feat-api-rate-limit). Back to `review`.
 - 2026-11-01: Approved by the owner with feat-api-rate-limit.
+- 2026-11-20: *Forms*: unsaved drafts in the form dialogs (OQ-284, OQ-285, feat-shell-form-drafts). Back to `review`.
+- 2026-11-20: Approved by the owner with feat-shell-form-drafts.

@@ -62,7 +62,20 @@ export function useTimeLogs(
     queryFn: async ({ signal }) =>
       unwrap(
         await apiClient.GET("/api/v1/time-logs", {
-          params: { query: { ...filter, page, pageSize: TIME_LOG_PAGE_SIZE } },
+          // API-TLOG-001 now requires from/to: feat-tlog-logged-range T2 replaces this file with its prototype twin,
+          // which sends them. Until then the query is cast so the contract typechecks.
+          params: {
+            query: {
+              ...filter,
+              page,
+              pageSize: TIME_LOG_PAGE_SIZE
+            } as TimeLogFilter & {
+              page: number;
+              pageSize: number;
+              from: string;
+              to: string;
+            }
+          },
           signal
         })
       ),

@@ -17,6 +17,9 @@ const errorType = (slug: string) => `${process.env.WEB_APP_URL}/errors/${slug}`;
 /** Noon in Zagreb on 2026-10-09: "today" for a user in `Europe/Zagreb`. */
 const NOW = new Date("2026-10-09T10:00:00.000Z");
 
+/** API-TLOG-001's required range (feat-tlog-logged-range): every log these tests list is dated in it. */
+const OCTOBER = "from=2026-10-01&to=2026-10-31";
+
 interface RefBody {
   id: string | null;
   title: string;
@@ -730,7 +733,7 @@ describe("Partial bookings API (feat-book-partial)", () => {
     const { user, logs, projects, tasks } = await seed();
 
     const byProject = await as(user).get(
-      `/time-logs?projectId=${projects.anthropic.id}`
+      `/time-logs?projectId=${projects.anthropic.id}&${OCTOBER}`
     );
     expect(byProject.status, JSON.stringify(byProject.body)).toBe(200);
     expect(byProject.body).toMatchObject({
@@ -749,7 +752,9 @@ describe("Partial bookings API (feat-book-partial)", () => {
       expect(item).not.toHaveProperty("bookingDate");
     }
 
-    const byTask = await as(user).get(`/time-logs?taskId=${tasks.meetings.id}`);
+    const byTask = await as(user).get(
+      `/time-logs?taskId=${tasks.meetings.id}&${OCTOBER}`
+    );
     expect(byTask.status, JSON.stringify(byTask.body)).toBe(200);
     expect(byTask.body.bookedMinutes).toBe(195);
   });

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { ComponentProps, ReactNode } from "react";
+import { useState, type ComponentProps, type ReactNode } from "react";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { createQueryClient } from "@/lib/query-client";
@@ -200,5 +200,98 @@ describe("ProjectFormDialog: edit (feat-prj-web)", () => {
     expect(
       await screen.findByRole("button", { name: "Saving…" })
     ).toBeDisabled();
+  });
+});
+
+/** A page holding the dialog's `open` state, with a button that opens it again. */
+function DialogHost() {
+  const [open, setOpen] = useState(true);
+  return (
+    <>
+      <button type="button" onClick={() => setOpen(true)}>
+        Open dialog
+      </button>
+      <ProjectFormDialog open={open} onOpenChange={setOpen} />
+    </>
+  );
+}
+
+function renderHost() {
+  const queryClient = createQueryClient();
+  queryClient.setQueryData(["users", "me"], me);
+  render(
+    <QueryClientProvider client={queryClient}>
+      <DialogHost />
+    </QueryClientProvider>
+  );
+}
+
+const newProjectHeading = () =>
+  screen.queryByRole("heading", { name: "New project" });
+
+async function closedThenReopened(close: () => void) {
+  close();
+  await waitFor(() => expect(newProjectHeading()).not.toBeInTheDocument());
+  fireEvent.click(screen.getByRole("button", { name: "Open dialog" }));
+  expect(
+    await screen.findByRole("heading", { name: "New project" })
+  ).toBeInTheDocument();
+}
+
+const pressEscape = () =>
+  fireEvent.keyDown(document.activeElement ?? document.body, {
+    key: "Escape"
+  });
+
+describe("ProjectFormDialog: unsaved drafts (SCR-022, feat-shell-form-drafts)", () => {
+  beforeEach(() => {
+    Object.values(api).forEach((fn) => fn.mockReset());
+    api.GET.mockResolvedValue({ data: me, response: res(200) });
+    push.mockReset();
+  });
+
+  it("AC-7 OQ-284: Escape keeps the typed title; reopening restores it with the notice; Discard empties it", async () => {
+    renderHost();
+    expect(
+      screen.queryByText(/Unsaved draft restored/)
+    ).not.toBeInTheDocument();
+    change("Title", "Half-typed project");
+
+    await closedThenReopened(pressEscape);
+
+    expect(field("Title").value).toBe("Half-typed project");
+    expect(screen.getByText(/Unsaved draft restored/)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Discard" }));
+    expect(field("Title").value).toBe("");
+    expect(
+      screen.queryByText(/Unsaved draft restored/)
+    ).not.toBeInTheDocument();
+  });
+
+  it("AC-8 OQ-284: Cancel drops the draft; a successful create drops it too", async () => {
+    renderHost();
+    change("Title", "Cancelled project");
+    await closedThenReopened(() =>
+      fireEvent.click(screen.getByRole("button", { name: "Cancel" }))
+    );
+    expect(field("Title").value).toBe("");
+    expect(
+      screen.queryByText(/Unsaved draft restored/)
+    ).not.toBeInTheDocument();
+
+    api.POST.mockResolvedValue({
+      data: { ...project, id: "p9", title: "Created project" },
+      response: res(201)
+    });
+    change("Title", "Created project");
+    await closedThenReopened(() =>
+      fireEvent.click(screen.getByRole("button", { name: "Create" }))
+    );
+    expect(api.POST).toHaveBeenCalledTimes(1);
+    expect(field("Title").value).toBe("");
+    expect(
+      screen.queryByText(/Unsaved draft restored/)
+    ).not.toBeInTheDocument();
   });
 });

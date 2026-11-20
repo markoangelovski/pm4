@@ -14,6 +14,13 @@ import { insertProject, insertTask } from "./support/project-test-utils.js";
 /** Noon in Zagreb on 2026-10-09: "today" for a user in `Europe/Zagreb`. */
 const NOW = new Date("2026-10-09T10:00:00.000Z");
 
+/** API-TLOG-001's required range (feat-tlog-logged-range): every log these tests list is dated in it. */
+const OCTOBER = "from=2026-10-01&to=2026-10-31";
+
+/** `query` (`""` or `?…`) with OCTOBER added. */
+const inOctober = (query: string) =>
+  `${query}${query.startsWith("?") ? "&" : "?"}${OCTOBER}`;
+
 interface RefBody {
   id: string | null;
   title: string;
@@ -225,7 +232,9 @@ describe("Logged time API (feat-proto-sync-web, feat-proto-sync-logged-chart)", 
     const { a, projects, logs } = await seed();
     const { direct, onT1, onT2 } = logs;
 
-    const response = await as(a).get(`/time-logs?projectId=${projects.p.id}`);
+    const response = await as(a).get(
+      `/time-logs?projectId=${projects.p.id}&${OCTOBER}`
+    );
 
     expect(response.status, JSON.stringify(response.body)).toBe(200);
     expect(response.body).toEqual({
@@ -245,7 +254,9 @@ describe("Logged time API (feat-proto-sync-web, feat-proto-sync-logged-chart)", 
   it("AC-2 API-TLOG-001: ?taskId → only the task's logs and their totals", async () => {
     const { a, tasks, logs } = await seed();
 
-    const response = await as(a).get(`/time-logs?taskId=${tasks.t1.id}`);
+    const response = await as(a).get(
+      `/time-logs?taskId=${tasks.t1.id}&${OCTOBER}`
+    );
 
     expect(response.status, JSON.stringify(response.body)).toBe(200);
     expect(response.body).toEqual({
@@ -262,7 +273,7 @@ describe("Logged time API (feat-proto-sync-web, feat-proto-sync-logged-chart)", 
   it("AC-3 API-TLOG-001: page and pageSize page the items; the totals cover every log, also past the end", async () => {
     const { a, projects, logs } = await seed();
     const [, last] = [logs.direct, logs.onT2].sort(byId);
-    const url = `/time-logs?projectId=${projects.p.id}&pageSize=2`;
+    const url = `/time-logs?projectId=${projects.p.id}&pageSize=2&${OCTOBER}`;
 
     const second = await as(a).get(`${url}&page=2`);
     expect(second.status, JSON.stringify(second.body)).toBe(200);
@@ -294,7 +305,7 @@ describe("Logged time API (feat-proto-sync-web, feat-proto-sync-logged-chart)", 
     const { p } = projects;
 
     for (const query of [`?projectId=${p.id}&taskId=${tasks.t1.id}`, ""]) {
-      const response = await as(a).get(`/time-logs${query}`);
+      const response = await as(a).get(`/time-logs${inOctober(query)}`);
       expect(response.status, query).toBe(400);
       expect(fieldsOf(response.body), query).toEqual(["projectId"]);
     }
@@ -305,7 +316,7 @@ describe("Logged time API (feat-proto-sync-web, feat-proto-sync-logged-chart)", 
       `?projectId=${p.id}&pageSize=101`,
       `?projectId=${p.id}&q=x`
     ]) {
-      const response = await as(a).get(`/time-logs${query}`);
+      const response = await as(a).get(`/time-logs${inOctober(query)}`);
       expect(response.status, query).toBe(400);
     }
   });
@@ -327,13 +338,13 @@ describe("Logged time API (feat-proto-sync-web, feat-proto-sync-logged-chart)", 
       `?projectId=${randomUUID()}`,
       `?taskId=${randomUUID()}`
     ]) {
-      const response = await as(a).get(`/time-logs${query}`);
+      const response = await as(a).get(`/time-logs${inOctober(query)}`);
       expect(response.status, query).toBe(200);
       expect(response.body, query).toEqual(empty);
     }
 
     const anonymous = await request(app.getHttpServer()).get(
-      `/api/v1/time-logs?projectId=${projects.p.id}`
+      `/api/v1/time-logs?projectId=${projects.p.id}&${OCTOBER}`
     );
     expect(anonymous.status).toBe(401);
   });
@@ -388,7 +399,9 @@ describe("Logged time API (feat-proto-sync-web, feat-proto-sync-logged-chart)", 
     it("AC-1 API-TLOG-001: ?projectId → one day per date with a log, oldest first; a booking counts on its log's work date, excluded logs count", async () => {
       const { a, projects } = await seed();
 
-      const response = await as(a).get(`/time-logs?projectId=${projects.p.id}`);
+      const response = await as(a).get(
+        `/time-logs?projectId=${projects.p.id}&${OCTOBER}`
+      );
 
       expect(response.status, JSON.stringify(response.body)).toBe(200);
       expect(response.body.days).toEqual(DAYS_P);
@@ -397,7 +410,9 @@ describe("Logged time API (feat-proto-sync-web, feat-proto-sync-logged-chart)", 
     it("AC-2 API-TLOG-001: ?taskId → only the task's days", async () => {
       const { a, tasks } = await seed();
 
-      const response = await as(a).get(`/time-logs?taskId=${tasks.t1.id}`);
+      const response = await as(a).get(
+        `/time-logs?taskId=${tasks.t1.id}&${OCTOBER}`
+      );
 
       expect(response.status, JSON.stringify(response.body)).toBe(200);
       expect(response.body.days).toEqual(DAYS_T1);
@@ -405,7 +420,7 @@ describe("Logged time API (feat-proto-sync-web, feat-proto-sync-logged-chart)", 
 
     it("AC-3 API-TLOG-001: days cover every matching log, whatever the page (also past the end)", async () => {
       const { a, projects } = await seed();
-      const url = `/time-logs?projectId=${projects.p.id}&pageSize=2`;
+      const url = `/time-logs?projectId=${projects.p.id}&pageSize=2&${OCTOBER}`;
 
       for (const page of [2, 3]) {
         const response = await as(a).get(`${url}&page=${page}`);
@@ -422,18 +437,103 @@ describe("Logged time API (feat-proto-sync-web, feat-proto-sync-logged-chart)", 
         `?projectId=${randomUUID()}`,
         `?taskId=${randomUUID()}`
       ]) {
-        const response = await as(a).get(`/time-logs${query}`);
+        const response = await as(a).get(`/time-logs${inOctober(query)}`);
         expect(response.status, query).toBe(200);
         expect(response.body.days, query).toEqual([]);
       }
 
       const own = await as(b).get(
-        `/time-logs?projectId=${projects.bProject.id}`
+        `/time-logs?projectId=${projects.bProject.id}&${OCTOBER}`
       );
       expect(own.status, JSON.stringify(own.body)).toBe(200);
       expect(own.body.days).toEqual([
         { workDate: "2026-10-06", workedMinutes: 45, bookedMinutes: 0 }
       ]);
+    });
+  });
+
+  describe("date range (feat-tlog-logged-range)", () => {
+    const empty = {
+      items: [],
+      page: 1,
+      pageSize: 25,
+      total: 0,
+      totalMinutes: 0,
+      bookedMinutes: 0,
+      days: []
+    };
+
+    it("AC-1 API-TLOG-001: a one-day range → only that date's logs, totals and days", async () => {
+      const { a, projects, logs } = await seed();
+
+      const response = await as(a).get(
+        `/time-logs?projectId=${projects.p.id}&from=2026-10-07&to=2026-10-07`
+      );
+
+      expect(response.status, JSON.stringify(response.body)).toBe(200);
+      expect(response.body).toEqual({
+        items: [withBooking(logs.onT1, [])],
+        page: 1,
+        pageSize: 25,
+        total: 1,
+        totalMinutes: 30,
+        bookedMinutes: 0,
+        days: [{ workDate: "2026-10-07", workedMinutes: 30, bookedMinutes: 0 }]
+      });
+    });
+
+    it("AC-2 API-TLOG-001: the log's work date decides, not its bookings' dates", async () => {
+      const { a, projects, logs } = await seed();
+
+      const response = await as(a).get(
+        `/time-logs?projectId=${projects.p.id}&from=2026-10-06&to=2026-10-06`
+      );
+
+      expect(response.status, JSON.stringify(response.body)).toBe(200);
+      expect(response.body).toEqual({
+        items: [
+          withBooking(logs.direct, BOOKED),
+          withBooking(logs.onT2, [])
+        ].sort(byId),
+        page: 1,
+        pageSize: 25,
+        total: 2,
+        totalMinutes: 75,
+        bookedMinutes: 60,
+        days: [{ workDate: "2026-10-06", workedMinutes: 75, bookedMinutes: 60 }]
+      });
+    });
+
+    it("AC-3 API-TLOG-001: a range without logs → an empty page with zero totals", async () => {
+      const { a, tasks } = await seed();
+
+      const response = await as(a).get(
+        `/time-logs?taskId=${tasks.t1.id}&from=2026-11-01&to=2026-11-30`
+      );
+
+      expect(response.status, JSON.stringify(response.body)).toBe(200);
+      expect(response.body).toEqual(empty);
+    });
+
+    it("AC-4 API-TLOG-001: from and to are required dates, from ≤ to ≤ from + 366 days", async () => {
+      const { a, projects } = await seed();
+      const base = `/time-logs?projectId=${projects.p.id}`;
+
+      for (const [query, field] of [
+        ["&to=2026-10-31", "from"],
+        ["&from=2026-10-01", "to"],
+        ["&from=2026-02-30&to=2026-03-31", "from"],
+        ["&from=2026-10-08&to=2026-10-07", "to"],
+        ["&from=2026-01-01&to=2027-01-03", "to"]
+      ]) {
+        const response = await as(a).get(`${base}${query}`);
+        expect(response.status, query).toBe(400);
+        expect([...new Set(fieldsOf(response.body))], query).toEqual([field]);
+      }
+
+      const longest = await as(a).get(`${base}&from=2026-01-01&to=2027-01-02`);
+      expect(longest.status, JSON.stringify(longest.body)).toBe(200);
+      expect(longest.body.total).toBe(3);
     });
   });
 });
