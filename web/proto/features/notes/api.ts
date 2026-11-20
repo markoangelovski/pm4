@@ -6,6 +6,7 @@ import {
   type UseMutationResult,
   type UseQueryResult
 } from "@tanstack/react-query";
+import { forgetDraftsOf } from "@/proto/features/system/form-drafts";
 import { apiClient } from "@/proto/mock/client";
 import { unwrap, unwrapVoid } from "@/lib/api/problem";
 import type {
@@ -113,8 +114,10 @@ export function useDeleteNote(): UseMutationResult<void, Error, string> {
           params: { path: { id } }
         })
       ),
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: noteKeys.notes() })
+    onSuccess: (_data, id) => {
+      forgetDraftsOf(id);
+      return queryClient.invalidateQueries({ queryKey: noteKeys.notes() });
+    }
   });
 }
 
@@ -177,7 +180,9 @@ export function useDeleteTodo(): UseMutationResult<void, Error, string> {
           params: { path: { id } }
         })
       ),
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: noteKeys.todos() })
+    onSuccess: (_data, id) => {
+      forgetDraftsOf(id);
+      return queryClient.invalidateQueries({ queryKey: noteKeys.todos() });
+    }
   });
 }

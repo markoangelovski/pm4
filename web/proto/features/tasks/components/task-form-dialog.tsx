@@ -1,10 +1,12 @@
 "use client";
 
-import { Controller, useForm, useWatch } from "react-hook-form";
+import { Controller, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { toastError } from "@/proto/features/system/rate-limit";
 import { Button } from "@/components/ui/button";
+import { draftKey, useDraftForm } from "@/proto/features/system/form-drafts";
+import { DraftNotice } from "@/proto/features/system/components/draft-notice";
 import {
   Dialog,
   DialogClose,
@@ -96,18 +98,26 @@ function TaskForm({
   const update = useUpdateTask(task?.id ?? "");
   const pending = create.isPending || update.isPending;
   const {
-    control,
-    register,
-    handleSubmit,
-    setError,
-    setValue,
-    formState: { errors }
-  } = useForm<TaskFormValues>({
+    form: {
+      control,
+      register,
+      handleSubmit,
+      setError,
+      setValue,
+      formState: { errors }
+    },
+    draft
+  } = useDraftForm<TaskFormValues>(draftKey("task", task?.id), {
     resolver: zodResolver(taskFormSchema),
     defaultValues: taskFormDefaults(task, me, defaultProject)
   });
 
   const watchedProjectId = useWatch({ control, name: "project" })?.id ?? null;
+
+  function onSaved() {
+    draft.clear();
+    onDone();
+  }
 
   function onFailure(error: unknown) {
     if (isApiError(error, 404)) {
@@ -120,12 +130,12 @@ function TaskForm({
   const onSubmit = handleSubmit((values) => {
     const input = toTaskInput(values);
     if (task) {
-      update.mutate(input, { onSuccess: onDone, onError: onFailure });
+      update.mutate(input, { onSuccess: onSaved, onError: onFailure });
     } else {
       create.mutate(input, {
         onSuccess: () => {
           toast.success("Task created");
-          onDone();
+          onSaved();
         },
         onError: onFailure
       });
@@ -140,6 +150,7 @@ function TaskForm({
           {task ? "Change the task's details." : "Create a task."}
         </DialogDescription>
       </DialogHeader>
+      <DraftNotice draft={draft} />
       <FieldGroup>
         <Field data-invalid={!!errors.project}>
           <FieldLabel htmlFor="task-project">Project</FieldLabel>
@@ -282,6 +293,7 @@ function TaskForm({
               variant="outline"
               type="button"
               className="cursor-pointer"
+              onClick={draft.clear}
             />
           }
         >

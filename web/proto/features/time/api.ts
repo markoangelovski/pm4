@@ -7,6 +7,7 @@ import {
   type UseMutationResult,
   type UseQueryResult
 } from "@tanstack/react-query";
+import { forgetDraftsOf } from "@/proto/features/system/form-drafts";
 import { useEffect, useState } from "react";
 import { projectKeys } from "@/proto/features/projects/api";
 import { taskKeys } from "@/proto/features/tasks/api";
@@ -165,7 +166,10 @@ export function useDeleteLog(): UseMutationResult<void, Error, TimeLog> {
           params: { path: { id: log.id } }
         })
       ),
-    onSuccess: () => refreshAfterLogChange(queryClient)
+    onSuccess: (_data, log) => {
+      forgetDraftsOf(log.id);
+      return refreshAfterLogChange(queryClient);
+    }
   });
 }
 

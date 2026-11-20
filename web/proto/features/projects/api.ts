@@ -7,6 +7,7 @@ import {
   type UseQueryResult
 } from "@tanstack/react-query";
 import { forgetLogLinkTo } from "@/proto/features/time/last-log-link";
+import { forgetDraftsOf } from "@/proto/features/system/form-drafts";
 import { apiClient } from "@/proto/mock/client";
 import { isApiError, unwrap, unwrapVoid } from "@/lib/api/problem";
 import type { components } from "@/lib/api/schema";
@@ -172,6 +173,7 @@ export function useDeleteProject(): UseMutationResult<void, Error, string> {
       void queryClient.invalidateQueries({ queryKey: TASKS_KEY });
       void queryClient.invalidateQueries({ queryKey: TIME_KEY });
       forgetLogLinkTo(id);
+      forgetDraftsOf(id);
     }
   });
 }
