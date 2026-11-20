@@ -3,7 +3,7 @@ id: arch-repos
 title: Repository Layout
 status: approved
 owner: Marko Angelovski
-last_updated: 2026-10-14
+last_updated: 2026-11-20
 related: [ADR-0006]
 ---
 
@@ -42,7 +42,7 @@ pm4/                               # git root. Remote: a new GitHub repo (OQ-033
 ## Branching and PRs
 - Default branch `master`, protected by a ruleset: changes only through pull requests, required check `ci-ok`,
   branch up to date before merging, linear history, no force pushes or deletion.
-- Short-lived branches (`task/T-####`, `proto/<screen>`, `docs/…`, `chore/…`, `fix/…`), each a pull request into
+- Short-lived branches (`task/T-####`, `proto/<batch>`, `docs/…`, `chore/…`, `fix/…`), each a pull request into
   `master`, **squash-merged** with the pull request title (a conventional commit) as the commit message. Head
   branches are deleted on merge. The workflow is in `AGENTS.md` §6 *Branches and pull requests*.
 - A merge deploys only the app(s) whose paths changed. Either app can be redeployed manually.
@@ -65,4 +65,5 @@ pm4/                               # git root. Remote: a new GitHub repo (OQ-033
 - 2026-09-26: OQ-033 resolved: a new GitHub repo.
 - 2026-09-27: Default branch is `master`.
 - 2026-11-16: Pull requests into a protected `master`, squash merge, `ci-ok` required check.
+- 2026-11-20: One `proto/<batch>` branch per batch of prototypes (owner).
 - 2026-09-27: Approved by the owner.

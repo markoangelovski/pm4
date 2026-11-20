@@ -35,7 +35,10 @@ Run this inline in the main (Opus) session, with the owner. No subagents. The ru
 
 ## 4. Confirm
 - The owner confirms the screen in words ("confirmed"). Then list the changed files and suggest a commit message
-  `proto(web): <screen>: <what>`. The owner commits on a `proto/<screen>` branch (AGENTS.md §3), which goes
-  to its own pull request, squash-merged into `master` (AGENTS.md §6 *Branches and pull requests*).
-- Next step: `write-spec` for the feature, with the **squash commit's SHA on `master`** for its `prototype:` field
+  `proto(web): <screen>: <what>`. It is committed, when the owner says so (AGENTS.md §3), on the current
+  `proto/<batch>` branch, which collects several features' prototypes. Start a new batch branch only when none is
+  open. Push and open the batch's one pull request only when the owner says the batch is done; it is
+  squash-merged into `master` (AGENTS.md §6 *Branches and pull requests*).
+- Next step, once the batch is merged: `write-spec` for each feature, with the batch's **squash commit's SHA on
+  `master`** for its `prototype:` field
   (the branch commit's SHA doesn't survive the squash).

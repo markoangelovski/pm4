@@ -132,7 +132,7 @@ task file, no feature spec, no Opus review). Details: `specs/05-quality/task-rou
 writes the signature, never the agent itself: in the spec's *Agents* table, each task's *Attempts* and `implementer:`,
 and each task's *Review*, where the reviewer grades the implementer. → `specs/05-quality/task-routing.md#agent-signatures`
 
-Commit points keep each diff reviewable: the confirmed prototype is its own commit, the working tree is clean before the first task, tasks of
+Commit points keep each diff reviewable: each confirmed prototype is its own commit, the working tree is clean before the first task, tasks of
 one feature build up uncommitted (`pm4 check` allows earlier tasks' files), and the owner commits the
 feature after the review.
 
@@ -144,7 +144,7 @@ request that passes the `ci-ok` check, merged with **squash** (one commit on `ma
 
 | Work | Branch (worktree under `.worktrees/`) | Pull request |
 | --- | --- | --- |
-| Confirmed prototype | `proto/<screen>` | Its own, merged before `write-spec`. The spec's `prototype:` is the **squash commit's SHA on `master`** |
+| Confirmed prototypes | `proto/<batch>`: one branch collects several features' prototypes, one commit per confirmed feature | One for the batch, opened when the owner says the batch is done, and merged before `write-spec` for any of its features. Each spec's `prototype:` is the batch's **squash commit's SHA on `master`** |
 | Feature (spec approval, tasks, acceptance tests, implementation) | `task/T-####` (the feature's first task) | One for the feature. The test-first commit is the branch's first commit; the acceptance tests fail until the implementation commit, so it never goes to `master` alone |
 | Quick-lane task | `task/T-####` | Its own |
 | Docs, specs, config, chores | `docs/<slug>`, `chore/<slug>`, `fix/<slug>` | Its own, or ride along with the feature it belongs to |
