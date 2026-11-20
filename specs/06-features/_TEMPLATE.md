@@ -121,6 +121,17 @@ A task's ACs come from the *Task* column above. The lint/typecheck/test/build ga
 | --- | --- | --- | --- | --- | --- | --- |
 | T1 | … | api | S | haiku | DTOs from the field table; copy `…` | — |
 
+## Agents
+Who did each step (`specs/05-quality/task-routing.md#agent-signatures`), added by the main session as each step
+finishes. Implementers and reviews are recorded in the task files.
+
+| Step | Agent | Date |
+| --- | --- | --- |
+| Prototype | `claude-code/claude-opus-5-5` | YYYY-MM-DD |
+| Spec | | |
+| Tasks (`pm4 tasks`) | | |
+| Acceptance tests | | |
+
 ## Open questions
 Must be empty before `review`. Link `OQ-###` entries in `specs/open-questions.md`.
 

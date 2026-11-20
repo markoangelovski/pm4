@@ -33,7 +33,7 @@ Rules:
 While iterating, run only what you need (`npx vitest run <file>`, `npm run typecheck`). When done,
 run `node scripts/pm4.mjs check <T-####>` once. It runs lint, format:check (if it fails, run
 `npm run format`), typecheck, test, build, `api:types` (if the contract is in scope) and the spec's
-checks. Paste its summary into the task's *Implementation notes*, and add a row to *Attempts*.
+checks. Paste its summary into the task's *Implementation notes*. Don't add an *Attempts* row: the main session records each attempt with your signature.
 
 End with exactly:
 

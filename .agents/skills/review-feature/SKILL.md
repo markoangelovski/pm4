@@ -7,11 +7,14 @@ argument-hint: <specs/06-features/file.md | T-####>
 # Review $ARGUMENTS
 
 1. For a feature, every task of the spec should be in `review` (see `tasks/BOARD.md`). If some aren't,
-   ask the owner whether to review what's there now (useful on large features).
+   ask the owner whether to review what's there now (useful on large features). Every task's *Attempts* rows and
+   `implementer:` should be signed (`specs/05-quality/task-routing.md#agent-signatures`); tasks finished before
+   2026-11-20 keep their tier-only rows.
 2. Delegate to the `reviewer` agent (Opus, read-only). Prompt: "Review `$ARGUMENTS`. Follow your agent
    instructions. Don't edit files or change git state."
-3. Write a short summary into each task's *Review* section: the verdict, the findings that concern
-   that task, and the tier feedback.
+3. Write a short summary into each task's *Review* section: the verdict line with the reviewer's signature
+   (`**Verdict: approve** (reviewer `claude-code/claude-opus-5-5`, YYYY-MM-DD)`), the findings that concern that
+   task, and its *Implementer assessment* row (the table header from `task-routing.md#agent-signatures`).
 4. Then, per task:
    - `approve` → leave it in `review`. Tell the owner the feature is ready for their review. After
      reviewing, the owner sets `done` (`pm4 status <T> done`) and says to commit the feature on its branch.

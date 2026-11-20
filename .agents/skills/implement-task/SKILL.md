@@ -20,8 +20,11 @@ yourself unless something goes wrong. The script and the subagent's report are e
 - `node scripts/pm4.mjs promote $ARGUMENTS`. It copies the task's prototype files (`P` rows) into place and
   prints what's left for the implementer; it does nothing for a task without `P` rows. On a retry, skip it
   (the files are already there).
-- `app: api` → `api-engineer`, `app: web` → `web-engineer`, with `model` = the task's `tier`.
-  `infra`/`spec` tasks: do them yourself, or ask the owner.
+- `app: api` → `api-engineer`, `app: web` → `web-engineer`, with `model` = the task's `tier`, unless the owner
+  names another agent (e.g. an OpenCode model) for this task. `infra`/`spec` tasks: do them yourself, or ask the owner.
+- Note the attempt's **signature** from what you launch (`specs/05-quality/task-routing.md#agent-signatures`): a
+  Claude subagent is `claude-code/<full model ID>` (`haiku` → `claude-haiku-5-5`), an OpenCode agent is
+  `opencode/…` or `ori-opencode/…` with the model from its launch command. Never take it from the agent's report.
 - Prompt: "Implement `$ARGUMENTS`. Follow your agent instructions. Never stage, commit or push." On a
   retry, add the previous `RESULT` report and the failing `pm4 check` output.
 
@@ -30,12 +33,16 @@ yourself unless something goes wrong. The script and the subagent's report are e
   the spec's checks. Later tasks' ACs are excluded.
 - `git log -1 --format=%H` must be unchanged since step 1 (the subagent didn't commit).
 
+Then record the attempt yourself: one row in *Attempts* (`| # | <signature> | <RESULT> | <one-line summary> |`).
+A fix you make in the main session is its own row with your signature.
+
 ## 4. Escalate (`specs/05-quality/task-routing.md#escalation`)
 - `BLOCKED: spec` → `pm4 status $ARGUMENTS blocked`, write the question into the task, propose an `OQ-###` to the owner.
 - `BLOCKED: test` → check the test yourself. Fix it and re-run `pm4 hash <spec>` if it's wrong; then re-delegate at the same tier.
-- `FAILED`, or the check fails → one row in *Attempts*, then re-delegate at the next tier. `FAILED` at sonnet → blocked, ask the owner.
+- `FAILED`, or the check fails → re-delegate at the next tier. `FAILED` at sonnet → blocked, ask the owner.
 
 ## 5. Hand off
+- Set `implementer:` in the task's frontmatter to the signature of the attempt that finished it.
 - `node scripts/pm4.mjs status $ARGUMENTS review`. This unblocks dependent tasks.
 - Tell the owner in a few lines: the files changed, the check summary, and the attempts.
 - Next: the next `ready` task of the feature. After the last one, suggest `review-feature <spec>`.
