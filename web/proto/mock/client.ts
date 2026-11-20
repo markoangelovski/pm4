@@ -27,12 +27,14 @@ import { getMockState, mock, nextId } from "./store";
 import * as pmspa from "./pmspa";
 import { changelogSeed } from "./changelog";
 import { apiRetryAfterSeconds, rateLimitedResponse } from "./rate-limit";
+import { mockSlowness } from "./latency";
 
 /** Every mock response waits this long, so loading states show. */
 export const MOCK_LATENCY_MS = 150;
 
 import type { Project, ProjectService } from "@/proto/features/projects/api";
 import type { Task } from "@/proto/features/tasks/api";
+import { isRangeTooLong } from "@/proto/features/dashboard/range";
 
 type Status = components["schemas"]["TaskStatus"];
 type Body = Record<string, unknown>;
@@ -362,12 +364,21 @@ function listLogs(q: URLSearchParams) {
       "Bad Request",
       "Pass exactly one of projectId, taskId."
     );
+  // TimeLogListQuery: from and to are required, from ≤ to, at most 366 days apart (as the dashboard report).
+  const from = q.get("from");
+  const to = q.get("to");
+  if (!from) return validation("from", "from is required.");
+  if (!to) return validation("to", "to is required.");
+  if (from > to) return validation("to", "to must not be before from.");
+  if (isRangeTooLong({ from, to }))
+    return validation("to", "The range is at most 366 days.");
   const s = getMockState();
   const all = s.logs
     .map((l, i) => ({ l, i }))
     .filter(({ l }) =>
       taskId ? l.task?.id === taskId : l.project?.id === projectId
     )
+    .filter(({ l }) => l.workDate >= from && l.workDate <= to)
     .sort((a, b) =>
       a.l.workDate === b.l.workDate
         ? a.i - b.i
@@ -1005,7 +1016,7 @@ async function mockFetch(request: Request): Promise<Response> {
   // The prototype shell's "API rate limit" switch: the API's guard answers before anything else runs.
   const limitedFor = apiRetryAfterSeconds();
   if (limitedFor > 0) {
-    await new Promise((r) => setTimeout(r, MOCK_LATENCY_MS));
+    await new Promise((r) => setTimeout(r, MOCK_LATENCY_MS + mockSlowness()));
     return rateLimitedResponse(limitedFor);
   }
   // The prototype shell's "another one running" switch: the API turns the next commit away on its lock,
@@ -1016,7 +1027,7 @@ async function mockFetch(request: Request): Promise<Response> {
     pmspa.isConnected() &&
     pmspa.takeSyncRunning()
   ) {
-    await new Promise((r) => setTimeout(r, MOCK_LATENCY_MS));
+    await new Promise((r) => setTimeout(r, MOCK_LATENCY_MS + mockSlowness()));
     return new Response(
       JSON.stringify({
         type: "https://pm4.angelovski.top/errors/pmspa-sync-running",
@@ -1031,7 +1042,9 @@ async function mockFetch(request: Request): Promise<Response> {
     ? pmspaCost(request.method, url, body)
     : 0;
   const wake = cost > 0 ? pmspa.wakeDelay() : 0;
-  await new Promise((r) => setTimeout(r, MOCK_LATENCY_MS + wake));
+  await new Promise((r) =>
+    setTimeout(r, MOCK_LATENCY_MS + mockSlowness() + wake)
+  );
   if (cost > 0 && (pmspa.isConnected() || request.method === "PUT")) {
     const retryAfterSeconds = pmspa.spendRequests(cost);
     if (retryAfterSeconds > 0)

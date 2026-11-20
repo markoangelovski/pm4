@@ -20,7 +20,7 @@ questions · Changelog. Requirements get one ID each (`FR-<AREA>-###`, `NFR-###`
 1. Copy `specs/06-features/_TEMPLATE.md` and follow its comment, including the size budget.
 2. **Web UI: start from the confirmed prototype** (`specs/04-web/prototype.md`). If the feature adds or changes
    UI and the owner hasn't confirmed and committed a prototype for it, stop and offer `prototype` first. Set
-   `prototype:` to that commit's SHA on `master` (the squash-merged prototype pull request). Take the UI from the prototype files and don't restate it: list each promoted
+   `prototype:` to that commit's SHA on `master` (the squash-merged pull request of its prototype batch; an unmerged batch means stop and say so). Take the UI from the prototype files and don't restate it: list each promoted
    file as a `P` row in *Files*, put its mock `api.ts` under *Read first*, and write in *Interfaces → Web* only the
    delta to production (the real hooks with the mock's names and shapes, each `@/proto/mock/` import to replace,
    auth, error mapping, URL state). The API shapes come from the prototype's `proposed-types.ts`.
