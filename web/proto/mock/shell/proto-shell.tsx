@@ -8,8 +8,10 @@ import Header from "./header";
 import { LogTimeButton } from "@/proto/features/time/components/log-time-button";
 import { OfflineBanner } from "@/proto/features/system/components/offline-banner";
 import { RateLimitNotifier } from "@/proto/features/system/components/rate-limit-notifier";
+import { ApiProgressBar } from "@/proto/features/system/components/api-progress-bar";
 import { PmspaMockSwitch } from "./pmspa-mock-switch";
 import { RateLimitMockSwitch } from "./rate-limit-mock-switch";
+import { SlowApiMockSwitch } from "./slow-api-mock-switch";
 import { ProtoSidebar } from "./proto-sidebar";
 
 /** The `/proto/app` shell: twins of the real header and footer around the prototype sidebar. */
@@ -27,6 +29,7 @@ export function ProtoShell({ children }: { children: React.ReactNode }) {
           <span>UI prototype: mock data in memory, reset on every reload.</span>
           <PmspaMockSwitch />
           <RateLimitMockSwitch />
+          <SlowApiMockSwitch />
         </div>
         <div className="flex flex-1 flex-col gap-4 p-4">
           <div className="w-full mx-auto container">
@@ -43,6 +46,7 @@ export function ProtoShell({ children }: { children: React.ReactNode }) {
       </SidebarInset>
       <LogTimeButton />
       <RateLimitNotifier />
+      <ApiProgressBar />
     </SidebarProvider>
   );
 }

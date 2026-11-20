@@ -27,6 +27,7 @@ import { getMockState, mock, nextId } from "./store";
 import * as pmspa from "./pmspa";
 import { changelogSeed } from "./changelog";
 import { apiRetryAfterSeconds, rateLimitedResponse } from "./rate-limit";
+import { mockSlowness } from "./latency";
 
 /** Every mock response waits this long, so loading states show. */
 export const MOCK_LATENCY_MS = 150;
@@ -1015,7 +1016,7 @@ async function mockFetch(request: Request): Promise<Response> {
   // The prototype shell's "API rate limit" switch: the API's guard answers before anything else runs.
   const limitedFor = apiRetryAfterSeconds();
   if (limitedFor > 0) {
-    await new Promise((r) => setTimeout(r, MOCK_LATENCY_MS));
+    await new Promise((r) => setTimeout(r, MOCK_LATENCY_MS + mockSlowness()));
     return rateLimitedResponse(limitedFor);
   }
   // The prototype shell's "another one running" switch: the API turns the next commit away on its lock,
@@ -1026,7 +1027,7 @@ async function mockFetch(request: Request): Promise<Response> {
     pmspa.isConnected() &&
     pmspa.takeSyncRunning()
   ) {
-    await new Promise((r) => setTimeout(r, MOCK_LATENCY_MS));
+    await new Promise((r) => setTimeout(r, MOCK_LATENCY_MS + mockSlowness()));
     return new Response(
       JSON.stringify({
         type: "https://pm4.angelovski.top/errors/pmspa-sync-running",
@@ -1041,7 +1042,9 @@ async function mockFetch(request: Request): Promise<Response> {
     ? pmspaCost(request.method, url, body)
     : 0;
   const wake = cost > 0 ? pmspa.wakeDelay() : 0;
-  await new Promise((r) => setTimeout(r, MOCK_LATENCY_MS + wake));
+  await new Promise((r) =>
+    setTimeout(r, MOCK_LATENCY_MS + mockSlowness() + wake)
+  );
   if (cost > 0 && (pmspa.isConnected() || request.method === "PUT")) {
     const retryAfterSeconds = pmspa.spendRequests(cost);
     if (retryAfterSeconds > 0)
