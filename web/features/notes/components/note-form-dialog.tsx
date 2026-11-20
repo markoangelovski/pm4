@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { Controller, useForm, useWatch } from "react-hook-form";
+import { Controller, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { toastError } from "@/features/system/rate-limit";
 import { Button } from "@/components/ui/button";
+import { draftKey, useDraftForm } from "@/features/system/form-drafts";
+import { DraftNotice } from "@/features/system/components/draft-notice";
 import {
   Dialog,
   DialogClose,
@@ -78,24 +80,34 @@ function NoteForm({
   const update = useUpdateNote(note?.id ?? "");
   const save = note ? update : create;
   const {
-    control,
-    register,
-    handleSubmit,
-    setValue,
-    setError,
-    formState: { errors }
-  } = useForm<NoteFormValues>({
+    form: {
+      control,
+      register,
+      handleSubmit,
+      setValue,
+      setError,
+      formState: { errors }
+    },
+    draft
+  } = useDraftForm<NoteFormValues>(draftKey("note", note?.id), {
     resolver: zodResolver(noteFormSchema),
     defaultValues: noteFormDefaults(note, preset)
   });
   const [project, task] = useWatch({ control, name: ["project", "task"] });
-  const [keepDeleted, setKeepDeleted] = useState(true);
+  // A restored draft that relinked the item has already dropped the deleted names.
+  const [keepDeleted, setKeepDeleted] = useState(
+    () =>
+      !draft.restored ||
+      ((project?.id ?? null) === (note?.project?.id ?? null) &&
+        (task?.id ?? null) === (note?.task?.id ?? null))
+  );
 
   const onSubmit = handleSubmit(async (values) => {
     try {
       await save.mutateAsync(
         toNoteInput(values, linkChanged(note, values, !keepDeleted))
       );
+      draft.clear();
       toast.success(note ? "Note saved" : "Note created");
       onDone();
     } catch (error) {
@@ -116,6 +128,7 @@ function NoteForm({
           {note ? "Change this note." : "Write a note."}
         </DialogDescription>
       </DialogHeader>
+      <DraftNotice draft={draft} />
       <FieldGroup>
         <Field data-invalid={!!errors.title}>
           <FieldLabel htmlFor="note-title">
@@ -179,6 +192,7 @@ function NoteForm({
               variant="outline"
               type="button"
               className="cursor-pointer"
+              onClick={draft.clear}
             />
           }
         >

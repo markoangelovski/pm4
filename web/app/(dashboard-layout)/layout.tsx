@@ -10,6 +10,7 @@ import RouteErrorBoundary from "@/app/components/shared/route-error-boundary";
 import { OfflineBanner } from "@/features/system/components/offline-banner";
 import { LogTimeButton } from "@/features/time/components/log-time-button";
 import { RateLimitNotifier } from "@/features/system/components/rate-limit-notifier";
+import { ApiProgressBar } from "@/features/system/components/api-progress-bar";
 
 export default function Layout({
   children
@@ -41,6 +42,7 @@ export default function Layout({
         </SidebarInset>
         <LogTimeButton />
         <RateLimitNotifier />
+        <ApiProgressBar />
       </SidebarProvider>
     </AuthGuard>
   );

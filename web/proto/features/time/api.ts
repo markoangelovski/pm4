@@ -16,7 +16,6 @@ import { unwrap, unwrapVoid } from "@/lib/api/problem";
 import type { components } from "@/lib/api/schema";
 import { nowMinute } from "@/lib/time/clock";
 import type { DateRange } from "@/proto/features/dashboard/range";
-import type { TimeLogListQuery } from "./proposed-types";
 import type { Day, TimeLog, TimeLogInput } from "./types";
 
 export type {
@@ -63,21 +62,21 @@ export function useTimeLogs(
 ): UseQueryResult<TimeLogList, Error> {
   return useQuery({
     queryKey: timeKeys.logList(filter, range, page),
-    queryFn: async ({ signal }) => {
-      const query: TimeLogListQuery = {
-        ...filter,
-        from: range.from,
-        to: range.to,
-        page,
-        pageSize: TIME_LOG_PAGE_SIZE
-      };
-      return unwrap(
+    queryFn: async ({ signal }) =>
+      unwrap(
         await apiClient.GET("/api/v1/time-logs", {
-          params: { query },
+          params: {
+            query: {
+              ...filter,
+              from: range.from,
+              to: range.to,
+              page,
+              pageSize: TIME_LOG_PAGE_SIZE
+            }
+          },
           signal
         })
-      );
-    },
+      ),
     placeholderData: keepPreviousData
   });
 }

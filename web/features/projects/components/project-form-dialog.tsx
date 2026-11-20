@@ -1,11 +1,13 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Controller, useForm, useWatch } from "react-hook-form";
+import { Controller, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { toastError } from "@/features/system/rate-limit";
 import { Button } from "@/components/ui/button";
+import { draftKey, useDraftForm } from "@/features/system/form-drafts";
+import { DraftNotice } from "@/features/system/components/draft-notice";
 import {
   Dialog,
   DialogClose,
@@ -76,17 +78,25 @@ function ProjectForm({
   const update = useUpdateProject(project?.id ?? "");
   const pending = create.isPending || update.isPending;
   const {
-    control,
-    register,
-    handleSubmit,
-    setError,
-    formState: { errors }
-  } = useForm<ProjectFormValues>({
+    form: {
+      control,
+      register,
+      handleSubmit,
+      setError,
+      formState: { errors }
+    },
+    draft
+  } = useDraftForm<ProjectFormValues>(draftKey("project", project?.id), {
     resolver: zodResolver(projectFormSchema),
     defaultValues: projectFormDefaults(project, me)
   });
   const services = useWatch({ control, name: "services" });
   const orphaned = removedInUse(project, services);
+
+  function onSaved() {
+    draft.clear();
+    onDone();
+  }
 
   function onFailure(error: unknown) {
     if (!applyFieldErrors(error, setError, PROJECT_FIELD_MAP)) {
@@ -97,12 +107,12 @@ function ProjectForm({
   const onSubmit = handleSubmit((values) => {
     const input = toProjectInput(values);
     if (project) {
-      update.mutate(input, { onSuccess: onDone, onError: onFailure });
+      update.mutate(input, { onSuccess: onSaved, onError: onFailure });
     } else {
       create.mutate(input, {
         onSuccess: (created) => {
           toast.success("Project created");
-          onDone();
+          onSaved();
           router.push(`${routes.app.project}?id=${created.id}`);
         },
         onError: onFailure
@@ -118,6 +128,7 @@ function ProjectForm({
           {project ? "Change the project's details." : "Create a project."}
         </DialogDescription>
       </DialogHeader>
+      <DraftNotice draft={draft} />
       <FieldGroup>
         <Field data-invalid={!!errors.title}>
           <FieldLabel htmlFor="project-title">Title</FieldLabel>
@@ -201,6 +212,7 @@ function ProjectForm({
               variant="outline"
               type="button"
               className="cursor-pointer"
+              onClick={draft.clear}
             />
           }
         >

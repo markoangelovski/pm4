@@ -23,6 +23,8 @@ import {
   TimeRepository
 } from "./time.repository.js";
 
+const MAX_RANGE_DAYS = 366;
+
 /** `400` naming `field` unless `value` is a real `YYYY-MM-DD` date. */
 export function assertDate(value: string, field: string): void {
   if (
@@ -144,10 +146,24 @@ export class TimeLogsService {
         ]
       });
     }
+    assertDate(query.from, "from");
+    assertDate(query.to, "to");
+    const span = daysBetween(query.from, query.to);
+    if (span < 0 || span > MAX_RANGE_DAYS) {
+      throw new BadRequestException({
+        errors: [
+          {
+            field: "to",
+            message: `must not be before from and at most ${MAX_RANGE_DAYS} days after it`
+          }
+        ]
+      });
+    }
     const { rows, total, totalMinutes, bookedMinutes, days } =
       await this.timeRepository.listLogs(
         userId,
         filter,
+        { from: query.from, to: query.to },
         query.page,
         query.pageSize
       );

@@ -1,9 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { Clock } from "lucide-react";
-import { parseAsInteger, useQueryState } from "nuqs";
+import {
+  parseAsInteger,
+  parseAsString,
+  useQueryState,
+  useQueryStates
+} from "nuqs";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -16,7 +21,15 @@ import {
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { formatDuration, formatWorkDate } from "@/lib/time";
+import { formatDuration, formatWorkDate, today as todayIn } from "@/lib/time";
+import { RangePicker } from "@/features/dashboard/components/range-picker";
+import {
+  STATS_PRESETS,
+  parseRange,
+  presetRange,
+  type DateRange
+} from "@/features/dashboard/range";
+import { useMe } from "@/features/users/api";
 import { routes } from "@/lib/routes";
 import { TIME_LOG_PAGE_SIZE, useTimeLogs, type TimeLogList } from "../api";
 import { DeletedName } from "./deleted-marker";
@@ -54,7 +67,11 @@ function BookedDates({ log }: { log: TimeLogList["items"][number] }) {
   );
 }
 
-/** SCR-044: the logged time of one project (with a Task column) or one task, as a chart or a table (like the dashboard's Workdays). */
+/**
+ * SCR-044: the logged time of one project (with a Task column) or one task in a date range, as a chart or a table
+ * (like the dashboard's Workdays). The range is Statistics' control, in the URL (`from`, `to`), default So far; the
+ * totals, the chart and the table cover only the logs dated in it.
+ */
 export function LoggedTimeSection({
   projectId,
   taskId
@@ -66,8 +83,28 @@ export function LoggedTimeSection({
     "logsPage",
     parseAsInteger.withDefault(1).withOptions({ clearOnDefault: true })
   );
+  const me = useMe();
+  const today = todayIn(me.data?.timeZone ?? "UTC");
+  const [query, setQuery] = useQueryStates(
+    { from: parseAsString, to: parseAsString },
+    { history: "replace" }
+  );
+  const range = useMemo(
+    () => parseRange(query.from, query.to, today, "so-far"),
+    [query.from, query.to, today]
+  );
+  const onRangeChange = (next: DateRange) => {
+    const def = presetRange("so-far", today);
+    void setQuery(
+      next.from === def.from && next.to === def.to
+        ? { from: null, to: null }
+        : next
+    );
+    void setPage(null);
+  };
   const logs = useTimeLogs(
     projectId !== undefined ? { projectId } : { taskId: taskId ?? "" },
+    range,
     Math.max(1, page)
   );
   const data = logs.data;
@@ -80,29 +117,37 @@ export function LoggedTimeSection({
 
   return (
     <Card className={`gap-0! border rounded-md! py-0! ${LOGGED_COLORS}`}>
-      <CardHeader className="flex h-11 flex-row items-center justify-between border-b px-4 py-0!">
+      <CardHeader className="flex min-h-11 flex-row flex-wrap items-center justify-between gap-2 border-b px-4 py-2!">
         <CardTitle className="flex items-center gap-2 text-sm">
           <Clock size={16} className="text-muted-foreground" /> Logged time
         </CardTitle>
-        <Tabs
-          value={view}
-          onValueChange={(v) => setView(v as "chart" | "table")}
-        >
-          <TabsList className="h-8">
-            <TabsTrigger
-              value="chart"
-              className="cursor-pointer px-2.5 text-xs"
-            >
-              Chart
-            </TabsTrigger>
-            <TabsTrigger
-              value="table"
-              className="cursor-pointer px-2.5 text-xs"
-            >
-              Table
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
+        <div className="flex flex-wrap items-center gap-2">
+          <RangePicker
+            value={range}
+            today={today}
+            presets={STATS_PRESETS}
+            onChange={onRangeChange}
+          />
+          <Tabs
+            value={view}
+            onValueChange={(v) => setView(v as "chart" | "table")}
+          >
+            <TabsList className="h-8">
+              <TabsTrigger
+                value="chart"
+                className="cursor-pointer px-2.5 text-xs"
+              >
+                Chart
+              </TabsTrigger>
+              <TabsTrigger
+                value="table"
+                className="cursor-pointer px-2.5 text-xs"
+              >
+                Table
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
       </CardHeader>
       <CardContent className="space-y-3 p-4">
         {data && data.total > 0 ? (
@@ -131,10 +176,10 @@ export function LoggedTimeSection({
           </div>
         ) : data.total === 0 ? (
           <p className="py-6 text-center text-sm text-muted-foreground">
-            No time logged yet.
+            No time logged in this range.
           </p>
         ) : view === "chart" ? (
-          <LoggedTimeChart days={data.days} />
+          <LoggedTimeChart days={data.days} range={range} />
         ) : (
           <div className="overflow-x-auto rounded-md border">
             <Table>

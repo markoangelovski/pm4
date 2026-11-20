@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { useForm, useWatch } from "react-hook-form";
+import { useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { toastError } from "@/features/system/rate-limit";
 import { Button } from "@/components/ui/button";
+import { draftKey, useDraftForm } from "@/features/system/form-drafts";
+import { DraftNotice } from "@/features/system/components/draft-notice";
 import {
   Dialog,
   DialogClose,
@@ -77,24 +79,34 @@ function TodoForm({
   const update = useUpdateTodo();
   const pending = create.isPending || update.isPending;
   const {
-    control,
-    register,
-    handleSubmit,
-    setValue,
-    setError,
-    formState: { errors }
-  } = useForm<TodoFormValues>({
+    form: {
+      control,
+      register,
+      handleSubmit,
+      setValue,
+      setError,
+      formState: { errors }
+    },
+    draft
+  } = useDraftForm<TodoFormValues>(draftKey("todo", todo?.id), {
     resolver: zodResolver(todoFormSchema),
     defaultValues: todoFormDefaults(todo, preset)
   });
   const [project, task] = useWatch({ control, name: ["project", "task"] });
-  const [keepDeleted, setKeepDeleted] = useState(true);
+  // A restored draft that relinked the item has already dropped the deleted names.
+  const [keepDeleted, setKeepDeleted] = useState(
+    () =>
+      !draft.restored ||
+      ((project?.id ?? null) === (todo?.project?.id ?? null) &&
+        (task?.id ?? null) === (todo?.task?.id ?? null))
+  );
 
   const onSubmit = handleSubmit(async (values) => {
     const input = toTodoInput(values, linkChanged(todo, values, !keepDeleted));
     try {
       if (todo) await update.mutateAsync({ id: todo.id, input });
       else await create.mutateAsync(input);
+      draft.clear();
       toast.success(todo ? "To-do saved" : "To-do added");
       onDone();
     } catch (error) {
@@ -115,6 +127,7 @@ function TodoForm({
           {todo ? "Change this to-do." : "Add something to do."}
         </DialogDescription>
       </DialogHeader>
+      <DraftNotice draft={draft} />
       <FieldGroup>
         <Field data-invalid={!!errors.text}>
           <FieldLabel htmlFor="todo-text">To-do</FieldLabel>
@@ -164,6 +177,7 @@ function TodoForm({
               variant="outline"
               type="button"
               className="cursor-pointer"
+              onClick={draft.clear}
             />
           }
         >
