@@ -35,7 +35,11 @@ questions · Changelog. Requirements get one ID each (`FR-<AREA>-###`, `NFR-###`
    for each, and no task smaller than a subagent context is worth. Write *Read first* and *Interfaces* so a
    haiku task is typing: every file names the pattern it copies or has its signatures spelled out. A promoted
    prototype screen is one haiku task (promote + wire), unless a sonnet trigger applies.
-8. Ask the owner about every unknown as you go (`AskUserQuestion`, batched), and record each one as
+8. Fill the *Agents* table (`specs/05-quality/task-routing.md#agent-signatures`): the **Spec** row with your own
+   signature (e.g. `claude-code/claude-opus-5-5`) and today's date. For a web UI feature, the **Prototype** row
+   from the prototype commit's `Co-Authored-By` trailer (`git log -1 --format=%B <sha>`), or `unknown`.
+   API-only features write `—` for the prototype.
+9. Ask the owner about every unknown as you go (`AskUserQuestion`, batched), and record each one as
    `OQ-###` in `specs/open-questions.md` with its answer. The spec stays `draft` until *Open questions*
    is empty. Then set `review`, and tell the owner what to look at.
 

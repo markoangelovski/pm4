@@ -30,4 +30,9 @@ your effort on judgment.
 Output:
 - **Verdict:** `approve` or `changes-requested`, per task.
 - **Findings:** numbered, each with its task, severity (blocker / major / minor), evidence (`file:line` or command output) and a suggested fix. A fix that changes UI names both the production file and its prototype twin (the prototype stays ahead).
-- **Tier feedback:** one line per task on whether its tier was right.
+- **Implementer assessment:** one row per task, in the table and grades of
+  `specs/05-quality/task-routing.md#agent-signatures`. Take the agents from each task's *Attempts* and `implementer:`
+  (written by the main session; don't trust an agent's own claim of who it is). Judge each from evidence: the
+  attempts, `pm4 check`, the diff and your findings. Check *Rules kept* from git (`git log`, staged files, changes to
+  `*.ac.*`, specs, `.claude/`, files outside *Files*): OpenCode agents have no guard hook. Tasks finished before
+  2026-11-20 have tier-only rows: assess the tier instead.

@@ -10,6 +10,7 @@ argument-hint: <specs/06-features/file.md>
    thin task file per *Tasks* row (in the milestone's folder), adds the BOARD rows, and updates the next
    free ID. It's idempotent: rows that already have a task are skipped.
 2. New tasks start `blocked`. They become `ready` when `pm4 hash` records their acceptance tests and their dependencies are met.
-3. Report the row → ID mapping to the owner. Don't edit the generated files unless the owner asks.
+3. Add the **Tasks** row to the spec's *Agents* table: your signature (the session that ran `pm4 tasks`) and today's date.
+4. Report the row → ID mapping to the owner. Don't edit the generated files unless the owner asks.
 
 Quick-lane tasks (no feature spec) are written by hand from `tasks/_TEMPLATE.md` (see `write-spec` §0).

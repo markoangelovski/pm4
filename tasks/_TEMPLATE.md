@@ -13,6 +13,8 @@ app: web            # web | api | infra | spec
 status: ready       # blocked | ready | in-progress | review | done
 size: S             # quick lane: S only
 tier: haiku         # haiku | sonnet | opus (specs/05-quality/task-routing.md)
+written_by: —       # signature of who wrote this file (task-routing.md#agent-signatures)
+implementer: —      # signature of the agent that finished it, set by implement-task
 depends_on: []
 feature_spec: —     # quick lane
 files: []           # every file this task may change (globs allowed); pm4 check enforces it
@@ -40,7 +42,7 @@ Optional. A bash block that `pm4 check` runs from the repo root after the gates.
 _Implementer: what changed, and anything the reviewer should look at._
 
 ### Attempts
-| # | Tier | Result | Summary |
+| # | Agent | Result | Summary |
 | --- | --- | --- | --- |
 
 ## Review

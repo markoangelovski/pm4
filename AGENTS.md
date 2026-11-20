@@ -127,6 +127,11 @@ task file, no feature spec, no Opus review). Details: `specs/05-quality/task-rou
 | Implement each task (`pm4 promote` copies confirmed prototype files first) | Tier on the task: Haiku / Sonnet | `implement-task` |
 | Review the whole feature, then **owner commits** | Opus reviewer | `review-feature` |
 
+**Every step is signed** with the agent that did it, as `<harness>/<model-id>[@effort]` (e.g.
+`claude-code/claude-opus-5-5`, `opencode/opencode/deepseek-v4.1-flash-free`). The session that launched the agent
+writes the signature, never the agent itself: in the spec's *Agents* table, each task's *Attempts* and `implementer:`,
+and each task's *Review*, where the reviewer grades the implementer. → `specs/05-quality/task-routing.md#agent-signatures`
+
 Commit points keep each diff reviewable: the confirmed prototype is its own commit, the working tree is clean before the first task, tasks of
 one feature build up uncommitted (`pm4 check` allows earlier tasks' files), and the owner commits the
 feature after the review.
@@ -167,6 +172,15 @@ Run from the app folder (`cd web` / `cd api`). CI (`.github/workflows/ci.yml`) r
 | `api/` | `npm ci` | `npm run start:dev` | `npm run lint` | `npm run typecheck` | `npm test`, then `npm run test:e2e` (needs `docker compose up -d`) | `npm run build` |
 
 Contract: `api/` → `npm run openapi:export`; `web/` → `npm run api:types`. Both must leave no diff when unchanged.
+
+**OpenCode with a free model.** The model's provider decides how to start OpenCode:
+
+| Provider | Model ID | Start with | List the free models |
+| --- | --- | --- | --- |
+| OpenCode Zen | `opencode/<name>-free` | `OPENCODE_CONFIG_CONTENT='{"model":"opencode/<name>-free"}' opencode` (the interactive UI has no `--model` flag) | `opencode models \| grep -E '^opencode/.*free'` |
+| OpenRouter | `<vendor>/<model>:free` | `ori opencode --model <vendor>/<model>:free` (Ori supplies the OpenRouter key) | `curl -s https://openrouter.ai/api/v1/models` (IDs ending in `:free`) |
+
+If a model is on both lists, use OpenCode Zen. The lists change often, so check them before choosing a model.
 
 ## 8. Glossary (short)
 

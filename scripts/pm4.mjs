@@ -477,6 +477,7 @@ app: ${r.app}
 status: blocked
 size: ${r.size || "S"}
 tier: ${r.tier}
+implementer: —
 depends_on: [${deps.join(", ")}]
 feature_spec: ${spec.path}
 spec_row: ${r.row}
@@ -493,7 +494,7 @@ Work from the brief: \`node scripts/pm4.mjs brief ${id}\`. Verify with \`node sc
 _Implementer: what changed, and anything the reviewer should look at._
 
 ### Attempts
-| # | Tier | Result | Summary |
+| # | Agent | Result | Summary |
 | --- | --- | --- | --- |
 
 ## Review

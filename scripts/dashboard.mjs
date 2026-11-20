@@ -160,7 +160,7 @@ function attemptsOf(body) {
     .filter((l) => /^\|\s*\d+\s*\|/.test(l))
     .map((l) => {
       const c = l.split("|").slice(1, -1).map((s) => s.trim());
-      return { n: c[0], tier: c[1], result: c[2], summary: c[3] };
+      return { n: c[0], agent: c[1], result: c[2], summary: c[3] };
     });
 }
 
@@ -181,6 +181,7 @@ const tasks = taskFiles
       status: meta.status ?? "blocked",
       size: meta.size ?? "—",
       tier: meta.tier ?? "—",
+      implementer: meta.implementer ?? "—",
       dependsOn: Array.isArray(meta.depends_on) ? meta.depends_on : [],
       featureSpec,
       featureSpecRow: meta.feature_spec?.match(/row "([^"]+)"/)?.[1] ?? null,
@@ -893,7 +894,7 @@ function client() {
           <div><dt>Milestone</dt><dd>${esc(t.milestone)}${D.milestones.find((m) => m.id === t.milestone) ? " · " + esc(D.milestones.find((m) => m.id === t.milestone).name) : ""}</dd></div>
           <div><dt>App</dt><dd>${esc(t.app)}</dd></div>
           <div><dt>Size</dt><dd>${esc(t.size)}</dd></div>
-          <div><dt>Tier</dt><dd>${esc(t.tier)}</dd></div>
+          <div><dt>Tier</dt><dd>${esc(t.tier)}</dd></div><div><dt>Implementer</dt><dd>${esc(t.implementer)}</dd></div>
           <div><dt>Depends on</dt><dd class="links">${t.dependsOn.length ? t.dependsOn.map(taskLink).join("") : "—"}</dd></div>
           <div><dt>Unblocks</dt><dd class="links">${t.dependents.length ? t.dependents.map(taskLink).join("") : "—"}</dd></div>
           <div><dt>Feature spec</dt><dd class="links">${spec ? docLink(spec.path, spec.title) + (t.featureSpecRow ? ` <span class="tag">row ${esc(t.featureSpecRow)}</span>` : "") + " " + pill(spec.status, DOC_STATUS) : "— quick lane / self-contained"}</dd></div>
@@ -904,8 +905,8 @@ function client() {
         ${t.acFiles.length ? `<section><h3 class="sub-h">Acceptance tests</h3><div style="overflow-x:auto"><table class="plain"><thead><tr><th>File</th><th>sha256</th><th>On disk</th></tr></thead><tbody>
           ${t.acFiles.map((a) => `<tr><td class="mono" style="font-size:12px;overflow-wrap:anywhere">${esc(a.path)}</td><td class="mono num" style="font-size:12px">${esc((a.sha256 || "").slice(0, 12))}…</td><td class="${a.exists ? "ok" : "bad"}">${a.exists ? "present" : "missing"}</td></tr>`).join("")}
         </tbody></table></div></section>` : ""}
-        ${t.attempts.length ? `<section><h3 class="sub-h">Attempts</h3><div style="overflow-x:auto"><table class="plain"><thead><tr><th>#</th><th>Tier</th><th>Result</th><th>Summary</th></tr></thead><tbody>
-          ${t.attempts.map((a) => `<tr><td class="num">${esc(a.n)}</td><td>${esc(a.tier)}</td><td class="${/done/.test(a.result) ? "ok" : /BLOCKED|FAILED/.test(a.result) ? "bad" : ""}">${esc(a.result)}</td><td>${inlineCode(a.summary)}</td></tr>`).join("")}
+        ${t.attempts.length ? `<section><h3 class="sub-h">Attempts</h3><div style="overflow-x:auto"><table class="plain"><thead><tr><th>#</th><th>Agent</th><th>Result</th><th>Summary</th></tr></thead><tbody>
+          ${t.attempts.map((a) => `<tr><td class="num">${esc(a.n)}</td><td>${esc(a.agent)}</td><td class="${/done/.test(a.result) ? "ok" : /BLOCKED|FAILED/.test(a.result) ? "bad" : ""}">${esc(a.result)}</td><td>${inlineCode(a.summary)}</td></tr>`).join("")}
         </tbody></table></div></section>` : ""}
         <section><h3 class="sub-h">Task file</h3><div id="d-body"></div></section>
       </div>`;

@@ -3,7 +3,7 @@ id: qa-task-routing
 title: Task Routing and Escalation
 status: approved
 owner: Marko Angelovski
-last_updated: 2026-10-17
+last_updated: 2026-11-20
 related: [qa-testing, qa-dod, feat-template, web-prototype, ADR-0012, OQ-189]
 ---
 
@@ -32,7 +32,7 @@ change itself. Delegating costs a fresh subagent context, which is more than the
 | Role | Model | Does |
 | --- | --- | --- |
 | Main session | opus | The UI prototype (with the owner), specs, acceptance tests and quick-lane task files (inline, so it can ask the owner directly); orchestrates `implement-task` |
-| Implementer | tier on the task | Code for one task (`api-engineer` / `web-engineer`), from `pm4 brief` |
+| Implementer | tier on the task, or the agent the owner names | Code for one task (`api-engineer` / `web-engineer`, or an OpenCode agent briefed with the same instructions), from `pm4 brief` |
 | Reviewer | opus | One review per feature: the diff against the spec, risks, DoD |
 | Explorer | haiku (built-in `Explore`) | Wide codebase searches only. Read a known file directly |
 | `scripts/pm4.mjs` | — | Task files, BOARD, hashes, readiness, briefs, prototype promotion, scope check, gates |
@@ -76,7 +76,39 @@ The implementer stops and returns one of:
 
 - Each `FAILED` climbs one tier. A task is never retried at the same tier after `FAILED`.
 - `FAILED` at sonnet → `status: blocked`, ask the owner (an opus attempt is the owner's call).
-- Every attempt gets a row in the task's *Attempts* table.
+- Every attempt gets a row in the task's *Attempts* table, signed with the agent that made it.
+
+## Agent signatures
+Every step of a feature records the agent that did it, so the review can judge each model on evidence.
+
+**Format:** `<harness>/<model-id>[@effort]`, e.g. `claude-code/claude-opus-5-5`, `claude-code/claude-haiku-5-5`,
+`opencode/opencode/deepseek-v4.1-flash-free`, `ori-opencode/deepseek/deepseek-v4.1-flash@high`. The harness is
+`claude-code`, `opencode` (plain OpenCode, OpenCode Zen models) or `ori-opencode` (OpenCode through Ori, OpenRouter
+models). The model ID is the exact one the harness ran (a Claude alias like `haiku` is written as its full ID).
+`@effort` only when one was set. A change the owner made by hand is signed `owner`.
+
+**Who writes it:** the session that launched the agent, from the launch command, never the agent itself (models
+misreport who they are). Implementers don't write their own *Attempts* rows; `implement-task` does.
+
+| Step | Where |
+| --- | --- |
+| Prototype, spec, tasks (`pm4 tasks`), acceptance tests | The feature spec's *Agents* table, filled in as each step finishes (all before the test-first commit) |
+| Implementation | The task file: one *Attempts* row per attempt (*Agent* column), and `implementer:` = the agent of the attempt that finished it |
+| Review | The task's *Review*: the verdict line names the reviewer's signature, and the *Implementer assessment* row grades the implementer |
+| Quick-lane task | The task file: `written_by:` (the task file's author), *Attempts*, `implementer:` |
+
+**Implementer assessment** (by the reviewer, one row per task, in its *Review*):
+
+| Agent | Attempts | ACs first try | Rules kept | Blocks right | Code | Grade | Fit |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+
+- *Rules kept*: no commit or staging, no edits to acceptance tests, specs or agent config, nothing outside *Files*
+  (OpenCode agents have no guard hook, so this is checked here). *Blocks right*: each `BLOCKED` was a real gap,
+  and no gap was worked around. *Code*: quality beyond the tests.
+- *Grade*: **A** done on the first attempt, at most minor findings · **B** done, with an extra fix round or a major
+  finding · **C** needed escalation or a main-session fix · **D** `FAILED`, a rule broken, or a wrong `BLOCKED`.
+- *Fit*: `right`, `too strong` (a cheaper agent would do) or `too weak`, with one line of evidence.
+- Finished tasks from before 2026-11-20 keep their tier-only rows; they aren't back-filled.
 
 ## Changelog
 - 2026-09-28: Initial version.
@@ -86,3 +118,4 @@ The implementer stops and returns one of:
   file-count and size limits on haiku are gone. Escalation unchanged.
 - 2026-10-11: Prototype first for web UI (ADR-0012); promoting a confirmed prototype screen is a haiku task.
 - 2026-10-17: Sonnet is the highest task tier (OQ-189): the opus triggers became sonnet triggers that need the algorithm spelled out in *Interfaces*; `FAILED` at sonnet → blocked.
+- 2026-11-20: Agent signatures on every step (`<harness>/<model-id>[@effort]`), written by the launching session; the spec's *Agents* table, `implementer:` and an *Agent* column in *Attempts*; the reviewer's *Implementer assessment* replaces the tier feedback. OpenCode agents can implement tasks.
