@@ -219,7 +219,7 @@ Typed stubs (created with the tests, so lint and typecheck pass while the tests 
 | Prototype | `claude-code/claude-opus-5-5` | 2026-11-21 |
 | Spec | `claude-code/claude-opus-5-5` | 2026-11-21 |
 | Tasks (`pm4 tasks`) | `claude-code/claude-sonnet-5-5` | 2026-11-21 |
-| Acceptance tests | `claude-code/claude-sonnet-5-5`, checked by `claude-code/claude-opus-5-5` (fixes by `claude-code/claude-opus-5-5`: AC-16 "Not used yet" matcher, Prettier) | 2026-11-21 |
+| Acceptance tests | `claude-code/claude-sonnet-5-5`, checked by `claude-code/claude-opus-5-5` (fixes by `claude-code/claude-opus-5-5`: AC-16 "Not used yet" matcher, Prettier; AC-17 list-call baseline after `BLOCKED: test` on T-0183) | 2026-11-21 |
 
 ## Open questions
 None. OQ-311…OQ-313 are resolved.
@@ -227,3 +227,5 @@ None. OQ-311…OQ-313 are resolved.
 ## Changelog
 - 2026-11-21: Initial draft from prototypes `05db575` and `3fc6229`; OQ-311 (Allow 404 → invalid page), OQ-312 (`429`
   toast on the consent page), OQ-313 (no Documentation update) resolved. Status `review`.
+- 2026-11-21: AC-17 counts list calls from a baseline before the error render (the shared mock made the absolute counts
+  unreachable; found by T-0183's implementer); re-hashed. Review: `?error=` lookup uses `Object.hasOwn`.

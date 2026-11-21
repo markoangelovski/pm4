@@ -161,15 +161,16 @@ describe("Connected apps settings (feat-mcp-web)", () => {
     expect(address().value).toBe(ADDRESS);
     empty.unmount();
 
+    const before = listCalls();
     listAnswers(failed, ok([claude]));
     renderSettings();
     expect(
       await screen.findByText("Couldn't load your connected apps.")
     ).toBeInTheDocument();
     expect(address().value).toBe(ADDRESS);
-    expect(listCalls()).toBe(1);
+    expect(listCalls() - before).toBe(1);
     fireEvent.click(screen.getByRole("button", { name: "Retry" }));
-    await waitFor(() => expect(listCalls()).toBe(2));
+    await waitFor(() => expect(listCalls() - before).toBe(2));
     expect(await screen.findByText("Claude Code")).toBeInTheDocument();
   });
 

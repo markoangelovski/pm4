@@ -34,15 +34,16 @@ export function sanitizeReturnTo(
     return null;
   }
   if (url.origin !== PARSE_ORIGIN) return null;
-  // 6. A private route, checked after parsing so dot segments are normalized.
+  // 6. No trailing slashes; the hash is dropped.
+  const path = url.pathname.replace(/\/+$/, "");
+  // 7. A private route, or the consent page (OQ-298), checked after parsing so dot segments are normalized.
   if (
-    url.pathname !== routes.app.dashboard &&
-    !url.pathname.startsWith(APP_PREFIX)
+    path !== routes.app.dashboard &&
+    !path.startsWith(APP_PREFIX) &&
+    path !== routes.consent
   ) {
     return null;
   }
-  // 7. No trailing slashes; the hash is dropped.
-  const path = url.pathname.replace(/\/+$/, "");
   return path + url.search;
 }
 

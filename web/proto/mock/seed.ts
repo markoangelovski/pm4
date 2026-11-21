@@ -5,16 +5,14 @@ import type { components } from "@/lib/api/schema";
 import { today } from "@/lib/time";
 import type { ProjectRef, TaskRef, TimeLog } from "@/proto/features/time/types";
 import type { NoteDto, TodoDto } from "@/proto/features/notes/types";
-import type {
-  ConnectedAppDto,
-  ConsentRequestDto
-} from "@/proto/features/agents/proposed-types";
 
 import type { Project } from "@/proto/features/projects/api";
 import type { Task } from "@/proto/features/tasks/api";
 
 type Me = components["schemas"]["MeResponseDto"];
 type Status = components["schemas"]["TaskStatus"];
+type ConnectedAppDto = components["schemas"]["ConnectedAppDto"];
+type ConsentRequestDto = components["schemas"]["ConsentRequestDto"];
 
 export const MOCK_TZ = Intl.DateTimeFormat().resolvedOptions().timeZone;
 

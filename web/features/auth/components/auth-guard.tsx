@@ -20,7 +20,8 @@ type GuardState = "checking" | "ready" | "unavailable";
 
 /** Wraps the app shell: renders children only once a session is known (D11). */
 export function AuthGuard({
-  children
+  children,
+  signedOutHref = landingHref
 }: {
   children: React.ReactNode;
   /** Where a signed-out visitor goes, from `window.location.pathname + search` (default: the landing page). */
@@ -45,7 +46,7 @@ export function AuthGuard({
         queryClient.clear();
         setLastLogLink(NO_LOG_LINK);
         router.replace(
-          landingHref(window.location.pathname + window.location.search)
+          signedOutHref(window.location.pathname + window.location.search)
         );
       },
       (error: unknown) => {
@@ -60,7 +61,7 @@ export function AuthGuard({
     return () => {
       cancelled = true;
     };
-  }, [state, queryClient, router]);
+  }, [state, queryClient, router, signedOutHref]);
 
   // Back online while unreachable: check the session again without waiting for Retry.
   useEffect(() => {
@@ -77,10 +78,10 @@ export function AuthGuard({
         setLastLogLink(NO_LOG_LINK);
         clearFormDrafts();
         router.replace(
-          landingHref(window.location.pathname + window.location.search)
+          signedOutHref(window.location.pathname + window.location.search)
         );
       }),
-    [queryClient, router]
+    [queryClient, router, signedOutHref]
   );
 
   // Unexpected errors surface in the app's error boundary instead of a stuck spinner.
