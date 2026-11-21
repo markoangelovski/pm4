@@ -1,10 +1,10 @@
 import { join } from "node:path";
-import { BadRequestException, ValidationPipe } from "@nestjs/common";
+import { ValidationPipe } from "@nestjs/common";
 import { NestExpressApplication } from "@nestjs/platform-express";
 import helmet from "helmet";
 import { AppConfigService } from "./config/app-config.service.js";
 import { ProblemDetailsFilter } from "./common/filters/problem-details/problem-details.filter.js";
-import { flattenValidationErrors } from "./common/validation/flatten-validation-errors.js";
+import { VALIDATION_PIPE_OPTIONS } from "./common/validation/validation-pipe.js";
 
 /**
  * Bootstrap shared by `main.ts` and every e2e test (`test/*.e2e-spec.ts`), so
@@ -17,6 +17,7 @@ export function configureApp(app: NestExpressApplication): void {
   app.setGlobalPrefix("api/v1", {
     exclude: [
       "health",
+      "mcp",
       ".well-known/oauth-protected-resource",
       ".well-known/oauth-protected-resource/mcp",
       ".well-known/oauth-authorization-server",
@@ -48,15 +49,7 @@ export function configureApp(app: NestExpressApplication): void {
     allowedHeaders: ["Authorization", "Content-Type"]
   });
 
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      forbidNonWhitelisted: true,
-      transform: true,
-      exceptionFactory: (errors) =>
-        new BadRequestException({ errors: flattenValidationErrors(errors) })
-    })
-  );
+  app.useGlobalPipes(new ValidationPipe(VALIDATION_PIPE_OPTIONS));
 
   app.useGlobalFilters(app.get(ProblemDetailsFilter));
 

@@ -178,6 +178,44 @@ export class TimeLogsService {
     };
   }
 
+  /** The caller's logs worked in `from..to` (MCP `list_time_logs`, OQ-309); no bookings, no paging. */
+  async listRange(
+    userId: string,
+    range: { from: string; to: string; projectId?: string; taskId?: string }
+  ): Promise<{
+    from: string;
+    to: string;
+    totalMinutes: number;
+    items: TimeLogResponseDto[];
+  }> {
+    assertDate(range.from, "from");
+    assertDate(range.to, "to");
+    const span = daysBetween(range.from, range.to);
+    if (span < 0 || span > MAX_RANGE_DAYS) {
+      throw new BadRequestException({
+        errors: [
+          {
+            field: "to",
+            message: `must not be before from and at most ${MAX_RANGE_DAYS} days after it`
+          }
+        ]
+      });
+    }
+    const rows = await this.timeRepository.listRange(
+      userId,
+      range.from,
+      range.to,
+      { projectId: range.projectId, taskId: range.taskId }
+    );
+    const items = rows.map(toTimeLogDto);
+    return {
+      from: range.from,
+      to: range.to,
+      totalMinutes: items.reduce((sum, item) => sum + item.durationMinutes, 0),
+      items
+    };
+  }
+
   async create(
     userId: string,
     dto: CreateTimeLogDto

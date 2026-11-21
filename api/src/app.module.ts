@@ -15,6 +15,7 @@ import { NotesModule } from "./notes/notes.module.js";
 import { ChangelogModule } from "./changelog/changelog.module.js";
 import { AccountModule } from "./account/account.module.js";
 import { OAuthModule } from "./oauth/oauth.module.js";
+import { McpModule } from "./mcp/mcp.module.js";
 
 @Module({
   imports: [
@@ -32,7 +33,8 @@ import { OAuthModule } from "./oauth/oauth.module.js";
     NotesModule,
     ChangelogModule,
     AccountModule,
-    OAuthModule
+    OAuthModule,
+    McpModule
   ],
   providers: [ProblemDetailsFilter]
 })

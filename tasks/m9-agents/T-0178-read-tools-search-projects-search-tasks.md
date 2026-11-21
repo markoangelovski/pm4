@@ -3,10 +3,10 @@ id: T-0178
 title: Read tools: search_projects, search_tasks, get_day, list_time_logs (+ listRange), report_summary (+ report-summary.ts)
 milestone: M9
 app: api
-status: blocked
+status: review
 size: M
 tier: haiku
-implementer: —
+implementer: claude-code/claude-haiku-5-5
 depends_on: [T-0177]
 feature_spec: specs/06-features/mcp-tools-api.md
 spec_row: T2
@@ -24,9 +24,29 @@ Work from the brief: `node scripts/pm4.mjs brief T-0178`. Verify with `node scri
 ## Implementation notes
 _Implementer: what changed, and anything the reviewer should look at._
 
+- `report-summary.ts`: `weekdaysBetween` (UTC walk, Mon–Fri) and `summarizeReport` (sums of `days`, target = weekdays × daily target).
+- `time.repository.ts`: `listRange` (workDate between, optional project/task, order workDate then id, as `listDay`).
+- `time-logs.service.ts`: `listRange` (assertDate, 0..366 days rule, `totalMinutes`). `time.module.ts` exports `ReportsService`.
+- `read-tools.service.ts`: the five read tools, registered with `runTool`/`validateDto`; absent optional inputs are dropped before validation; `title` = tool name.
+- AC-8 to AC-13 pass in `test/mcp-tools.ac.e2e-spec.ts`. AC-7, AC-15 to AC-19 still fail, as expected: the write tools are T3.
+- `pm4 check T-0178` (run once, after `npm run format` on `api/src`):
+  - `ac hashes: ok (2)`, `api lint: ok`, `api format:check: ok`, `api typecheck: ok`, `api test: ok`, `api test:e2e: ok`, `api build: ok`, `check AC-20: ok`
+  - `scope: FAIL`: `specs/06-features/mcp-tools-api.md` is modified in the working tree but is not in this task's Files table. It was already modified before T-0178 started (main-session change), so it's not from this implementation. Needs the main session to look at it.
+
 ### Attempts
 | # | Agent | Result | Summary |
 | --- | --- | --- | --- |
+| 1 | `claude-code/claude-haiku-5-5` | done | Five read tools, `listRange`, `report-summary.ts`; all gates pass (scope flag = the main session's spec edit) |
+| 2 | `claude-code/claude-opus-5-5` | done | Tool titles = FR-MCP-008's labels; `present()` moved to `mcp-tools.ts` for T3 |
 
 ## Review
-_Filled in by `review-feature`._
+
+**Verdict: approve** (reviewer `claude-code/claude-opus-5-5`, 2026-11-21).
+
+Findings: (5) minor, optional: `listRange` copies the 366-day check a third time (as the spec said); left as is.
+
+*Implementer assessment*
+
+| Task | Agent | Attempts | ACs first try | Rules kept | Blocks right | Code | Grade | Fit |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| T-0178 | `claude-code/claude-haiku-5-5` | 2 (attempt 2 by `claude-code/claude-opus-5-5`) | yes (AC-8…AC-14) | yes | n/a | good; titles were tool names, fixed by the main session | C | right |

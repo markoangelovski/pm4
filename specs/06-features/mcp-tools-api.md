@@ -20,7 +20,7 @@ FR-MCP-008; API-MCP-012). The consent page and Connected apps tab are `feat-mcp-
 ## Decisions
 | # | Decision | Source |
 | --- | --- | --- |
-| D1 | SDK v2: `@modelcontextprotocol/server` + `@modelcontextprotocol/node`; `createMcpHandler` (a fresh `McpServer` per request, stateless) with `responseMode: "json"` | OQ-306 (owner, 2026-11-21) |
+| D1 | SDK v2: `@modelcontextprotocol/server` + `@modelcontextprotocol/node`; stateless, a fresh `McpServer` per request from one factory. Modern (2026-07-28) traffic: `createMcpHandler(factory, { legacy: "reject", responseMode: "json" })`. 2025-era traffic (`isLegacyRequest`): a per-request `WebStandardStreamableHTTPServerTransport({ sessionIdGenerator: undefined, enableJsonResponse: true })`, because the SDK's legacy fallback always answers SSE | OQ-306 (owner, 2026-11-21); SDK `isLegacyRequest` docs |
 | D2 | An omitted `workDate` = today in the user's time zone (`get_day`, `log_time`, `set_workday_start`) | OQ-307 (owner, 2026-11-21) |
 | D3 | A `pm4:read` token gets only the five read tools; the write tools are registered only for `pm4:write` | OQ-308 (owner, 2026-11-21) |
 | D4 | `list_time_logs` = logs with their work date in `from..to` (a new repository query), optional project/task filter, no bookings | OQ-309 (owner, 2026-11-21) |
@@ -73,6 +73,7 @@ scope (120 / min per user); the ten tools; `TimeLogsService.listRange`; the shar
 | api | `api/src/rate-limit/rate-limit.guard.ts` | M | T1 | Per-user tracker for `mcp` |
 | api | `api/src/common/decorators/mcp-resource/mcp-resource.decorator.ts` | C | T1 | `npx nest g decorator common/decorators/mcp-resource` |
 | api | `api/src/common/guards/access-token/access-token.guard.ts` | M | T1 | MCP branch (D5) |
+| api | `api/src/common/guards/access-token/access-token.guard.spec.ts` | M | T1 | The guard's new constructor arguments |
 | api | `api/src/common/validation/validation-pipe.ts` | C | T1 | Shared options + `validateDto` |
 | api | `api/src/app.setup.ts` | M | T1 | `"mcp"` prefix exclusion; `VALIDATION_PIPE_OPTIONS` |
 | api | `api/src/mcp/mcp.module.ts`, `api/src/app.module.ts` | C, M | T1 | `npx nest g module mcp` |
@@ -84,6 +85,7 @@ scope (120 / min per user); the ten tools; `TimeLogsService.listRange`; the shar
 | api | `api/src/time/time.module.ts` | M | T2 | Export `ReportsService` |
 | api | `api/src/time/time-logs.service.ts`, `api/src/time/time.repository.ts` | M | T2 | `listRange` |
 | api | `api/src/mcp/*.spec.ts` | C | T1, T2, T3 | Ordinary unit tests, optional |
+| api | `api/test/mcp-modern.e2e-spec.ts` | C | T1 | Ordinary e2e test of the 2026-07-28 path (review) |
 
 ## Interfaces
 
@@ -144,8 +146,9 @@ zone").
     `ForbiddenException("Origin not allowed.")`; otherwise `mcp.handle(req, res)`.
   - `@Get()` and `@Delete()` (two methods): `res.status(405).setHeader("Allow", "POST").json({ jsonrpc: "2.0",
     error: { code: -32000, message: "Method not allowed." }, id: null })`.
-- **`McpService`** (`OnModuleDestroy`): one `createMcpHandler(factory, { responseMode: "json" })` and its
-  `toNodeHandler` built in the constructor. `factory` reads the `McpAuthInfo` the SDK passes through (from
+- **`McpService`** (`OnModuleDestroy`): built in the constructor: `createMcpHandler(factory, { legacy: "reject",
+  responseMode: "json" })` for modern requests, a per-request JSON-response `WebStandardStreamableHTTPServerTransport` for
+  requests `isLegacyRequest` flags (D1), and one `toNodeHandler` routing between them. `factory` reads the `McpAuthInfo` the SDK passes through (from
   `req.auth`), creates `new McpServer({ name: "pm4", version: packageJson.version }, { instructions })` and calls
   `readTools.register(server, userId)`, then `writeTools.register(server, userId)` only when `scopes` includes
   `"pm4:write"` (D3). `handle(req, res)` = `node(req, res, req.body)`. `onModuleDestroy` closes the handler.
@@ -263,3 +266,5 @@ cp api/openapi.json "$tmp/"
 ## Changelog
 - 2026-11-21: Initial draft (OQ-306…OQ-309 decided with the owner the same day). Status `review`.
 - 2026-11-21: Approved by the owner.
+- 2026-11-21: *Files*: T1 also updates the guard's unit spec (new constructor arguments).
+- 2026-11-21: Review: D1 and the `McpService` interface describe the 2025-era leg (the SDK fallback answers SSE); an ordinary e2e test covers the 2026-07-28 path.

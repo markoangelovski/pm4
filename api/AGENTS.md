@@ -33,7 +33,8 @@ not contradict the root `AGENTS.md`/`CLAUDE.md` or `../specs` — read those fir
 - `src/health/` — `GET /health`: outside the `api/v1` prefix, unauthenticated, excluded from
   Swagger and (later) rate limiting.
 - `src/common/filters/problem-details/` — RFC 9457 error filter. `src/common/validation/` — DTO
-  validation-error flattening used by the pipe's `exceptionFactory`.
+  validation-error flattening used by the pipe's `exceptionFactory`, the shared `VALIDATION_PIPE_OPTIONS` and
+  `validateDto` (validates a plain object against a DTO class the way a request is, e.g. for MCP tool inputs).
 - `scripts/` — standalone scripts (no Nest DI bootstrap beyond what they need): `export-openapi.ts`,
   `migrate.ts`. Compiled by `nest build` (see `tsconfig.build.json`) and run from `dist/scripts/`.
 - `drizzle/` — committed SQL migrations + snapshots (drizzle-kit). `drizzle.config.ts` — drizzle-kit

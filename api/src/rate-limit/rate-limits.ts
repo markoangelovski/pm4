@@ -35,7 +35,7 @@ export const DEFAULT_RATE_LIMITS: RateLimits = {
     oauthAuthorize: 30,
     oauthToken: 30,
     oauthRegister: 10,
-    mcp: 0 // feat-mcp-tools-api T1: 120
+    mcp: 120
   }
 };
 

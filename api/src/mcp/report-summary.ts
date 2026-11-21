@@ -3,11 +3,18 @@ import type {
   ReportProjectDto
 } from "../time/dto/dashboard-report-response.dto.js";
 
+const DAY_MS = 86_400_000;
+
 /** Monday–Friday dates in [from, to] (UTC calendar arithmetic on YYYY-MM-DD); 0 when to < from. */
 export function weekdaysBetween(from: string, to: string): number {
-  void from;
-  void to;
-  throw new Error("not implemented (feat-mcp-tools-api)");
+  const start = Date.parse(from);
+  const end = Date.parse(to);
+  let count = 0;
+  for (let t = start; t <= end; t += DAY_MS) {
+    const weekday = new Date(t).getUTCDay();
+    if (weekday >= 1 && weekday <= 5) count += 1;
+  }
+  return count;
 }
 
 export interface ReportSummary {
@@ -29,9 +36,18 @@ export function summarizeReport(
   to: string,
   dailyTargetMinutes: number
 ): ReportSummary {
-  void report;
-  void from;
-  void to;
-  void dailyTargetMinutes;
-  throw new Error("not implemented (feat-mcp-tools-api)");
+  const sum = (pick: (day: (typeof report.days)[number]) => number): number =>
+    report.days.reduce((total, day) => total + pick(day), 0);
+  const weekdays = weekdaysBetween(from, to);
+  return {
+    from,
+    to,
+    workedMinutes: sum((day) => day.workedMinutes),
+    bookedMinutes: sum((day) => day.bookedMinutes),
+    nonprodMinutes: sum((day) => day.nonprodMinutes),
+    weekdays,
+    dailyTargetMinutes,
+    targetMinutes: weekdays * dailyTargetMinutes,
+    projects: report.projects
+  };
 }
