@@ -3,7 +3,7 @@ id: arch-deployment
 title: Deployment and CI/CD
 status: review
 owner: Marko Angelovski
-last_updated: 2026-11-07
+last_updated: 2026-11-21
 related: [arch-env, arch-repos, web-static-export, ADR-0001, ADR-0002, ADR-0006]
 ---
 
@@ -17,14 +17,18 @@ How each app is built, tested and deployed **independently** from the monorepo (
 | --- | --- | --- |
 | `ci.yml` | `pull_request` | Detects changed paths (`dorny/paths-filter` or equivalent). Runs the web checks and/or the api checks; `.github/**` changes run both. `ci-ok` aggregates them and is the one required check of the `master` ruleset (passes when each job passed or was skipped). |
 | `web-deploy.yml` | `push` to `master` with `paths: [web/**, api/openapi.json, .github/workflows/web-deploy.yml]`, plus `workflow_dispatch` | Build and deploy web to Pages |
-| `api-deploy.yml` | `push` to `master` with `paths: [api/**, .github/workflows/api-deploy.yml]`, plus `workflow_dispatch` | Test, migrate and deploy the api to Azure |
+| `api-deploy.yml` | `push` to `master` with `paths: [api/**, .github/workflows/api-deploy.yml]`, plus `workflow_dispatch` | Build, migrate and deploy the api to Azure |
 
 Every job sets `defaults.run.working-directory` to its app folder and uses `actions/setup-node` with
 the npm cache keyed on that app's `package-lock.json`. A `concurrency` group per workflow prevents overlapping deploys.
 
+The deploy workflows **don't repeat CI's checks** (lint, format, type-check, tests, contract diffs). The `master`
+ruleset requires `ci-ok` and that the branch is **up to date** with `master` before merging, so the squash commit
+on `master` has exactly the tree `ci.yml` tested. A manual `workflow_dispatch` deploys `master`, which passed the same
+gate. If the up-to-date rule is ever turned off, the deploy workflows must run the checks again.
+
 ## Web → GitHub Pages
-1. `npm ci` → `npm run lint` → type-check → `npm test` → check the generated API types are
-   current (ADR-0010) → `npm run build` (→ `web/out/`).
+1. `npm ci` → release version, stamp and changelog → `npm run build` (→ `web/out/`).
 2. Make sure `out/404.html` exists (from `not-found.tsx`). Pages serves it for unknown paths.
 3. `actions/upload-pages-artifact` (path `web/out`) → `actions/deploy-pages`.
 - The Pages source is set to **GitHub Actions**. The **custom domain** is configured in the repo's Pages
@@ -35,8 +39,7 @@ the npm cache keyed on that app's `package-lock.json`. A `concurrency` group per
 - Build env comes from repository **variables**.
 
 ## API → Azure Web App
-1. `npm ci` → lint → `npm test` → `npm run test:e2e` (Postgres + Redis service containers) →
-   check `openapi.json` is current → `npm run build`.
+1. `npm ci` → release version, stamp and changelog → `npm run build`.
 2. **Migrate:** `drizzle-kit migrate` against `DATABASE_URL_DIRECT`, as an explicit step before
    deploy. Migrations must be backward compatible with the currently running version (expand/contract).
 3. Package `dist/`, `package.json`, `package-lock.json` and production `node_modules`
@@ -130,3 +133,4 @@ One-time setup outside the repo, done by the owner, not an agent:
   Added the post-deploy `/health` smoke check and the owner's one-time Azure/Pages setup checklist.
 - 2026-10-03: *Release versions* (OQ-098): automatic per-app versions from git tags and conventional commits; bootstrap tags in the owner checklist.
 - 2026-11-07: *Release changelog* (OQ-270…272): each deploy builds its app's changelog; the Versioning tab restates *Release versions* (feat-shell-documentation). Back to `review`.
+- 2026-11-21: Deploy workflows no longer repeat CI's checks; the up-to-date rule on `master` makes them redundant.

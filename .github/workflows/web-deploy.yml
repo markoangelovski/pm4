@@ -3,6 +3,9 @@ name: web-deploy
 # Builds and deploys web/ to GitHub Pages at the custom domain (arch-deployment).
 # Runs only for web-relevant changes, plus a manual trigger. Never for api-only changes
 # (except api/openapi.json, which web/ consumes via the generated types, ADR-0010).
+# No lint/type-check/test here: ci.yml already ran them on this exact tree. The `master` ruleset requires
+# `ci-ok` with "branch must be up to date", so the squash commit is the tree CI tested. If that rule is
+# ever turned off, put the checks back here.
 on:
   push:
     branches: [master]
@@ -45,21 +48,6 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
-
-      - name: Lint
-        run: npm run lint
-
-      - name: Type-check
-        run: npm run typecheck
-
-      - name: Test
-        run: npm test
-
-      - name: Regenerate API types
-        run: npm run api:types
-
-      - name: Verify generated API types are current (ADR-0010)
-        run: git diff --exit-code -- lib/api/schema.d.ts
 
       # Release version (OQ-098): next semver from web-v* tags and conventional commits; the stamped
       # package.json is never committed (the repo stays at 0.0.0).

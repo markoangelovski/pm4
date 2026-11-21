@@ -123,7 +123,7 @@ task file, no feature spec, no Opus review). Details: `specs/05-quality/task-rou
 | *Web UI only:* build the screen in the UI prototype until the owner confirms it, then **owner commits** | Main session (Opus) with the owner | `prototype` |
 | Write the feature spec (reads code first; no open questions left) | Main session (Opus), owner approves | `write-spec` |
 | Create task files from the spec's task list | Script (`pm4 tasks`) | `write-task` |
-| Write the acceptance tests (+ typed stubs), then **owner commits** | Main session (Opus) | `write-acceptance-tests` |
+| Write the acceptance tests (+ typed stubs), then **owner commits** | Sonnet test writer, one per app (one per file when an app has 3+); the main session (Opus) checks them against the spec | `write-acceptance-tests` |
 | Implement each task (`pm4 promote` copies confirmed prototype files first) | Tier on the task: Haiku / Sonnet | `implement-task` |
 | Review the whole feature, then **owner commits** | Opus reviewer | `review-feature` |
 

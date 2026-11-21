@@ -3,7 +3,7 @@ id: qa-task-routing
 title: Task Routing and Escalation
 status: approved
 owner: Marko Angelovski
-last_updated: 2026-11-20
+last_updated: 2026-11-21
 related: [qa-testing, qa-dod, feat-template, web-prototype, ADR-0012, OQ-189]
 ---
 
@@ -31,7 +31,8 @@ change itself. Delegating costs a fresh subagent context, which is more than the
 ## Roles
 | Role | Model | Does |
 | --- | --- | --- |
-| Main session | opus | The UI prototype (with the owner), specs, acceptance tests and quick-lane task files (inline, so it can ask the owner directly); orchestrates `implement-task` |
+| Main session | opus | The UI prototype (with the owner), specs and quick-lane task files (inline, so it can ask the owner directly); orchestrates `write-acceptance-tests` (checks the test diff against the spec, runs `pm4 hash`) and `implement-task` |
+| Test writer | sonnet | The acceptance tests and typed stubs of one feature for one app (`test-engineer`), from the approved spec. Never Haiku: implementers are graded against these tests. An app with 3 or more independent test files gets one agent per file (`write-acceptance-tests`) |
 | Implementer | tier on the task, or the agent the owner names | Code for one task (`api-engineer` / `web-engineer`, or an OpenCode agent briefed with the same instructions), from `pm4 brief` |
 | Reviewer | opus | One review per feature: the diff against the spec, risks, DoD |
 | Explorer | haiku (built-in `Explore`) | Wide codebase searches only. Read a known file directly |
@@ -71,7 +72,7 @@ The implementer stops and returns one of:
 | Result | When | `implement-task` then |
 | --- | --- | --- |
 | `BLOCKED: spec` | The spec is ambiguous, contradictory or wrong, or a needed file, pattern or dependency is missing | `status: blocked`, the question goes into the task, and a proposed `OQ-###` goes to the owner. A higher tier won't help |
-| `BLOCKED: test` | An acceptance test contradicts the spec, or can't pass as written | The main session (test author) checks it. If the test is wrong, it fixes the test, re-runs `pm4 hash`, records it in *Attempts*, and re-delegates at the same tier. If the test is right, it re-delegates and explains why |
+| `BLOCKED: test` | An acceptance test contradicts the spec, or can't pass as written | The main session checks it. If the test is wrong, it fixes the test, re-runs `pm4 hash`, records it in *Attempts*, and re-delegates at the same tier. If the test is right, it re-delegates and explains why |
 | `FAILED` | The acceptance tests still fail after **two** fix attempts | Re-delegate at the next tier (haiku → sonnet), with the previous report and the failing `pm4 check` output. The diff stays |
 
 - Each `FAILED` climbs one tier. A task is never retried at the same tier after `FAILED`.
@@ -92,7 +93,7 @@ misreport who they are). Implementers don't write their own *Attempts* rows; `im
 
 | Step | Where |
 | --- | --- |
-| Prototype, spec, tasks (`pm4 tasks`), acceptance tests | The feature spec's *Agents* table, filled in as each step finishes (all before the test-first commit) |
+| Prototype, spec, tasks (`pm4 tasks`), acceptance tests | The feature spec's *Agents* table, filled in as each step finishes (all before the test-first commit). The acceptance tests row names the test writer and the main session that checked them |
 | Implementation | The task file: one *Attempts* row per attempt (*Agent* column), and `implementer:` = the agent of the attempt that finished it |
 | Review | The task's *Review*: the verdict line names the reviewer's signature, and the *Implementer assessment* row grades the implementer |
 | Quick-lane task | The task file: `written_by:` (the task file's author), *Attempts*, `implementer:` |
@@ -119,3 +120,4 @@ misreport who they are). Implementers don't write their own *Attempts* rows; `im
 - 2026-10-11: Prototype first for web UI (ADR-0012); promoting a confirmed prototype screen is a haiku task.
 - 2026-10-17: Sonnet is the highest task tier (OQ-189): the opus triggers became sonnet triggers that need the algorithm spelled out in *Interfaces*; `FAILED` at sonnet → blocked.
 - 2026-11-20: Agent signatures on every step (`<harness>/<model-id>[@effort]`), written by the launching session; the spec's *Agents* table, `implementer:` and an *Agent* column in *Attempts*; the reviewer's *Implementer assessment* replaces the tier feedback. OpenCode agents can implement tasks.
+- 2026-11-21: Sonnet `test-engineer` subagents write the acceptance tests (one per app, one per file when an app has 3 or more); the main session checks their diff against the spec and runs `pm4 hash`.

@@ -1,7 +1,10 @@
 name: api-deploy
 
-# Tests, migrates (Neon) and deploys api/ to the Azure Web App (arch-deployment).
+# Builds, migrates (Neon) and deploys api/ to the Azure Web App (arch-deployment).
 # Runs only for api-relevant changes, plus a manual trigger. Never for web-only changes.
+# No lint/type-check/tests here: ci.yml already ran them on this exact tree. The `master` ruleset requires
+# `ci-ok` with "branch must be up to date", so the squash commit is the tree CI tested. If that rule is
+# ever turned off, put the checks back here.
 on:
   push:
     branches: [master]
@@ -27,29 +30,6 @@ jobs:
     defaults:
       run:
         working-directory: api
-    services:
-      postgres:
-        image: postgres:18
-        env:
-          POSTGRES_USER: pm4
-          POSTGRES_PASSWORD: pm4
-          POSTGRES_DB: pm4_test
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U pm4 -d pm4_test"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 10
-      redis:
-        image: redis:8
-        ports:
-          - 6379:6379
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 10
     steps:
       - uses: actions/checkout@v7
         with:
@@ -63,24 +43,6 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
-
-      - name: Lint
-        run: npm run lint
-
-      - name: Type-check
-        run: npm run typecheck
-
-      - name: Test
-        run: npm test
-
-      - name: Test (e2e, Postgres + Redis service containers)
-        run: npm run test:e2e
-
-      - name: Regenerate openapi.json
-        run: npm run openapi:export
-
-      - name: Verify openapi.json is current (ADR-0010)
-        run: git diff --exit-code -- openapi.json
 
       # Release version (OQ-098): next semver from api-v* tags and conventional commits; the stamped
       # package.json is never committed (the repo stays at 0.0.0).

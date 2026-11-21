@@ -6,12 +6,15 @@
 // - no subagent runs the bookkeeping commands of scripts/pm4.mjs (tasks, hash,
 //   status): re-hashing would launder an edited acceptance test;
 // - implementers (api-engineer, web-engineer) edit only their own app and task
-//   files (tasks/**/T-*.md), never acceptance tests (*.ac.*), specs or agent config.
+//   files (tasks/**/T-*.md), never acceptance tests (*.ac.*), specs or agent config;
+// - the test writer (test-engineer) edits only api/ and web/ (acceptance tests,
+//   typed stubs), never specs, task files, the board, scripts or agent config.
 // It stops accidents, not a determined workaround: the reviewer's sha256
 // check on acceptance tests is the backstop.
 import path from "node:path";
 
 const IMPLEMENTER_APP = { "api-engineer": "api", "web-engineer": "web" };
+const TEST_WRITER = "test-engineer";
 const FILE_TOOLS = new Set(["Edit", "Write", "MultiEdit", "NotebookEdit"]);
 const AC_FILE = /\.ac\.(spec|e2e-spec|test)\.tsx?$/;
 const AC_WRITE_IN_BASH = /(>|\btee\b|\bsed\s+-i|\bperl\s+-\w*i|\bmv\b|\bcp\b|\brm\b)[^|;&]*\.ac\.(spec|e2e-spec|test)\.tsx?/;
@@ -58,7 +61,7 @@ if (tool === "Bash") {
   process.exit(0);
 }
 
-if (FILE_TOOLS.has(tool) && agent in IMPLEMENTER_APP) {
+if (FILE_TOOLS.has(tool) && (agent in IMPLEMENTER_APP || agent === TEST_WRITER)) {
   const target = toolInput.file_path ?? toolInput.notebook_path ?? "";
   // A task branch checked out under .worktrees/<name>/ follows the same rules as the main checkout.
   const rel = path
@@ -66,6 +69,14 @@ if (FILE_TOOLS.has(tool) && agent in IMPLEMENTER_APP) {
     .split(path.sep)
     .join("/")
     .replace(/^\.worktrees\/[^/]+\//, "");
+
+  if (agent === TEST_WRITER) {
+    if (!(rel.startsWith("api/") || rel.startsWith("web/"))) {
+      deny(`test-engineer writes only acceptance tests and stubs in api/ or web/. To change ${rel}, report BLOCKED: spec.`);
+    }
+    process.exit(0);
+  }
+
   const app = IMPLEMENTER_APP[agent];
 
   if (AC_FILE.test(rel)) {
