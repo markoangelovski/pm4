@@ -1,14 +1,49 @@
 "use client";
 
 import { parseAsStringLiteral, useQueryState } from "nuqs";
-import { Braces, History, Tag, type LucideIcon } from "lucide-react";
+import {
+  Braces,
+  Database,
+  History,
+  KeyRound,
+  Network,
+  Tag,
+  type LucideIcon
+} from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ApiDocs } from "./api-docs";
+import { ArchitectureDoc } from "./architecture-doc";
+import { AuthDoc } from "./auth-doc";
 import { ChangelogDoc } from "./changelog-doc";
+import { DatabaseDoc } from "./database-doc";
 import { VersioningDoc } from "./versioning-doc";
 
 /** One entry per documentation topic. Add a topic here and it gets its own tab. */
 const TOPICS = [
+  {
+    id: "architecture",
+    label: "Architecture",
+    icon: Network,
+    content: <ArchitectureDoc />
+  },
+  {
+    id: "auth",
+    label: "Auth",
+    icon: KeyRound,
+    content: <AuthDoc />
+  },
+  {
+    id: "database",
+    label: "Database",
+    icon: Database,
+    content: <DatabaseDoc />
+  },
+  {
+    id: "api-docs",
+    label: "API Docs",
+    icon: Braces,
+    content: <ApiDocs />
+  },
   {
     id: "versioning",
     label: "Versioning",
@@ -20,12 +55,6 @@ const TOPICS = [
     label: "Changelog",
     icon: History,
     content: <ChangelogDoc />
-  },
-  {
-    id: "api-docs",
-    label: "API Docs",
-    icon: Braces,
-    content: <ApiDocs />
   }
 ] satisfies {
   id: string;
