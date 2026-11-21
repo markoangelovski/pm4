@@ -1,5 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { CimdFetcher } from "./cimd-fetcher.js";
+import { clientLogoUri } from "./client-logo.js";
 import { GrantsRepository } from "./grants.repository.js";
 import { OAuthError } from "./oauth-error.js";
 import { OAuthStore } from "./oauth.store.js";
@@ -10,6 +11,7 @@ export interface ResolvedClient {
   name: string;
   clientIdHost: string;
   redirectUris: string[];
+  logoUri: string | null;
 }
 
 export interface RegisterResponse {
@@ -17,6 +19,7 @@ export interface RegisterResponse {
   client_id_issued_at: number;
   client_name: string;
   redirect_uris: string[];
+  logo_uri?: string;
   token_endpoint_auth_method: "none";
   grant_types: ["authorization_code", "refresh_token"];
   response_types: ["code"];
@@ -65,7 +68,8 @@ export class ClientRegistry {
         clientId: client.id,
         name: client.name,
         clientIdHost: new URL(client.redirectUris[0]).host,
-        redirectUris: client.redirectUris
+        redirectUris: client.redirectUris,
+        logoUri: client.logoUri
       };
     } catch {
       return null;
@@ -84,7 +88,7 @@ export class ClientRegistry {
     if (url.protocol !== "https:" && !this.fetcher.isDevUrl(url)) return null;
 
     const cached = await this.store.getCachedClient(clientId);
-    if (cached) return cached;
+    if (cached) return { ...cached, logoUri: cached.logoUri ?? null };
 
     const doc = await this.fetcher.fetchJson(url);
     if (!isObject(doc) || doc.client_id !== clientId) return null;
@@ -98,7 +102,8 @@ export class ClientRegistry {
       clientId,
       name,
       clientIdHost: url.host,
-      redirectUris
+      redirectUris,
+      logoUri: clientLogoUri(doc.logo_uri, url.host)
     };
     await this.store.cacheClient(clientId, client);
     return client;
@@ -152,12 +157,18 @@ export class ClientRegistry {
       );
     }
 
-    const row = await this.repository.registerClient(name, redirectUris);
+    const logoUri = clientLogoUri(body.logo_uri, new URL(redirectUris[0]).host);
+    const row = await this.repository.registerClient(
+      name,
+      redirectUris,
+      logoUri
+    );
     return {
       client_id: row.id,
       client_id_issued_at: Math.floor(row.createdAt.getTime() / 1000),
       client_name: name,
       redirect_uris: redirectUris,
+      ...(logoUri === null ? {} : { logo_uri: logoUri }),
       token_endpoint_auth_method: "none",
       grant_types: ["authorization_code", "refresh_token"],
       response_types: ["code"]

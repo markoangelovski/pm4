@@ -5820,6 +5820,11 @@
       "ConnectedAppDto": {
         "type": "object",
         "properties": {
+          "logoUri": {
+            "type": "string",
+            "nullable": true,
+            "description": "HTTPS URL of the app's logo, on the app's own host; null = none."
+          },
           "scopes": {
             "type": "array",
             "items": {
@@ -5852,6 +5857,7 @@
           }
         },
         "required": [
+          "logoUri",
           "scopes",
           "lastUsedAt",
           "id",

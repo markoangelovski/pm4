@@ -1,7 +1,7 @@
 ---
 id: api-endpoints
 title: API Endpoints
-status: review
+status: approved
 owner: Marko Angelovski
 last_updated: 2026-11-21
 related: [api-conventions, api-data-model, req-auth, req-projects, req-tasks, req-time-logs, req-reporting, req-integrations, req-notes, req-agents]
@@ -1035,3 +1035,4 @@ None.
 - 2026-11-21: Agent access: API-MCP-001…011 and *Shared agent-access shapes* (req-agents, ADR-0013, OQ-301…305, feat-mcp-oauth-api).
 - 2026-11-21: API-MCP-012 `POST /mcp`: transport, auth, Origin check, rate limit and the ten tools (OQ-306…OQ-309, feat-mcp-tools-api).
 - 2026-11-21: *App logo*: `logo_uri` kept on the app's own host, `ConnectedApp.logoUri`, API-MCP-003 accepts and echoes `logo_uri` (OQ-314, feat-mcp-logos).
+- 2026-11-21: Approved by the owner.

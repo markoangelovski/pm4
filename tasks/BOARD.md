@@ -186,7 +186,7 @@
 | [T-0181](m9-agents/T-0181-returnto-accepts-the-consent-page-authguard.md) | returnTo accepts the consent page, AuthGuard's signedOutHref, D1 for api.ts / scopes.ts and their twins, promote app-mark | M9 | web | S | done | — |
 | [T-0182](m9-agents/T-0182-consent-page-the-rest-of-d1.md) | Consent page: the rest of D1, promote auth-frame and consent-page (D6 in both), sign-in page twin, ConsentRoute, app/auth/consent/page.tsx | M9 | web | S | done | T-0181 |
 | [T-0183](m9-agents/T-0183-connected-apps-tab-promote-mcp-server.md) | Connected apps tab: promote mcp-server-url and connected-apps-settings, settings view twin | M9 | web | S | done | T-0181 |
-| [T-0184](m9-agents/T-0184-logo-check-logo-uri-on-clients.md) | Logo check, logo_uri on clients and grants (migration 0013), register echo, ConnectedApp.logoUri, OpenAPI | M9 | api | S | ready | — |
-| [T-0185](m9-agents/T-0185-api-types-copy-the-prototype-s.md) | api:types, copy the prototype's AppMark, pass logoUri in Connected apps, prototype back to the schema type | M9 | web | S | blocked | T-0184 |
+| [T-0184](m9-agents/T-0184-logo-check-logo-uri-on-clients.md) | Logo check, logo_uri on clients and grants (migration 0013), register echo, ConnectedApp.logoUri, OpenAPI | M9 | api | S | done | — |
+| [T-0185](m9-agents/T-0185-api-types-copy-the-prototype-s.md) | api:types, copy the prototype's AppMark, pass logoUri in Connected apps, prototype back to the schema type | M9 | web | S | done | T-0184 |
 
 M0–M6 are done. Later follow-ups are filed under the milestone they extend.

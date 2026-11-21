@@ -21,7 +21,8 @@ export const oauthClients = pgTable("oauth_clients", {
     .primaryKey()
     .default(sql`uuidv7()`),
   clientName: varchar("client_name", { length: 100 }).notNull(),
-  redirectUris: varchar("redirect_uris", { length: 2000 }).array().notNull()
+  redirectUris: varchar("redirect_uris", { length: 2000 }).array().notNull(),
+  logoUri: varchar("logo_uri", { length: 2048 })
 });
 
 /** One user's approval of one app (FR-MCP-005, FR-MCP-009). */
@@ -39,7 +40,8 @@ export const oauthGrants = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
     clientId: varchar("client_id", { length: 2048 }).notNull(),
-    clientName: varchar("client_name", { length: 100 }).notNull()
+    clientName: varchar("client_name", { length: 100 }).notNull(),
+    logoUri: varchar("logo_uri", { length: 2048 })
   },
   (table) => [
     uniqueIndex("oauth_grants_user_client_uq").on(table.userId, table.clientId)

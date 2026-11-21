@@ -92,6 +92,13 @@
       "when": 1795268376735,
       "tag": "0012_oauth",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1795298004362,
+      "tag": "0013_oauth_logo_uri",
+      "breakpoints": true
     }
   ]
 }
