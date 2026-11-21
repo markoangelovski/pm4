@@ -3,7 +3,7 @@ id: arch-overview
 title: System Overview
 status: approved
 owner: Marko Angelovski
-last_updated: 2026-10-14
+last_updated: 2026-11-21
 related: [arch-stack, arch-deployment, sec, ADR-0001, ADR-0002, ADR-0007, ADR-0008]
 ---
 
@@ -15,14 +15,14 @@ The high-level architecture: components, and how they communicate.
 ## Components
 
 ```
-                         Google OAuth 2.0 / OIDC
-                          ▲                │
-                 (2) auth │                │ (3) callback
-                          │                ▼
- ┌──────────────────────────────┐  HTTPS JSON + Bearer   ┌──────────────────────────────┐
+                         Google OAuth 2.0 / OIDC           ┌────────────────────────────┐
+                          ▲                │               │ PMSPA (external, per user) │
+                 (2) auth │                │ (3) callback  └──────────────▲─────────────┘
+                          │                ▼                              │ HTTPS, API only
+ ┌──────────────────────────────┐  HTTPS JSON + Bearer   ┌────────────────┴─────────────┐
  │ Browser                      │ ─────────────────────▶ │ api/  NestJS                 │
  │ web/: static Next.js export  │ ◀───────────────────── │ Azure Web App (Linux, Node)  │
- │ https://pm4.angelovski.top   │   CORS: web origin     │ pm4-api-….azurewebsites.net 
+ │ https://pm4.angelovski.top   │   CORS: web origin     │ pm4-api-….azurewebsites.net  │
  └──────────────▲───────────────┘                        └───────┬──────────────┬───────┘
                 │ static files                                   │ TLS          │ no TLS (free)
  ┌──────────────┴───────────────┐                        ┌───────▼──────┐ ┌─────▼────────┐
@@ -39,6 +39,7 @@ The high-level architecture: components, and how they communicate.
 | `api/` | OAuth, token issuing, authorization, validation, business rules, aggregation (reports), OpenAPI | Serve the frontend. Store secrets in code. |
 | Neon Postgres | The durable data store | Be the source of truth for sessions |
 | Redis Cloud | Ephemeral state: OAuth state/PKCE, one-time codes, refresh tokens, rate limits | Hold the only copy of any user data |
+| PMSPA (external, per user) | The user's own PMSPA instance, which the PMSPA connector reads and writes (req-integrations) | Be called from the browser: only the API calls it ([security.md#outbound-calls-to-pmspa-m6-req-integrations](security.md#outbound-calls-to-pmspa-m6-req-integrations)) |
 | Cloudflare R2 | Unused (reserved for future file features) | — |
 
 ## Key flows
@@ -63,3 +64,5 @@ The high-level architecture: components, and how they communicate.
 - 2026-09-27: OQ-024 resolved: API stays on *.azurewebsites.net; refresh token in localStorage.
 - 2026-09-27: Approved by the owner.
 - 2026-09-27: Real hosts in the diagram. Redis link has no TLS (free tier).
+- 2026-11-21: PMSPA, the external system the connector (M6) talks to, joins the diagram and the components table; the API box's right edge is fixed.
+- 2026-11-21: Approved by the owner.

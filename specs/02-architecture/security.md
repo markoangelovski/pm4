@@ -3,7 +3,7 @@ id: sec
 title: Security
 status: review
 owner: Marko Angelovski
-last_updated: 2026-11-12
+last_updated: 2026-11-21
 related: [web-routing, req-auth, arch-env, api-conventions, ADR-0007, NFR-004, NFR-005]
 ---
 
@@ -49,7 +49,10 @@ Actors: **W** = web (`https://pm4.angelovski.top`), **A** = API (`https://pm4-ap
 8. **Refresh:** `POST /auth/refresh {refreshToken}` → a new pair, and the old token is invalidated
    (**rotation**; a marker `auth:rotated:<hash>` → `familyId` remembers it for the refresh lifetime).
    Reusing an already-rotated token revokes the whole family (**reuse detection**).
-   Concurrent refreshes from several tabs are serialized in the client (one in-flight refresh, shared through a BroadcastChannel/lock).
+   Concurrent refreshes are serialized in the client: within a tab, every caller shares one in-flight refresh; across
+   tabs, the refresh runs inside the Web Locks API lock `pm4-auth-refresh` (`navigator.locks`; without it, the tab
+   refreshes on its own) and reads the stored token inside the lock, so a tab that waited uses the token another tab
+   just rotated. Tabs learn of a sign-out through `storage` events on the refresh-token key.
 9. **Logout:** `POST /auth/logout {refreshToken}` revokes the family. W clears its storage.
 10. **Logout everywhere:** `POST /auth/logout-all` (authenticated) revokes every refresh-token family of
     the user. Redis keeps a per-user set of family ids (`auth:families:<userId>`) for this. Access tokens
@@ -171,3 +174,4 @@ Secrets live in Azure App Settings and in GitHub Actions secrets. They are never
 - 2026-11-01: Approved by the owner with feat-api-rate-limit.
 - 2026-11-07: `GET /api/v1/changelog` (API-SYS-004) added to the public and the not-limited endpoints (OQ-272, feat-shell-documentation review).
 - 2026-11-12: The lead picker exposes no emails (OQ-277); a deleted account's access tokens are an accepted risk (OQ-281). Back to `review`.
+- 2026-11-21: Flow step 8 describes the cross-tab refresh as built: the Web Locks lock `pm4-auth-refresh` and `storage` events, not a BroadcastChannel.
