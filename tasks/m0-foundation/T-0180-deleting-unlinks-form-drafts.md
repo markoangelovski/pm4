@@ -3,7 +3,7 @@ id: T-0180
 title: Deleting a project or task unlinks it from every form draft
 milestone: M0
 app: web
-status: review
+status: done
 size: S
 tier: haiku
 written_by: claude-code/claude-opus-5-5
@@ -62,3 +62,5 @@ _Implementer: what changed, and anything the reviewer should look at._
 
 ## Review
 _The owner's review (quick lane), or `review-feature`'s verdict._
+
+- Owner (2026-11-21): diff reviewed and approved (quick lane), committed e610d23.

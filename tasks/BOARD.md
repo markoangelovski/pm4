@@ -182,6 +182,6 @@
 | [T-0177](m9-agents/T-0177-the-mcp-endpoint-mcp-auth-in.md) | The /mcp endpoint: MCP auth in AccessTokenGuard, mcp rate limit, prefix exclusion, shared validation options, McpService with the SDK handler, controller with the Origin check and 405s, tool helpers, empty tool services | M9 | api | M | done | — |
 | [T-0178](m9-agents/T-0178-read-tools-search-projects-search-tasks.md) | Read tools: search_projects, search_tasks, get_day, list_time_logs (+ listRange), report_summary (+ report-summary.ts) | M9 | api | M | done | T-0177 |
 | [T-0179](m9-agents/T-0179-write-tools-log-time-update-time.md) | Write tools: log_time, update_time_log, create_task, set_task_status, set_workday_start | M9 | api | S | done | T-0178 |
-| [T-0180](m0-foundation/T-0180-deleting-unlinks-form-drafts.md) | Deleting a project or task unlinks it from every form draft | M0 | web | S | review | — |
+| [T-0180](m0-foundation/T-0180-deleting-unlinks-form-drafts.md) | Deleting a project or task unlinks it from every form draft | M0 | web | S | done | — |
 
 M0–M6 are done. Later follow-ups are filed under the milestone they extend.
