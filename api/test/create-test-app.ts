@@ -28,7 +28,8 @@ export const TEST_RATE_LIMITS: RateLimits = {
     user: 1_000_000,
     oauthAuthorize: 1_000_000,
     oauthToken: 1_000_000,
-    oauthRegister: 1_000_000
+    oauthRegister: 1_000_000,
+    mcp: 1_000_000
   }
 };
 

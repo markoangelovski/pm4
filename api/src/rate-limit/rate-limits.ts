@@ -12,7 +12,8 @@ export type RateLimitScope =
   | "user"
   | "oauthAuthorize"
   | "oauthToken"
-  | "oauthRegister";
+  | "oauthRegister"
+  | "mcp";
 
 export interface RateLimits {
   windowMs: number;
@@ -33,7 +34,8 @@ export const DEFAULT_RATE_LIMITS: RateLimits = {
     user: 300,
     oauthAuthorize: 30,
     oauthToken: 30,
-    oauthRegister: 10
+    oauthRegister: 10,
+    mcp: 0 // feat-mcp-tools-api T1: 120
   }
 };
 

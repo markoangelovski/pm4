@@ -4,7 +4,7 @@ title: Agent access (MCP server with OAuth)
 status: approved
 owner: Marko Angelovski
 last_updated: 2026-11-21
-related: [req-auth, OQ-298, OQ-299, OQ-300, OQ-301, OQ-302, OQ-303, OQ-304, OQ-305, sec, api-endpoints, web-screens, ADR-0007, ADR-0013, OQ-287, OQ-288, OQ-289, OQ-290, OQ-291, OQ-292, OQ-293, OQ-294, OQ-295, OQ-296, OQ-297]
+related: [req-auth, OQ-298, OQ-299, OQ-300, OQ-301, OQ-302, OQ-303, OQ-304, OQ-305, OQ-306, OQ-307, OQ-308, OQ-309, sec, api-endpoints, web-screens, ADR-0007, ADR-0013, OQ-287, OQ-288, OQ-289, OQ-290, OQ-291, OQ-292, OQ-293, OQ-294, OQ-295, OQ-296, OQ-297]
 ---
 
 # Agent access (MCP server with OAuth)
@@ -131,6 +131,8 @@ user; `/oauth/authorize` and `/oauth/token` 30 / min per IP; `/oauth/register` 1
 | Set task status | `pm4:write` | Changes a task's status |
 | Set workday start | `pm4:write` | Sets a date's start time |
 
+A tool's optional date defaults to today in the user's time zone (OQ-307). An app with only `pm4:read` is offered
+only the read tools (OQ-308). *List time logs* returns the logs worked in the range (OQ-309). The contract is API-MCP-012.
 No tool deletes anything, writes bookings or notes, or starts a PMSPA sync. Each tool maps to existing API behaviour (same validation, same user scope, same errors
 as the REST endpoint), checks the scope it needs (OQ-289), and describes its inputs with a JSON schema.
 
@@ -161,4 +163,6 @@ None. OQ-287…OQ-297 are resolved.
   re-consent, sign-out-all, loopback redirects, rate limits). Status `review`.
 - 2026-11-21: Approved by the owner.
 - 2026-11-21: FR-MCP-009: expired apps stay listed, *last used* not in Postgres (OQ-305). Back to `review`.
+- 2026-11-21: Approved by the owner.
+- 2026-11-21: FR-MCP-008: date defaults, the read-only tool list and the logs of *List time logs* (OQ-307…OQ-309). Back to `review`.
 - 2026-11-21: Approved by the owner.

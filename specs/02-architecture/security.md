@@ -125,7 +125,7 @@ same `user_identities` table (`provider` = the configured provider key). Provide
 
 ## Agent access (M9, ADR-0013, req-agents)
 PM4's API is the OAuth 2.1 authorization server for its own MCP endpoint `/mcp`. Contracts: endpoints.md
-*Shared agent-access shapes* and API-MCP-001…011.
+*Shared agent-access shapes* and API-MCP-001…012.
 
 - **Threats:** consent phishing (any app can call itself anything), SSRF through `client_id` metadata URLs, open
   redirects through `redirect_uri`, code interception, token replay against the REST API, stolen refresh tokens, and
@@ -166,6 +166,11 @@ PM4's API is the OAuth 2.1 authorization server for its own MCP endpoint `/mcp`.
   | `mcp:rotated:<h(token)>` | `grantId` (reuse detection) | `REFRESH_TOKEN_TTL` |
   | `mcp:family:<grantId>` | `{userId, clientId, current: h \| null, lastUsedAt: ISO \| null}` | `REFRESH_TOKEN_TTL`, sliding |
   | `mcp:revoked:<grantId>` | `1` | `ACCESS_TOKEN_TTL` |
+- **`/mcp` (API-MCP-012):** the global access-token guard treats the route as an MCP resource: it verifies the MCP
+  token (never a web token) and the `mcp:revoked:<gid>` marker, answers `401` with `WWW-Authenticate: Bearer
+  resource_metadata=…` on failure, and sets the request's user, so every tool is scoped to that user. A request with
+  an `Origin` other than the web app's → `403` (DNS rebinding). Read-only grants get only the read tools (OQ-308).
+  `/mcp` is limited to 120 requests / min per user (`mcp`, OQ-297).
 - **Rate limits (OQ-297)**, per client IP: `GET /oauth/authorize` 30 / min (`oauth-authorize`); `POST /oauth/token` and
   `POST /oauth/revoke` 30 / min together (`oauth-token`); `POST /oauth/register` 10 / **hour** (`oauth-register`, its
   own window). The consent and Connected apps endpoints share the user counter. The discovery documents aren't limited.
@@ -225,3 +230,4 @@ Secrets live in Azure App Settings and in GitHub Actions secrets. They are never
 - 2026-11-12: The lead picker exposes no emails (OQ-277); a deleted account's access tokens are an accepted risk (OQ-281). Back to `review`.
 - 2026-11-21: Flow step 8 describes the cross-tab refresh as built: the Web Locks lock `pm4-auth-refresh` and `storage` events, not a BroadcastChannel.
 - 2026-11-21: *Agent access*: the MCP OAuth server's threats, token separation, CIMD fetching, revocation, Redis keys and rate limits (ADR-0013, OQ-290, OQ-295, OQ-297, OQ-301, OQ-302, feat-mcp-oauth-api).
+- 2026-11-21: *Agent access*: the `/mcp` guard, Origin check, read-only tool list and its per-user limit (OQ-308, feat-mcp-tools-api).

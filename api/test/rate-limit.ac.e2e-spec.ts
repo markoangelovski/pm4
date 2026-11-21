@@ -32,7 +32,8 @@ const SMALL_LIMITS: RateLimits = {
     user: 4,
     oauthAuthorize: 2,
     oauthToken: 2,
-    oauthRegister: 2
+    oauthRegister: 2,
+    mcp: 2
   }
 };
 
