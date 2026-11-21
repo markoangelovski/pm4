@@ -868,6 +868,8 @@ export interface components {
             redirectUrl: string;
         };
         ConnectedAppDto: {
+            /** @description HTTPS URL of the app's logo, on the app's own host; null = none. */
+            logoUri: string | null;
             scopes: ("pm4:read" | "pm4:write")[];
             /** @description The last token issued or refreshed; null = never used since connecting. */
             lastUsedAt: string | null;

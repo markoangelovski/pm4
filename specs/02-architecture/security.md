@@ -149,6 +149,10 @@ PM4's API is the OAuth 2.1 authorization server for its own MCP endpoint `/mcp`.
   (as API-MCP-003), and no `token_endpoint_auth_method` other than `none`. A valid document is cached in Redis for 10
   minutes; a failure isn't cached. In `development` and `test`, `http://localhost` and `http://127.0.0.1` URLs are
   allowed too (as OQ-160), so tests can serve documents.
+- **App logos (OQ-314):** a client's `logo_uri` is kept only on the client's own host (endpoints.md *App logo*), never
+  fetched by the API, and shown only in Connected apps, never on the consent page (any app can claim any logo). The
+  browser loads it with `referrerPolicy="no-referrer"`; showing it tells that host the user's IP when they open the tab
+  (accepted). This is why `img-src` allows `https:`.
 - **Refresh tokens:** one family per grant, rotated on every use with reuse detection (as the web's, *Authentication
   flow* step 8); a reuse deletes the family, and the grant shows as expired. Every refresh re-checks that the user exists and
   passes the allow-list (*Sign-up policy*); a failure deletes the grant.
@@ -179,7 +183,7 @@ PM4's API is the OAuth 2.1 authorization server for its own MCP endpoint `/mcp`.
 
 ## Web hardening
 - CSP via `<meta http-equiv="Content-Security-Policy">` (Pages can't set headers). Roughly:
-  `default-src 'self'; connect-src 'self' <API origin>; img-src 'self' data: https://*.googleusercontent.com https://images.unsplash.com; script-src 'self' <hashes needed by Next>; style-src 'self' 'unsafe-inline'; frame-ancestors` (not
+  `default-src 'self'; connect-src 'self' <API origin>; img-src 'self' data: https:; script-src 'self' <hashes needed by Next>; style-src 'self' 'unsafe-inline'; frame-ancestors` (not
   enforceable via meta. Accept the risk). TODO: finalize and verify against the Next export output.
 - No third-party scripts or analytics (they would widen the XSS surface for the refresh token).
 - Render user text as text. No `dangerouslySetInnerHTML`.
@@ -231,3 +235,4 @@ Secrets live in Azure App Settings and in GitHub Actions secrets. They are never
 - 2026-11-21: Flow step 8 describes the cross-tab refresh as built: the Web Locks lock `pm4-auth-refresh` and `storage` events, not a BroadcastChannel.
 - 2026-11-21: *Agent access*: the MCP OAuth server's threats, token separation, CIMD fetching, revocation, Redis keys and rate limits (ADR-0013, OQ-290, OQ-295, OQ-297, OQ-301, OQ-302, feat-mcp-oauth-api).
 - 2026-11-21: *Agent access*: the `/mcp` guard, Origin check, read-only tool list and its per-user limit (OQ-308, feat-mcp-tools-api).
+- 2026-11-21: *App logos* and `img-src https:` (OQ-314, feat-mcp-logos).

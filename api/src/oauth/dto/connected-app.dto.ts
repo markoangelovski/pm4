@@ -5,6 +5,9 @@ import { OAuthClientDto, type DtoOAuthScope } from "./consent.dto.js";
 export class ConnectedAppDto {
   /** The grant's id. */
   id: string;
+  /** HTTPS URL of the app's logo, on the app's own host; null = none. */
+  @ApiProperty({ type: String, nullable: true })
+  logoUri: string | null;
   client: OAuthClientDto;
   @ApiProperty({ enum: ["pm4:read", "pm4:write"], isArray: true })
   scopes: DtoOAuthScope[];

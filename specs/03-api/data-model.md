@@ -282,6 +282,7 @@ by the next registration's transaction.
 | id | uuid | PK (UUIDv7). The `client_id` |
 | client_name | varchar(100) | not null |
 | redirect_uris | varchar(2000)[] | not null, 1–10 elements |
+| logo_uri | varchar(2048) | null. The registered `logo_uri` when it passed the *App logo* check (endpoints.md, OQ-314) |
 
 No other index: the table stays small, and the cleanup scans it.
 
@@ -298,6 +299,7 @@ One user's approval of one app (req-agents FR-MCP-005, FR-MCP-009). Deleted on r
 | user_id | uuid | not null, FK → users ON DELETE CASCADE |
 | client_id | varchar(2048) | not null. A CIMD URL or an `oauth_clients.id` as text (no FK: CIMD ids have no row) |
 | client_name | varchar(100) | not null. The name the user approved, shown in Connected apps |
+| logo_uri | varchar(2048) | null. The app logo the user approved (OQ-314), set at Allow like `client_name` |
 
 **Index:** unique `(user_id, client_id)`: one grant per app (OQ-293); also serves the user's list and the FK delete.
 
@@ -346,6 +348,8 @@ the column and its index. This one isn't expand/contract compatible: an old API 
 
 `0012` creates `oauth_clients`, `oauth_grants` and the `oauth_scope` enum (expand only, feat-mcp-oauth-api).
 
+`0013` adds the nullable `logo_uri` to `oauth_clients` and `oauth_grants` (expand only, feat-mcp-logos).
+
 ## Open questions
 None.
 
@@ -375,4 +379,6 @@ None.
 - 2026-11-21: Every table here exists (migrations `0000`…`0011`): *Tables* is no longer "proposed", the relationships show the optional `project_lead_user_id`, and the spec moves to `review`.
 - 2026-11-21: Approved by the owner.
 - 2026-11-21: `oauth_clients` and `oauth_grants` for agent access (req-agents, OQ-290, OQ-305, feat-mcp-oauth-api). Back to `review`.
+- 2026-11-21: Approved by the owner.
+- 2026-11-21: `logo_uri` on `oauth_clients` and `oauth_grants`, migration `0013` (OQ-314, feat-mcp-logos). Back to `review`.
 - 2026-11-21: Approved by the owner.

@@ -208,7 +208,15 @@ describe("Connected apps (feat-mcp-oauth-api)", () => {
       [older.grantId, newer.grantId].reverse()
     );
     expect(Object.keys(items[0]).sort()).toEqual(
-      ["client", "connectedAt", "expired", "id", "lastUsedAt", "scopes"].sort()
+      [
+        "client",
+        "connectedAt",
+        "expired",
+        "id",
+        "lastUsedAt",
+        "logoUri",
+        "scopes"
+      ].sort()
     );
     expect(items[0]).toMatchObject({
       id: newer.grantId,

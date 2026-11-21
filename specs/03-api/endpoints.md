@@ -1,7 +1,7 @@
 ---
 id: api-endpoints
 title: API Endpoints
-status: review
+status: approved
 owner: Marko Angelovski
 last_updated: 2026-11-21
 related: [api-conventions, api-data-model, req-auth, req-projects, req-tasks, req-time-logs, req-reporting, req-integrations, req-notes, req-agents]
@@ -835,12 +835,17 @@ unchanged (the web origin only), so browser-based MCP clients aren't supported.
 - **Redirect URI match (OQ-295):** exact string match against the client's `redirect_uris`, except a **loopback**
   URI (`http` with host `127.0.0.1`, `[::1]` or `localhost`), which matches a registered loopback URI with the same
   scheme, host, path and query on **any port** (RFC 8252 §7.3).
+- **App logo (OQ-314):** the client's `logo_uri` (CIMD document field, or API-MCP-003 body field) is kept only when it
+  is a string ≤ 2048 chars that parses as an absolute `https:` URL with no user name or password, whose `host` (with
+  port) equals the **client ID host** (above), and that host isn't a loopback one (`127.0.0.1`, `[::1]`, `localhost`).
+  Anything else is `null`: never an error, the client stays valid. Stored on the grant at Allow, like the name.
 - **`OAuthClient`:** `{ name: string, clientIdHost: string }`.
 - **`ConsentRequest`:** `{ id: string, client: OAuthClient, redirectHost: string` (host, with the port for a loopback
   address)`, loopback: boolean, scopes: OAuthScope[]` (what was asked; `["pm4:read","pm4:write"]` for `write`)`,
   expiresAt: string` (ISO 8601 UTC)`, existingGrant: { connectedAt: string } | null }`.
 - **`ConsentResult`:** `{ redirectUrl: string }`: where the web sends the browser next.
-- **`ConnectedApp`:** `{ id: string` (grant id)`, client: OAuthClient, scopes: OAuthScope[], connectedAt: string,
+- **`ConnectedApp`:** `{ id: string` (grant id)`, client: OAuthClient, logoUri: string | null` (the app logo the user
+  allowed; never on `ConsentRequest`)`, scopes: OAuthScope[], connectedAt: string,
   lastUsedAt: string | null` (the last token issued or refreshed; `null` = none yet)`, expired: boolean }`. `expired`:
   the grant's refresh family no longer exists (30 days without use, or a reused refresh token), so the app has to
   connect again (OQ-305).
@@ -864,9 +869,10 @@ client_id_metadata_document_supported: true }`, `Cache-Control: public, max-age=
 `POST /oauth/register` (root, JSON, RFC 7591) · Auth: none · Implements: FR-MCP-003 (OQ-290)
 **Request body:** `client_name` (string, trimmed 1–100), `redirect_uris` (1–10 strings, each ≤ 2000 chars, an absolute
 `https://` URL or a loopback `http://` URL, no fragment), optional `token_endpoint_auth_method` (only `"none"`),
-`grant_types` (subset of `authorization_code`, `refresh_token`), `response_types` (only `["code"]`). Other fields are ignored.
+`grant_types` (subset of `authorization_code`, `refresh_token`), `response_types` (only `["code"]`), `logo_uri` (kept per
+*App logo*, otherwise dropped without an error). Other fields are ignored.
 **201:** `{ client_id, client_id_issued_at` (seconds)`, client_name, redirect_uris, token_endpoint_auth_method: "none",
-grant_types: ["authorization_code","refresh_token"], response_types: ["code"] }`. Stores an `oauth_clients` row, and in the
+grant_types: ["authorization_code","refresh_token"], response_types: ["code"] }`, plus `logo_uri` when it was kept. Stores an `oauth_clients` row, and in the
 same transaction deletes every client older than 30 days that no grant names (OQ-290).
 **Errors:** 400 `invalid_redirect_uri` (a bad redirect URI) · 400 `invalid_client_metadata` (anything else) ·
 429 (`oauth-register`, 10 / hour per IP, OQ-297).
@@ -1028,3 +1034,5 @@ None.
 - 2026-11-20: API-TLOG-001 takes a required `from`/`to` (at most 366 days); the list, totals and `days` cover only that range (OQ-286, feat-tlog-logged-range).
 - 2026-11-21: Agent access: API-MCP-001…011 and *Shared agent-access shapes* (req-agents, ADR-0013, OQ-301…305, feat-mcp-oauth-api).
 - 2026-11-21: API-MCP-012 `POST /mcp`: transport, auth, Origin check, rate limit and the ten tools (OQ-306…OQ-309, feat-mcp-tools-api).
+- 2026-11-21: *App logo*: `logo_uri` kept on the app's own host, `ConnectedApp.logoUri`, API-MCP-003 accepts and echoes `logo_uri` (OQ-314, feat-mcp-logos).
+- 2026-11-21: Approved by the owner.

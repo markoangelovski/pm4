@@ -10,6 +10,7 @@ export interface GrantRow {
   userId: string;
   clientId: string;
   clientName: string;
+  logoUri: string | null;
   scope: GrantScope;
   createdAt: Date;
 }
@@ -26,6 +27,7 @@ export class GrantsRepository {
     id: string;
     name: string;
     redirectUris: string[];
+    logoUri: string | null;
     createdAt: Date;
   } | null> {
     if (!UUID.test(id)) return null;
@@ -39,6 +41,7 @@ export class GrantsRepository {
       id: row.id,
       name: row.clientName,
       redirectUris: row.redirectUris,
+      logoUri: row.logoUri,
       createdAt: row.createdAt
     };
   }
@@ -46,7 +49,8 @@ export class GrantsRepository {
   /** One transaction: delete clients created > 30 days ago that no grant names, then insert (API-MCP-003). */
   registerClient(
     name: string,
-    redirectUris: string[]
+    redirectUris: string[],
+    logoUri: string | null
   ): Promise<{ id: string; createdAt: Date }> {
     return this.db.transaction(async (tx) => {
       await tx.delete(oauthClients).where(
@@ -65,7 +69,7 @@ export class GrantsRepository {
       );
       const [row] = await tx
         .insert(oauthClients)
-        .values({ clientName: name, redirectUris })
+        .values({ clientName: name, redirectUris, logoUri })
         .returning({ id: oauthClients.id, createdAt: oauthClients.createdAt });
       return row;
     });
@@ -98,6 +102,7 @@ export class GrantsRepository {
     userId: string,
     clientId: string,
     clientName: string,
+    logoUri: string | null,
     scope: GrantScope
   ): Promise<{ grant: GrantRow; replacedId: string | null }> {
     return this.db.transaction(async (tx) => {
@@ -112,7 +117,7 @@ export class GrantsRepository {
         .returning({ id: oauthGrants.id });
       const [grant] = await tx
         .insert(oauthGrants)
-        .values({ userId, clientId, clientName, scope })
+        .values({ userId, clientId, clientName, logoUri, scope })
         .returning();
       return { grant, replacedId: replaced?.id ?? null };
     });

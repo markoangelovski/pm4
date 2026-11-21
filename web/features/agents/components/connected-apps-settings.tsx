@@ -115,7 +115,11 @@ function AppRow({
   const tz = me?.timeZone ?? "UTC";
   return (
     <li className="flex flex-col gap-3 p-4 sm:flex-row sm:items-start">
-      <AppMark name={app.client.name} className="size-9 text-sm" />
+      <AppMark
+        name={app.client.name}
+        logoUri={app.logoUri}
+        className="size-9 text-sm"
+      />
       <div className="flex min-w-0 flex-1 flex-col gap-1.5">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
           <span className="font-medium [overflow-wrap:anywhere]">

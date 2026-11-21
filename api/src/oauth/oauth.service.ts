@@ -119,6 +119,7 @@ export class OAuthService {
       clientId: client.clientId,
       clientName: client.name,
       clientIdHost: client.clientIdHost,
+      logoUri: client.logoUri,
       redirectUri,
       codeChallenge: challenge,
       scope,
@@ -158,6 +159,7 @@ export class OAuthService {
       userId,
       pending.clientId,
       pending.clientName,
+      pending.logoUri ?? null,
       pending.scope
     );
     if (replacedId) await this.store.revokeGrant(replacedId);

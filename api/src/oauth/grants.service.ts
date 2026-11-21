@@ -41,6 +41,7 @@ export class GrantsService {
       const family = families[index];
       return {
         id: row.id,
+        logoUri: row.logoUri,
         client: {
           name: row.clientName,
           clientIdHost: clientIdHost(

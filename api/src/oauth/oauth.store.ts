@@ -10,6 +10,8 @@ export interface PendingRequest {
   clientId: string;
   clientName: string;
   clientIdHost: string;
+  /** Absent in requests saved before feat-mcp-logos. */
+  logoUri?: string | null;
   redirectUri: string;
   codeChallenge: string;
   scope: GrantScope;
