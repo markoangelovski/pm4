@@ -28,6 +28,33 @@ export function forgetDraftsOf(id: string): void {
   }
 }
 
+/**
+ * Unlinks the deleted project or task `id` from every draft (a project's delete takes its tasks): a `project` or
+ * `task` field pointing at it becomes null, and a cleared project takes its `serviceId` with it. The draft stays, so
+ * a restored form just shows no project or task.
+ */
+export function forgetDraftLinksTo(id: string): void {
+  for (const [key, value] of drafts) {
+    if (typeof value !== "object" || value === null) continue;
+    const draft = value as {
+      project?: { id: string } | null;
+      task?: { id: string; project: { id: string } } | null;
+      serviceId?: string | null;
+    };
+    const next = { ...draft };
+    if (draft.task && (draft.task.id === id || draft.task.project.id === id)) {
+      next.task = null;
+    }
+    if (draft.project?.id === id) {
+      next.project = null;
+      if ("serviceId" in draft) next.serviceId = null;
+    }
+    if (next.task !== draft.task || next.project !== draft.project) {
+      drafts.set(key, next);
+    }
+  }
+}
+
 /** Drops every draft (sign-out). */
 export function clearFormDrafts(): void {
   drafts.clear();
