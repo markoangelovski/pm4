@@ -4,6 +4,7 @@ import {
   ApiBadRequestResponse,
   ApiConflictResponse,
   ApiExtraModels,
+  ApiGoneResponse,
   ApiInternalServerErrorResponse,
   ApiNotFoundResponse,
   ApiServiceUnavailableResponse,
@@ -13,7 +14,7 @@ import {
 } from "@nestjs/swagger";
 import { ProblemDetailsDto } from "../../filters/problem-details/problem-details.dto.js";
 
-export type ProblemStatus = 400 | 401 | 404 | 409 | 502 | 503;
+export type ProblemStatus = 400 | 401 | 404 | 409 | 410 | 502 | 503;
 
 const content = {
   "application/problem+json": {
@@ -32,6 +33,7 @@ const RESPONSES = {
   },
   404: { decorator: ApiNotFoundResponse, description: "Not found." },
   409: { decorator: ApiConflictResponse, description: "Conflict." },
+  410: { decorator: ApiGoneResponse, description: "Gone: it expired." },
   429: {
     decorator: ApiTooManyRequestsResponse,
     description: "Rate limited: `retryAfterSeconds` and `Retry-After`."

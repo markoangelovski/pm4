@@ -4,22 +4,36 @@ import type { Request } from "express";
 
 /** A rate-limit counter: the auth routes' per-IP counters, and one per user (security.md#api-hardening). */
 export type RateLimitScope =
-  "google" | "callback" | "token" | "refresh" | "logout" | "user";
+  | "google"
+  | "callback"
+  | "token"
+  | "refresh"
+  | "logout"
+  | "user"
+  | "oauthAuthorize"
+  | "oauthToken"
+  | "oauthRegister";
 
 export interface RateLimits {
   windowMs: number;
+  /** A scope's own window, instead of `windowMs`. */
+  windowsMs: Partial<Record<RateLimitScope, number>>;
   limits: Record<RateLimitScope, number>;
 }
 
 export const DEFAULT_RATE_LIMITS: RateLimits = {
   windowMs: 60_000,
+  windowsMs: { oauthRegister: 3_600_000 },
   limits: {
     google: 10,
     callback: 10,
     token: 10,
     refresh: 30,
     logout: 30,
-    user: 300
+    user: 300,
+    oauthAuthorize: 30,
+    oauthToken: 30,
+    oauthRegister: 10
   }
 };
 

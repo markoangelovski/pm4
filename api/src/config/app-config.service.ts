@@ -46,6 +46,11 @@ export class AppConfigService {
     return this.env.WEB_APP_URL;
   }
 
+  /** `API_PUBLIC_URL`: the OAuth issuer's origin, no trailing slash. */
+  get apiPublicUrl(): string {
+    return this.env.API_PUBLIC_URL;
+  }
+
   get googleClientId(): string {
     return this.env.GOOGLE_CLIENT_ID;
   }

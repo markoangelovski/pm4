@@ -44,7 +44,7 @@ const duration = z
  * specs/02-architecture/environments.md goes into `.env.example` now, and is
  * added to this schema by the task that first uses it (auth → M1).
  */
-export const envSchema = z.object({
+const baseEnvSchema = z.object({
   NODE_ENV: z
     .enum(["development", "test", "production"])
     .default("development"),
@@ -62,6 +62,9 @@ export const envSchema = z.object({
     )
     .pipe(z.array(urlWithProtocol(["http", "https"])).min(1)),
   WEB_APP_URL: urlWithProtocol(["http", "https"]),
+  // Agent access (feat-mcp-oauth-api, FR-MCP-002): the OAuth issuer's origin.
+  // Optional here; `envSchema` below applies the default and the production rule.
+  API_PUBLIC_URL: z.string().optional(),
   // Auth (feat-auth-api-session). `.prefault` (not `.default`) so the
   // default goes through the transform (zod 4).
   GOOGLE_CLIENT_ID: z.string().min(1),
@@ -96,6 +99,54 @@ export const envSchema = z.object({
         .filter((email) => email.length > 0)
     )
 });
+
+/** An origin only: `http(s)`, no path (other than `/`), query or fragment, no trailing slash. */
+function isPublicOrigin(value: string): boolean {
+  try {
+    const url = new URL(value);
+    return (
+      ["http:", "https:"].includes(url.protocol) &&
+      url.username === "" &&
+      url.password === "" &&
+      url.pathname === "/" &&
+      url.search === "" &&
+      url.hash === "" &&
+      !value.endsWith("/")
+    );
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * The validated env. `API_PUBLIC_URL` defaults to the local API outside
+ * production and is required in production (FR-MCP-002).
+ */
+export const envSchema = baseEnvSchema
+  .superRefine((env, ctx) => {
+    if (env.API_PUBLIC_URL === undefined) {
+      if (env.NODE_ENV === "production") {
+        ctx.addIssue({
+          code: "custom",
+          path: ["API_PUBLIC_URL"],
+          message: "is required in production"
+        });
+      }
+      return;
+    }
+    if (!isPublicOrigin(env.API_PUBLIC_URL)) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["API_PUBLIC_URL"],
+        message:
+          "must be an http(s) origin without trailing slash, path, query or fragment"
+      });
+    }
+  })
+  .transform((env) => ({
+    ...env,
+    API_PUBLIC_URL: env.API_PUBLIC_URL ?? "http://localhost:3001"
+  }));
 
 export type Env = z.infer<typeof envSchema>;
 

@@ -6,3 +6,4 @@ export * from "./projects.js";
 export * from "./time.js";
 export * from "./integrations.js";
 export * from "./notes.js";
+export * from "./oauth.js";

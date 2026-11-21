@@ -4,7 +4,7 @@ title: Agent access (MCP server with OAuth)
 status: approved
 owner: Marko Angelovski
 last_updated: 2026-11-21
-related: [req-auth, sec, api-endpoints, web-screens, ADR-0007, ADR-0013, OQ-287, OQ-288, OQ-289, OQ-290, OQ-291, OQ-292, OQ-293, OQ-294, OQ-295, OQ-296, OQ-297]
+related: [req-auth, OQ-298, OQ-299, OQ-300, OQ-301, OQ-302, OQ-303, OQ-304, OQ-305, sec, api-endpoints, web-screens, ADR-0007, ADR-0013, OQ-287, OQ-288, OQ-289, OQ-290, OQ-291, OQ-292, OQ-293, OQ-294, OQ-295, OQ-296, OQ-297]
 ---
 
 # Agent access (MCP server with OAuth)
@@ -140,6 +140,8 @@ as the REST endpoint), checks the scope it needs (OQ-289), and describes its inp
 app's name, its `client_id` host, the scopes in plain words, when it was connected and when it was last used. **Revoke**
 (confirmed in a dialog) ends the grant: its refresh tokens stop working at once, and its access tokens within their
 lifetime. A user sees only their own grants.
+An app that hasn't refreshed its access for 30 days can't any more: its row stays, marked **Expired — reconnect from
+the app**, until the user revokes it or the app connects again (OQ-305). *Last used* isn't written to Postgres (OQ-305).
 **Acceptance criteria:**
 - Given I connected two apps, then I see both with their names and scopes, and no other user's apps.
 - Given I revoke an app, when it next refreshes, then it gets `invalid_grant`, and it's gone from the list.
@@ -157,4 +159,6 @@ None. OQ-287…OQ-297 are resolved.
   tokens only for `/mcp`, open clients with consent as the gate, a per-user Connected apps list.
 - 2026-11-21: OQ-287…OQ-297 resolved and folded in (tools, scopes, CIMD + DCR, token lifetimes, Connected apps tab,
   re-consent, sign-out-all, loopback redirects, rate limits). Status `review`.
+- 2026-11-21: Approved by the owner.
+- 2026-11-21: FR-MCP-009: expired apps stay listed, *last used* not in Postgres (OQ-305). Back to `review`.
 - 2026-11-21: Approved by the owner.

@@ -3,6 +3,7 @@ import { Injectable, Logger, UnauthorizedException } from "@nestjs/common";
 import { AppConfigService } from "../config/app-config.service.js";
 import { UsersRepository } from "../users/users.repository.js";
 import { AccessTokenService } from "./access-token.service.js";
+import { GrantsService } from "../oauth/grants.service.js";
 import { TokenPairDto } from "./dto/token-pair.dto.js";
 import { GoogleOidc } from "./google-oidc.js";
 import { randomSecret, SessionStore } from "./session.store.js";
@@ -72,7 +73,8 @@ export class AuthService {
     private readonly google: GoogleOidc,
     private readonly sessions: SessionStore,
     private readonly users: UsersRepository,
-    private readonly accessTokens: AccessTokenService
+    private readonly accessTokens: AccessTokenService,
+    private readonly grants: GrantsService
   ) {}
 
   /** API-AUTH-001: stores the state entry and returns Google's URL. */
@@ -163,9 +165,10 @@ export class AuthService {
     return this.sessions.revokeByToken(token);
   }
 
-  /** API-AUTH-006: revokes every session of the user. */
-  logoutAll(userId: string): Promise<void> {
-    return this.sessions.revokeAll(userId);
+  /** API-AUTH-006: revokes every session of the user, then their MCP grants (OQ-294). */
+  async logoutAll(userId: string): Promise<void> {
+    await this.sessions.revokeAll(userId);
+    await this.grants.revokeAll(userId);
   }
 
   private isAllowed(email: string): boolean {

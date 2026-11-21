@@ -20,6 +20,7 @@ const SLUG_BY_STATUS: Record<number, string> = {
   403: "forbidden",
   404: "not-found",
   409: "conflict",
+  410: "gone",
   429: "rate-limited",
   500: "internal"
 };
@@ -30,6 +31,7 @@ const TITLE_BY_STATUS: Record<number, string> = {
   403: "Forbidden",
   404: "Not Found",
   409: "Conflict",
+  410: "Gone",
   429: "Too Many Requests",
   500: "Internal Server Error"
 };

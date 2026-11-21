@@ -1,5 +1,6 @@
 import { Injectable, Logger, UnauthorizedException } from "@nestjs/common";
 import { SessionStore } from "../auth/session.store.js";
+import { GrantsService } from "../oauth/grants.service.js";
 import { PmspaStore } from "../integrations/pmspa/pmspa-store.js";
 import { UsersRepository } from "../users/users.repository.js";
 
@@ -10,11 +11,16 @@ export class AccountService {
   constructor(
     private readonly usersRepository: UsersRepository,
     private readonly sessions: SessionStore,
-    private readonly pmspaStore: PmspaStore
+    private readonly pmspaStore: PmspaStore,
+    private readonly grants: GrantsService
   ) {}
 
   /** API-USR-004: the account, then its sessions and cached PMSPA data (D3). */
   async deleteAccount(userId: string): Promise<void> {
+    // Before the delete: the grant ids are gone after it.
+    await this.cleanUp(userId, "agent grants", () =>
+      this.grants.markAllRevoked(userId)
+    );
     if (!(await this.usersRepository.deleteAccount(userId))) {
       throw new UnauthorizedException("Missing or invalid access token.");
     }

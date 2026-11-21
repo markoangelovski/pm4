@@ -3,7 +3,7 @@ id: arch-env
 title: Environments and Configuration
 status: approved
 owner: Marko Angelovski
-last_updated: 2026-10-17
+last_updated: 2026-11-21
 related: [arch-deployment, sec]
 ---
 
@@ -41,6 +41,7 @@ Validated at startup. The app refuses to boot if something is missing or invalid
 | `DATABASE_URL_DIRECT` | **yes** | Neon **direct** connection string (migrations only, CI secret) |
 | `REDIS_URL` | **yes** | Redis Cloud URL, **plain `redis://`**: the Redis Cloud free tier has TLS off (owner, 2026-09-27; accepted risk in security.md). Used for auth state and rate limits |
 | `CORS_ORIGINS` | no | `https://pm4.angelovski.top` (comma-separated) |
+| `API_PUBLIC_URL` | no | The API's own public origin, no trailing slash (`https://pm4-api-heagfvepgbcje5c3.westeurope-01.azurewebsites.net`; locally `http://localhost:3001`). The OAuth issuer and the `/mcp` resource URL (OQ-303, ADR-0013) |
 | `WEB_APP_URL` | no | Where the OAuth callback redirects back to (`https://pm4.angelovski.top`) |
 | `GOOGLE_CLIENT_ID` | no | Google OAuth client |
 | `GOOGLE_CLIENT_SECRET` | **yes** | Google OAuth client secret |
@@ -76,3 +77,5 @@ Each app commits a `.env.example` with every variable and dummy values.
 - 2026-10-03: `NEXT_PUBLIC_APP_VERSION` is the release version stamped by `web-deploy` (OQ-098).
 - 2026-10-17: `PMSPA_ENCRYPTION_KEY` (FR-INT-003, feat-int-conn-api). Back to `review`.
 - 2026-10-17: Approved by the owner.
+- 2026-11-21: `API_PUBLIC_URL` (OQ-303, feat-mcp-oauth-api). Back to `review`.
+- 2026-11-21: Approved by the owner.

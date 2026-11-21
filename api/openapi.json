@@ -338,6 +338,375 @@
         ]
       }
     },
+    "/api/v1/oauth/consent/{requestId}": {
+      "get": {
+        "operationId": "ConsentController_get",
+        "parameters": [
+          {
+            "name": "requestId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConsentRequestDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid or expired credentials.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited: `retryAfterSeconds` and `Retry-After`.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Consent"
+        ]
+      }
+    },
+    "/api/v1/oauth/consent/{requestId}/allow": {
+      "post": {
+        "operationId": "ConsentController_allow",
+        "parameters": [
+          {
+            "name": "requestId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConsentResultDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid or expired credentials.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "Gone: it expired.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited: `retryAfterSeconds` and `Retry-After`.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Consent"
+        ]
+      }
+    },
+    "/api/v1/oauth/consent/{requestId}/deny": {
+      "post": {
+        "operationId": "ConsentController_deny",
+        "parameters": [
+          {
+            "name": "requestId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConsentResultDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid or expired credentials.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "Gone: it expired.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited: `retryAfterSeconds` and `Retry-After`.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Consent"
+        ]
+      }
+    },
+    "/api/v1/connected-apps": {
+      "get": {
+        "operationId": "ConnectedAppsController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConnectedAppListDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid or expired credentials.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited: `retryAfterSeconds` and `Retry-After`.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "ConnectedApps"
+        ]
+      }
+    },
+    "/api/v1/connected-apps/{id}": {
+      "delete": {
+        "operationId": "ConnectedAppsController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "401": {
+            "description": "Missing, invalid or expired credentials.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited: `retryAfterSeconds` and `Retry-After`.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "ConnectedApps"
+        ]
+      }
+    },
     "/api/v1/me": {
       "get": {
         "operationId": "UsersController_get",
@@ -5355,6 +5724,154 @@
         },
         "required": [
           "refreshToken"
+        ]
+      },
+      "ExistingGrantDto": {
+        "type": "object",
+        "properties": {
+          "connectedAt": {
+            "type": "string",
+            "description": "ISO 8601 UTC instant."
+          }
+        },
+        "required": [
+          "connectedAt"
+        ]
+      },
+      "OAuthClientDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "From the Client ID Metadata Document, or the DCR registration."
+          },
+          "clientIdHost": {
+            "type": "string",
+            "description": "Host of the `client_id` URL; for a DCR client, the host of its first redirect URI."
+          }
+        },
+        "required": [
+          "name",
+          "clientIdHost"
+        ]
+      },
+      "ConsentRequestDto": {
+        "type": "object",
+        "properties": {
+          "scopes": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "pm4:read",
+                "pm4:write"
+              ]
+            }
+          },
+          "existingGrant": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ExistingGrantDto"
+              }
+            ]
+          },
+          "id": {
+            "type": "string"
+          },
+          "client": {
+            "$ref": "#/components/schemas/OAuthClientDto"
+          },
+          "redirectHost": {
+            "type": "string",
+            "description": "Host (with port for a loopback address) the browser returns to."
+          },
+          "loopback": {
+            "type": "boolean",
+            "description": "`127.0.0.1`, `[::1]` or `localhost`."
+          },
+          "expiresAt": {
+            "type": "string",
+            "description": "ISO 8601 UTC instant; after it Allow fails with 410."
+          }
+        },
+        "required": [
+          "scopes",
+          "existingGrant",
+          "id",
+          "client",
+          "redirectHost",
+          "loopback",
+          "expiresAt"
+        ]
+      },
+      "ConsentResultDto": {
+        "type": "object",
+        "properties": {
+          "redirectUrl": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "redirectUrl"
+        ]
+      },
+      "ConnectedAppDto": {
+        "type": "object",
+        "properties": {
+          "scopes": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "pm4:read",
+                "pm4:write"
+              ]
+            }
+          },
+          "lastUsedAt": {
+            "type": "string",
+            "nullable": true,
+            "description": "The last token issued or refreshed; null = never used since connecting."
+          },
+          "id": {
+            "type": "string",
+            "description": "The grant's id."
+          },
+          "client": {
+            "$ref": "#/components/schemas/OAuthClientDto"
+          },
+          "connectedAt": {
+            "type": "string",
+            "description": "ISO 8601 UTC instant."
+          },
+          "expired": {
+            "type": "boolean",
+            "description": "The grant's refresh family is gone (30 days unused)."
+          }
+        },
+        "required": [
+          "scopes",
+          "lastUsedAt",
+          "id",
+          "client",
+          "connectedAt",
+          "expired"
+        ]
+      },
+      "ConnectedAppListDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConnectedAppDto"
+            }
+          }
+        },
+        "required": [
+          "items"
         ]
       },
       "MeResponseDto": {

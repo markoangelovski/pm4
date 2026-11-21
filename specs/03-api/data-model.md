@@ -4,7 +4,7 @@ title: Data Model
 status: approved
 owner: Marko Angelovski
 last_updated: 2026-11-21
-related: [api-conventions, req-integrations, prod-glossary, req-projects, req-tasks, req-time-logs, ADR-0008]
+related: [api-conventions, req-integrations, req-agents, prod-glossary, req-projects, req-tasks, req-time-logs, ADR-0008]
 ---
 
 # Data Model
@@ -29,6 +29,8 @@ users 1──0..1 pmspa_connections       PK user_id (M6)
 projects 1──0..1 pmspa_project_links  PK project_id (FK ON DELETE CASCADE)
 tasks 1──0..1 pmspa_task_links        PK task_id (FK ON DELETE CASCADE)
 time_logs 1──0..1 pmspa_log_links     PK time_log_id (FK ON DELETE CASCADE)
+users 1──* oauth_grants               unique (user_id, client_id), FK ON DELETE CASCADE (M9)
+oauth_clients                         DCR apps; no FK (grants name CIMD URLs too)
 ```
 
 Deletes are **permanent** (hard deletes). Every user-owned table references
@@ -269,6 +271,36 @@ active links (prefix `user_id, pmspa_user_id`). A PMSPA record is linked to at m
 The fingerprint is the first 8 bytes of SHA-256 over the side's shared fields in a fixed order (the feature specs
 `feat-int-sync-api` and `feat-int-time-api` list them). Two users linking the same PMSPA account each have their own rows.
 
+### oauth_clients
+Apps registered through Dynamic Client Registration (API-MCP-003, OQ-290). CIMD apps aren't stored: their document is
+fetched and cached in Redis (security.md *Agent access*). A client no grant names is deleted 30 days after it registered,
+by the next registration's transaction.
+
+| Column | Type | Constraints |
+| --- | --- | --- |
+| created_at | timestamptz | not null, default `now()` (`client_id_issued_at`, and the 30-day cleanup) |
+| id | uuid | PK (UUIDv7). The `client_id` |
+| client_name | varchar(100) | not null |
+| redirect_uris | varchar(2000)[] | not null, 1–10 elements |
+
+No other index: the table stays small, and the cleanup scans it.
+
+### oauth_grants
+One user's approval of one app (req-agents FR-MCP-005, FR-MCP-009). Deleted on revoke (API-MCP-011, API-MCP-009), on
+**Sign out of all devices** (OQ-294), when Allow replaces it (OQ-293), and with the user. Tokens, the refresh family and
+*last used* live in Redis, not here (storage rule 8, OQ-305).
+
+| Column | Type | Constraints |
+| --- | --- | --- |
+| created_at | timestamptz | not null, default `now()` (*connected at*) |
+| scope | enum `oauth_scope` (`read`, `write`) | not null. `write` includes read (OQ-289) |
+| id | uuid | PK (UUIDv7). The tokens' `gid` |
+| user_id | uuid | not null, FK → users ON DELETE CASCADE |
+| client_id | varchar(2048) | not null. A CIMD URL or an `oauth_clients.id` as text (no FK: CIMD ids have no row) |
+| client_name | varchar(100) | not null. The name the user approved, shown in Connected apps |
+
+**Index:** unique `(user_id, client_id)`: one grant per app (OQ-293); also serves the user's list and the FK delete.
+
 ## Retained names (FR-TLOG-014)
 - **On delete** (in one transaction): first save the names on the linked logs, then delete the row. The FKs
   then set `task_id`/`project_id` to NULL.
@@ -312,6 +344,8 @@ the column and its index. This one isn't expand/contract compatible: an old API 
 
 `0011` creates `project_services` and adds the nullable `tasks.service_id` with its FK and partial index (expand only).
 
+`0012` creates `oauth_clients`, `oauth_grants` and the `oauth_scope` enum (expand only, feat-mcp-oauth-api).
+
 ## Open questions
 None.
 
@@ -339,4 +373,6 @@ None.
 - 2026-10-26: The owner approved `project_services` and `tasks.service_id` for feat-prj-services.
 - 2026-11-12: Account deletion exists (API-USR-004): it clears the deleted user's leads on other users' items, name included (OQ-280).
 - 2026-11-21: Every table here exists (migrations `0000`…`0011`): *Tables* is no longer "proposed", the relationships show the optional `project_lead_user_id`, and the spec moves to `review`.
+- 2026-11-21: Approved by the owner.
+- 2026-11-21: `oauth_clients` and `oauth_grants` for agent access (req-agents, OQ-290, OQ-305, feat-mcp-oauth-api). Back to `review`.
 - 2026-11-21: Approved by the owner.

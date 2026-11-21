@@ -9,6 +9,7 @@ import {
   type MockInstance
 } from "vitest";
 import type { SessionStore } from "../auth/session.store.js";
+import type { GrantsService } from "../oauth/grants.service.js";
 import type { PmspaStore } from "../integrations/pmspa/pmspa-store.js";
 import type { UsersRepository } from "../users/users.repository.js";
 import { AccountService } from "./account.service.js";
@@ -31,7 +32,8 @@ describe("AccountService.deleteAccount", () => {
     service = new AccountService(
       usersRepository as unknown as UsersRepository,
       sessions as unknown as SessionStore,
-      pmspaStore as unknown as PmspaStore
+      pmspaStore as unknown as PmspaStore,
+      { markAllRevoked: vi.fn() } as unknown as GrantsService
     );
   });
 

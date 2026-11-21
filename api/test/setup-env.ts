@@ -9,6 +9,7 @@ process.env.DATABASE_URL ??= "postgres://pm4:pm4@localhost:5432/pm4_test";
 process.env.REDIS_URL ??= "redis://localhost:6379";
 process.env.CORS_ORIGINS ??= "http://localhost:3000";
 process.env.WEB_APP_URL ??= "http://localhost:3000";
+process.env.API_PUBLIC_URL ??= "http://localhost:3001";
 // Auth (feat-auth-api-session). Dummy values: e2e tests replace `GoogleOidc`
 // with a fake (test/fake-google-oidc.ts), so nothing ever calls Google.
 // AUTH_ALLOWED_EMAILS and the token TTLs stay unset (open sign-up, 15m/30d);
