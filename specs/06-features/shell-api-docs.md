@@ -26,13 +26,14 @@ OpenAPI document as an interactive reference (Scalar). **Test request** calls th
 | D5 | Publishing the document adds no exposure: the repository is public and `api/openapi.json` is committed in it. | Agent |
 | D6 | No file (local dev and builds) → a `404` → `null` → "This build has no API docs." | Agent, prototype `bd9bb4f` (as D6 of feat-shell-documentation) |
 | D7 | The token comes from `getAccessToken()`. `SessionUnavailableError` → `null`, so the request goes out without a token and the API answers `401`. Other errors are rethrown. | Agent |
+| D8 | The token goes only to this build's API: `onBeforeRequest` adds it only when the request's origin equals `NEXT_PUBLIC_API_BASE_URL`'s, never to an address typed into Scalar's request client. | Owner (2026-11-21, review finding) |
 
 ## Scope
 **In:** the deploy step and ignore line, the real `useApiSpec` and `getApiDocsAccessToken`, the promoted API Docs
 components, the new topic in the Documentation view.
 
 **Non-goals** (implementers must not touch these):
-- `web/proto/**`, `web/package.json`, `web/package-lock.json`, `api/**`.
+- `web/proto/**` (except the `api-docs.tsx` twin, D8), `web/package.json`, `web/package-lock.json`, `api/**`.
 - The Versioning and Changelog tabs, `useChangelog`, the sidebar.
 - `api/`'s `/docs` setting, CORS, helmet.
 - Any acceptance test (`*.ac.*`).
@@ -52,6 +53,7 @@ components, the new topic in the Documentation view.
 | web | `web/features/documentation/api-spec.ac.test.tsx` | C | tests | AC-1…AC-3 |
 | web | `web/features/documentation/api.ts` | M | tests, T2 | Stubs, then the real functions |
 | web | `proto/features/documentation/components/api-docs.tsx` → `features/documentation/components/api-docs.tsx` | P | T2 | Imports only `../api`: no changes |
+| web | `web/proto/features/documentation/components/api-docs.tsx` | M | T2 | D8: `isApiRequest`, then copied to its production twin |
 | web | `proto/features/documentation/components/scalar-reference.tsx` → `features/documentation/components/scalar-reference.tsx` | P | T2 | No changes |
 | web | `web/features/documentation/components/documentation-view.tsx` | M | T2 | Becomes its prototype twin (command below) |
 
@@ -143,3 +145,4 @@ grep -q 'id: "api-docs"' web/features/documentation/components/documentation-vie
 ## Changelog
 - 2026-11-21: Initial draft from prototype `bd9bb4f`. Open questions empty → `review`.
 - 2026-11-21: Approved by the owner.
+- 2026-11-21: Review finding: the token goes only to this build's API (D8), fixed in the prototype twin and its production copy. Approved by the owner.

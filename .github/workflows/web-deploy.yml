@@ -61,6 +61,9 @@ jobs:
       - name: Changelog
         run: node ../scripts/changelog.mjs web public/changelog.json
 
+      - name: API docs
+        run: cp ../api/openapi.json public/openapi.json
+
       - name: Build (static export)
         run: npm run build
         env:

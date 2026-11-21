@@ -1,3 +1,4 @@
+import { getAccessToken, SessionUnavailableError } from "@/lib/auth/session";
 import { useQuery, type UseQueryResult } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api/client";
 import type { components } from "@/lib/api/schema";
@@ -68,10 +69,32 @@ export type OpenApiDocument = Record<string, unknown>;
 /** The API's OpenAPI document, at the site root: the web deploy copies `api/openapi.json` there with the build. */
 export const API_SPEC_URL = "/openapi.json";
 
+/**
+ * The API's OpenAPI document, or null when the build has none (a `404`, as on a local build).
+ */
 export function useApiSpec(): UseQueryResult<OpenApiDocument | null> {
-  throw new Error("not implemented (feat-shell-api-docs)");
+  return useQuery({
+    queryKey: [...documentationKeys.all, "api-spec"] as const,
+    staleTime: Infinity,
+    queryFn: async ({ signal }) => {
+      const response = await fetch(API_SPEC_URL, { signal });
+      if (response.status === 404) return null;
+      if (!response.ok) {
+        throw new Error(`GET ${API_SPEC_URL} failed (${response.status})`);
+      }
+      return (await response.json()) as OpenApiDocument;
+    }
+  });
 }
 
+/**
+ * The bearer token "Test request" sends, so it calls the API as the signed-in user. No session gives null.
+ */
 export async function getApiDocsAccessToken(): Promise<string | null> {
-  throw new Error("not implemented (feat-shell-api-docs)");
+  try {
+    return await getAccessToken();
+  } catch (error) {
+    if (error instanceof SessionUnavailableError) return null;
+    throw error;
+  }
 }
