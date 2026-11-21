@@ -74,6 +74,7 @@ A feature spec links to those. It doesn't copy them.
 | Landing page redesign: a full marketing page at `/` with a light/dark switch | [land-redesign.md](land-redesign.md) | M7 | approved |
 | Landing page v2: product tour, live duration box, FAQ | [land-page-v2.md](land-page-v2.md) | M7 | approved |
 | Documentation page: Versioning and Changelog tabs, with a changelog built by every deploy | [shell-documentation.md](shell-documentation.md) | M1 | approved |
+| Documentation: API Docs tab (Scalar) | [shell-api-docs.md](shell-api-docs.md) | M1 | approved |
 | Logs: Timeline view, the new default | [tlog-timeline.md](tlog-timeline.md) | M4 | approved |
 | Logs: Timeline grouped by project | [tlog-timeline-groups.md](tlog-timeline-groups.md) | M4 | approved |
 | Logs: + and ⋯ in Timeline, + after a row's task, task icons | [tlog-views-actions.md](tlog-views-actions.md) | M4 | approved |

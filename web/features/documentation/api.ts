@@ -61,3 +61,17 @@ export function useChangelog(
   const api = useApiChangelog(app === "api");
   return app === "web" ? web : api;
 }
+
+/** An OpenAPI document, as Scalar takes it. */
+export type OpenApiDocument = Record<string, unknown>;
+
+/** The API's OpenAPI document, at the site root: the web deploy copies `api/openapi.json` there with the build. */
+export const API_SPEC_URL = "/openapi.json";
+
+export function useApiSpec(): UseQueryResult<OpenApiDocument | null> {
+  throw new Error("not implemented (feat-shell-api-docs)");
+}
+
+export async function getApiDocsAccessToken(): Promise<string | null> {
+  throw new Error("not implemented (feat-shell-api-docs)");
+}
