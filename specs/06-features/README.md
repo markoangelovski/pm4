@@ -86,3 +86,4 @@ A feature spec links to those. It doesn't copy them.
 | Agent access: OAuth server, consent and Connected apps (API) | [mcp-oauth-api.md](mcp-oauth-api.md) | M9 | approved |
 | Agent access: the MCP endpoint and its tools (API) | [mcp-tools-api.md](mcp-tools-api.md) | M9 | review |
 | Agent access: the consent page and Settings → Connected apps (web) | [mcp-web.md](mcp-web.md) | M9 | approved |
+| Agent access: app logos in Connected apps | [mcp-logos.md](mcp-logos.md) | M9 | approved |

@@ -66,8 +66,12 @@ Both are public and live at the API host's root, outside `/api/v1`.
 (security rules in `security.md`, written at feature-spec time). Apps that can't publish such a document may register
 through **Dynamic Client Registration** (RFC 7591, `POST /oauth/register`, OQ-290): PM4 stores the client and deletes it after
 30 days without a grant.
+An app may also send a logo (`logo_uri`). PM4 keeps it only when it is an HTTPS URL on the app's own host (the
+`client_id` URL's host, or for a registered app the first redirect URI's host, never a loopback one), and shows it only
+in Settings → Connected apps; the consent page never shows a logo, because any app can claim any logo (OQ-314).
 **Acceptance criteria:**
 - Given an app whose `client_id` URL serves a valid document, when it starts an authorization, then the consent screen shows the document's name.
+- Given an app whose `logo_uri` is an HTTPS URL on its own host, when the user allows it, then Connected apps shows that logo; given any other `logo_uri` (another host, `http`, a loopback host), the app's letter shows and the app still connects.
 - Given a `client_id` URL that isn't HTTPS, doesn't answer, answers with an invalid document, or whose document doesn't list the request's `redirect_uri`, then PM4 doesn't redirect to the app and shows an error page instead.
 
 ### FR-MCP-004: Authorization request
@@ -165,4 +169,6 @@ None. OQ-287…OQ-297 are resolved.
 - 2026-11-21: FR-MCP-009: expired apps stay listed, *last used* not in Postgres (OQ-305). Back to `review`.
 - 2026-11-21: Approved by the owner.
 - 2026-11-21: FR-MCP-008: date defaults, the read-only tool list and the logs of *List time logs* (OQ-307…OQ-309). Back to `review`.
+- 2026-11-21: Approved by the owner.
+- 2026-11-21: FR-MCP-003: an app's `logo_uri` on its own host shows in Connected apps, never on the consent page (OQ-314, prototype `c71d350`). Back to `review`.
 - 2026-11-21: Approved by the owner.

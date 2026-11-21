@@ -44,21 +44,25 @@ const me: Me = {
   createdAt: "2026-10-02T22:30:00.000Z"
 };
 
-const claude: ConnectedApp = {
+// `logoUri` joins the generated `ConnectedApp` type when T-0185 regenerates it; the intersection types both states.
+type AppFixture = ConnectedApp & { logoUri: string | null };
+const claude: AppFixture = {
   id: "g1",
   client: { name: "Claude Code", clientIdHost: "claude.ai" },
   scopes: ["pm4:read", "pm4:write"],
   connectedAt: "2026-11-01T10:00:00Z",
   lastUsedAt: new Date(Date.now() - 3 * 3600 * 1000).toISOString(),
-  expired: false
+  expired: false,
+  logoUri: null
 };
-const opencode: ConnectedApp = {
+const opencode: AppFixture = {
   id: "g2",
   client: { name: "OpenCode", clientIdHost: "opencode.ai" },
   scopes: ["pm4:read"],
   connectedAt: "2026-10-02T22:30:00Z",
   lastUsedAt: null,
-  expired: false
+  expired: false,
+  logoUri: null
 };
 
 const res = (status: number) => new Response(null, { status });

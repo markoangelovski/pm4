@@ -33,13 +33,15 @@ const consentRequest: ConsentRequest = {
   expiresAt: "2026-11-21T10:10:00Z"
 };
 
-const app: ConnectedApp = {
+// `logoUri` joins the generated `ConnectedApp` type when T-0185 regenerates it; the intersection types both states.
+const app: ConnectedApp & { logoUri: string | null } = {
   id: "g1",
   client: { name: "Claude Code", clientIdHost: "claude.ai" },
   scopes: ["pm4:read"],
   connectedAt: "2026-11-01T10:00:00Z",
   lastUsedAt: null,
-  expired: false
+  expired: false,
+  logoUri: null
 };
 
 const res = (status: number) => new Response(null, { status });
