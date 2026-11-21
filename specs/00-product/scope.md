@@ -3,8 +3,8 @@ id: prod-scope
 title: Scope and Milestones
 status: approved
 owner: Marko Angelovski
-last_updated: 2026-10-25
-related: [prod-vision, req-overview, req-integrations]
+last_updated: 2026-11-21
+related: [prod-vision, req-overview, req-integrations, req-agents]
 ---
 
 # Scope and Milestones
@@ -49,6 +49,7 @@ Each milestone corresponds to a folder in `tasks/`.
 | M6 | Integrations | Settings → Integrations, the PMSPA connector (connection, status, sync) and its Connectors page (OQ-141) | FR-INT-* done |
 | M7 | Landing page | A complete redesign of the public landing page (OQ-151) | FR-LAND-* redesigned and done |
 | M8 | Notes | Notes and to-dos, linked to projects and tasks or General (OQ-230) | FR-NOTE-* done |
+| M9 | Agents (MCP) | An MCP server at the API's `/mcp`, PM4 as its OAuth 2.1 authorization server, the consent page and Settings → Connected apps (OQ-287, ADR-0013) | FR-MCP-* done |
 
 ## Changelog
 - 2026-09-26: Initial scaffold.
@@ -67,3 +68,4 @@ Each milestone corresponds to a folder in `tasks/`.
 - 2026-10-23: Bookings can cover part of a log, over several dates (feat-book-partial).
 - 2026-10-24: M8 Notes: notes and to-dos (OQ-230).
 - 2026-10-25: Installable PWA with the app shell offline; offline data stays out of scope (OQ-237, feat-shell-pwa).
+- 2026-11-21: M9 Agents (MCP): an MCP server with OAuth for AI agents (OQ-287, req-agents). Approved by the owner the same day.
