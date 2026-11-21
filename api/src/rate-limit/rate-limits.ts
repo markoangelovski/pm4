@@ -23,7 +23,7 @@ export interface RateLimits {
 
 export const DEFAULT_RATE_LIMITS: RateLimits = {
   windowMs: 60_000,
-  windowsMs: {},
+  windowsMs: { oauthRegister: 3_600_000 },
   limits: {
     google: 10,
     callback: 10,

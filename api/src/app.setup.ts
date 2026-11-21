@@ -13,7 +13,19 @@ import { flattenValidationErrors } from "./common/validation/flatten-validation-
 export function configureApp(app: NestExpressApplication): void {
   const configService = app.get(AppConfigService);
 
-  app.setGlobalPrefix("api/v1", { exclude: ["health"] });
+  // The root OAuth endpoints (agent access, FR-MCP-002, endpoints.md) sit outside `api/v1`.
+  app.setGlobalPrefix("api/v1", {
+    exclude: [
+      "health",
+      ".well-known/oauth-protected-resource",
+      ".well-known/oauth-protected-resource/mcp",
+      ".well-known/oauth-authorization-server",
+      "oauth/authorize",
+      "oauth/token",
+      "oauth/revoke",
+      "oauth/register"
+    ]
+  });
 
   app.set("trust proxy", 1);
 
@@ -26,6 +38,8 @@ export function configureApp(app: NestExpressApplication): void {
     maxAge: "7d"
   });
   app.useBodyParser("json", { limit: "100kb" });
+  // Form posts to the OAuth token and revoke endpoints (RFC 6749 §4.1.3, RFC 7009).
+  app.useBodyParser("urlencoded", { extended: false, limit: "10kb" });
 
   app.enableCors({
     origin: configService.corsOrigins,

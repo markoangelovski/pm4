@@ -9,6 +9,7 @@ import {
   sanitizeTimeZone
 } from "./auth.service.js";
 import { GoogleOidc, GoogleProfile } from "./google-oidc.js";
+import { GrantsService } from "../oauth/grants.service.js";
 import { SessionStore } from "./session.store.js";
 
 const WEB = "http://localhost:3000";
@@ -133,7 +134,8 @@ describe("AuthService", () => {
       google as unknown as GoogleOidc,
       sessions as unknown as SessionStore,
       users as unknown as UsersRepository,
-      accessTokens
+      accessTokens,
+      { revokeAll: vi.fn() } as unknown as GrantsService
     );
   });
 

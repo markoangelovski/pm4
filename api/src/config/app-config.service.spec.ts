@@ -12,6 +12,7 @@ describe("AppConfigService", () => {
     REDIS_URL: "redis://localhost:6379",
     CORS_ORIGINS: ["https://pm4.example.com"],
     WEB_APP_URL: "https://pm4.example.com",
+    API_PUBLIC_URL: "https://api.example.com",
     GOOGLE_CLIENT_ID: "client-id",
     GOOGLE_CLIENT_SECRET: "client-secret",
     GOOGLE_CALLBACK_URL: "https://api.example.com/api/v1/auth/google/callback",

@@ -79,7 +79,7 @@ the MCP token service (exported for feat-mcp-tools-api); Sign out of all devices
 | web | `web/lib/api/schema.d.ts` | M | tests | `npm run api:types` (generated; CI's contract check, owner 2026-11-21) |
 | api | `api/src/database/schema/oauth.ts`, `api/src/database/schema/index.ts` | C, M | T1 | |
 | api | `api/drizzle/0012_oauth.sql`, `api/drizzle/meta/*` | C, M | T1 | `npx drizzle-kit generate --name oauth` |
-| api | `api/src/config/env.schema.ts`, `api/src/config/app-config.service.ts`, `api/.env.example`, `api/test/setup-env.ts` | M | T1 | `API_PUBLIC_URL` |
+| api | `api/src/config/env.schema.ts`, `api/src/config/app-config.service.ts`, `api/.env.example`, `api/test/setup-env.ts`, `api/src/config/env.schema.spec.ts`, `api/src/config/app-config.service.spec.ts` | M | T1 | `API_PUBLIC_URL` (the two unit-test fixtures gain the field) |
 | api | `api/src/rate-limit/rate-limits.ts` | M | tests, T1 | Test step: the scope and `windowsMs` types; T1: values (D10) |
 | api | `api/src/rate-limit/rate-limit.guard.ts` | M | T1 | D10 |
 | api | `api/src/app.setup.ts` | M | T1 | Prefix exclusions, urlencoded body parser |
@@ -369,3 +369,4 @@ cp api/openapi.json "$tmp/"
 - 2026-11-21: Contract stubs also cover `redirect-uri.ts` and `isPublicAddress` so the unit acceptance tests typecheck (found in the test step).
 - 2026-11-21: The test step also touches `rate-limit.ac.e2e-spec.ts` (type only) and adds `410` to `ApiProblemResponses`.
 - 2026-11-21: The test step regenerates `web/lib/api/schema.d.ts` so the pull request's contract check passes (owner).
+- 2026-11-21: T1 also updates the `Env` fixtures in `env.schema.spec.ts` and `app-config.service.spec.ts` for the required `API_PUBLIC_URL` (found in T1).

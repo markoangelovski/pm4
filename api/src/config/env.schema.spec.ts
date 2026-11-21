@@ -28,6 +28,7 @@ describe("validateEnv", () => {
       REDIS_URL: "redis://localhost:6379",
       CORS_ORIGINS: ["http://localhost:3000", "http://localhost:3001"],
       WEB_APP_URL: "http://localhost:3000",
+      API_PUBLIC_URL: "http://localhost:3001",
       GOOGLE_CLIENT_ID: "client-id",
       GOOGLE_CLIENT_SECRET: "client-secret",
       GOOGLE_CALLBACK_URL: "http://localhost:3001/api/v1/auth/google/callback",
@@ -60,6 +61,15 @@ describe("validateEnv", () => {
     expect(() =>
       validateEnv({ ...validConfig, DATABASE_URL: "not-a-url" })
     ).toThrow(/DATABASE_URL/);
+  });
+
+  it("rejects an API_PUBLIC_URL with userinfo", () => {
+    expect(() =>
+      validateEnv({
+        ...validConfig,
+        API_PUBLIC_URL: "https://u:p@api.example.com"
+      })
+    ).toThrow(/API_PUBLIC_URL/);
   });
 
   it("rejects a REDIS_URL with the wrong protocol", () => {
