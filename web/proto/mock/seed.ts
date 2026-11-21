@@ -5,13 +5,13 @@ import type { components } from "@/lib/api/schema";
 import { today } from "@/lib/time";
 import type { ProjectRef, TaskRef, TimeLog } from "@/proto/features/time/types";
 import type { NoteDto, TodoDto } from "@/proto/features/notes/types";
+import type { ConnectedAppDto } from "@/proto/features/agents/proposed-types";
 
 import type { Project } from "@/proto/features/projects/api";
 import type { Task } from "@/proto/features/tasks/api";
 
 type Me = components["schemas"]["MeResponseDto"];
 type Status = components["schemas"]["TaskStatus"];
-type ConnectedAppDto = components["schemas"]["ConnectedAppDto"];
 type ConsentRequestDto = components["schemas"]["ConsentRequestDto"];
 
 export const MOCK_TZ = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -621,25 +621,43 @@ const inMinutes = (minutes: number) =>
 
 /** A connected app (grant) with the app's client id, which the consent mock matches on. */
 export type MockGrant = ConnectedAppDto & { clientId: string };
-/** A pending consent request with the app's client id. */
-export type MockConsentRequest = ConsentRequestDto & { clientId: string };
+/** A pending consent request with the app's client id and the logo a grant from it gets (never shown there). */
+export type MockConsentRequest = ConsentRequestDto & {
+  clientId: string;
+  logoUri?: string | null;
+};
+
+/** Mock logos as inline SVG, so the prototype needs no network (the real ones are HTTPS URLs on the app's host). */
+const svgLogo = (body: string) =>
+  `data:image/svg+xml,${encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">${body}</svg>`
+  )}`;
+const CLAUDE_LOGO = svgLogo(
+  '<rect width="32" height="32" fill="#d97757"/><g stroke="#fff" stroke-width="2.6" stroke-linecap="round"><path d="M16 6v20M6 16h20M9 9l14 14M23 9 9 23"/></g>'
+);
+const OPENCODE_LOGO = svgLogo(
+  '<rect width="32" height="32" fill="#18181b"/><rect x="9" y="8" width="14" height="16" fill="none" stroke="#fafafa" stroke-width="2.6"/><rect x="12.5" y="15" width="7" height="6" fill="#a1a1aa"/>'
+);
 
 const CLAUDE = {
   clientId: "https://claude.ai/oauth/mcp-client.json",
-  client: { name: "Claude", clientIdHost: "claude.ai" }
+  client: { name: "Claude", clientIdHost: "claude.ai" },
+  logoUri: CLAUDE_LOGO
 };
 const CLAUDE_CODE = {
   clientId: "https://claude.ai/oauth/claude-code-client.json",
-  client: { name: "Claude Code", clientIdHost: "claude.ai" }
+  client: { name: "Claude Code", clientIdHost: "claude.ai" },
+  logoUri: CLAUDE_LOGO
 };
 const OPENCODE = {
   clientId: "https://opencode.ai/oauth/client.json",
-  client: { name: "OpenCode", clientIdHost: "opencode.ai" }
+  client: { name: "OpenCode", clientIdHost: "opencode.ai" },
+  logoUri: OPENCODE_LOGO
 };
 
 /**
- * Settings → Connected apps: a typical app, one used yesterday, a long name that was never used, and one that
- * expired (30 days unused, OQ-305).
+ * Settings → Connected apps: a typical app, one used yesterday (both with logos), a long name that was never used
+ * (no logo), and one that expired (30 days unused, OQ-305) whose logo fails to load (the letter shows).
  */
 export function seedGrants(): MockGrant[] {
   return [
@@ -665,6 +683,7 @@ export function seedGrants(): MockGrant[] {
         name: "Weekly timesheet summariser for the finance team (staging)",
         clientIdHost: "timesheets.internal.example.com"
       },
+      logoUri: null,
       id: "g-timesheets",
       scopes: ["pm4:read"],
       connectedAt: inMinutes(-3 * 24 * 60),
@@ -674,6 +693,7 @@ export function seedGrants(): MockGrant[] {
     {
       clientId: "https://standup.example.org/oauth/client.json",
       client: { name: "Standup notes", clientIdHost: "standup.example.org" },
+      logoUri: "https://standup.example.org/missing-logo.png",
       id: "g-standup",
       scopes: ["pm4:read"],
       connectedAt: inMinutes(-75 * 24 * 60),

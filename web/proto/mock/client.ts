@@ -714,7 +714,7 @@ function consent(method: string, [requestId, action]: string[]): Response {
       "Not Found",
       "This authorization request doesn't exist."
     );
-  const { clientId, ...dto } = request;
+  const { clientId, logoUri, ...dto } = request;
   if (method === "GET" && !action) return json(dto);
   if (method !== "POST" || (action !== "allow" && action !== "deny"))
     return notFound();
@@ -734,6 +734,7 @@ function consent(method: string, [requestId, action]: string[]): Response {
   const grant = {
     clientId,
     client: request.client,
+    logoUri: logoUri ?? null,
     id: old?.id ?? nextId("g-"),
     scopes: request.scopes,
     connectedAt: old?.connectedAt ?? new Date().toISOString(),
@@ -752,6 +753,7 @@ function connectedApps(method: string, id: string | undefined): Response {
       items: s.grants.map((g) => ({
         id: g.id,
         client: g.client,
+        logoUri: g.logoUri,
         scopes: g.scopes,
         connectedAt: g.connectedAt,
         lastUsedAt: g.lastUsedAt,

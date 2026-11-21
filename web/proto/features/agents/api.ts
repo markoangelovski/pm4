@@ -8,10 +8,11 @@ import {
 import { apiClient } from "@/proto/mock/client";
 import { unwrap, unwrapVoid } from "@/lib/api/problem";
 import type { components } from "@/lib/api/schema";
+import type { ConnectedAppDto } from "./proposed-types";
 
 export type ConsentRequest = components["schemas"]["ConsentRequestDto"];
 export type ConsentResult = components["schemas"]["ConsentResultDto"];
-export type ConnectedApp = components["schemas"]["ConnectedAppDto"];
+export type ConnectedApp = ConnectedAppDto;
 
 export const agentKeys = {
   all: ["agents"] as const,
