@@ -1,6 +1,6 @@
 # Task Board
 
-**Next free ID:** T-0169
+**Next free ID:** T-0171
 
 | ID | Title | Milestone | App | Size | Status | Depends on |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -171,5 +171,7 @@
 | [T-0166](m0-foundation/T-0166-promote-form-drafts-ts-and-draftnotice.md) | Promote form-drafts.ts and DraftNotice, replace the five dialogs and three api.ts with their twins, clearFormDrafts() in sign-out and session end | M0 | web | S | done | — |
 | [T-0167](m4-time-logs/T-0167-from-to-on-get-time-logs.md) | from/to on GET /time-logs (API-TLOG-001): the range check and the filter, openapi:export | M4 | api | S | done | — |
 | [T-0168](m4-time-logs/T-0168-web-from-the-prototype-usetimelogs-with.md) | Web from the prototype: useTimeLogs with the range, the Logged time section's range control and chart; drop proposed-types.ts | M4 | web | S | done | T-0167, T-0166 |
+| [T-0169](m1-auth/T-0169-web-deploy-copies-api-openapi-json.md) | Web deploy copies api/openapi.json into the site; ignore the copy | M1 | infra | S | done | — |
+| [T-0170](m1-auth/T-0170-api-docs-tab-promote-real-useapispec.md) | API Docs tab: promote, real useApiSpec and getApiDocsAccessToken, the view's twin | M1 | web | S | done | — |
 
 M0–M6 are done. Later follow-ups are filed under the milestone they extend.

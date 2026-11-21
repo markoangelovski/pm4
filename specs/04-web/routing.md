@@ -3,7 +3,7 @@ id: web-routing
 title: Routing and Navigation
 status: review
 owner: Marko Angelovski
-last_updated: 2026-11-12
+last_updated: 2026-11-21
 related: [web-static-export, web-screens, web-prototype, req-landing, req-auth, feat-land-app-route-split, ADR-0012]
 ---
 
@@ -44,7 +44,7 @@ and the client reads `id` with `useSearchParams` (inside `<Suspense>`).
 | `/app/bookings?from=&to=&project=#day-…` | SCR-045 Bookings (per-day figures, project rows, booking dates); `from`/`to` absent or invalid = the current month up to today; `project` = a project id or `deleted:<title>`, absent or not among the range's projects = all (OQ-226); hash `day-YYYY-MM-DD` or `day-<day>.log-<logId>.to-<bookingDate>` = scroll to that day / booking row (OQ-228) | required |
 | `/app/notes?tab=notes\|todos&show=&q=&sort=&from=&to=&page=` | SCR-070 Notes (FR-NOTE-001/002); `tab` absent = `notes`; `show` = `unlinked` (General, the default), `all` or a project id (unknown = General); `sort` absent = `updatedAt:desc`; `from`/`to` absent = All time, invalid = this month; `page` only on the Notes tab. The toolbar state is shared by both tabs (OQ-232) | required |
 | `/app/user-profile` | SCR-051 Profile (Google identity, sign out of all devices) | required |
-| `/app/documentation?tab=versioning\|changelog&app=web\|api` | SCR-053 Documentation; `tab` absent = `versioning`; `app` (Changelog tab) absent = `web` | required |
+| `/app/documentation?tab=versioning\|changelog\|api-docs&app=web\|api` | SCR-053 Documentation; `tab` absent = `versioning`; `app` (Changelog tab) absent = `web` | required |
 | `/app/settings?tab=` | SCR-050 Settings (tabs; `tab` absent = `user`: daily target, time zone; `integrations`: SCR-052, FR-INT-001) | required |
 | `/app/connectors/pmspa?tab=projects\|time&week=` | SCR-060 PMSPA connector (FR-INT-007); `tab` absent = `projects`; `week` = any date of the week shown on the Time tab (Monday-based), absent = this week | required |
 | `/proto/app/**` | UI prototype twins of the `/app/**` routes (same params). **Dev server on localhost only**, not in the build: in production it's the not-found page (`prototype.md`, ADR-0012) | mocked (always signed in) |
@@ -139,3 +139,4 @@ and the client reads `id` with `useSearchParams` (inside `<Suspense>`).
 - 2026-11-07: `/app/documentation` (SCR-053) and its sidebar link below Settings (OQ-270, feat-shell-documentation). Back to `review`.
 - 2026-11-09: `/app/time` has `view=timeline`, the default (FR-TLOG-023, feat-tlog-timeline). Back to `review`.
 - 2026-11-12: Public routes `/privacy` and `/terms` (SCR-080, SCR-081, OQ-275).
+- 2026-11-21: `/app/documentation` gains `tab=api-docs` (SCR-053, feat-shell-api-docs).

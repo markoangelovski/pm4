@@ -64,6 +64,16 @@ function ApiDocsSkeleton() {
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
+/** True when the request goes to this build's API (same origin as `API_BASE_URL`). */
+function isApiRequest(url: string): boolean {
+  if (!API_BASE_URL) return false;
+  try {
+    return new URL(url).origin === new URL(API_BASE_URL).origin;
+  } catch {
+    return false;
+  }
+}
+
 type ScalarConfiguration = ComponentProps<
   typeof ScalarReference
 >["configuration"];
@@ -87,8 +97,10 @@ function ApiReference({ spec }: { spec: OpenApiDocument }) {
       agent: { disabled: true },
       mcp: { disabled: true },
       authentication: { preferredSecurityScheme: "bearer" },
-      // "Test request" calls the API as the signed-in user.
+      // "Test request" calls the API as the signed-in user. The token goes only to this build's API, never to an
+      // address typed into the request.
       onBeforeRequest: async ({ request }) => {
+        if (!isApiRequest(request.url)) return;
         const token = await getApiDocsAccessToken();
         if (token) request.headers.set("Authorization", `Bearer ${token}`);
       }

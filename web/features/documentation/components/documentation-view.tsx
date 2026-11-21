@@ -1,8 +1,9 @@
 "use client";
 
 import { parseAsStringLiteral, useQueryState } from "nuqs";
-import { History, Tag, type LucideIcon } from "lucide-react";
+import { Braces, History, Tag, type LucideIcon } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ApiDocs } from "./api-docs";
 import { ChangelogDoc } from "./changelog-doc";
 import { VersioningDoc } from "./versioning-doc";
 
@@ -19,6 +20,12 @@ const TOPICS = [
     label: "Changelog",
     icon: History,
     content: <ChangelogDoc />
+  },
+  {
+    id: "api-docs",
+    label: "API Docs",
+    icon: Braces,
+    content: <ApiDocs />
   }
 ] satisfies {
   id: string;
