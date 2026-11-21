@@ -83,3 +83,4 @@ A feature spec links to those. It doesn't copy them.
 | API loading bar at the top of the window | [shell-api-progress.md](shell-api-progress.md) | M0 | approved |
 | Unsaved drafts in form dialogs | [shell-form-drafts.md](shell-form-drafts.md) | M0 | approved |
 | Date range on the Logged time section | [tlog-logged-range.md](tlog-logged-range.md) | M4 | approved |
+| Agent access: OAuth server, consent and Connected apps (API) | [mcp-oauth-api.md](mcp-oauth-api.md) | M9 | approved |

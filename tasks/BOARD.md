@@ -1,6 +1,6 @@
 # Task Board
 
-**Next free ID:** T-0172
+**Next free ID:** T-0177
 
 | ID | Title | Milestone | App | Size | Status | Depends on |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -175,5 +175,9 @@
 | [T-0170](m1-auth/T-0170-api-docs-tab-promote-real-useapispec.md) | API Docs tab: promote, real useApiSpec and getApiDocsAccessToken, the view's twin | M1 | web | S | done | — |
 | [T-0171](m1-auth/T-0171-documentation-architecture-auth-database-tabs.md) | Documentation: promote the Architecture, Auth and Database tabs and the new topic order | M1 | web | S | done | — |
 | [T-0172](m1-auth/T-0172-sign-in-page-landing-look.md) | Sign-in page in the landing page's look: promote SignInPage and GoogleButton, rewire the page and SocialButtons | M1 | web | S | done | — |
+| [T-0173](m9-agents/T-0173-foundation-schema-migration-api-public-url.md) | Foundation: schema + migration, API_PUBLIC_URL, rate-limit scopes and windows, prefix exclusions, urlencoded parser, discovery documents | M9 | api | S | ready | — |
+| [T-0174](m9-agents/T-0174-clients-and-authorize-redirect-uri-matching.md) | Clients and authorize: redirect-URI matching, the SSRF-safe CIMD fetcher, DCR registration, ClientRegistry, GET /oauth/authorize | M9 | api | M | blocked | T-0173 |
+| [T-0175](m9-agents/T-0175-consent-tokens-revoke-the-redis-store.md) | Consent, tokens, revoke: the Redis store with the rotation script, McpTokenService, the consent endpoints, POST /oauth/token and /oauth/revoke | M9 | api | M | blocked | T-0174 |
+| [T-0176](m9-agents/T-0176-connected-apps-list-and-revoke-sign.md) | Connected apps list and revoke, Sign out of all devices and account deletion ending grants, openapi.json | M9 | api | S | blocked | T-0175 |
 
 M0–M6 are done. Later follow-ups are filed under the milestone they extend.

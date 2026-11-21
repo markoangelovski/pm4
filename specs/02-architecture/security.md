@@ -123,6 +123,55 @@ same `user_identities` table (`provider` = the configured provider key). Provide
 - **Budget:** a 60-second timeout per call; a 429 pauses every call to that host until `Retry-After` (OQ-177).
 - PMSPA payloads are never logged, only the operation, status and duration.
 
+## Agent access (M9, ADR-0013, req-agents)
+PM4's API is the OAuth 2.1 authorization server for its own MCP endpoint `/mcp`. Contracts: endpoints.md
+*Shared agent-access shapes* and API-MCP-001…011.
+
+- **Threats:** consent phishing (any app can call itself anything), SSRF through `client_id` metadata URLs, open
+  redirects through `redirect_uri`, code interception, token replay against the REST API, stolen refresh tokens, and
+  registration spam.
+- **Separate tokens:** MCP access tokens are signed with an HKDF-derived key (OQ-301), carry `aud` = the `/mcp` URL,
+  and are verified only at `/mcp`. The web's `AccessTokenGuard` verifies with `JWT_ACCESS_SECRET`, so an MCP token
+  fails there (`401`), and a web token fails at `/mcp`.
+- **Consent is the gate** (open clients): the consent page shows the client ID's host and the return host next to
+  the claimed name, and warns for a loopback redirect. Nothing is granted without the signed-in user's **Allow**
+  through the web app's bearer-authenticated API-MCP-006. The app never sees the user's Google or web tokens.
+- **Redirects:** `/oauth/authorize` redirects to an app's `redirect_uri` only after it matched the client's registered
+  URIs (endpoints.md *Redirect URI match*); before that, errors go to the web's consent page. Loopback URIs match on
+  any port (OQ-295).
+- **PKCE S256 only**; authorization codes are single use, live 60 s, and are bound to client, redirect URI, challenge
+  and grant. Codes and refresh tokens are stored only as `sha256` hashes.
+- **Client ID Metadata Documents:** fetched only for an `https://` `client_id` with a path, no fragment, ≤ 2048 chars.
+  The host must resolve only to public addresses: loopback, private (RFC 1918, `fc00::/7`), link-local, CGNAT
+  (`100.64.0.0/10`), multicast, unspecified and IPv4-mapped forms of these are refused (`node:net` `BlockList`), and
+  the connection goes to the checked address. No redirects followed, 5 s timeout, at most 10 kB, JSON only. The
+  document must have `client_id` equal to the URL, a `client_name` (trimmed 1–100 chars) and 1–10 `redirect_uris`
+  (as API-MCP-003), and no `token_endpoint_auth_method` other than `none`. A valid document is cached in Redis for 10
+  minutes; a failure isn't cached. In `development` and `test`, `http://localhost` and `http://127.0.0.1` URLs are
+  allowed too (as OQ-160), so tests can serve documents.
+- **Refresh tokens:** one family per grant, rotated on every use with reuse detection (as the web's, *Authentication
+  flow* step 8); a reuse deletes the family, and the grant shows as expired. Every refresh re-checks that the user exists and
+  passes the allow-list (*Sign-up policy*); a failure deletes the grant.
+- **Revocation (OQ-302):** deleting a grant (Revoke, Allow replacing it, Sign out of all devices, the app's own
+  `/oauth/revoke`, a failed allow-list check) deletes its family and refresh token, and sets `mcp:revoked:<grantId>`
+  for `ACCESS_TOKEN_TTL`; `/mcp` refuses tokens whose `gid` has the marker. Account deletion (API-USR-004) sets the
+  marker for each of the user's grants before deleting the user.
+- **Redis keys:**
+  | Key | Value | TTL |
+  | --- | --- | --- |
+  | `oauth:request:<id>` | pending authorization request (client, redirect URI, challenge, scope, state, `expiresAt`) | 1 h (`expiresAt` = +10 min) |
+  | `oauth:code:<h(code)>` | `{grantId, userId, clientId, redirectUri, codeChallenge, scope}` | 60 s |
+  | `oauth:cimd:<h(url)>` | a validated Client ID Metadata Document | 10 min |
+  | `mcp:refresh:<h(token)>` | `{grantId, userId}` | `REFRESH_TOKEN_TTL` |
+  | `mcp:rotated:<h(token)>` | `grantId` (reuse detection) | `REFRESH_TOKEN_TTL` |
+  | `mcp:family:<grantId>` | `{userId, clientId, current: h \| null, lastUsedAt: ISO \| null}` | `REFRESH_TOKEN_TTL`, sliding |
+  | `mcp:revoked:<grantId>` | `1` | `ACCESS_TOKEN_TTL` |
+- **Rate limits (OQ-297)**, per client IP: `GET /oauth/authorize` 30 / min (`oauth-authorize`); `POST /oauth/token` and
+  `POST /oauth/revoke` 30 / min together (`oauth-token`); `POST /oauth/register` 10 / **hour** (`oauth-register`, its
+  own window). The consent and Connected apps endpoints share the user counter. The discovery documents aren't limited.
+- **Registration spam:** besides its rate limit, a DCR client that no grant names is deleted after 30 days (OQ-290).
+- Never log codes, tokens, `code_verifier`s or OAuth request bodies.
+
 ## Web hardening
 - CSP via `<meta http-equiv="Content-Security-Policy">` (Pages can't set headers). Roughly:
   `default-src 'self'; connect-src 'self' <API origin>; img-src 'self' data: https://*.googleusercontent.com https://images.unsplash.com; script-src 'self' <hashes needed by Next>; style-src 'self' 'unsafe-inline'; frame-ancestors` (not
@@ -175,3 +224,4 @@ Secrets live in Azure App Settings and in GitHub Actions secrets. They are never
 - 2026-11-07: `GET /api/v1/changelog` (API-SYS-004) added to the public and the not-limited endpoints (OQ-272, feat-shell-documentation review).
 - 2026-11-12: The lead picker exposes no emails (OQ-277); a deleted account's access tokens are an accepted risk (OQ-281). Back to `review`.
 - 2026-11-21: Flow step 8 describes the cross-tab refresh as built: the Web Locks lock `pm4-auth-refresh` and `storage` events, not a BroadcastChannel.
+- 2026-11-21: *Agent access*: the MCP OAuth server's threats, token separation, CIMD fetching, revocation, Redis keys and rate limits (ADR-0013, OQ-290, OQ-295, OQ-297, OQ-301, OQ-302, feat-mcp-oauth-api).

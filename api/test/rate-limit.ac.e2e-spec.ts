@@ -22,12 +22,24 @@ const RATE_LIMITED_TYPE = `${WEB}/errors/rate-limited`;
 /** Small limits, so each case needs only a few requests (spec *Acceptance criteria*). */
 const SMALL_LIMITS: RateLimits = {
   windowMs: 60_000,
-  limits: { google: 2, callback: 2, token: 2, refresh: 3, logout: 3, user: 4 }
+  windowsMs: {},
+  limits: {
+    google: 2,
+    callback: 2,
+    token: 2,
+    refresh: 3,
+    logout: 3,
+    user: 4,
+    oauthAuthorize: 2,
+    oauthToken: 2,
+    oauthRegister: 2
+  }
 };
 
 /** AC-11: a 1 s window and one request per user. */
 const SHORT_WINDOW: RateLimits = {
   windowMs: 1000,
+  windowsMs: {},
   limits: { ...SMALL_LIMITS.limits, user: 1 }
 };
 

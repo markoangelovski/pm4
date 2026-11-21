@@ -18,13 +18,17 @@ export interface ProviderOverride {
  */
 export const TEST_RATE_LIMITS: RateLimits = {
   windowMs: 60_000,
+  windowsMs: {},
   limits: {
     google: 1_000_000,
     callback: 1_000_000,
     token: 1_000_000,
     refresh: 1_000_000,
     logout: 1_000_000,
-    user: 1_000_000
+    user: 1_000_000,
+    oauthAuthorize: 1_000_000,
+    oauthToken: 1_000_000,
+    oauthRegister: 1_000_000
   }
 };
 

@@ -3,7 +3,7 @@ id: api-conventions
 title: API Conventions
 status: approved
 owner: Marko Angelovski
-last_updated: 2026-11-01
+last_updated: 2026-11-21
 related: [api-endpoints, api-data-model, sec, ADR-0010]
 ---
 
@@ -95,6 +95,7 @@ RFC 9457 Problem Details (`application/problem+json`):
 | 400 | Validation error (`errors[]` per field) |
 | 401 | Missing, invalid or expired access token |
 | 404 | Not found or not owned (`type` `…/errors/not-found`) |
+| 410 | Gone: it existed but expired (`type` `…/errors/gone`; API-MCP-006/007, an expired consent request) |
 | 429 | Rate limited (security.md#api-hardening): `type` `…/errors/rate-limited`, extension `retryAfterSeconds` (integer ≥ 1), and a `Retry-After` header with the same seconds |
 | 500 | Unexpected error. No internals leaked. Logged (NestJS default logger). |
 
@@ -129,3 +130,5 @@ RFC 9457 Problem Details (`application/problem+json`):
 - 2026-10-25: `/favicon.ico` served as a static file; the Swagger UI uses it (T-0110).
 - 2026-11-01: `429` `rate-limited` with `retryAfterSeconds` and `Retry-After`; every rate-limited operation documents `429` (feat-api-rate-limit). Back to `review`.
 - 2026-11-01: Approved by the owner with feat-api-rate-limit.
+- 2026-11-21: `410` `…/errors/gone` (feat-mcp-oauth-api). Back to `review`.
+- 2026-11-21: Approved by the owner.

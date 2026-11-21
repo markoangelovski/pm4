@@ -3,8 +3,8 @@ id: api-endpoints
 title: API Endpoints
 status: review
 owner: Marko Angelovski
-last_updated: 2026-11-20
-related: [api-conventions, api-data-model, req-auth, req-projects, req-tasks, req-time-logs, req-reporting, req-integrations, req-notes]
+last_updated: 2026-11-21
+related: [api-conventions, api-data-model, req-auth, req-projects, req-tasks, req-time-logs, req-reporting, req-integrations, req-notes, req-agents]
 ---
 
 # API Endpoints
@@ -92,6 +92,17 @@ defines its request, response and errors. Paths are relative to `/api/v1` unless
 | API-INT-017 | GET | `/integrations/pmspa/tasks` → `{items: PmspaTask[]}` (live, every task, for **Expand all**) | FR-INT-007, FR-INT-015 | specified |
 | API-INT-018 | GET | `/integrations/pmspa/days/details?dates=` → `{items: PmspaDay[]}` (live, the given days with their events) | FR-INT-007, FR-INT-015 | specified |
 | API-INT-019 | POST | `/integrations/pmspa/candidates` `PmspaCandidatesInput` → `PmspaCandidates` (live, **Link to existing** lists) | FR-INT-008, FR-INT-012, FR-INT-015 | specified |
+| API-MCP-001 | GET | `/.well-known/oauth-protected-resource/mcp` (root) → Protected Resource Metadata | FR-MCP-002 | specified |
+| API-MCP-002 | GET | `/.well-known/oauth-authorization-server` (root) → Authorization Server Metadata | FR-MCP-002 | specified |
+| API-MCP-003 | POST | `/oauth/register` (root) → a DCR client | FR-MCP-003 | specified |
+| API-MCP-004 | GET | `/oauth/authorize` (root) → 302 web `/auth/consent?request=` (or `?error=`, or the app with `error=`) | FR-MCP-003, FR-MCP-004 | specified |
+| API-MCP-005 | GET | `/oauth/consent/{requestId}` (bearer) → `ConsentRequest` | FR-MCP-005 | specified |
+| API-MCP-006 | POST | `/oauth/consent/{requestId}/allow` (bearer) → `ConsentResult` | FR-MCP-005 | specified |
+| API-MCP-007 | POST | `/oauth/consent/{requestId}/deny` (bearer) → `ConsentResult` | FR-MCP-005 | specified |
+| API-MCP-008 | POST | `/oauth/token` (root, form) → MCP tokens | FR-MCP-006 | specified |
+| API-MCP-009 | POST | `/oauth/revoke` (root, form) | FR-MCP-006 | specified |
+| API-MCP-010 | GET | `/connected-apps` (bearer) → `{items: ConnectedApp[]}` | FR-MCP-009 | specified |
+| API-MCP-011 | DELETE | `/connected-apps/{id}` (bearer) | FR-MCP-009 | specified |
 
 ## Endpoint details
 
@@ -135,7 +146,7 @@ Returns the API's own releases, newest first, from the `changelog.json` that `ap
 - **`TokenPair`:** `{ accessToken: string, accessTokenExpiresAt: string (ISO 8601 UTC), refreshToken: string }`.
   The refresh token is opaque: 32 random bytes, base64url (43 chars).
 - **Protection (OQ-066):** every endpoint needs a valid access token unless marked public: `/health`,
-  API-SYS-003, API-SYS-004, API-AUTH-001…005. A missing, malformed, badly signed or expired token → `401`
+  API-SYS-003, API-SYS-004, API-AUTH-001…005, and the agent-access endpoints API-MCP-001…004, 008, 009. A missing, malformed, badly signed or expired token → `401`
   `…/errors/unauthorized`.
 - **Valid `returnTo` (API rule, security.md):** a string of 1–2048 chars that starts with `/`, doesn't start
   with `//`, and has no `\` and no control characters. The web applies its stricter `/app` rule on top.
@@ -802,6 +813,134 @@ Reads PMSPA once per list (OQ-204): `project` = the account's projects, `task` =
 `groupId` = the PMSPA project of a task (null for a project), as a preview row's.
 **Errors:** 400 validation · 401 · *PMSPA errors*
 
+### Shared agent-access shapes (req-agents, ADR-0013)
+The OAuth endpoints the **apps** call (API-MCP-001…004, 008, 009) live at the API host's root, outside `/api/v1`, and
+follow the OAuth specs, not conventions.md: their errors are `{error, error_description?}` JSON (RFC 6749 §5.2,
+RFC 7591 §3.2.2) with `Cache-Control: no-store`, never Problem Details. The endpoints the **web app** calls
+(API-MCP-005…007, 010, 011) are ordinary `/api/v1` endpoints with the web's bearer token and Problem Details. CORS is
+unchanged (the web origin only), so browser-based MCP clients aren't supported.
+- **Origins:** `ISSUER` = `API_PUBLIC_URL` (environments.md); `RESOURCE` = `ISSUER + "/mcp"`.
+- **`OAuthScope`:** `"pm4:read" | "pm4:write"`; `pm4:write` includes read (OQ-289). A grant stores one value:
+  `read` or `write`. Scope strings are space-separated; a request with both, or with `pm4:write` alone, is `write`.
+- **MCP access token:** a JWT, HS256, signed with the **MCP key** = HKDF-SHA256(`JWT_ACCESS_SECRET`, salt empty,
+  info `"pm4-mcp"`, 32 bytes) (OQ-301), never with `JWT_ACCESS_SECRET` itself, so web and MCP tokens never verify as
+  each other. Claims: `iss` = `ISSUER`, `aud` = `RESOURCE`, `sub` = user id, `gid` = grant id, `client_id`,
+  `scope` (`"pm4:read"` or `"pm4:read pm4:write"`), `iat`, `exp` (`iat` + `ACCESS_TOKEN_TTL`). Valid at `/mcp` only
+  (feat-mcp-tools-api), and only while `mcp:revoked:<gid>` doesn't exist (OQ-302).
+- **MCP refresh token:** opaque, 32 random bytes, base64url, rotated on every use with reuse detection, one family
+  per grant (security.md *Agent access*). Lifetime `REFRESH_TOKEN_TTL`, sliding (OQ-291).
+- **Client ID:** a **CIMD client** has an `https://` URL as `client_id` (its Client ID Metadata Document); a **DCR client**
+  has the UUID API-MCP-003 issued. **Client ID host:** the URL's host for CIMD; the host of the first redirect URI for DCR.
+- **Redirect URI match (OQ-295):** exact string match against the client's `redirect_uris`, except a **loopback**
+  URI (`http` with host `127.0.0.1`, `[::1]` or `localhost`), which matches a registered loopback URI with the same
+  scheme, host, path and query on **any port** (RFC 8252 §7.3).
+- **`OAuthClient`:** `{ name: string, clientIdHost: string }`.
+- **`ConsentRequest`:** `{ id: string, client: OAuthClient, redirectHost: string` (host, with the port for a loopback
+  address)`, loopback: boolean, scopes: OAuthScope[]` (what was asked; `["pm4:read","pm4:write"]` for `write`)`,
+  expiresAt: string` (ISO 8601 UTC)`, existingGrant: { connectedAt: string } | null }`.
+- **`ConsentResult`:** `{ redirectUrl: string }`: where the web sends the browser next.
+- **`ConnectedApp`:** `{ id: string` (grant id)`, client: OAuthClient, scopes: OAuthScope[], connectedAt: string,
+  lastUsedAt: string | null` (the last token issued or refreshed; `null` = none yet)`, expired: boolean }`. `expired`:
+  the grant's refresh family no longer exists (30 days without use, or a reused refresh token), so the app has to
+  connect again (OQ-305).
+
+### API-MCP-001: Protected Resource Metadata
+`GET /.well-known/oauth-protected-resource/mcp` (root, also `GET /.well-known/oauth-protected-resource`) · Auth: none ·
+Implements: FR-MCP-002
+**200:** `{ resource: RESOURCE, authorization_servers: [ISSUER], scopes_supported: ["pm4:read","pm4:write"],
+bearer_methods_supported: ["header"], resource_name: "PM4" }`, `Cache-Control: public, max-age=3600`. Not rate limited.
+
+### API-MCP-002: Authorization Server Metadata
+`GET /.well-known/oauth-authorization-server` (root) · Auth: none · Implements: FR-MCP-002
+**200:** `{ issuer: ISSUER, authorization_endpoint: ISSUER+"/oauth/authorize", token_endpoint: ISSUER+"/oauth/token",
+revocation_endpoint: ISSUER+"/oauth/revoke", registration_endpoint: ISSUER+"/oauth/register",
+scopes_supported: ["pm4:read","pm4:write"], response_types_supported: ["code"],
+grant_types_supported: ["authorization_code","refresh_token"], code_challenge_methods_supported: ["S256"],
+token_endpoint_auth_methods_supported: ["none"], revocation_endpoint_auth_methods_supported: ["none"],
+client_id_metadata_document_supported: true }`, `Cache-Control: public, max-age=3600`. Not rate limited.
+
+### API-MCP-003: Register a client (DCR)
+`POST /oauth/register` (root, JSON, RFC 7591) · Auth: none · Implements: FR-MCP-003 (OQ-290)
+**Request body:** `client_name` (string, trimmed 1–100), `redirect_uris` (1–10 strings, each ≤ 2000 chars, an absolute
+`https://` URL or a loopback `http://` URL, no fragment), optional `token_endpoint_auth_method` (only `"none"`),
+`grant_types` (subset of `authorization_code`, `refresh_token`), `response_types` (only `["code"]`). Other fields are ignored.
+**201:** `{ client_id, client_id_issued_at` (seconds)`, client_name, redirect_uris, token_endpoint_auth_method: "none",
+grant_types: ["authorization_code","refresh_token"], response_types: ["code"] }`. Stores an `oauth_clients` row, and in the
+same transaction deletes every client older than 30 days that no grant names (OQ-290).
+**Errors:** 400 `invalid_redirect_uri` (a bad redirect URI) · 400 `invalid_client_metadata` (anything else) ·
+429 (`oauth-register`, 10 / hour per IP, OQ-297).
+
+### API-MCP-004: Authorize
+`GET /oauth/authorize?response_type=&client_id=&redirect_uri=&code_challenge=&code_challenge_method=&scope=&state=&resource=`
+(root) · Auth: none · Implements: FR-MCP-003, FR-MCP-004 · A browser navigation: always **302**.
+Checked in this order:
+1. **Client:** `client_id` is a CIMD URL (fetched per security.md *Agent access*) or a known DCR UUID. Missing, unknown,
+   unfetchable or invalid → `<WEB_APP_URL>/auth/consent?error=invalid_client`.
+2. **Redirect URI:** `redirect_uri` is present and matches the client's (above). Otherwise →
+   `<WEB_APP_URL>/auth/consent?error=invalid_redirect_uri`.
+3. From here an error goes back to the app: `redirect_uri` + `error=` (+ `state=` when given):
+   `response_type` isn't `code` → `unsupported_response_type`; `code_challenge` missing or not 43–128 characters of
+   `[A-Za-z0-9-._~]`, or `code_challenge_method` isn't `S256` → `invalid_request`; `scope` has a value other than
+   `pm4:read`/`pm4:write` → `invalid_scope` (no `scope` = `write`); `resource` given and not exactly `RESOURCE` →
+   `invalid_target`; `state` longer than 500 characters → `invalid_request`.
+4. **Success:** stores the pending request `oauth:request:<id>` (id = 32 random bytes, base64url) with `expiresAt` =
+   now + 10 min and a Redis TTL of 1 hour, then → `<WEB_APP_URL>/auth/consent?request=<id>`.
+**Rate limited** (`oauth-authorize`, 30 / min per IP): `429` Problem Details, no redirect.
+
+### API-MCP-005: Get a consent request
+`GET /oauth/consent/{requestId}` · Auth: bearer · Implements: FR-MCP-005
+**200:** `ConsentRequest` for the signed-in user (`existingGrant` = their grant for this `client_id`). Also after
+`expiresAt`, so the page can say it expired.
+**Errors:** 401 · 404 unknown, already decided, or past its 1-hour Redis TTL
+
+### API-MCP-006: Allow
+`POST /oauth/consent/{requestId}/allow` · Auth: bearer · Implements: FR-MCP-005 (OQ-293)
+**200:** `ConsentResult` with `redirectUrl` = `redirect_uri` + `code=` (+ `state=`). Consumes the request (single use).
+Replaces any grant the user has for this `client_id` (deleted with its tokens, as API-MCP-011) by a new one: a new
+`oauth_grants` row, its refresh family (no token yet, `lastUsedAt` null), and an authorization code
+`oauth:code:<h(code)>` (single use, TTL 60 s) bound to the grant, client, `redirect_uri`, `code_challenge` and scope.
+**Errors:** 401 · 404 as API-MCP-005 · 410 `…/errors/gone` past `expiresAt` (the request is deleted)
+
+### API-MCP-007: Deny
+`POST /oauth/consent/{requestId}/deny` · Auth: bearer · Implements: FR-MCP-005
+**200:** `ConsentResult` with `redirectUrl` = `redirect_uri` + `error=access_denied` (+ `state=`). Consumes the request;
+no grant changes.
+**Errors:** 401 · 404 · 410 as API-MCP-006
+
+### API-MCP-008: Token
+`POST /oauth/token` (root, `application/x-www-form-urlencoded`) · Auth: none (public clients) · Implements: FR-MCP-006
+- **`grant_type=authorization_code`**: `code`, `redirect_uri`, `client_id`, `code_verifier`, optional `resource`.
+  Consumes the code (single use, also when the request then fails). Fails with `invalid_grant` when the code is
+  unknown or expired, `client_id` or `redirect_uri` differ from the code's, `BASE64URL(SHA256(code_verifier))` isn't the
+  `code_challenge`, or the grant no longer exists; `invalid_target` when `resource` is given and isn't `RESOURCE`.
+- **`grant_type=refresh_token`**: `refresh_token`, `client_id`, optional `scope` and `resource` (ignored when within the
+  grant). Rotates the token (reuse → the family is deleted and `mcp:revoked:<gid>` set; the grant shows `expired`).
+  `invalid_grant` when the token isn't live, `client_id` isn't the grant's, the grant or user no longer exists, or the
+  allow-list is set and the user's email isn't on it (then the grant is deleted as API-MCP-011).
+- **200:** `{ access_token, token_type: "Bearer", expires_in` (seconds)`, refresh_token, scope }`, `Cache-Control: no-store`.
+  Updates the family's `lastUsedAt` and slides its TTL.
+- **Errors (400):** `invalid_request` (a missing or repeated parameter), `invalid_grant`, `invalid_target`,
+  `unsupported_grant_type`; `invalid_client` (401) when `client_id` is missing. 429 (`oauth-token`, 30 / min per IP).
+
+### API-MCP-009: Revoke
+`POST /oauth/revoke` (root, form, RFC 7009) · Auth: none · Implements: FR-MCP-006
+**Request:** `token`, optional `token_type_hint`, `client_id`. A live or rotated refresh token whose grant belongs to
+`client_id`: the grant is deleted as API-MCP-011 (the app disconnected itself). Anything else (an access token, an
+unknown token, another client's token) changes nothing.
+**200:** empty, always. **Errors:** 400 `invalid_request` when `token` is missing · 429 (`oauth-token`)
+
+### API-MCP-010: List connected apps
+`GET /connected-apps` · Auth: bearer · Implements: FR-MCP-009 (OQ-305)
+**200:** `{ items: ConnectedApp[] }`: the user's grants, newest `connectedAt` first. `lastUsedAt` and `expired` come from
+the grants' Redis families (one `MGET`), not from Postgres.
+**Errors:** 401
+
+### API-MCP-011: Revoke a connected app
+`DELETE /connected-apps/{id}` · Auth: bearer · Implements: FR-MCP-009
+**204:** deletes the grant row, its refresh family and live refresh token, and sets `mcp:revoked:<id>` (TTL
+`ACCESS_TOKEN_TTL`), so its access tokens stop working at `/mcp` at once (OQ-302).
+**Errors:** 401 · 404 not the user's grant (or unknown)
+
 ## Open questions
 None.
 
@@ -851,3 +990,4 @@ None.
 - 2026-11-07: API-SYS-004 `GET /changelog`: the API's releases, public (OQ-270…272, feat-shell-documentation).
 - 2026-11-12: API-USR-003 returns and matches no emails (OQ-277); new API-USR-004 `DELETE /me` (FR-AUTH-008, OQ-280, OQ-281) (feat-acct-privacy).
 - 2026-11-20: API-TLOG-001 takes a required `from`/`to` (at most 366 days); the list, totals and `days` cover only that range (OQ-286, feat-tlog-logged-range).
+- 2026-11-21: Agent access: API-MCP-001…011 and *Shared agent-access shapes* (req-agents, ADR-0013, OQ-301…305, feat-mcp-oauth-api).

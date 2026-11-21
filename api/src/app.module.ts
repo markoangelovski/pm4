@@ -14,6 +14,7 @@ import { PmspaModule } from "./integrations/pmspa/pmspa.module.js";
 import { NotesModule } from "./notes/notes.module.js";
 import { ChangelogModule } from "./changelog/changelog.module.js";
 import { AccountModule } from "./account/account.module.js";
+import { OAuthModule } from "./oauth/oauth.module.js";
 
 @Module({
   imports: [
@@ -30,7 +31,8 @@ import { AccountModule } from "./account/account.module.js";
     PmspaModule,
     NotesModule,
     ChangelogModule,
-    AccountModule
+    AccountModule,
+    OAuthModule
   ],
   providers: [ProblemDetailsFilter]
 })
