@@ -64,13 +64,14 @@ proto/                         # UI prototype code, mirroring this tree; never i
   precise keys they affect (e.g. creating a log invalidates that day's logs, the linked task/project details, and reports).
 - Optimistic updates for task status changes and log edits, with rollback on error.
 - Defaults: `staleTime` 30 s, `retry` 1 for idempotent queries, no retry for mutations. A `429` is never retried. `refetchOnWindowFocus` stays on.
-- A `429` (rate limited) gets one shared toast from the shell (SCR-007, `features/system/rate-limit.ts`). A failed API call's
+- A `429` (rate limited) gets one shared toast from the shell (SCR-007, `features/system/rate-limit.ts`), and from the consent page (SCR-090, OQ-312), which is outside the shell. A failed API call's
   toast goes through `toastError(error, message)` from that file instead of `toast.error`, so it is skipped for a `429` (OQ-256).
 - `lib/api` attaches the access token (not to the public endpoints). On a 401 it runs a single shared
   refresh, then retries once. If the refresh is **rejected** (`401`/`400`), it signs out (removes the stored
   refresh token), then replaces the URL with
   `landingHref(window.location.pathname + window.location.search)`, i.e. `/?returnTo=<current path+query>`
-  (OQ-049, routing.md). Only a user-initiated sign-out goes to `/auth/sign-in`. A refresh that can't reach
+  (OQ-049, routing.md); on the consent page, `signInHref(…)` instead (OQ-298). Only a user-initiated sign-out (and
+  the consent page's guard) goes to `/auth/sign-in`. A refresh that can't reach
   the API keeps the session (OQ-067).
 
 ## Forms (ADR-0009)
@@ -125,3 +126,4 @@ proto/                         # UI prototype code, mirroring this tree; never i
 - 2026-11-20: *Forms*: unsaved drafts in the form dialogs (OQ-284, OQ-285, feat-shell-form-drafts). Back to `review`.
 - 2026-11-20: Approved by the owner with feat-shell-form-drafts.
 - 2026-11-21: *Forms*: deleting a project or task unlinks it from the other drafts (OQ-310, prototype `4e62337`, T-0180).
+- 2026-11-21: The consent page's guard goes to sign-in, and it shows the rate-limit toast (OQ-298, OQ-312, feat-mcp-web). Back to `review`.

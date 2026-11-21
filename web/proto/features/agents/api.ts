@@ -7,15 +7,11 @@ import {
 } from "@tanstack/react-query";
 import { apiClient } from "@/proto/mock/client";
 import { unwrap, unwrapVoid } from "@/lib/api/problem";
-import type {
-  ConnectedAppDto,
-  ConsentRequestDto,
-  ConsentResultDto
-} from "./proposed-types";
+import type { components } from "@/lib/api/schema";
 
-export type ConsentRequest = ConsentRequestDto;
-export type ConsentResult = ConsentResultDto;
-export type ConnectedApp = ConnectedAppDto;
+export type ConsentRequest = components["schemas"]["ConsentRequestDto"];
+export type ConsentResult = components["schemas"]["ConsentResultDto"];
+export type ConnectedApp = components["schemas"]["ConnectedAppDto"];
 
 export const agentKeys = {
   all: ["agents"] as const,

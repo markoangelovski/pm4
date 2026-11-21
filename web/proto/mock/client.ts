@@ -3,7 +3,6 @@
 // `window.fetch`. Prototype twins of `features/<domain>/api.ts` import `apiClient` from here.
 import createClient from "openapi-fetch";
 import type { components, paths } from "@/lib/api/schema";
-import type { ProposedPaths } from "@/proto/features/agents/proposed-types";
 import type { TimeLog } from "@/proto/features/time/types";
 import type {
   BookingLog,
@@ -705,7 +704,7 @@ function integrations(
   return notFound();
 }
 
-/** The consent page's request, Allow and Deny (FR-MCP-005, proposed-types.ts). */
+/** The consent page's request, Allow and Deny (FR-MCP-005). */
 function consent(method: string, [requestId, action]: string[]): Response {
   const s = getMockState();
   const request = s.consentRequests.find((r) => r.id === requestId);
@@ -745,7 +744,7 @@ function consent(method: string, [requestId, action]: string[]): Response {
   return json({ redirectUrl: via(`${back}?code=mock-code&state=mock-state`) });
 }
 
-/** Settings → Connected apps (FR-MCP-009, proposed-types.ts). */
+/** Settings → Connected apps (FR-MCP-009). */
 function connectedApps(method: string, id: string | undefined): Response {
   const s = getMockState();
   if (method === "GET" && !id)
@@ -1140,7 +1139,7 @@ const OTHER_USERS: components["schemas"]["UserSummaryDto"][] = [
 ];
 
 /** Same surface as `apiClient` in `lib/api/client`; the base URL is never requested. */
-export const apiClient = createClient<paths & ProposedPaths>({
+export const apiClient = createClient<paths>({
   baseUrl: "http://proto.localhost",
   fetch: mockFetch
 });

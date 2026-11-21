@@ -35,6 +35,7 @@ and the client reads `id` with `useSearchParams` (inside `<Suspense>`).
 | `/privacy` | SCR-080 Privacy policy (FR-LEGAL-001) | public |
 | `/terms` | SCR-081 Terms (FR-LEGAL-002) | public |
 | `/auth/callback?code=&returnTo=` | SCR-002 OAuth callback (token exchange, then redirect) | public |
+| `/auth/consent?request=` · `/auth/consent?error=` | SCR-090 Consent (FR-MCP-005, OQ-298): `?request=` needs a session (signed out → `/auth/sign-in?returnTo=<this page>`); `?error=`, or no `request`, needs none | `?request=`: required |
 | `/app?from=&to=` | SCR-010 Dashboard (count tiles, workday chart, worked / target / booked, running totals, hours by project); `from`/`to` absent, invalid or over 366 days apart = this month | required |
 | `/app/projects?q=&sort=&page=` | SCR-020 Project list | required |
 | `/app/project?id=&status=&q=&sort=&page=` | SCR-021 Project detail (details, task statistics, tasks) | required |
@@ -45,7 +46,7 @@ and the client reads `id` with `useSearchParams` (inside `<Suspense>`).
 | `/app/notes?tab=notes\|todos&show=&q=&sort=&from=&to=&page=` | SCR-070 Notes (FR-NOTE-001/002); `tab` absent = `notes`; `show` = `unlinked` (General, the default), `all` or a project id (unknown = General); `sort` absent = `updatedAt:desc`; `from`/`to` absent = All time, invalid = this month; `page` only on the Notes tab. The toolbar state is shared by both tabs (OQ-232) | required |
 | `/app/user-profile` | SCR-051 Profile (Google identity, sign out of all devices) | required |
 | `/app/documentation?tab=versioning\|changelog\|api-docs&app=web\|api` | SCR-053 Documentation; `tab` absent = `versioning`; `app` (Changelog tab) absent = `web` | required |
-| `/app/settings?tab=` | SCR-050 Settings (tabs; `tab` absent = `user`: daily target, time zone; `integrations`: SCR-052, FR-INT-001) | required |
+| `/app/settings?tab=` | SCR-050 Settings (tabs; `tab` absent = `user`: daily target, time zone; `integrations`: SCR-052, FR-INT-001; `connected-apps`: SCR-054, FR-MCP-009) | required |
 | `/app/connectors/pmspa?tab=projects\|time&week=` | SCR-060 PMSPA connector (FR-INT-007); `tab` absent = `projects`; `week` = any date of the week shown on the Time tab (Monday-based), absent = this week | required |
 | `/proto/app/**` | UI prototype twins of the `/app/**` routes (same params). **Dev server on localhost only**, not in the build: in production it's the not-found page (`prototype.md`, ADR-0012) | mocked (always signed in) |
 
@@ -83,7 +84,7 @@ and the client reads `id` with `useSearchParams` (inside `<Suspense>`).
 - The sign-in screen passes `returnTo` to the API (API-AUTH-001), which round-trips it to `/auth/callback`.
   After the token exchange, the callback replaces the URL with `returnTo`, or with **`/app`** when there is none.
 - **Validation.** Every hop (landing, sign-in, callback) validates `returnTo` with the same rule, and
-  treats an invalid value as absent: it must be a **same-origin relative path that is `/app` or starts with `/app/`**, at most
+  treats an invalid value as absent: it must be a **same-origin relative path that is `/app`, starts with `/app/`, or is `/auth/consent`** (with its query; OQ-298), at most
   2048 characters, starting with a single `/` and containing no backslash or control character. The
   check runs on the parsed, normalized URL (so `/app/../auth/` is rejected). The hash is dropped, and a trailing slash is removed (`/app/projects/` → `/app/projects`).
   An invalid value is never echoed into a link, and the page doesn't rewrite its own URL. Details and
@@ -91,6 +92,9 @@ and the client reads `id` with `useSearchParams` (inside `<Suspense>`).
 - **A session that ends while the user is inside `/app/**`** (a failed refresh after a 401: expired or
   revoked, "Sign out of all devices" on another device, allow-list removal) follows the same rule: the
   client removes the stored refresh token, then replaces the URL with `/?returnTo=<current path+query>` (OQ-049).
+- **The consent page** (`/auth/consent?request=`, SCR-090) guards itself with the same session restore, but a signed-out
+  visitor (or a session that ends there) goes straight to `/auth/sign-in?returnTo=<path+query>`, not to the landing
+  page; sign-in then returns to the request (OQ-298). Its **Use another account** signs out to the same target (OQ-299).
 - A user-initiated **Sign out** lands on the sign-in screen `/auth/sign-in`, with no `returnTo` (FR-AUTH-004).
 - Opening `/auth/sign-in` **while signed in** (a stored refresh token) replaces the URL with a valid
   `returnTo`, else `/app`, like "Go to app" (OQ-070).
@@ -140,3 +144,4 @@ and the client reads `id` with `useSearchParams` (inside `<Suspense>`).
 - 2026-11-09: `/app/time` has `view=timeline`, the default (FR-TLOG-023, feat-tlog-timeline). Back to `review`.
 - 2026-11-12: Public routes `/privacy` and `/terms` (SCR-080, SCR-081, OQ-275).
 - 2026-11-21: `/app/documentation` gains `tab=api-docs` (SCR-053, feat-shell-api-docs).
+- 2026-11-21: `/auth/consent` (SCR-090): its own guard to sign-in, and `returnTo` accepts it (OQ-298, OQ-299); `/app/settings?tab=connected-apps` (SCR-054). Back to `review` (feat-mcp-web).

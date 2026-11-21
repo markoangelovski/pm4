@@ -1,4 +1,7 @@
-import type { OAuthScope } from "./proposed-types";
+import type { components } from "@/lib/api/schema";
+
+export type OAuthScope =
+  components["schemas"]["ConnectedAppDto"]["scopes"][number];
 
 /** What each scope lets an app do, in plain words (FR-MCP-005, FR-MCP-008). `pm4:write` includes read. */
 export const SCOPE_TEXT: Record<OAuthScope, string> = {

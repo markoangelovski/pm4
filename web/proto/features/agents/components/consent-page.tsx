@@ -33,9 +33,11 @@ import {
   useDenyConsent,
   type ConsentRequest
 } from "../api";
-import type { ConsentErrorCode } from "../proposed-types";
 import { scopeLines } from "../scopes";
 import { AppMark } from "./app-mark";
+
+/** The `?error=` the API sends the browser to the consent page with (FR-MCP-003, FR-MCP-004). */
+type ConsentErrorCode = "invalid_client" | "invalid_redirect_uri";
 
 /**
  * The consent page (FR-MCP-005) inside `AuthFrame`: `?request=<id>` shows the pending authorization request with
@@ -61,7 +63,9 @@ function ConsentRequestView({ requestId }: { requestId: string }) {
   } = useConsentRequest(requestId);
   const expired = useExpired(request?.expiresAt);
   const [gone, setGone] = useState(false);
+  const [invalid, setInvalid] = useState(false);
 
+  if (invalid) return <ConsentError code={null} />;
   if (isError && !request) {
     if (isApiError(error, 404)) return <ConsentError code={null} />;
     return (
@@ -79,7 +83,13 @@ function ConsentRequestView({ requestId }: { requestId: string }) {
   }
   if (isPending || !request) return <ConsentSkeleton />;
   if (expired || gone) return <ConsentExpired request={request} />;
-  return <ConsentForm request={request} onExpired={() => setGone(true)} />;
+  return (
+    <ConsentForm
+      request={request}
+      onExpired={() => setGone(true)}
+      onInvalid={() => setInvalid(true)}
+    />
+  );
 }
 
 /** True once `expiresAt` has passed; flips by itself at that moment. */
@@ -112,10 +122,12 @@ function Heading({ title, lead }: { title: string; lead?: React.ReactNode }) {
 
 function ConsentForm({
   request,
-  onExpired
+  onExpired,
+  onInvalid
 }: {
   request: ConsentRequest;
   onExpired: () => void;
+  onInvalid: () => void;
 }) {
   const allow = useAllowConsent();
   const deny = useDenyConsent();
@@ -130,6 +142,7 @@ function ConsentForm({
       },
       onError: (e) => {
         if (isApiError(e, 410)) onExpired();
+        else if (isApiError(e, 404)) onInvalid();
         else toastError(e, "Couldn't send your answer. Try again.");
       }
     });
@@ -344,7 +357,7 @@ const ERRORS: Record<
 
 /** FR-MCP-003/004: an untrusted client or redirect, or an unknown request: never redirects to the app. */
 function ConsentError({ code }: { code: ConsentErrorCode | null }) {
-  const e = (code && ERRORS[code]) ?? ERRORS.unknown;
+  const e = code && Object.hasOwn(ERRORS, code) ? ERRORS[code] : ERRORS.unknown;
   const Icon = code === "invalid_redirect_uri" ? ShieldAlert : CircleAlert;
   return (
     <>
