@@ -5,6 +5,10 @@ import type { components } from "@/lib/api/schema";
 import { today } from "@/lib/time";
 import type { ProjectRef, TaskRef, TimeLog } from "@/proto/features/time/types";
 import type { NoteDto, TodoDto } from "@/proto/features/notes/types";
+import type {
+  ConnectedAppDto,
+  ConsentRequestDto
+} from "@/proto/features/agents/proposed-types";
 
 import type { Project } from "@/proto/features/projects/api";
 import type { Task } from "@/proto/features/tasks/api";
@@ -612,3 +616,108 @@ export const seedTodos = (): TodoDto[] => [
     task: deletedRef("Security audit")
   }
 ];
+
+/** An instant `minutes` from now (negative = in the past). */
+const inMinutes = (minutes: number) =>
+  new Date(Date.now() + minutes * 60_000).toISOString();
+
+/** A connected app (grant) with the app's client id, which the consent mock matches on. */
+export type MockGrant = ConnectedAppDto & { clientId: string };
+/** A pending consent request with the app's client id. */
+export type MockConsentRequest = ConsentRequestDto & { clientId: string };
+
+const CLAUDE = {
+  clientId: "https://claude.ai/oauth/mcp-client.json",
+  client: { name: "Claude", clientIdHost: "claude.ai" }
+};
+const CLAUDE_CODE = {
+  clientId: "https://claude.ai/oauth/claude-code-client.json",
+  client: { name: "Claude Code", clientIdHost: "claude.ai" }
+};
+const OPENCODE = {
+  clientId: "https://opencode.ai/oauth/client.json",
+  client: { name: "OpenCode", clientIdHost: "opencode.ai" }
+};
+
+/** Settings → Connected apps: a typical app, one used yesterday, and a long name that was never used. */
+export function seedGrants(): MockGrant[] {
+  return [
+    {
+      ...CLAUDE,
+      id: "g-claude",
+      scopes: ["pm4:write"],
+      connectedAt: inMinutes(-40 * 24 * 60),
+      lastUsedAt: inMinutes(-125)
+    },
+    {
+      ...OPENCODE,
+      id: "g-opencode",
+      scopes: ["pm4:write"],
+      connectedAt: inMinutes(-12 * 24 * 60),
+      lastUsedAt: inMinutes(-26 * 60)
+    },
+    {
+      clientId: "https://timesheets.internal.example.com/oauth/client.json",
+      client: {
+        name: "Weekly timesheet summariser for the finance team (staging)",
+        clientIdHost: "timesheets.internal.example.com"
+      },
+      id: "g-timesheets",
+      scopes: ["pm4:read"],
+      connectedAt: inMinutes(-3 * 24 * 60),
+      lastUsedAt: null
+    }
+  ];
+}
+
+/** The consent page's states, by request id (`/proto/auth/consent?request=<id>`). */
+export function seedConsentRequests(): MockConsentRequest[] {
+  const pending = { expiresAt: inMinutes(10), existingGrant: null };
+  return [
+    {
+      ...CLAUDE_CODE,
+      ...pending,
+      id: "normal",
+      clientId: "https://claude.ai/oauth/claude-code-web.json",
+      client: { name: "Claude Code on the web", clientIdHost: "claude.ai" },
+      redirectHost: "claude.ai",
+      loopback: false,
+      scopes: ["pm4:write"]
+    },
+    {
+      ...pending,
+      id: "read-only",
+      clientId: "https://reports.example.com/pm4-client.json",
+      client: { name: "Report Builder", clientIdHost: "reports.example.com" },
+      redirectHost: "reports.example.com",
+      loopback: false,
+      scopes: ["pm4:read"]
+    },
+    {
+      ...CLAUDE_CODE,
+      ...pending,
+      id: "loopback",
+      redirectHost: "127.0.0.1:53682",
+      loopback: true,
+      scopes: ["pm4:write"]
+    },
+    {
+      ...OPENCODE,
+      ...pending,
+      id: "connected",
+      redirectHost: "opencode.ai",
+      loopback: false,
+      scopes: ["pm4:write"],
+      existingGrant: { connectedAt: inMinutes(-12 * 24 * 60) }
+    },
+    {
+      ...CLAUDE,
+      id: "expired",
+      redirectHost: "claude.ai",
+      loopback: false,
+      scopes: ["pm4:write"],
+      expiresAt: inMinutes(-5),
+      existingGrant: null
+    }
+  ];
+}

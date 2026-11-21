@@ -27,7 +27,13 @@ export function MockSignInState() {
   );
 }
 
+/** Opens `?returnTo=` when it's a prototype path (e.g. back to the consent page), else the app. */
 export function MockGoogleButton() {
   const router = useRouter();
-  return <GoogleButton onClick={() => router.push(routes.app.dashboard)} />;
+  const returnTo = useSearchParams().get("returnTo");
+  const to =
+    returnTo?.startsWith("/proto/") && !returnTo.startsWith("//")
+      ? returnTo
+      : routes.app.dashboard;
+  return <GoogleButton onClick={() => router.push(to)} />;
 }

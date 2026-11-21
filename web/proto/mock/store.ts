@@ -6,6 +6,10 @@ import type { TimeLog } from "@/proto/features/time/types";
 import type { NoteDto, TodoDto } from "@/proto/features/notes/types";
 import {
   MOCK_USER,
+  seedConsentRequests,
+  seedGrants,
+  type MockConsentRequest,
+  type MockGrant,
   seedNotes,
   seedProjects,
   seedTasks,
@@ -37,6 +41,10 @@ export interface MockState {
   bookings: Record<string, BookingDto[]>;
   notes: NoteDto[];
   todos: TodoDto[];
+  /** Connected apps (FR-MCP-009), most recently connected first. */
+  grants: MockGrant[];
+  /** Pending consent requests by id (FR-MCP-005). */
+  consentRequests: MockConsentRequest[];
   seq: number;
 }
 
@@ -48,6 +56,8 @@ let state: MockState = {
   ...seedTime(),
   notes: seedNotes(),
   todos: seedTodos(),
+  grants: seedGrants(),
+  consentRequests: seedConsentRequests(),
   seq: 10000
 };
 
@@ -170,6 +180,9 @@ export const mock = {
   },
   setTodos(todos: TodoDto[]) {
     set({ todos });
+  },
+  setGrants(grants: MockGrant[]) {
+    set({ grants });
   },
   setStart(date: string, minute: number) {
     set({ starts: { ...state.starts, [date]: minute } });
