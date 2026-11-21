@@ -23,6 +23,8 @@ export function AuthGuard({
   children
 }: {
   children: React.ReactNode;
+  /** Where a signed-out visitor goes, from `window.location.pathname + search` (default: the landing page). */
+  signedOutHref?: (currentPathAndQuery: string) => string;
 }): React.JSX.Element {
   const router = useRouter();
   const queryClient = useQueryClient();

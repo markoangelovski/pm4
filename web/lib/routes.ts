@@ -3,6 +3,7 @@ export const routes = {
   landing: "/",
   signIn: "/auth/sign-in",
   authCallback: "/auth/callback",
+  consent: "/auth/consent",
   privacy: "/privacy",
   terms: "/terms",
   app: {
