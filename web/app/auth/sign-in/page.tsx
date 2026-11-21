@@ -1,8 +1,6 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
-import Link from "next/link";
-import { Card } from "@/components/ui/card";
-import { routes } from "@/lib/routes";
+import { SignInPage } from "@/features/auth/components/sign-in-page";
 import { SignInState } from "@/features/auth/components/sign-in-state";
 import SocialButtons from "../authforms/social-buttons";
 
@@ -10,51 +8,16 @@ export const metadata: Metadata = {
   title: "Sign in"
 };
 
-export default function SignInPage() {
+/** The sign-in page (SCR-001), outside the app shell. */
+export default function SignInRoute() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-accent px-4">
-      <Card className="w-full max-w-md border-none shadow-lg p-6">
-        <div className="mx-auto w-fit">
-          <Link
-            href={routes.landing}
-            className="text-lg font-semibold text-foreground"
-          >
-            PM4
-          </Link>
-        </div>
-
-        <div className="flex flex-col gap-2 text-center">
-          <h1 className="text-xl font-semibold text-foreground">Sign in</h1>
-          <p className="text-sm text-muted-foreground">
-            Sign in with your Google account to continue.
-          </p>
-        </div>
-
+    <SignInPage
+      state={
         <Suspense fallback={null}>
           <SignInState />
         </Suspense>
-
-        <SocialButtons />
-
-        {/* FR-LEGAL-003, OQ-276 */}
-        <p className="text-center text-xs text-muted-foreground">
-          By continuing, you agree to the{" "}
-          <Link
-            href={routes.terms}
-            className="underline underline-offset-4 hover:text-foreground"
-          >
-            Terms
-          </Link>{" "}
-          and acknowledge the{" "}
-          <Link
-            href={routes.privacy}
-            className="underline underline-offset-4 hover:text-foreground"
-          >
-            Privacy policy
-          </Link>
-          .
-        </p>
-      </Card>
-    </div>
+      }
+      button={<SocialButtons />}
+    />
   );
 }

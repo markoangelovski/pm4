@@ -20,7 +20,7 @@ function Logo() {
     <Link
       href={routes.landing}
       className="flex items-center gap-2"
-      aria-label="PM4 home"
+      aria-label="PM4"
     >
       <Image
         src="/images/logos/logoicon.svg"
