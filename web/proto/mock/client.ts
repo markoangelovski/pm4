@@ -738,7 +738,8 @@ function consent(method: string, [requestId, action]: string[]): Response {
     id: old?.id ?? nextId("g-"),
     scopes: request.scopes,
     connectedAt: old?.connectedAt ?? new Date().toISOString(),
-    lastUsedAt: new Date().toISOString()
+    lastUsedAt: new Date().toISOString(),
+    expired: false
   };
   mock.setGrants([grant, ...s.grants.filter((g) => g.clientId !== clientId)]);
   return json({ redirectUrl: via(`${back}?code=mock-code&state=mock-state`) });
@@ -754,7 +755,8 @@ function connectedApps(method: string, id: string | undefined): Response {
         client: g.client,
         scopes: g.scopes,
         connectedAt: g.connectedAt,
-        lastUsedAt: g.lastUsedAt
+        lastUsedAt: g.lastUsedAt,
+        expired: g.expired
       }))
     });
   if (method === "DELETE" && id) {
