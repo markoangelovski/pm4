@@ -3,7 +3,7 @@ id: req-overview
 title: Requirements Overview
 status: draft
 owner: Marko Angelovski
-last_updated: 2026-10-24
+last_updated: 2026-11-21
 related: [prod-scope]
 ---
 
@@ -25,6 +25,7 @@ Explains how requirements are written, and indexes the requirement specs.
 | Dashboard and reporting | RPT | [reporting.md](reporting.md) |
 | Integrations and connectors | INT | [integrations.md](integrations.md) |
 | Notes and to-dos | NOTE | [notes.md](notes.md) |
+| Agent access (MCP server with OAuth) | MCP | [agents.md](agents.md) |
 | Non-functional | NFR | [non-functional.md](non-functional.md) |
 
 ## Requirement format
@@ -49,3 +50,4 @@ before the spec can move to `review`.
 - 2026-10-09: Added the bookings area (BOOK).
 - 2026-10-14: Added the integrations area (INT).
 - 2026-10-24: Added the notes and to-dos area (NOTE).
+- 2026-11-21: Added the agent access area (MCP).

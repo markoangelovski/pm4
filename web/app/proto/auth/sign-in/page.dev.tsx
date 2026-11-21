@@ -19,7 +19,11 @@ export default function ProtoSignInPage() {
           <MockSignInState />
         </Suspense>
       }
-      button={<MockGoogleButton />}
+      button={
+        <Suspense fallback={null}>
+          <MockGoogleButton />
+        </Suspense>
+      }
     />
   );
 }

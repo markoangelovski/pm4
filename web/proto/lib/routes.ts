@@ -5,7 +5,8 @@
  */
 export const routes = {
   landing: "/",
-  signIn: "/auth/sign-in",
+  signIn: "/proto/auth/sign-in",
+  consent: "/proto/auth/consent",
   authCallback: "/auth/callback",
   privacy: "/proto/privacy",
   terms: "/proto/terms",

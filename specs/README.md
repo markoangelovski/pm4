@@ -35,6 +35,7 @@ Either way, fix the disagreement. Never ignore it.
 | Bookings | [01-requirements/bookings.md](01-requirements/bookings.md) | approved |
 | Dashboard and reporting | [01-requirements/reporting.md](01-requirements/reporting.md) | approved |
 | Integrations and connectors | [01-requirements/integrations.md](01-requirements/integrations.md) | approved |
+| Agent access (MCP server with OAuth) | [01-requirements/agents.md](01-requirements/agents.md) | approved |
 | Non-functional requirements | [01-requirements/non-functional.md](01-requirements/non-functional.md) | draft |
 | System overview | [02-architecture/system-overview.md](02-architecture/system-overview.md) | approved |
 | Tech stack | [02-architecture/tech-stack.md](02-architecture/tech-stack.md) | approved |
@@ -93,7 +94,7 @@ related: [api-endpoints, ADR-0001]
 | Open question | `OQ-###` | `OQ-004` | `open-questions.md` |
 | Task | `T-####` | `T-0012` | `../tasks/` |
 
-Area codes: `AUTH` auth/accounts · `LAND` public landing page · `LEGAL` privacy policy and terms · `PRJ` projects · `TSK` tasks · `TLOG` time capture (workdays, time logs) · `BOOK` bookings · `RPT` reporting · `INT` integrations and connectors · `SYS` system.
+Area codes: `AUTH` auth/accounts · `LAND` public landing page · `LEGAL` privacy policy and terms · `PRJ` projects · `TSK` tasks · `TLOG` time capture (workdays, time logs) · `BOOK` bookings · `RPT` reporting · `INT` integrations and connectors · `MCP` agent access (MCP server, OAuth) · `SYS` system.
 IDs are never reused or renumbered. Removed items are marked `(removed)`.
 
 ### Placeholders

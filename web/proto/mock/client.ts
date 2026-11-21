@@ -3,6 +3,7 @@
 // `window.fetch`. Prototype twins of `features/<domain>/api.ts` import `apiClient` from here.
 import createClient from "openapi-fetch";
 import type { components, paths } from "@/lib/api/schema";
+import type { ProposedPaths } from "@/proto/features/agents/proposed-types";
 import type { TimeLog } from "@/proto/features/time/types";
 import type {
   BookingLog,
@@ -704,6 +705,66 @@ function integrations(
   return notFound();
 }
 
+/** The consent page's request, Allow and Deny (FR-MCP-005, proposed-types.ts). */
+function consent(method: string, [requestId, action]: string[]): Response {
+  const s = getMockState();
+  const request = s.consentRequests.find((r) => r.id === requestId);
+  if (!request)
+    return problem(
+      404,
+      "Not Found",
+      "This authorization request doesn't exist."
+    );
+  const { clientId, ...dto } = request;
+  if (method === "GET" && !action) return json(dto);
+  if (method !== "POST" || (action !== "allow" && action !== "deny"))
+    return notFound();
+  if (Date.parse(request.expiresAt) <= Date.now())
+    return problem(410, "Gone", "This authorization request has expired.");
+  const scheme = request.loopback ? "http" : "https";
+  // The real redirect would leave PM4; the mock shows where it would go (app/proto/auth/consent/returned).
+  const back = `${scheme}://${request.redirectHost}/callback`;
+  const via = (url: string) =>
+    `/proto/auth/consent/returned?to=${encodeURIComponent(url)}`;
+  if (action === "deny")
+    return json({
+      redirectUrl: via(`${back}?error=access_denied&state=mock-state`)
+    });
+  // OQ-293: one grant per app; Allow replaces an existing one's scopes (and ends its tokens).
+  const old = s.grants.find((g) => g.clientId === clientId);
+  const grant = {
+    clientId,
+    client: request.client,
+    id: old?.id ?? nextId("g-"),
+    scopes: request.scopes,
+    connectedAt: old?.connectedAt ?? new Date().toISOString(),
+    lastUsedAt: new Date().toISOString()
+  };
+  mock.setGrants([grant, ...s.grants.filter((g) => g.clientId !== clientId)]);
+  return json({ redirectUrl: via(`${back}?code=mock-code&state=mock-state`) });
+}
+
+/** Settings → Connected apps (FR-MCP-009, proposed-types.ts). */
+function connectedApps(method: string, id: string | undefined): Response {
+  const s = getMockState();
+  if (method === "GET" && !id)
+    return json({
+      items: s.grants.map((g) => ({
+        id: g.id,
+        client: g.client,
+        scopes: g.scopes,
+        connectedAt: g.connectedAt,
+        lastUsedAt: g.lastUsedAt
+      }))
+    });
+  if (method === "DELETE" && id) {
+    if (!s.grants.some((g) => g.id === id)) return notFound();
+    mock.setGrants(s.grants.filter((g) => g.id !== id));
+    return noContent();
+  }
+  return notFound();
+}
+
 /** Answers one API request from the store. */
 function handle(
   method: string,
@@ -754,6 +815,10 @@ function handle(
       return notes(method, id, q, body);
     case "todos":
       return todos(method, id, q, body);
+    case "oauth":
+      return id === "consent" ? consent(method, rest) : notFound();
+    case "connected-apps":
+      return connectedApps(method, id);
   }
   return problem(
     501,
@@ -1073,7 +1138,7 @@ const OTHER_USERS: components["schemas"]["UserSummaryDto"][] = [
 ];
 
 /** Same surface as `apiClient` in `lib/api/client`; the base URL is never requested. */
-export const apiClient = createClient<paths>({
+export const apiClient = createClient<paths & ProposedPaths>({
   baseUrl: "http://proto.localhost",
   fetch: mockFetch
 });

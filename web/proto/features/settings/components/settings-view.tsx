@@ -1,8 +1,9 @@
 "use client";
 
 import { parseAsStringLiteral, useQueryState } from "nuqs";
-import { Blocks, UserRound, type LucideIcon } from "lucide-react";
+import { Blocks, Bot, UserRound, type LucideIcon } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ConnectedAppsSettings } from "@/proto/features/agents/components/connected-apps-settings";
 import { IntegrationsSettings } from "@/proto/features/integrations/components/integrations-settings";
 import { DesktopNotificationsSettings } from "./desktop-notifications-settings";
 import { UserSettings } from "./user-settings";
@@ -25,6 +26,12 @@ const SECTIONS = [
     label: "Integrations",
     icon: Blocks,
     content: <IntegrationsSettings />
+  },
+  {
+    id: "connected-apps",
+    label: "Connected apps",
+    icon: Bot,
+    content: <ConnectedAppsSettings />
   }
 ] satisfies {
   id: string;
