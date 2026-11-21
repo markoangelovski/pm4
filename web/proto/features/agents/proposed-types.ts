@@ -50,6 +50,11 @@ export type ConnectedAppDto = {
   connectedAt: string;
   /** The last token issued or refreshed for the grant; null = never used since connecting. */
   lastUsedAt: string | null;
+  /**
+   * The grant's refresh family is gone (30 days unused, or a reused refresh token): the app has to connect again
+   * (OQ-305). `lastUsedAt` is null then, since it lives in that family.
+   */
+  expired: boolean;
 };
 
 export type ConnectedAppListDto = { items: ConnectedAppDto[] };

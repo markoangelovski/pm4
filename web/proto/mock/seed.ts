@@ -639,7 +639,10 @@ const OPENCODE = {
   client: { name: "OpenCode", clientIdHost: "opencode.ai" }
 };
 
-/** Settings → Connected apps: a typical app, one used yesterday, and a long name that was never used. */
+/**
+ * Settings → Connected apps: a typical app, one used yesterday, a long name that was never used, and one that
+ * expired (30 days unused, OQ-305).
+ */
 export function seedGrants(): MockGrant[] {
   return [
     {
@@ -647,14 +650,16 @@ export function seedGrants(): MockGrant[] {
       id: "g-claude",
       scopes: ["pm4:write"],
       connectedAt: inMinutes(-40 * 24 * 60),
-      lastUsedAt: inMinutes(-125)
+      lastUsedAt: inMinutes(-125),
+      expired: false
     },
     {
       ...OPENCODE,
       id: "g-opencode",
       scopes: ["pm4:write"],
       connectedAt: inMinutes(-12 * 24 * 60),
-      lastUsedAt: inMinutes(-26 * 60)
+      lastUsedAt: inMinutes(-26 * 60),
+      expired: false
     },
     {
       clientId: "https://timesheets.internal.example.com/oauth/client.json",
@@ -665,7 +670,17 @@ export function seedGrants(): MockGrant[] {
       id: "g-timesheets",
       scopes: ["pm4:read"],
       connectedAt: inMinutes(-3 * 24 * 60),
-      lastUsedAt: null
+      lastUsedAt: null,
+      expired: false
+    },
+    {
+      clientId: "https://standup.example.org/oauth/client.json",
+      client: { name: "Standup notes", clientIdHost: "standup.example.org" },
+      id: "g-standup",
+      scopes: ["pm4:read"],
+      connectedAt: inMinutes(-75 * 24 * 60),
+      lastUsedAt: null,
+      expired: true
     }
   ];
 }

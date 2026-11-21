@@ -136,7 +136,13 @@ function AppRow({
             Connected {formatShortDate(app.connectedAt, tz)}
           </span>
           {" · "}
-          {app.lastUsedAt ? (
+          {app.expired ? (
+            // OQ-305: the refresh family is gone, so there is no last use to show; the row stays until revoked
+            // or the app connects again.
+            <span className="font-medium text-amber-700 dark:text-amber-400">
+              Expired — reconnect from the app
+            </span>
+          ) : app.lastUsedAt ? (
             <span title={formatDateTime(app.lastUsedAt, tz)}>
               Last used{" "}
               {formatDistanceToNowStrict(app.lastUsedAt, { addSuffix: true })}
