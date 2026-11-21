@@ -3,7 +3,7 @@ id: qa-testing
 title: Testing Strategy
 status: draft
 owner: Marko Angelovski
-last_updated: 2026-10-14
+last_updated: 2026-11-21
 related: [qa-dod, qa-task-routing, NFR-005]
 ---
 
@@ -34,8 +34,9 @@ Defines what is tested, at which level, and with which tools.
 - Auth: state/code single use, refresh rotation and reuse detection, cross-user 404s (API).
 
 ## Acceptance tests (test-first)
-Each feature spec (`06-features/`) lists its acceptance tests (`AC-#`). The main session (opus) writes
-them **before** implementation (`write-acceptance-tests`). Implementers make them pass.
+Each feature spec (`06-features/`) lists its acceptance tests (`AC-#`). Sonnet `test-engineer` subagents
+write them **before** implementation, and the main session (opus) checks them against the spec
+(`write-acceptance-tests`). Implementers make them pass.
 
 - **Naming:** `*.ac.spec.ts` (api unit), `*.ac.e2e-spec.ts` (api e2e, in `api/test/`), `*.ac.test.ts(x)`
   (web). These names match the existing Vitest include patterns.
@@ -67,3 +68,4 @@ them **before** implementation (`write-acceptance-tests`). Implementers make the
 - 2026-09-27: API tests use Vitest instead of Jest (owner decision: NestJS 12 is ESM-only, and Jest needs experimental ESM workarounds).
 - 2026-09-28: Acceptance tests are written first by the test writer and protected from implementer edits.
 - 2026-10-01: The main session writes them; `pm4 hash`/`pm4 check` handle hashes; the `BLOCKED: test` path.
+- 2026-11-21: Sonnet `test-engineer` subagents write them; the main session checks them and runs `pm4 hash`.

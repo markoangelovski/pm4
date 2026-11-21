@@ -14,23 +14,26 @@ The shared instructions above apply in full. This section adds only what is spec
 | --- | --- | --- |
 | `api-engineer` | haiku | Implementing `api/` tasks. `implement-task` sets the model from the task's `tier` |
 | `web-engineer` | haiku | Implementing `web/` tasks. `implement-task` sets the model from the task's `tier` |
+| `test-engineer` | sonnet | Acceptance tests and typed stubs of one feature for one app (`write-acceptance-tests`). Never Haiku |
 | `reviewer` | opus | One review per feature (`review-feature`): the diff against the spec. Read-only |
 | `Explore` (built-in) | pass `model: haiku` | Wide codebase searches only; open known files directly |
 
-Specs and acceptance tests are written **inline in the main session**, not by subagents, so open
-questions go straight to the owner and nothing is read twice.
+Specs are written **inline in the main session**, not by subagents, so open questions go straight to
+the owner and nothing is read twice. Acceptance tests are typing once the spec is approved: `test-engineer`
+writes them, and the main session checks the diff against the spec before `pm4 hash`.
 
 Subagents never commit (AGENTS.md §3). When you delegate, repeat that rule in the prompt, and check
 afterwards that nothing was staged or committed. `.claude/hooks/guard-subagents.mjs` also blocks
-subagents from changing git state or running `pm4 tasks`/`hash`/`status`, and implementers from
-editing acceptance tests, specs, agent config, the board and the other app.
+subagents from changing git state or running `pm4 tasks`/`hash`/`status`, implementers from
+editing acceptance tests, specs, agent config, the board and the other app, and `test-engineer` from
+editing anything outside `api/` and `web/`.
 
 ### Skills (`.claude/skills/` → symlink to `.agents/skills/`)
 
 - `prototype`: build or change a screen in the UI prototype with the owner, in the main session (Opus)
 - `write-spec`: create or update a spec. Feature specs use `specs/06-features/_TEMPLATE.md`
 - `write-task <feature-spec>`: create task files from an approved feature spec (runs `pm4 tasks`)
-- `write-acceptance-tests <feature-spec>`: the test-first step (ends with `pm4 hash`)
+- `write-acceptance-tests <feature-spec>`: the test-first step: `test-engineer` (Sonnet) writes, the main session checks and runs `pm4 hash`
 - `implement-task <T-####>`: delegate one task to the right engineer and model, run `pm4 check`, escalate
 - `review-feature <feature-spec | T-####>`: one Opus review of the feature's diff, verdicts into the tasks
 - `new-session [focus]`: write a short kickoff prompt to resume the current work in a fresh session
