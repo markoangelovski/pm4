@@ -27,9 +27,7 @@
             }
           }
         },
-        "tags": [
-          "Version"
-        ]
+        "tags": ["Version"]
       }
     },
     "/api/v1/auth/google": {
@@ -69,9 +67,7 @@
           }
         },
         "summary": "API-AUTH-001: start Google sign-in (a browser navigation).",
-        "tags": [
-          "Auth"
-        ]
+        "tags": ["Auth"]
       }
     },
     "/api/v1/auth/google/callback": {
@@ -84,9 +80,7 @@
           }
         },
         "summary": "API-AUTH-002: Google's callback; always redirects to the web app.",
-        "tags": [
-          "Auth"
-        ]
+        "tags": ["Auth"]
       }
     },
     "/api/v1/auth/token": {
@@ -156,9 +150,7 @@
           }
         },
         "summary": "API-AUTH-003: exchange the login code for a token pair.",
-        "tags": [
-          "Auth"
-        ]
+        "tags": ["Auth"]
       }
     },
     "/api/v1/auth/refresh": {
@@ -228,9 +220,7 @@
           }
         },
         "summary": "API-AUTH-004: rotate the refresh token.",
-        "tags": [
-          "Auth"
-        ]
+        "tags": ["Auth"]
       }
     },
     "/api/v1/auth/logout": {
@@ -283,9 +273,7 @@
           }
         },
         "summary": "API-AUTH-005: sign out of this session.",
-        "tags": [
-          "Auth"
-        ]
+        "tags": ["Auth"]
       }
     },
     "/api/v1/auth/logout-all": {
@@ -333,9 +321,7 @@
           }
         ],
         "summary": "API-AUTH-006: sign out of every session.",
-        "tags": [
-          "Auth"
-        ]
+        "tags": ["Auth"]
       }
     },
     "/api/v1/me": {
@@ -389,9 +375,7 @@
             "bearer": []
           }
         ],
-        "tags": [
-          "Users"
-        ]
+        "tags": ["Users"]
       },
       "patch": {
         "operationId": "UsersController_update",
@@ -464,9 +448,7 @@
           }
         ],
         "summary": "Change the profile settings (API-USR-002).",
-        "tags": [
-          "Users"
-        ]
+        "tags": ["Users"]
       },
       "delete": {
         "operationId": "AccountController_remove",
@@ -512,9 +494,7 @@
           }
         ],
         "summary": "Delete the account and all of its data, permanently.",
-        "tags": [
-          "Account"
-        ]
+        "tags": ["Account"]
       }
     },
     "/api/v1/users": {
@@ -590,9 +570,7 @@
             "bearer": []
           }
         ],
-        "tags": [
-          "UserSearch"
-        ]
+        "tags": ["UserSearch"]
       }
     },
     "/api/v1/projects": {
@@ -667,9 +645,7 @@
           }
         ],
         "summary": "Create a project (API-PRJ-001).",
-        "tags": [
-          "Projects"
-        ]
+        "tags": ["Projects"]
       },
       "get": {
         "operationId": "ProjectsController_list",
@@ -784,9 +760,7 @@
           }
         ],
         "summary": "The caller's projects (API-PRJ-002).",
-        "tags": [
-          "Projects"
-        ]
+        "tags": ["Projects"]
       }
     },
     "/api/v1/projects/service-names": {
@@ -841,9 +815,7 @@
           }
         ],
         "summary": "Every service name on the caller's projects (API-PRJ-006).",
-        "tags": [
-          "Projects"
-        ]
+        "tags": ["Projects"]
       }
     },
     "/api/v1/projects/{id}": {
@@ -917,9 +889,7 @@
           }
         ],
         "summary": "One project (API-PRJ-003).",
-        "tags": [
-          "Projects"
-        ]
+        "tags": ["Projects"]
       },
       "patch": {
         "operationId": "ProjectsController_update",
@@ -1011,9 +981,7 @@
           }
         ],
         "summary": "Change the given fields (API-PRJ-004).",
-        "tags": [
-          "Projects"
-        ]
+        "tags": ["Projects"]
       },
       "delete": {
         "operationId": "ProjectsController_remove",
@@ -1078,9 +1046,7 @@
           }
         ],
         "summary": "Delete the project and its tasks permanently (API-PRJ-005).",
-        "tags": [
-          "Projects"
-        ]
+        "tags": ["Projects"]
       }
     },
     "/api/v1/tasks": {
@@ -1155,9 +1121,7 @@
           }
         ],
         "summary": "Create a task (API-TSK-001).",
-        "tags": [
-          "Tasks"
-        ]
+        "tags": ["Tasks"]
       },
       "get": {
         "operationId": "TasksController_list",
@@ -1294,9 +1258,7 @@
           }
         ],
         "summary": "The caller's tasks, optionally filtered by project and status (API-TSK-002).",
-        "tags": [
-          "Tasks"
-        ]
+        "tags": ["Tasks"]
       }
     },
     "/api/v1/tasks/{id}": {
@@ -1370,9 +1332,7 @@
           }
         ],
         "summary": "One task (API-TSK-003).",
-        "tags": [
-          "Tasks"
-        ]
+        "tags": ["Tasks"]
       },
       "patch": {
         "operationId": "TasksController_update",
@@ -1464,9 +1424,7 @@
           }
         ],
         "summary": "Change the given fields (API-TSK-004).",
-        "tags": [
-          "Tasks"
-        ]
+        "tags": ["Tasks"]
       },
       "delete": {
         "operationId": "TasksController_remove",
@@ -1531,9 +1489,7 @@
           }
         ],
         "summary": "Delete the task permanently (API-TSK-005).",
-        "tags": [
-          "Tasks"
-        ]
+        "tags": ["Tasks"]
       }
     },
     "/api/v1/workdays": {
@@ -1619,9 +1575,7 @@
           }
         ],
         "summary": "The workdays in a date range (API-WD-001).",
-        "tags": [
-          "Workdays"
-        ]
+        "tags": ["Workdays"]
       }
     },
     "/api/v1/workdays/{date}": {
@@ -1696,9 +1650,7 @@
           }
         ],
         "summary": "A whole day: start, total and logs (API-WD-003).",
-        "tags": [
-          "Workdays"
-        ]
+        "tags": ["Workdays"]
       },
       "put": {
         "operationId": "WorkdaysController_setStart",
@@ -1781,9 +1733,7 @@
           }
         ],
         "summary": "Set the day start (API-WD-002).",
-        "tags": [
-          "Workdays"
-        ]
+        "tags": ["Workdays"]
       },
       "delete": {
         "operationId": "WorkdaysController_deleteDay",
@@ -1859,9 +1809,7 @@
           }
         ],
         "summary": "Delete the day's start and logs (API-WD-004).",
-        "tags": [
-          "Workdays"
-        ]
+        "tags": ["Workdays"]
       }
     },
     "/api/v1/time-logs": {
@@ -1992,9 +1940,7 @@
           }
         ],
         "summary": "One page of a project's or task's logs, with totals (API-TLOG-001).",
-        "tags": [
-          "TimeLogs"
-        ]
+        "tags": ["TimeLogs"]
       },
       "post": {
         "operationId": "TimeLogsController_create",
@@ -2077,9 +2023,7 @@
           }
         ],
         "summary": "Create a time log (API-TLOG-002).",
-        "tags": [
-          "TimeLogs"
-        ]
+        "tags": ["TimeLogs"]
       }
     },
     "/api/v1/time-logs/{id}": {
@@ -2173,9 +2117,7 @@
           }
         ],
         "summary": "Change the given fields (API-TLOG-004).",
-        "tags": [
-          "TimeLogs"
-        ]
+        "tags": ["TimeLogs"]
       },
       "delete": {
         "operationId": "TimeLogsController_remove",
@@ -2240,9 +2182,7 @@
           }
         ],
         "summary": "Delete a time log (API-TLOG-006).",
-        "tags": [
-          "TimeLogs"
-        ]
+        "tags": ["TimeLogs"]
       }
     },
     "/api/v1/bookings": {
@@ -2328,9 +2268,7 @@
           }
         ],
         "summary": "The logs worked or booked in a date range (API-BOOK-001).",
-        "tags": [
-          "Bookings"
-        ]
+        "tags": ["Bookings"]
       },
       "put": {
         "operationId": "BookingsController_set",
@@ -2413,9 +2351,7 @@
           }
         ],
         "summary": "Replace the bookings of one or many logs (API-BOOK-002).",
-        "tags": [
-          "Bookings"
-        ]
+        "tags": ["Bookings"]
       }
     },
     "/api/v1/reports/dashboard": {
@@ -2501,9 +2437,7 @@
           }
         ],
         "summary": "Worked and booked minutes per day and per project in a date range (API-RPT-001).",
-        "tags": [
-          "Reports"
-        ]
+        "tags": ["Reports"]
       }
     },
     "/api/v1/integrations/pmspa": {
@@ -2558,9 +2492,7 @@
           }
         ],
         "summary": "The stored connection; no PMSPA call (API-INT-001).",
-        "tags": [
-          "PmspaConnection"
-        ]
+        "tags": ["PmspaConnection"]
       },
       "put": {
         "operationId": "PmspaConnectionController_save",
@@ -2653,9 +2585,7 @@
           }
         ],
         "summary": "Save the settings, then check them (API-INT-002).",
-        "tags": [
-          "PmspaConnection"
-        ]
+        "tags": ["PmspaConnection"]
       },
       "delete": {
         "operationId": "PmspaConnectionController_disconnect",
@@ -2701,9 +2631,7 @@
           }
         ],
         "summary": "Delete the connection and the token; the links stay (API-INT-004).",
-        "tags": [
-          "PmspaConnection"
-        ]
+        "tags": ["PmspaConnection"]
       }
     },
     "/api/v1/integrations/pmspa/test": {
@@ -2778,9 +2706,7 @@
           }
         ],
         "summary": "Check the stored credentials again (API-INT-003).",
-        "tags": [
-          "PmspaConnection"
-        ]
+        "tags": ["PmspaConnection"]
       }
     },
     "/api/v1/integrations/pmspa/projects": {
@@ -2865,9 +2791,7 @@
           }
         ],
         "summary": "The connected account's projects by title, with their PM4 links (API-INT-005).",
-        "tags": [
-          "PmspaBrowse"
-        ]
+        "tags": ["PmspaBrowse"]
       }
     },
     "/api/v1/integrations/pmspa/projects/{id}/tasks": {
@@ -2983,9 +2907,7 @@
           }
         ],
         "summary": "The tasks of one of the connected account's projects, with their PM4 links (API-INT-006).",
-        "tags": [
-          "PmspaBrowse"
-        ]
+        "tags": ["PmspaBrowse"]
       }
     },
     "/api/v1/integrations/pmspa/tasks": {
@@ -3070,9 +2992,7 @@
           }
         ],
         "summary": "Every task of the connected account, with their PM4 links (API-INT-017).",
-        "tags": [
-          "PmspaBrowse"
-        ]
+        "tags": ["PmspaBrowse"]
       }
     },
     "/api/v1/integrations/pmspa/days": {
@@ -3188,9 +3108,7 @@
           }
         ],
         "summary": "The connected account's days in a week, newest first, from one PMSPA call: no events (API-INT-007).",
-        "tags": [
-          "PmspaBrowse"
-        ]
+        "tags": ["PmspaBrowse"]
       }
     },
     "/api/v1/integrations/pmspa/days/details": {
@@ -3301,9 +3219,7 @@
           }
         ],
         "summary": "The given days, newest first, with their events and logs (API-INT-018).",
-        "tags": [
-          "PmspaBrowse"
-        ]
+        "tags": ["PmspaBrowse"]
       }
     },
     "/api/v1/integrations/pmspa/links": {
@@ -3316,11 +3232,7 @@
             "in": "query",
             "schema": {
               "type": "string",
-              "enum": [
-                "project",
-                "task",
-                "time-log"
-              ]
+              "enum": ["project", "task", "time-log"]
             }
           }
         ],
@@ -3382,9 +3294,7 @@
           }
         ],
         "summary": "The active links of a type (API-INT-012).",
-        "tags": [
-          "PmspaLinks"
-        ]
+        "tags": ["PmspaLinks"]
       }
     },
     "/api/v1/integrations/pmspa/links/{type}/{id}": {
@@ -3397,11 +3307,7 @@
             "in": "path",
             "schema": {
               "type": "string",
-              "enum": [
-                "project",
-                "task",
-                "time-log"
-              ]
+              "enum": ["project", "task", "time-log"]
             }
           },
           {
@@ -3476,9 +3382,7 @@
           }
         ],
         "summary": "Remove the link; both records stay (API-INT-013).",
-        "tags": [
-          "PmspaLinks"
-        ]
+        "tags": ["PmspaLinks"]
       },
       "get": {
         "operationId": "PmspaLinksController_detail",
@@ -3489,11 +3393,7 @@
             "in": "path",
             "schema": {
               "type": "string",
-              "enum": [
-                "project",
-                "task",
-                "time-log"
-              ]
+              "enum": ["project", "task", "time-log"]
             }
           },
           {
@@ -3605,9 +3505,7 @@
           }
         ],
         "summary": "A link with its PMSPA counterpart, read live (API-INT-014).",
-        "tags": [
-          "PmspaLinks"
-        ]
+        "tags": ["PmspaLinks"]
       }
     },
     "/api/v1/integrations/pmspa/import/preview": {
@@ -3712,9 +3610,7 @@
           }
         ],
         "summary": "The rows of an import of the selected PMSPA projects and tasks (API-INT-008).",
-        "tags": [
-          "PmspaSync"
-        ]
+        "tags": ["PmspaSync"]
       }
     },
     "/api/v1/integrations/pmspa/push/preview": {
@@ -3829,9 +3725,7 @@
           }
         ],
         "summary": "The rows of a push of one PM4 day to PMSPA (API-INT-010).",
-        "tags": [
-          "PmspaSync"
-        ]
+        "tags": ["PmspaSync"]
       }
     },
     "/api/v1/integrations/pmspa/sync/preview": {
@@ -3946,9 +3840,7 @@
           }
         ],
         "summary": "The rows of a two-way sync of a PM4 project or task (API-INT-015).",
-        "tags": [
-          "PmspaSync"
-        ]
+        "tags": ["PmspaSync"]
       }
     },
     "/api/v1/integrations/pmspa/import": {
@@ -4053,9 +3945,7 @@
           }
         ],
         "summary": "Imports the selected PMSPA projects and tasks (API-INT-009).",
-        "tags": [
-          "PmspaSync"
-        ]
+        "tags": ["PmspaSync"]
       }
     },
     "/api/v1/integrations/pmspa/sync": {
@@ -4170,9 +4060,7 @@
           }
         ],
         "summary": "Syncs a PM4 project or task both ways (API-INT-016).",
-        "tags": [
-          "PmspaSync"
-        ]
+        "tags": ["PmspaSync"]
       }
     },
     "/api/v1/integrations/pmspa/push": {
@@ -4287,9 +4175,7 @@
           }
         ],
         "summary": "Pushes one PM4 day to PMSPA as events (API-INT-011).",
-        "tags": [
-          "PmspaSync"
-        ]
+        "tags": ["PmspaSync"]
       }
     },
     "/api/v1/integrations/pmspa/candidates": {
@@ -4394,9 +4280,7 @@
           }
         ],
         "summary": "The Link to existing PMSPA candidates of many PM4 records (API-INT-019).",
-        "tags": [
-          "PmspaSync"
-        ]
+        "tags": ["PmspaSync"]
       }
     },
     "/api/v1/notes": {
@@ -4555,9 +4439,7 @@
           }
         ],
         "summary": "The caller's notes (API-NOTE-001).",
-        "tags": [
-          "Notes"
-        ]
+        "tags": ["Notes"]
       },
       "post": {
         "operationId": "NotesController_create",
@@ -4640,9 +4522,7 @@
           }
         ],
         "summary": "Create a note (API-NOTE-002).",
-        "tags": [
-          "Notes"
-        ]
+        "tags": ["Notes"]
       }
     },
     "/api/v1/notes/{id}": {
@@ -4736,9 +4616,7 @@
           }
         ],
         "summary": "Replace the note's title and body, and its link when given (API-NOTE-003).",
-        "tags": [
-          "Notes"
-        ]
+        "tags": ["Notes"]
       },
       "delete": {
         "operationId": "NotesController_remove",
@@ -4803,9 +4681,7 @@
           }
         ],
         "summary": "Delete the note permanently (API-NOTE-004).",
-        "tags": [
-          "Notes"
-        ]
+        "tags": ["Notes"]
       }
     },
     "/api/v1/todos": {
@@ -4941,9 +4817,7 @@
           }
         ],
         "summary": "The caller's to-dos, open and done (API-TODO-001).",
-        "tags": [
-          "Todos"
-        ]
+        "tags": ["Todos"]
       },
       "post": {
         "operationId": "TodosController_create",
@@ -5026,9 +4900,7 @@
           }
         ],
         "summary": "Create a to-do (API-TODO-002).",
-        "tags": [
-          "Todos"
-        ]
+        "tags": ["Todos"]
       }
     },
     "/api/v1/todos/{id}": {
@@ -5122,9 +4994,7 @@
           }
         ],
         "summary": "Change the given fields (API-TODO-003).",
-        "tags": [
-          "Todos"
-        ]
+        "tags": ["Todos"]
       },
       "delete": {
         "operationId": "TodosController_remove",
@@ -5189,9 +5059,7 @@
           }
         ],
         "summary": "Delete the to-do permanently (API-TODO-004).",
-        "tags": [
-          "Todos"
-        ]
+        "tags": ["Todos"]
       }
     },
     "/api/v1/changelog": {
@@ -5220,9 +5088,7 @@
             }
           }
         },
-        "tags": [
-          "Changelog"
-        ]
+        "tags": ["Changelog"]
       }
     }
   },
@@ -5255,10 +5121,7 @@
             "description": "What is wrong with it."
           }
         },
-        "required": [
-          "field",
-          "message"
-        ]
+        "required": ["field", "message"]
       },
       "ProblemDetailsDto": {
         "type": "object",
@@ -5288,12 +5151,7 @@
             }
           }
         },
-        "required": [
-          "status",
-          "type",
-          "title",
-          "detail"
-        ]
+        "required": ["status", "type", "title", "detail"]
       },
       "VersionResponseDto": {
         "type": "object",
@@ -5303,9 +5161,7 @@
             "description": "The `version` field of `api/package.json`, e.g. `0.0.1`."
           }
         },
-        "required": [
-          "version"
-        ]
+        "required": ["version"]
       },
       "CodeRequestDto": {
         "type": "object",
@@ -5317,9 +5173,7 @@
             "maxLength": 128
           }
         },
-        "required": [
-          "code"
-        ]
+        "required": ["code"]
       },
       "TokenPairDto": {
         "type": "object",
@@ -5337,11 +5191,7 @@
             "description": "Opaque: 32 random bytes, base64url (43 chars)."
           }
         },
-        "required": [
-          "accessToken",
-          "accessTokenExpiresAt",
-          "refreshToken"
-        ]
+        "required": ["accessToken", "accessTokenExpiresAt", "refreshToken"]
       },
       "RefreshTokenRequestDto": {
         "type": "object",
@@ -5353,9 +5203,7 @@
             "maxLength": 128
           }
         },
-        "required": [
-          "refreshToken"
-        ]
+        "required": ["refreshToken"]
       },
       "MeResponseDto": {
         "type": "object",
@@ -5426,11 +5274,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "avatarUrl",
-          "id",
-          "displayName"
-        ]
+        "required": ["avatarUrl", "id", "displayName"]
       },
       "UserSearchResponseDto": {
         "type": "object",
@@ -5442,9 +5286,7 @@
             }
           }
         },
-        "required": [
-          "items"
-        ]
+        "required": ["items"]
       },
       "CreateProjectDto": {
         "type": "object",
@@ -5491,9 +5333,7 @@
             "maxLength": 200
           }
         },
-        "required": [
-          "title"
-        ]
+        "required": ["title"]
       },
       "LeadUserDto": {
         "type": "object",
@@ -5510,20 +5350,13 @@
             "description": "The user's current display name (D2)."
           }
         },
-        "required": [
-          "avatarUrl",
-          "id",
-          "displayName"
-        ]
+        "required": ["avatarUrl", "id", "displayName"]
       },
       "ProjectLeadDto": {
         "type": "object",
         "properties": {
           "kind": {
-            "enum": [
-              "user",
-              "text"
-            ],
+            "enum": ["user", "text"],
             "type": "string"
           },
           "user": {
@@ -5540,11 +5373,7 @@
             "description": "`user.displayName` for a user lead, else the saved text name."
           }
         },
-        "required": [
-          "kind",
-          "user",
-          "name"
-        ]
+        "required": ["kind", "user", "name"]
       },
       "ProjectServiceDto": {
         "type": "object",
@@ -5561,11 +5390,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "id",
-          "taskCount",
-          "name"
-        ]
+        "required": ["id", "taskCount", "name"]
       },
       "TaskCountsDto": {
         "type": "object",
@@ -5584,12 +5409,7 @@
             "description": "`upcoming + inProgress + completed`."
           }
         },
-        "required": [
-          "upcoming",
-          "inProgress",
-          "completed",
-          "total"
-        ]
+        "required": ["upcoming", "inProgress", "completed", "total"]
       },
       "ProjectResponseDto": {
         "type": "object",
@@ -5672,12 +5492,7 @@
             }
           }
         },
-        "required": [
-          "page",
-          "pageSize",
-          "total",
-          "items"
-        ]
+        "required": ["page", "pageSize", "total", "items"]
       },
       "ServiceNamesResponseDto": {
         "type": "object",
@@ -5689,9 +5504,7 @@
             }
           }
         },
-        "required": [
-          "items"
-        ]
+        "required": ["items"]
       },
       "UpdateProjectDto": {
         "type": "object",
@@ -5741,11 +5554,7 @@
       },
       "TaskStatus": {
         "type": "string",
-        "enum": [
-          "upcoming",
-          "in-progress",
-          "completed"
-        ],
+        "enum": ["upcoming", "in-progress", "completed"],
         "description": "Status of the task; absent defaults to `upcoming`. `null` → 400."
       },
       "CreateTaskDto": {
@@ -5808,10 +5617,7 @@
             "maxLength": 200
           }
         },
-        "required": [
-          "projectId",
-          "title"
-        ]
+        "required": ["projectId", "title"]
       },
       "ServiceRefDto": {
         "type": "object",
@@ -5824,10 +5630,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "id",
-          "name"
-        ]
+        "required": ["id", "name"]
       },
       "RefDto": {
         "type": "object",
@@ -5843,11 +5646,7 @@
             "type": "boolean"
           }
         },
-        "required": [
-          "id",
-          "title",
-          "deleted"
-        ]
+        "required": ["id", "title", "deleted"]
       },
       "TaskResponseDto": {
         "type": "object",
@@ -5946,12 +5745,7 @@
             }
           }
         },
-        "required": [
-          "page",
-          "pageSize",
-          "total",
-          "items"
-        ]
+        "required": ["page", "pageSize", "total", "items"]
       },
       "UpdateTaskDto": {
         "type": "object",
@@ -6028,11 +5822,7 @@
             "type": "number"
           }
         },
-        "required": [
-          "workDate",
-          "startMinute",
-          "totalMinutes"
-        ]
+        "required": ["workDate", "startMinute", "totalMinutes"]
       },
       "WorkdayListResponseDto": {
         "type": "object",
@@ -6044,9 +5834,7 @@
             }
           }
         },
-        "required": [
-          "items"
-        ]
+        "required": ["items"]
       },
       "TimeLogResponseDto": {
         "type": "object",
@@ -6123,12 +5911,7 @@
             "description": "The sum of all the day's logs, excluded ones too."
           }
         },
-        "required": [
-          "workDate",
-          "startMinute",
-          "logs",
-          "totalMinutes"
-        ]
+        "required": ["workDate", "startMinute", "logs", "totalMinutes"]
       },
       "SetWorkdayDto": {
         "type": "object",
@@ -6140,9 +5923,7 @@
             "maximum": 1425
           }
         },
-        "required": [
-          "startMinute"
-        ]
+        "required": ["startMinute"]
       },
       "WorkdayResponseDto": {
         "type": "object",
@@ -6155,10 +5936,7 @@
             "type": "number"
           }
         },
-        "required": [
-          "workDate",
-          "startMinute"
-        ]
+        "required": ["workDate", "startMinute"]
       },
       "BookingDto": {
         "type": "object",
@@ -6177,10 +5955,7 @@
             "maximum": 1440
           }
         },
-        "required": [
-          "date",
-          "minutes"
-        ]
+        "required": ["date", "minutes"]
       },
       "BookingLogResponseDto": {
         "type": "object",
@@ -6262,11 +6037,7 @@
             "example": 120
           }
         },
-        "required": [
-          "workDate",
-          "workedMinutes",
-          "bookedMinutes"
-        ]
+        "required": ["workDate", "workedMinutes", "bookedMinutes"]
       },
       "TimeLogListResponseDto": {
         "type": "object",
@@ -6360,11 +6131,7 @@
             "maximum": 1425
           }
         },
-        "required": [
-          "workDate",
-          "durationMinutes",
-          "text"
-        ]
+        "required": ["workDate", "durationMinutes", "text"]
       },
       "UpdateTimeLogDto": {
         "type": "object",
@@ -6425,9 +6192,7 @@
             }
           }
         },
-        "required": [
-          "items"
-        ]
+        "required": ["items"]
       },
       "SetLogBookingsDto": {
         "type": "object",
@@ -6445,10 +6210,7 @@
             }
           }
         },
-        "required": [
-          "logId",
-          "bookings"
-        ]
+        "required": ["logId", "bookings"]
       },
       "SetBookingsDto": {
         "type": "object",
@@ -6462,9 +6224,7 @@
             }
           }
         },
-        "required": [
-          "logs"
-        ]
+        "required": ["logs"]
       },
       "ReportDayDto": {
         "type": "object",
@@ -6504,11 +6264,7 @@
       },
       "ReportProjectKind": {
         "type": "string",
-        "enum": [
-          "project",
-          "unsorted",
-          "nonprod"
-        ]
+        "enum": ["project", "unsorted", "nonprod"]
       },
       "ReportProjectDto": {
         "type": "object",
@@ -6537,12 +6293,7 @@
             "type": "number"
           }
         },
-        "required": [
-          "kind",
-          "project",
-          "workedMinutes",
-          "bookedMinutes"
-        ]
+        "required": ["kind", "project", "workedMinutes", "bookedMinutes"]
       },
       "DashboardReportResponseDto": {
         "type": "object",
@@ -6560,10 +6311,7 @@
             }
           }
         },
-        "required": [
-          "days",
-          "projects"
-        ]
+        "required": ["days", "projects"]
       },
       "PmspaConnectionStatus": {
         "type": "string",
@@ -6576,10 +6324,7 @@
       },
       "PmspaAccountRole": {
         "type": "string",
-        "enum": [
-          "admin",
-          "user"
-        ]
+        "enum": ["admin", "user"]
       },
       "PmspaAccountDto": {
         "type": "object",
@@ -6603,12 +6348,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "avatarUrl",
-          "role",
-          "id",
-          "email"
-        ]
+        "required": ["avatarUrl", "role", "id", "email"]
       },
       "PmspaRateLimitDto": {
         "type": "object",
@@ -6630,12 +6370,7 @@
             "description": "ISO 8601 UTC"
           }
         },
-        "required": [
-          "limit",
-          "remaining",
-          "resetAt",
-          "observedAt"
-        ]
+        "required": ["limit", "remaining", "resetAt", "observedAt"]
       },
       "PmspaConnectionResponseDto": {
         "type": "object",
@@ -6719,18 +6454,11 @@
             "description": "Confirms a switch to another PMSPA account (FR-INT-002)."
           }
         },
-        "required": [
-          "url",
-          "email"
-        ]
+        "required": ["url", "email"]
       },
       "PmspaLinkOrigin": {
         "type": "string",
-        "enum": [
-          "imported",
-          "pushed",
-          "linked"
-        ]
+        "enum": ["imported", "pushed", "linked"]
       },
       "PmspaRecordLinkDto": {
         "type": "object",
@@ -6753,12 +6481,7 @@
             "description": "ISO 8601 UTC"
           }
         },
-        "required": [
-          "origin",
-          "pm4Id",
-          "pm4Title",
-          "syncedAt"
-        ]
+        "required": ["origin", "pm4Id", "pm4Title", "syncedAt"]
       },
       "PmspaProjectDto": {
         "type": "object",
@@ -6787,13 +6510,7 @@
             "description": "PMSPA's open + closed task count."
           }
         },
-        "required": [
-          "link",
-          "id",
-          "title",
-          "done",
-          "taskCount"
-        ]
+        "required": ["link", "id", "title", "done", "taskCount"]
       },
       "PmspaProjectListDto": {
         "type": "object",
@@ -6805,17 +6522,11 @@
             }
           }
         },
-        "required": [
-          "items"
-        ]
+        "required": ["items"]
       },
       "PmspaColumn": {
         "type": "string",
-        "enum": [
-          "Upcoming",
-          "In Progress",
-          "Completed"
-        ]
+        "enum": ["Upcoming", "In Progress", "Completed"]
       },
       "PmspaTaskDto": {
         "type": "object",
@@ -6846,13 +6557,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "column",
-          "link",
-          "id",
-          "projectId",
-          "title"
-        ]
+        "required": ["column", "link", "id", "projectId", "title"]
       },
       "PmspaTaskListDto": {
         "type": "object",
@@ -6864,9 +6569,7 @@
             }
           }
         },
-        "required": [
-          "items"
-        ]
+        "required": ["items"]
       },
       "PmspaDaySummaryDto": {
         "type": "object",
@@ -6885,11 +6588,7 @@
             "description": "The event ids PMSPA lists for the day."
           }
         },
-        "required": [
-          "date",
-          "startMinute",
-          "eventCount"
-        ]
+        "required": ["date", "startMinute", "eventCount"]
       },
       "PmspaDaySummaryListDto": {
         "type": "object",
@@ -6901,9 +6600,7 @@
             }
           }
         },
-        "required": [
-          "items"
-        ]
+        "required": ["items"]
       },
       "PmspaEventTaskDto": {
         "type": "object",
@@ -6918,11 +6615,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "id",
-          "title",
-          "projectTitle"
-        ]
+        "required": ["id", "title", "projectTitle"]
       },
       "PmspaLogDto": {
         "type": "object",
@@ -6940,12 +6633,7 @@
             "type": "boolean"
           }
         },
-        "required": [
-          "id",
-          "title",
-          "durationMinutes",
-          "linked"
-        ]
+        "required": ["id", "title", "durationMinutes", "linked"]
       },
       "PmspaEventDto": {
         "type": "object",
@@ -6972,12 +6660,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "task",
-          "logs",
-          "id",
-          "title"
-        ]
+        "required": ["task", "logs", "id", "title"]
       },
       "PmspaDayDto": {
         "type": "object",
@@ -6992,11 +6675,7 @@
             "nullable": true
           },
           "linkState": {
-            "enum": [
-              "linked",
-              "partly-linked",
-              "not-linked"
-            ],
+            "enum": ["linked", "partly-linked", "not-linked"],
             "type": "string"
           },
           "events": {
@@ -7027,9 +6706,7 @@
             }
           }
         },
-        "required": [
-          "items"
-        ]
+        "required": ["items"]
       },
       "PmspaLinkDto": {
         "type": "object",
@@ -7053,12 +6730,7 @@
             "description": "ISO 8601 UTC: when PMSPA created the linked record, from its ObjectId (OQ-207)."
           }
         },
-        "required": [
-          "origin",
-          "pm4Id",
-          "syncedAt",
-          "pmspaCreatedAt"
-        ]
+        "required": ["origin", "pm4Id", "syncedAt", "pmspaCreatedAt"]
       },
       "PmspaLinkListDto": {
         "type": "object",
@@ -7070,17 +6742,11 @@
             }
           }
         },
-        "required": [
-          "items"
-        ]
+        "required": ["items"]
       },
       "PmspaLinkType": {
         "type": "string",
-        "enum": [
-          "project",
-          "task",
-          "time-log"
-        ]
+        "enum": ["project", "task", "time-log"]
       },
       "PmspaRecordDetailDto": {
         "type": "object",
@@ -7110,21 +6776,14 @@
           "column": {
             "type": "string",
             "description": "Task: its column.",
-            "enum": [
-              "Upcoming",
-              "In Progress",
-              "Completed"
-            ]
+            "enum": ["Upcoming", "In Progress", "Completed"]
           },
           "eventTitle": {
             "type": "string",
             "description": "Time log: its PMSPA event's title."
           }
         },
-        "required": [
-          "type",
-          "title"
-        ]
+        "required": ["type", "title"]
       },
       "PmspaLinkDetailDto": {
         "type": "object",
@@ -7150,11 +6809,7 @@
             "description": "ISO 8601 UTC"
           }
         },
-        "required": [
-          "origin",
-          "pmspa",
-          "syncedAt"
-        ]
+        "required": ["origin", "pmspa", "syncedAt"]
       },
       "PmspaImportProjectDto": {
         "type": "object",
@@ -7174,10 +6829,7 @@
             "pattern": "^[0-9a-f]{24}$"
           }
         },
-        "required": [
-          "taskIds",
-          "id"
-        ]
+        "required": ["taskIds", "id"]
       },
       "PmspaImportSelectionDto": {
         "type": "object",
@@ -7200,9 +6852,7 @@
             }
           }
         },
-        "required": [
-          "projects"
-        ]
+        "required": ["projects"]
       },
       "SyncFieldDiffDto": {
         "type": "object",
@@ -7221,11 +6871,7 @@
             "description": "E.g. \"Title\", \"Lead\", \"Due date\"."
           }
         },
-        "required": [
-          "pm4",
-          "pmspa",
-          "field"
-        ]
+        "required": ["pm4", "pmspa", "field"]
       },
       "SyncCandidateDto": {
         "type": "object",
@@ -7253,13 +6899,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "groupId",
-          "detail",
-          "differences",
-          "id",
-          "title"
-        ]
+        "required": ["groupId", "detail", "differences", "id", "title"]
       },
       "SyncTaskPathDto": {
         "type": "object",
@@ -7271,10 +6911,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "projectTitle",
-          "taskTitle"
-        ]
+        "required": ["projectTitle", "taskTitle"]
       },
       "SyncPreviewItemDto": {
         "type": "object",
@@ -7284,12 +6921,7 @@
             "nullable": true
           },
           "type": {
-            "enum": [
-              "project",
-              "task",
-              "day",
-              "event"
-            ],
+            "enum": ["project", "task", "day", "event"],
             "type": "string"
           },
           "detail": {
@@ -7297,21 +6929,13 @@
             "nullable": true
           },
           "action": {
-            "enum": [
-              "create",
-              "update",
-              "skip",
-              "differs"
-            ],
+            "enum": ["create", "update", "skip", "differs"],
             "type": "string"
           },
           "direction": {
             "nullable": true,
             "description": "Where a project or task is written (OQ-172). Null for days, events and undecided differs rows.",
-            "enum": [
-              "to-pm4",
-              "to-pmspa"
-            ],
+            "enum": ["to-pm4", "to-pmspa"],
             "type": "string"
           },
           "reason": {
@@ -7399,17 +7023,13 @@
             }
           }
         },
-        "required": [
-          "items"
-        ]
+        "required": ["items"]
       },
       "PmspaPushTargetDto": {
         "type": "object",
         "properties": {
           "type": {
-            "enum": [
-              "day"
-            ],
+            "enum": ["day"],
             "type": "string"
           },
           "id": {
@@ -7418,19 +7038,13 @@
             "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
           }
         },
-        "required": [
-          "type",
-          "id"
-        ]
+        "required": ["type", "id"]
       },
       "PmspaSyncTargetDto": {
         "type": "object",
         "properties": {
           "type": {
-            "enum": [
-              "project",
-              "task"
-            ],
+            "enum": ["project", "task"],
             "type": "string"
           },
           "id": {
@@ -7438,29 +7052,19 @@
             "format": "uuid"
           }
         },
-        "required": [
-          "type",
-          "id"
-        ]
+        "required": ["type", "id"]
       },
       "SyncChoiceDto": {
         "type": "object",
         "properties": {
           "kind": {
-            "enum": [
-              "create",
-              "link",
-              "skip"
-            ],
+            "enum": ["create", "link", "skip"],
             "type": "string"
           },
           "overwrite": {
             "nullable": true,
             "description": "`link`: the side to overwrite; null = Link only.",
-            "enum": [
-              "to-pm4",
-              "to-pmspa"
-            ],
+            "enum": ["to-pm4", "to-pmspa"],
             "type": "string"
           },
           "key": {
@@ -7474,10 +7078,7 @@
             "maxLength": 36
           }
         },
-        "required": [
-          "kind",
-          "key"
-        ]
+        "required": ["kind", "key"]
       },
       "PmspaImportDto": {
         "type": "object",
@@ -7493,10 +7094,7 @@
             "$ref": "#/components/schemas/PmspaImportSelectionDto"
           }
         },
-        "required": [
-          "choices",
-          "selection"
-        ]
+        "required": ["choices", "selection"]
       },
       "SyncResultItemDto": {
         "type": "object",
@@ -7506,12 +7104,7 @@
             "nullable": true
           },
           "type": {
-            "enum": [
-              "project",
-              "task",
-              "day",
-              "event"
-            ],
+            "enum": ["project", "task", "day", "event"],
             "type": "string"
           },
           "newTitle": {
@@ -7520,13 +7113,7 @@
             "description": "The title after an overwrite changed it (shown as \"old → new\", OQ-174)."
           },
           "outcome": {
-            "enum": [
-              "created",
-              "updated",
-              "linked",
-              "skipped",
-              "failed"
-            ],
+            "enum": ["created", "updated", "linked", "skipped", "failed"],
             "type": "string"
           },
           "reason": {
@@ -7571,10 +7158,7 @@
             "description": "ISO 8601 UTC"
           }
         },
-        "required": [
-          "items",
-          "syncedAt"
-        ]
+        "required": ["items", "syncedAt"]
       },
       "PmspaSyncDto": {
         "type": "object",
@@ -7590,10 +7174,7 @@
             "$ref": "#/components/schemas/PmspaSyncTargetDto"
           }
         },
-        "required": [
-          "choices",
-          "target"
-        ]
+        "required": ["choices", "target"]
       },
       "PmspaPushDto": {
         "type": "object",
@@ -7609,19 +7190,13 @@
             "$ref": "#/components/schemas/PmspaPushTargetDto"
           }
         },
-        "required": [
-          "choices",
-          "target"
-        ]
+        "required": ["choices", "target"]
       },
       "PmspaCandidatesInputDto": {
         "type": "object",
         "properties": {
           "type": {
-            "enum": [
-              "project",
-              "task"
-            ],
+            "enum": ["project", "task"],
             "type": "string"
           },
           "projectId": {
@@ -7641,10 +7216,7 @@
             }
           }
         },
-        "required": [
-          "type",
-          "for"
-        ]
+        "required": ["type", "for"]
       },
       "PmspaCandidatesItemDto": {
         "type": "object",
@@ -7660,10 +7232,7 @@
             }
           }
         },
-        "required": [
-          "pm4Id",
-          "candidates"
-        ]
+        "required": ["pm4Id", "candidates"]
       },
       "PmspaCandidatesDto": {
         "type": "object",
@@ -7675,9 +7244,7 @@
             }
           }
         },
-        "required": [
-          "items"
-        ]
+        "required": ["items"]
       },
       "NoteSort": {
         "type": "string",
@@ -7759,12 +7326,7 @@
             }
           }
         },
-        "required": [
-          "page",
-          "pageSize",
-          "total",
-          "items"
-        ]
+        "required": ["page", "pageSize", "total", "items"]
       },
       "NoteInputDto": {
         "type": "object",
@@ -7792,9 +7354,7 @@
             "format": "uuid"
           }
         },
-        "required": [
-          "body"
-        ]
+        "required": ["body"]
       },
       "TodoSort": {
         "type": "string",
@@ -7866,9 +7426,7 @@
             }
           }
         },
-        "required": [
-          "items"
-        ]
+        "required": ["items"]
       },
       "TodoInputDto": {
         "type": "object",
@@ -7897,10 +7455,7 @@
       },
       "ChangelogApp": {
         "type": "string",
-        "enum": [
-          "web",
-          "api"
-        ]
+        "enum": ["web", "api"]
       },
       "ChangelogEntryDto": {
         "type": "object",
@@ -7927,13 +7482,7 @@
             "description": "Short commit hash."
           }
         },
-        "required": [
-          "scope",
-          "type",
-          "description",
-          "breaking",
-          "hash"
-        ]
+        "required": ["scope", "type", "description", "breaking", "hash"]
       },
       "ChangelogReleaseDto": {
         "type": "object",
@@ -7968,14 +7517,7 @@
             }
           }
         },
-        "required": [
-          "app",
-          "commitCount",
-          "version",
-          "tag",
-          "date",
-          "changes"
-        ]
+        "required": ["app", "commitCount", "version", "tag", "date", "changes"]
       },
       "ChangelogResponseDto": {
         "type": "object",
@@ -7987,9 +7529,7 @@
             }
           }
         },
-        "required": [
-          "items"
-        ]
+        "required": ["items"]
       }
     }
   }
