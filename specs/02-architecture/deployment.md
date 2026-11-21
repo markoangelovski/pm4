@@ -1,7 +1,7 @@
 ---
 id: arch-deployment
 title: Deployment and CI/CD
-status: review
+status: approved
 owner: Marko Angelovski
 last_updated: 2026-11-21
 related: [arch-env, arch-repos, web-static-export, ADR-0001, ADR-0002, ADR-0006]
@@ -28,7 +28,9 @@ on `master` has exactly the tree `ci.yml` tested. A manual `workflow_dispatch` d
 gate. If the up-to-date rule is ever turned off, the deploy workflows must run the checks again.
 
 ## Web → GitHub Pages
-1. `npm ci` → release version, stamp and changelog → `npm run build` (→ `web/out/`).
+1. `npm ci` → release version, stamp and changelog → **API docs**: copy `api/openapi.json` to `web/public/openapi.json`,
+   so the site serves it at `/openapi.json` for the Documentation **API Docs** tab (feat-shell-api-docs; the copy is
+   git-ignored, and this is why `api/openapi.json` is in the trigger paths) → `npm run build` (→ `web/out/`).
 2. Make sure `out/404.html` exists (from `not-found.tsx`). Pages serves it for unknown paths.
 3. `actions/upload-pages-artifact` (path `web/out`) → `actions/deploy-pages`.
 - The Pages source is set to **GitHub Actions**. The **custom domain** is configured in the repo's Pages
@@ -134,3 +136,5 @@ One-time setup outside the repo, done by the owner, not an agent:
 - 2026-10-03: *Release versions* (OQ-098): automatic per-app versions from git tags and conventional commits; bootstrap tags in the owner checklist.
 - 2026-11-07: *Release changelog* (OQ-270…272): each deploy builds its app's changelog; the Versioning tab restates *Release versions* (feat-shell-documentation). Back to `review`.
 - 2026-11-21: Deploy workflows no longer repeat CI's checks; the up-to-date rule on `master` makes them redundant.
+- 2026-11-21: Web deploy step 1 names the `api/openapi.json` → `public/openapi.json` copy for the API Docs tab.
+- 2026-11-21: Approved by the owner (Release changelog shipped; the README index already said `approved`).

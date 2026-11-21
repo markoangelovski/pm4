@@ -43,7 +43,7 @@ Either way, fix the disagreement. Never ignore it.
 | Deployment and CI/CD | [02-architecture/deployment.md](02-architecture/deployment.md) | approved |
 | Security | [02-architecture/security.md](02-architecture/security.md) | review |
 | API conventions | [03-api/conventions.md](03-api/conventions.md) | approved |
-| Data model | [03-api/data-model.md](03-api/data-model.md) | draft |
+| Data model | [03-api/data-model.md](03-api/data-model.md) | approved |
 | API endpoints | [03-api/endpoints.md](03-api/endpoints.md) | approved |
 | Static export constraints | [04-web/static-export.md](04-web/static-export.md) | approved |
 | Template adaptation | [04-web/template-adaptation.md](04-web/template-adaptation.md) | approved |
