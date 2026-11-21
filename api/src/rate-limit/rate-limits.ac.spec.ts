@@ -7,7 +7,7 @@ function req(ip: string | undefined, remoteAddress?: string): Request {
 }
 
 describe("Rate limits and client IP (feat-api-rate-limit)", () => {
-  it("AC-13 NFR-004: DEFAULT_RATE_LIMITS are a 60 s window, google/callback/token 10, refresh/logout 30, user 300, oauthAuthorize/oauthToken 30, oauthRegister 10 per hour (feat-mcp-oauth-api AC-3)", () => {
+  it("AC-13 NFR-004: DEFAULT_RATE_LIMITS are a 60 s window, google/callback/token 10, refresh/logout 30, user 300, oauthAuthorize/oauthToken 30, oauthRegister 10 per hour (feat-mcp-oauth-api AC-3), mcp 120 (feat-mcp-tools-api AC-6)", () => {
     expect(DEFAULT_RATE_LIMITS).toEqual({
       windowMs: 60_000,
       windowsMs: { oauthRegister: 3_600_000 },
@@ -20,7 +20,8 @@ describe("Rate limits and client IP (feat-api-rate-limit)", () => {
         user: 300,
         oauthAuthorize: 30,
         oauthToken: 30,
-        oauthRegister: 10
+        oauthRegister: 10,
+        mcp: 120
       }
     });
   });

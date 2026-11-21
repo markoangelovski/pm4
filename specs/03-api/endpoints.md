@@ -103,6 +103,7 @@ defines its request, response and errors. Paths are relative to `/api/v1` unless
 | API-MCP-009 | POST | `/oauth/revoke` (root, form) | FR-MCP-006 | specified |
 | API-MCP-010 | GET | `/connected-apps` (bearer) → `{items: ConnectedApp[]}` | FR-MCP-009 | specified |
 | API-MCP-011 | DELETE | `/connected-apps/{id}` (bearer) | FR-MCP-009 | specified |
+| API-MCP-012 | POST | `/mcp` (root, MCP bearer) → MCP Streamable HTTP, stateless; the tools of FR-MCP-008 | FR-MCP-001, FR-MCP-008 | specified |
 
 ## Endpoint details
 
@@ -941,6 +942,41 @@ the grants' Redis families (one `MGET`), not from Postgres.
 `ACCESS_TOKEN_TTL`), so its access tokens stop working at `/mcp` at once (OQ-302).
 **Errors:** 401 · 404 not the user's grant (or unknown)
 
+### API-MCP-012: MCP endpoint
+`POST /mcp` (root, JSON-RPC 2.0, MCP **Streamable HTTP**, stateless) · Auth: an **MCP access token** · Implements:
+FR-MCP-001, FR-MCP-008 (OQ-306…OQ-309)
+- **Transport:** stateless: no `Mcp-Session-Id`, every request stands alone, answers are `application/json` (never SSE).
+  Both protocol eras of the SDK are served (2025 revisions with `initialize`, and 2026-07-28). `GET /mcp` and
+  `DELETE /mcp` → `405` with `Allow: POST`. Not in the OpenAPI contract. `serverInfo.name` = `pm4`.
+- **Auth:** the token must verify as an MCP access token (*Shared agent-access shapes*) and its `gid` must have no
+  `mcp:revoked:` marker. Otherwise `401` Problem Details `unauthorized` with
+  `WWW-Authenticate: Bearer resource_metadata="<ISSUER>/.well-known/oauth-protected-resource/mcp"` (plus
+  `, error="invalid_token"` when a token was sent). A web access token is refused here, and an MCP token at `/api/v1`.
+- **Origin:** a request with an `Origin` header that isn't one of the web app's CORS origins → `403` `forbidden`
+  (MCP transport rule against DNS rebinding); requests without `Origin` (every non-browser client) pass.
+- **Rate limit:** 120 / min per user (`mcp`, FR-MCP-007), `429` as everywhere.
+- **Tools:** the token's scopes decide which are listed: `pm4:read` lists the five read tools, `pm4:write` all ten
+  (OQ-308); an unlisted tool can't be called. Each runs as the token's user through the same service, validation
+  and rules as the REST endpoint named. A date input that is optional defaults to **today in the user's time zone**
+  (OQ-307). Durations and `startMinute` are minutes (multiples of 15; `startMinute` after midnight).
+
+  | Tool | Scope | Input | Result (JSON text) | As |
+  | --- | --- | --- | --- | --- |
+  | `search_projects` | read | `query?, sort?, page?, pageSize?` | `{items: Project[], page, pageSize, total}` | API-PRJ-002 (`q` = `query`) |
+  | `search_tasks` | read | `query?, projectId?, status?: TaskStatus[], sort?, page?, pageSize?` | `{items: Task[], page, pageSize, total}` | API-TSK-002 |
+  | `get_day` | read | `workDate?` | `Day` | API-WD-003 |
+  | `list_time_logs` | read | `from, to` (≤ 366 days), `projectId?, taskId?` | `{from, to, totalMinutes, items: TimeLog[]}` | logs **worked** in the range, by date then entry order (OQ-309) |
+  | `report_summary` | read | `from, to` (≤ 366 days) | `{from, to, workedMinutes, bookedMinutes, nonprodMinutes, weekdays, dailyTargetMinutes, targetMinutes, projects: ReportProject[]}` | API-RPT-001; target per FR-RPT-004 |
+  | `log_time` | write | `workDate?, durationMinutes, text, title?, projectId?, taskId?, excludeFromStats?, dayStartMinute?` | `TimeLog` | API-TLOG-002 |
+  | `update_time_log` | write | `id`, then any of `log_time`'s fields | `TimeLog` | API-TLOG-004 |
+  | `create_task` | write | `projectId, title, description?, status?, dueDate?, serviceId?, externalLink?` | `Task` | API-TSK-001 |
+  | `set_task_status` | write | `id, status` | `Task` | API-TSK-004 |
+  | `set_workday_start` | write | `workDate?, startMinute` | `{workDate, startMinute}` | API-WD-002 |
+- **Tool errors** are tool results with `isError: true` and a text the agent can act on: `Invalid input:` and one
+  `- <field>: <message>` line per field (a `400`), the endpoint's message for a `404` (e.g. `Task not found.`), and
+  `Something went wrong. Try again later.` for anything unexpected. Arguments that don't match a tool's input schema
+  are rejected the same way by the SDK.
+
 ## Open questions
 None.
 
@@ -991,3 +1027,4 @@ None.
 - 2026-11-12: API-USR-003 returns and matches no emails (OQ-277); new API-USR-004 `DELETE /me` (FR-AUTH-008, OQ-280, OQ-281) (feat-acct-privacy).
 - 2026-11-20: API-TLOG-001 takes a required `from`/`to` (at most 366 days); the list, totals and `days` cover only that range (OQ-286, feat-tlog-logged-range).
 - 2026-11-21: Agent access: API-MCP-001…011 and *Shared agent-access shapes* (req-agents, ADR-0013, OQ-301…305, feat-mcp-oauth-api).
+- 2026-11-21: API-MCP-012 `POST /mcp`: transport, auth, Origin check, rate limit and the ten tools (OQ-306…OQ-309, feat-mcp-tools-api).

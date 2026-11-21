@@ -45,6 +45,7 @@
   fetching client metadata URLs, open redirects. `security.md` gets a section for them.
 - New state: pending authorization requests and codes in Redis; grants and dynamically registered clients (OQ-290) in Postgres, within
   the storage rules.
-- New dependency: the MCP TypeScript SDK (`@modelcontextprotocol/sdk`) for the transport. The OAuth endpoints are written
+- New dependency: the MCP TypeScript SDK (`@modelcontextprotocol/sdk`) for the transport. Since its v2 the SDK ships as
+  `@modelcontextprotocol/server` + `@modelcontextprotocol/node`, which PM4 uses (OQ-306). The OAuth endpoints are written
   in Nest on the existing auth module's patterns, with no OAuth library, and every auth task gets an Opus review (OQ-296).
 - The consent page and Connected apps list go through the UI prototype first (ADR-0012).

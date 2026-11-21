@@ -240,6 +240,29 @@ export class TimeRepository {
       .orderBy(asc(timeLogs.id));
   }
 
+  /** The user's logs worked in `[from, to]`, optionally of one project or task; by work date, then entry order. */
+  async listRange(
+    userId: string,
+    from: string,
+    to: string,
+    filter: { projectId?: string; taskId?: string }
+  ): Promise<TimeLogRow[]> {
+    const conditions = [
+      eq(timeLogs.userId, userId),
+      gte(timeLogs.workDate, from),
+      lte(timeLogs.workDate, to)
+    ];
+    if (filter.projectId !== undefined) {
+      conditions.push(eq(timeLogs.projectId, filter.projectId));
+    }
+    if (filter.taskId !== undefined) {
+      conditions.push(eq(timeLogs.taskId, filter.taskId));
+    }
+    return this.selectRows()
+      .where(and(...conditions))
+      .orderBy(asc(timeLogs.workDate), asc(timeLogs.id));
+  }
+
   /** Logs worked or booked in `[from, to]`, ordered by work date, then entry order (API-BOOK-001). */
   async listBookingRange(
     userId: string,

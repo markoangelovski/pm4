@@ -1,6 +1,9 @@
 import { ExecutionContext, UnauthorizedException } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 import { AccessTokenService } from "../../../auth/access-token.service.js";
+import { AppConfigService } from "../../../config/app-config.service.js";
+import { McpTokenService } from "../../../oauth/mcp-token.service.js";
+import { OAuthStore } from "../../../oauth/oauth.store.js";
 import { AccessTokenGuard } from "./access-token.guard.js";
 
 function contextFor(request: Record<string, unknown>): ExecutionContext {
@@ -17,9 +20,13 @@ describe("AccessTokenGuard", () => {
   const reflector = {
     getAllAndOverride: () => isPublic
   } as unknown as Reflector;
-  const guard = new AccessTokenGuard(reflector, {
-    verify
-  } as unknown as AccessTokenService);
+  const guard = new AccessTokenGuard(
+    reflector,
+    { verify } as unknown as AccessTokenService,
+    {} as unknown as McpTokenService,
+    {} as unknown as OAuthStore,
+    {} as unknown as AppConfigService
+  );
 
   beforeEach(() => {
     isPublic = undefined;

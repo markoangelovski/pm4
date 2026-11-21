@@ -1,6 +1,6 @@
 # Task Board
 
-**Next free ID:** T-0177
+**Next free ID:** T-0180
 
 | ID | Title | Milestone | App | Size | Status | Depends on |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -179,5 +179,8 @@
 | [T-0174](m9-agents/T-0174-clients-and-authorize-redirect-uri-matching.md) | Clients and authorize: redirect-URI matching, the SSRF-safe CIMD fetcher, DCR registration, ClientRegistry, GET /oauth/authorize | M9 | api | M | done | T-0173 |
 | [T-0175](m9-agents/T-0175-consent-tokens-revoke-the-redis-store.md) | Consent, tokens, revoke: the Redis store with the rotation script, McpTokenService, the consent endpoints, POST /oauth/token and /oauth/revoke | M9 | api | M | done | T-0174 |
 | [T-0176](m9-agents/T-0176-connected-apps-list-and-revoke-sign.md) | Connected apps list and revoke, Sign out of all devices and account deletion ending grants, openapi.json | M9 | api | S | done | T-0175 |
+| [T-0177](m9-agents/T-0177-the-mcp-endpoint-mcp-auth-in.md) | The /mcp endpoint: MCP auth in AccessTokenGuard, mcp rate limit, prefix exclusion, shared validation options, McpService with the SDK handler, controller with the Origin check and 405s, tool helpers, empty tool services | M9 | api | M | done | — |
+| [T-0178](m9-agents/T-0178-read-tools-search-projects-search-tasks.md) | Read tools: search_projects, search_tasks, get_day, list_time_logs (+ listRange), report_summary (+ report-summary.ts) | M9 | api | M | done | T-0177 |
+| [T-0179](m9-agents/T-0179-write-tools-log-time-update-time.md) | Write tools: log_time, update_time_log, create_task, set_task_status, set_workday_start | M9 | api | S | done | T-0178 |
 
 M0–M6 are done. Later follow-ups are filed under the milestone they extend.

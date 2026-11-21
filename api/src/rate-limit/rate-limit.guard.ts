@@ -50,7 +50,9 @@ export class RateLimitGuard extends ThrottlerGuard {
     const scope = this.scopeOf(props.context);
     const req = props.context.switchToHttp().getRequest<RateLimitedRequest>();
     const tracker =
-      scope === "user" && req.user ? "u:" + req.user.id : "ip:" + clientIp(req);
+      (scope === "user" || scope === "mcp") && req.user
+        ? "u:" + req.user.id
+        : "ip:" + clientIp(req);
     const windowMs =
       this.rateLimits.windowsMs[scope] ?? this.rateLimits.windowMs;
     return super.handleRequest({
