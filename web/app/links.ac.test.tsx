@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import type { ComponentProps } from "react";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import FullLogo from "./(dashboard-layout)/layout/shared/logo/full-logo";
 import SignInPage from "./auth/sign-in/page";
 import NotFound from "./not-found";
@@ -44,20 +44,19 @@ describe("Sign-in legal note (feat-acct-web)", () => {
   it("AC-4 FR-LEGAL-003: the sign-in page links the terms and the privacy policy", () => {
     render(<SignInPage />);
 
-    expect(
-      screen.getByText(
-        (_, el) =>
-          el?.tagName === "P" &&
-          el.textContent ===
-            "By continuing, you agree to the Terms and acknowledge the Privacy policy."
-      )
-    ).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Terms" })).toHaveAttribute(
+    // The page footer links Privacy and Terms too (SCR-001), so the links are looked up in the note.
+    const note = screen.getByText(
+      (_, el) =>
+        el?.tagName === "P" &&
+        el.textContent ===
+          "By continuing, you agree to the Terms and acknowledge the Privacy policy."
+    );
+    expect(within(note).getByRole("link", { name: "Terms" })).toHaveAttribute(
       "href",
       "/terms"
     );
     expect(
-      screen.getByRole("link", { name: "Privacy policy" })
+      within(note).getByRole("link", { name: "Privacy policy" })
     ).toHaveAttribute("href", "/privacy");
   });
 });

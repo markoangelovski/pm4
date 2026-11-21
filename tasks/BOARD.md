@@ -174,5 +174,6 @@
 | [T-0169](m1-auth/T-0169-web-deploy-copies-api-openapi-json.md) | Web deploy copies api/openapi.json into the site; ignore the copy | M1 | infra | S | done | — |
 | [T-0170](m1-auth/T-0170-api-docs-tab-promote-real-useapispec.md) | API Docs tab: promote, real useApiSpec and getApiDocsAccessToken, the view's twin | M1 | web | S | done | — |
 | [T-0171](m1-auth/T-0171-documentation-architecture-auth-database-tabs.md) | Documentation: promote the Architecture, Auth and Database tabs and the new topic order | M1 | web | S | done | — |
+| [T-0172](m1-auth/T-0172-sign-in-page-landing-look.md) | Sign-in page in the landing page's look: promote SignInPage and GoogleButton, rewire the page and SocialButtons | M1 | web | S | done | — |
 
 M0–M6 are done. Later follow-ups are filed under the milestone they extend.

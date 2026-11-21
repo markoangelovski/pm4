@@ -3,7 +3,7 @@ id: web-prototype
 title: UI Prototype
 status: approved
 owner: Marko Angelovski
-last_updated: 2026-11-20
+last_updated: 2026-11-21
 related: [ADR-0012, web-static-export, web-routing, web-conventions, qa-task-routing, feat-template]
 ---
 
@@ -22,7 +22,8 @@ prototype screen and only adapt its data wiring.
   `next build` emits no `/proto` route and production serves the normal `404.html` for `/proto/*`.
 - **Localhost only.** The prototype shell renders the not-found page unless `window.location.hostname` is
   `localhost` or `127.0.0.1`.
-- **Always signed in** as a fixed mock user. There is no prototype sign-in page, and no real auth code runs.
+- **Always signed in** as a fixed mock user, and no real auth code runs. The sign-in page's twin (`/proto/auth/sign-in`)
+  is visual only: its button opens `/proto/app`, and `?error=` shows the same alerts as production.
 
 ## Layout: mirror the app
 Under `web/proto/`, every file sits at the path its production twin has (or will have) under `web/`. Promotion
@@ -134,3 +135,4 @@ acceptance tests; lint and typecheck cover it.
 - 2026-10-11: Mock hooks are copies of the real `api.ts` over a mock client (owner).
 - 2026-10-11: Twin check: `pm4 check` and `pm4 twins` compare `proto/features/**` with production (T-0058).
 - 2026-11-20: Prototypes of several features build up on one `proto/<batch>` branch and merge as one pull request (owner).
+- 2026-11-21: The sign-in page has a visual-only twin at `/proto/auth/sign-in` (prototype `39be2bd`, T-0172).
