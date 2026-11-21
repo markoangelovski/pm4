@@ -3,7 +3,7 @@ id: T-0179
 title: Write tools: log_time, update_time_log, create_task, set_task_status, set_workday_start
 milestone: M9
 app: api
-status: review
+status: done
 size: S
 tier: haiku
 implementer: claude-code/claude-haiku-5-5

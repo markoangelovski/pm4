@@ -3,7 +3,7 @@ id: T-0178
 title: Read tools: search_projects, search_tasks, get_day, list_time_logs (+ listRange), report_summary (+ report-summary.ts)
 milestone: M9
 app: api
-status: review
+status: done
 size: M
 tier: haiku
 implementer: claude-code/claude-haiku-5-5

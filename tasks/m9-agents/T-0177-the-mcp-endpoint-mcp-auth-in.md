@@ -3,7 +3,7 @@ id: T-0177
 title: The /mcp endpoint: MCP auth in AccessTokenGuard, mcp rate limit, prefix exclusion, shared validation options, McpService with the SDK handler, controller with the Origin check and 405s, tool helpers, empty tool services
 milestone: M9
 app: api
-status: review
+status: done
 size: M
 tier: sonnet
 implementer: claude-code/claude-sonnet-5-5
