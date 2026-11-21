@@ -3,7 +3,7 @@ id: web-conventions
 title: Web Conventions
 status: approved
 owner: Marko Angelovski
-last_updated: 2026-11-20
+last_updated: 2026-11-21
 related: [web-static-export, web-template, web-routing, web-prototype, qa-code-style, ADR-0009, ADR-0010, ADR-0012, feat-land-app-route-split]
 ---
 
@@ -83,7 +83,8 @@ proto/                         # UI prototype code, mirroring this tree; never i
   (`features/system/form-drafts.ts`). Closing by click outside, Escape or the X keeps what was typed; the same dialog (same form and item)
   opens again with it and "Unsaved draft restored · Discard" (`DraftNotice`), where **Discard** returns to the starting values. **Cancel**
   and a successful submit drop the draft; values equal to the starting ones leave none; deleting an item drops its edit drafts
-  (`forgetDraftsOf`). Drafts live in memory only: a reload, sign-out or session end (`AuthGuard`'s session-ended handler) drops them all
+  (`forgetDraftsOf`), and deleting a project or task unlinks it from every other draft (`forgetDraftLinksTo`, OQ-310): its
+  project / task field becomes empty, a cleared project also clears the service, and the restored form says nothing more. Drafts live in memory only: a reload, sign-out or session end (`AuthGuard`'s session-ended handler) drops them all
   (`clearFormDrafts`). Inline forms and the day prompt don't keep drafts.
 
 ## Time and dates
@@ -123,3 +124,4 @@ proto/                         # UI prototype code, mirroring this tree; never i
 - 2026-11-01: Approved by the owner with feat-api-rate-limit.
 - 2026-11-20: *Forms*: unsaved drafts in the form dialogs (OQ-284, OQ-285, feat-shell-form-drafts). Back to `review`.
 - 2026-11-20: Approved by the owner with feat-shell-form-drafts.
+- 2026-11-21: *Forms*: deleting a project or task unlinks it from the other drafts (OQ-310, prototype `4e62337`, T-0180).

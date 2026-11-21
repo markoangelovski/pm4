@@ -11,7 +11,10 @@ import { toastError } from "@/features/system/rate-limit";
 import { projectKeys } from "@/features/projects/api";
 import { TASK_STATUSES, type TaskStatus } from "@/features/tasks/status";
 import { forgetLogLinkTo } from "@/features/time/last-log-link";
-import { forgetDraftsOf } from "@/features/system/form-drafts";
+import {
+  forgetDraftLinksTo,
+  forgetDraftsOf
+} from "@/features/system/form-drafts";
 import { apiClient } from "@/lib/api/client";
 import { isApiError, unwrap, unwrapVoid } from "@/lib/api/problem";
 import type { components } from "@/lib/api/schema";
@@ -281,6 +284,7 @@ export function useDeleteTask(): UseMutationResult<void, Error, Task> {
       void queryClient.invalidateQueries({ queryKey: TIME_KEY });
       forgetLogLinkTo(task.id);
       forgetDraftsOf(task.id);
+      forgetDraftLinksTo(task.id);
     }
   });
 }
