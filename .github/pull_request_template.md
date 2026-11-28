@@ -10,12 +10,13 @@
 
 - Feature spec: <!-- specs/06-features/feat-….md, or "quick lane" / "none" -->
 - Tasks: <!-- T-####, T-#### -->
-- Prototype: <!-- master SHA of the prototype commit, or "n/a" -->
+- Prototype: <!-- SHA of the prototype commit on this branch, or "n/a" -->
 
 ## Checks
 
 - [ ] `node scripts/pm4.mjs check <T-####>` passes (summary in the task's *Implementation notes*)
-- [ ] `review-feature` verdict `approve` (or quick lane: owner reviewed the diff)
+- [ ] `review-feature` verdict `approve` (or quick lane: none)
+- [ ] Owner tested the branch locally (run report in the spec, or the task's *Implementation notes*)
 - [ ] Tasks set to `done` in this branch
 - [ ] Web: `npm run build`, `out/` served, deep route hard-refreshed
 - [ ] API: `openapi.json` regenerated and `npm run api:types` run in `web/` if the contract changed

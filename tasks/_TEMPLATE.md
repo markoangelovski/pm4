@@ -39,11 +39,12 @@ Optional. A bash block that `pm4 check` runs from the repo root after the gates.
 ---
 
 ## Implementation notes
-_Implementer: what changed, and anything the reviewer should look at._
+_Implementer: what changed, and anything the reviewer should look at. An autonomous run adds its run report
+here (`specs/05-quality/task-routing.md#run-report`)._
 
 ### Attempts
 | # | Agent | Result | Summary |
 | --- | --- | --- | --- |
 
 ## Review
-_The owner's review (quick lane), or `review-feature`'s verdict._
+_The owner's local test (quick lane), or `review-feature`'s verdict._

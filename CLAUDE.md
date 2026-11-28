@@ -18,8 +18,8 @@ The shared instructions above apply in full. This section adds only what is spec
 | `reviewer` | opus | One review per feature (`review-feature`): the diff against the spec. Read-only |
 | `Explore` (built-in) | pass `model: haiku` | Wide codebase searches only; open known files directly |
 
-Specs are written **inline in the main session**, not by subagents, so open questions go straight to
-the owner and nothing is read twice. Acceptance tests are typing once the spec is approved: `test-engineer`
+Specs are written **inline in the main session**, not by subagents, so nothing is read twice. In an
+autonomous run, the main session decides each open question itself and records it as an assumed decision. Acceptance tests are typing once the spec is approved: `test-engineer`
 writes them, and the main session checks the diff against the spec before `pm4 hash`.
 
 Subagents never commit (AGENTS.md §3). When you delegate, repeat that rule in the prompt, and check
@@ -30,7 +30,10 @@ editing anything outside `api/` and `web/`.
 
 ### Skills (`.claude/skills/` → symlink to `.agents/skills/`)
 
-- `prototype`: build or change a screen in the UI prototype with the owner, in the main session (Opus)
+- `prototype`: build or change a screen in the UI prototype with the owner, in the main session (Opus), on the
+  feature's `feat/<slug>` branch. It ends with the prototype commit and a kickoff prompt for `build-feature`
+- `build-feature <slug | description> [--revise …]`: the autonomous run from the confirmed prototype to a tested
+  branch with local servers and a run report. It chains the skills below and commits each step
 - `write-spec`: create or update a spec. Feature specs use `specs/06-features/_TEMPLATE.md`
 - `write-task <feature-spec>`: create task files from an approved feature spec (runs `pm4 tasks`)
 - `write-acceptance-tests <feature-spec>`: the test-first step: `test-engineer` (Sonnet) writes, the main session checks and runs `pm4 hash`
@@ -47,6 +50,11 @@ editing anything outside `api/` and `web/`.
   The `pm4` output and the subagent's report are enough.
 - Before claiming a task is done, run `node scripts/pm4.mjs check <T-####>` and put its summary in
   the task's *Implementation notes*.
-- Commit only when the owner says so, after they've reviewed the diff (AGENTS.md §3).
+- Commit at the workflow's commit points on the work branch (AGENTS.md §6). Anything else waits until the owner
+  says to commit (AGENTS.md §3). Never commit on `master`.
+- An autonomous run doesn't ask questions (`AskUserQuestion`) or wait for approval. It decides, records the
+  decision, and reports it (`specs/05-quality/task-routing.md#autonomous-runs`).
+- Local servers for the owner's testing run from the feature's worktree on ports 3000/3001. Stop whatever
+  serves those ports first (`build-feature` §6).
 - Push only a work branch, from the main session, to open its pull request; never `master`, never
   `--force` (AGENTS.md §6 *Branches and pull requests*). `gh` must be logged in (`! gh auth login`).

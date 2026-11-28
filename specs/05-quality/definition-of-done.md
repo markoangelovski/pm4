@@ -3,7 +3,7 @@ id: qa-dod
 title: Definition of Done
 status: approved
 owner: Marko Angelovski
-last_updated: 2026-10-01
+last_updated: 2026-11-28
 related: [qa-testing, qa-code-style, qa-task-routing]
 ---
 
@@ -17,7 +17,7 @@ reviewer runs `pm4 check --feature` and checks the rest by reading.
 - [ ] ⚙ The task's acceptance tests pass, and their sha256 hashes match the task file.
 - [ ] ⚙ Lint, typecheck, tests and build pass. The `pm4 check` summary is pasted in *Implementation notes*.
 - [ ] ⚙ Only files listed for the task (the feature spec's *Files*, or the quick task's `files:`) changed.
-- [ ] ⚙ Nothing is staged, committed or pushed (AGENTS.md §3).
+- [ ] ⚙ Nothing is staged or pushed when the check runs. The main session commits the task after it passes (AGENTS.md §3, §6).
 - [ ] The implementation matches the spec. Any deviation was raised and resolved, not silently made.
 - [ ] Tests were added or updated as `testing.md` requires.
 - [ ] No secrets, debug leftovers or commented-out code.
@@ -45,4 +45,5 @@ reviewer runs `pm4 check --feature` and checks the rest by reading.
 - 2026-09-26: Initial scaffold.
 - 2026-09-27: Agents never commit; the owner reviews the diff and commits.
 - 2026-09-28: Acceptance-test hash check; only the spec's listed files change; commits happen after the owner's review, on request.
+- 2026-11-28: Autonomous runs: the main session commits each task on the feature branch after its check passes.
 - 2026-10-01: Mechanical items are verified by `pm4 check`.

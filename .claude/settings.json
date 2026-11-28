@@ -12,18 +12,18 @@
       "Bash(git status:*)",
       "Bash(git diff:*)",
       "Bash(git log:*)",
-      "Bash(node scripts/pm4.mjs:*)"
-    ],
-    "ask": [
+      "Bash(node scripts/pm4.mjs:*)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
+      "Bash(npm install *)",
+      "Bash(npm i *)",
+      "Bash(npm run db:migrate*)"
+    ],
+    "ask": [
       "Bash(git push:*)",
       "Bash(gh pr create:*)",
       "Bash(gh pr merge:*)",
-      "Bash(npm install *)",
-      "Bash(npm i *)",
       "Bash(npm uninstall *)",
-      "Bash(npm run db:migrate*)",
       "Bash(npx drizzle-kit push*)"
     ],
     "deny": [

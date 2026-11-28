@@ -2,12 +2,13 @@
 id: feat-<area>-<slug>          # e.g. feat-prj-crud
 title: <Feature title>
 status: draft                   # draft | review | approved | deprecated
+approved_by: —                  # owner, or the autonomous run's signature (task-routing.md#autonomous-runs)
 owner: Marko Angelovski
 last_updated: YYYY-MM-DD
 milestone: M<N>
 requirements: []                # [FR-PRJ-001, NFR-005]
 related: []                     # [api-endpoints, api-data-model, ADR-000X]
-prototype: —                    # master SHA of the squash-merged prototype commit (web UI features), e.g. 1a2b3c4
+prototype: —                    # SHA of the prototype commit on the feature branch (web UI features), e.g. 1a2b3c4
 ---
 
 <!--
@@ -24,8 +25,9 @@ How to use this template (delete this comment in the real spec):
 - The spec can't move to `review` while Open questions is non-empty or a `TODO:` remains.
 - Web UI feature: the confirmed prototype (`specs/04-web/prototype.md`) is the UI spec. Don't describe markup,
   layout or copy; point at the prototype files and write only the delta to production (Interfaces → Web).
-  Promoted files are `P` rows in Files. UI behavior the owner confirmed is a decision sourced
-  "Owner, prototype `<sha>`". Acceptance tests cover the wiring (real hooks, invalidation, URL state, auth,
+  Promoted files are `P` rows in Files. UI behavior the owner confirmed (and each decision the prototype commit's
+  message lists) is a decision sourced "Owner, prototype `<sha>`".
+- Autonomous run: an unknown the run decided itself is sourced `assumed, OQ-###`. The run fills *Run report* last. Acceptance tests cover the wiring (real hooks, invalidation, URL state, auth,
   errors), not markup the prototype already settled.
 -->
 
@@ -39,7 +41,13 @@ Optional. Choices made while writing this spec, and who made them. *Interfaces* 
 
 | # | Decision | Source |
 | --- | --- | --- |
-| D1 | … | OQ-### (owner, YYYY-MM-DD) · Owner, prototype `<sha>` |
+| D1 | … | OQ-### (owner, YYYY-MM-DD) · Owner, prototype `<sha>` · assumed, OQ-### |
+
+## Dependencies
+Packages this feature adds, or `—`. The main session installs them; implementers never do.
+
+| App | Package | Version | Why |
+| --- | --- | --- | --- |
 
 ## Scope
 **In:** …
@@ -87,7 +95,7 @@ Hooks with signatures, query keys and the keys each mutation invalidates (same n
 `api.ts`). For promoted files, only the **delta from prototype to production**: each remaining `@/proto/mock/`
 import and its replacement, auth/session use, API error mapping, URL state, anything the mock skipped. For a
 promoted file that already exists in production: the command that shows the prototype change to apply,
-e.g. `git diff <previous prototype sha> <prototype sha> -- web/proto/features/<domain>/components/x-view.tsx`.
+e.g. `git show <prototype sha> -- web/proto/features/<domain>/components/x-view.tsx`.
 New non-prototype components: props and signatures as usual.
 
 ## Acceptance criteria
@@ -134,6 +142,10 @@ finishes. Implementers and reviews are recorded in the task files.
 
 ## Open questions
 Must be empty before `review`. Link `OQ-###` entries in `specs/open-questions.md`.
+
+## Run report
+Autonomous runs only, written last (`specs/05-quality/task-routing.md#run-report`): test it, assumed decisions,
+dependencies added, deviations, not done, gates. A revision adds a *Revision N* part.
 
 ## Changelog
 - YYYY-MM-DD: Initial draft.

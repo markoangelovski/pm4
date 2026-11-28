@@ -3,7 +3,7 @@ id: web-prototype
 title: UI Prototype
 status: approved
 owner: Marko Angelovski
-last_updated: 2026-11-21
+last_updated: 2026-11-28
 related: [ADR-0012, web-static-export, web-routing, web-conventions, qa-task-routing, feat-template]
 ---
 
@@ -110,13 +110,12 @@ acceptance tests; lint and typecheck cover it.
 ## Workflow
 1. **Build** (main session with the owner, `prototype` skill): the screen, its mock hooks, seed and proposed types.
    The owner tries it at `http://localhost:3000/proto/app/...`.
-2. **Confirm**: the owner says the screen is confirmed, and it is committed (`proto(web): …`) on the current
-   `proto/<batch>` branch. One batch branch collects the prototypes of several features, one commit each; when the
-   owner says the batch is done, it goes to `master` as one pull request, squash-merged. That squash commit's SHA on
-   `master` goes into the `prototype:` field of every feature spec in the batch, so a batch's specs are written after
-   its merge.
-3. **Spec** (`write-spec`): the feature spec takes the UI from the prototype and states only the delta (see
-   `specs/06-features/_TEMPLATE.md`).
+2. **Confirm**: the owner says the screen is confirmed, and it is committed (`proto(web): …`) as the first commit on
+   the feature's own `feat/<slug>` branch. The commit message lists the owner's decisions from the session. The
+   prototype isn't merged on its own: it reaches `master` in the feature's pull request.
+3. **Spec** (`write-spec`, inside `build-feature`): the feature spec takes the UI from the prototype and states only
+   the delta (see `specs/06-features/_TEMPLATE.md`). Its `prototype:` is the prototype commit's SHA on the feature
+   branch.
 4. **Promote** (`implement-task`): before delegating a web task, the orchestrator runs
    `node scripts/pm4.mjs promote <T-####>`. For each *Files* row marked `P`, it copies the prototype file to its
    production path (only if that path doesn't exist yet), rewrites `@/proto/` imports to `@/`, and lists the
@@ -136,3 +135,5 @@ acceptance tests; lint and typecheck cover it.
 - 2026-10-11: Twin check: `pm4 check` and `pm4 twins` compare `proto/features/**` with production (T-0058).
 - 2026-11-20: Prototypes of several features build up on one `proto/<batch>` branch and merge as one pull request (owner).
 - 2026-11-21: The sign-in page has a visual-only twin at `/proto/auth/sign-in` (prototype `39be2bd`, T-0172).
+- 2026-11-28: No more batches: each feature's prototype is the first commit on its `feat/<slug>` branch, and the
+  autonomous build continues on that branch (owner).
