@@ -4,6 +4,10 @@ Unresolved decisions. **Agents must not guess answers to these.** Where a spec d
 says `TBD (OQ-###)`. When a question is resolved, set its status to `resolved`, record the answer,
 and link to where the decision now lives. Resolved items stay here for history.
 
+An autonomous run (`build-feature`) doesn't leave questions open. It records its recommended answer straight in
+*Resolved*, starting **Assumed (YYYY-MM-DD):**. When the owner confirms or changes it, the answer starts
+**Owner (YYYY-MM-DD):** instead (`specs/05-quality/task-routing.md#autonomous-runs`).
+
 ## Open
 
 | ID | Question | Proposal | Area | Blocks |

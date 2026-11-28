@@ -18,7 +18,8 @@ Either way, fix the disagreement. Never ignore it.
 ## Index and status
 
 `draft` = being written, not implementable · `review` = complete, awaiting owner sign-off ·
-`approved` = implementable · `deprecated` = kept for history only.
+`approved` = implementable (a feature spec from an autonomous run approves itself, with `approved_by:` the run's
+signature, and the owner reviews it with the run report) · `deprecated` = kept for history only.
 
 | Spec | File | Status |
 | --- | --- | --- |
@@ -110,3 +111,6 @@ IDs are never reused or renumbered. Removed items are marked `(removed)`.
    `review` whose files changed meaning goes back to `in-progress`.
 3. Architectural changes need a new ADR, which supersedes the old one. Never edit an accepted ADR's decision.
 4. Only the human owner moves a spec to `approved`.
+5. **Autonomous runs** (`build-feature`, `05-quality/task-routing.md#autonomous-runs`) are the exception to 2 and 4:
+   the run approves its own feature spec, and it changes approved specs without moving them back to `review`. Each
+   such change gets a changelog line and a *Deviations* entry in the run report. The owner reviews them while testing.

@@ -31,9 +31,11 @@ stage or commit.
 
 ## 3. Handle the reports
 - `BLOCKED: spec` → the spec doesn't say enough to test without guessing. Ask the owner (`OQ-###`), update the
-  spec once answered, and re-delegate. Don't answer the question yourself.
+  spec once answered, and re-delegate. Don't answer the question yourself. **Autonomous:** answer it yourself as an
+  assumed decision (`write-spec` §9), update the spec, and re-delegate.
 - `FAILED` → read the failure. Fix it yourself if it's small (a setup or import error), otherwise re-delegate
-  once with the report. Still failing → ask the owner.
+  once with the report. Still failing → ask the owner (autonomous: fix it yourself; if you can't, stop the run and
+  report it, because no task can be checked without its tests).
 
 ## 4. Check the diff (trust your read over the report)
 `git status` and `git diff` must show only `*.ac.*` files and the listed stubs, nothing staged. Then read every
@@ -61,7 +63,8 @@ tests still pass. With a split, this is the first time the app's files are check
 
 ## 7. Report
 The files written (and by which agent), each AC with its failure reason, the gate results, and what you fixed
-in the check. Then ask the owner to review and **commit the test-first step** (spec, tasks, tests, stubs) as
-the first commit on the feature's `task/T-####` branch, so each implementation diff contains only
-implementation. It isn't pushed to `master` on its own: its tests fail until the implementation lands in the
-same pull request. Never stage or commit yourself.
+in the check. Then the main session **commits the test-first step** (spec, layer specs, tasks, board, tests, stubs,
+`package*.json` for the spec's dependencies) on the feature branch, after the prototype commit. That way each
+implementation diff contains only implementation. It isn't pushed to `master` on its own: its tests fail until
+the implementation lands in the same pull request. Outside an autonomous run, ask the owner first. Subagents never
+stage or commit.

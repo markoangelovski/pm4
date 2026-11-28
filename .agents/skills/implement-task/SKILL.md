@@ -13,7 +13,8 @@ yourself unless something goes wrong. The script and the subagent's report are e
 - `node scripts/pm4.mjs ready $ARGUMENTS`. If it says NOT READY, report the reasons and stop.
 - `node scripts/pm4.mjs check $ARGUMENTS --no-gates`. If the scope check lists files, they were
   there before this task started. Ask the owner to commit or remove them, unless they belong to earlier
-  tasks of the same feature (the check allows those).
+  tasks of the same feature (the check allows those). **Autonomous:** earlier tasks are already committed. Files
+  left over from this run go into the commit of the task they belong to; anything else stops the run (report it).
 
 ## 2. Delegate
 - `node scripts/pm4.mjs status $ARGUMENTS in-progress`.
@@ -21,7 +22,7 @@ yourself unless something goes wrong. The script and the subagent's report are e
   prints what's left for the implementer; it does nothing for a task without `P` rows. On a retry, skip it
   (the files are already there).
 - `app: api` → `api-engineer`, `app: web` → `web-engineer`, with `model` = the task's `tier`, unless the owner
-  names another agent (e.g. an OpenCode model) for this task. `infra`/`spec` tasks: do them yourself, or ask the owner.
+  names another agent (e.g. an OpenCode model) for this task. `infra`/`spec` tasks: do them yourself, or ask the owner (autonomous: do them yourself, within the hard stops).
 - Note the attempt's **signature** from what you launch (`specs/05-quality/task-routing.md#agent-signatures`): a
   Claude subagent is `claude-code/<full model ID>` (`haiku` → `claude-haiku-5-5`), an OpenCode agent is
   `opencode/…` or `ori-opencode/…` with the model from its launch command. Never take it from the agent's report.
@@ -74,15 +75,19 @@ Then record the attempt yourself: one row in *Attempts* (`| # | <signature> | <R
 A fix you make in the main session is its own row with your signature.
 
 ## 4. Escalate (`specs/05-quality/task-routing.md#escalation`)
-- `BLOCKED: spec` → `pm4 status $ARGUMENTS blocked`, write the question into the task, propose an `OQ-###` to the owner.
+- `BLOCKED: spec` → decide the gap yourself as an assumed decision (`write-spec` §9): fix the spec, have
+  `test-engineer` update any test it changes and re-run `pm4 hash <spec>`, install a missing dependency yourself. Then
+  re-delegate at the same tier.
 - `BLOCKED: test` → check the test yourself. Fix it and re-run `pm4 hash <spec>` if it's wrong; then re-delegate at the same tier.
-- `FAILED`, or the check fails → re-delegate at the next tier. `FAILED` at sonnet → blocked, ask the owner.
+- `FAILED`, or the check fails → re-delegate at the next tier. `FAILED` at sonnet → one fix attempt of your own (its own
+  *Attempts* row). Still failing → `pm4 status $ARGUMENTS blocked`, the reason goes into the task, and the run
+  continues with the tasks that don't depend on it.
 
 ## 5. Hand off
 - Set `implementer:` in the task's frontmatter to the signature of the attempt that finished it.
 - `node scripts/pm4.mjs status $ARGUMENTS review`. This unblocks dependent tasks.
-- Tell the owner in a few lines: the files changed, the check summary, and the attempts.
+- Note in a few lines, for the run report: the files changed, the check summary, and the attempts.
 - Next: the next `ready` task of the feature. After the last one, suggest `review-feature <spec>`.
-  A quick-lane task goes straight to the owner's review, then its own pull request.
-- Don't commit. The owner commits after their review (AGENTS.md §3). Work happens on the feature's
-  `task/T-####` branch, never on `master` (AGENTS.md §6 *Branches and pull requests*).
+  A quick-lane task goes on to `build-feature`'s local servers and run report.
+- Commit the task on the feature branch (`build-feature` §4): its code, the task file and the board. Never on
+  `master` (AGENTS.md §6 *Branches and pull requests*). Outside an autonomous run, ask the owner first (AGENTS.md §3).

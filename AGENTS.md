@@ -44,13 +44,16 @@ document (ADR-0010): `api/openapi.json` → `web/lib/api/schema.d.ts` (`npm run 
 
 If sources conflict, the higher one wins. If something is **unspecified**, do not invent product
 behavior. Add an entry to `specs/open-questions.md` and ask the user (implementers: see §5, stop and report instead).
+In an autonomous run (`build-feature`), the main session records the answer it recommends as an **assumed**
+decision instead of asking, and the owner reviews it afterwards (`specs/05-quality/task-routing.md#autonomous-runs`).
 
 ## 3. Non-negotiable constraints
 
-- **The owner reviews before anything is committed.** Leave every change as an uncommitted,
-  unstaged working-tree change. Commit only when the owner explicitly asks you to in the current
-  conversation, after they have reviewed the diff, and then commit only the reviewed changes.
-  **Subagents never commit or push.** Only the main session pushes, and only a work branch (never
+- **Commits stay on work branches, and the owner decides what reaches `master`.** The main session commits
+  only on its own work branch (never `master`), at the steps the workflow names: the confirmed prototype once
+  the owner confirms it, and every step of an autonomous run (`build-feature`, §6). The owner reviews the
+  finished branch by testing it locally. Any other change stays uncommitted and unstaged until the owner
+  asks for a commit in the current conversation. **Subagents never commit or push.** Only the main session pushes, and only a work branch (never
   `master`, never `--force`), to open its pull request (§6 *Branches and pull requests*). `master`
   changes only by a squash merge of a pull request on GitHub. Never run `git stash`, `git reset`,
   `git rebase`, `git merge`, `git checkout -- …`, `git restore` or `git clean`; if one seems
@@ -94,7 +97,10 @@ behavior. Add an entry to `specs/open-questions.md` and ask the user (implemente
   - `api/`: Nest building blocks via `npx nest generate <schematic> <name>` from `api/`.
     → `specs/03-api/conventions.md#code-generation-nest-cli`
 - **Ask before hard-to-reverse actions**, such as creating repos, deploying, changing CI secrets,
-  running migrations against Neon, adding or removing dependencies, or deleting files.
+  running migrations against Neon, removing dependencies, or deleting files no spec lists. An autonomous run
+  never does these: it records them as owner actions (`specs/05-quality/task-routing.md#autonomous-runs`).
+  **Adding** a dependency is the main session's call in an autonomous run: the feature spec lists it with its
+  version, and the run report names it.
 
 ## 5. Rules for implementers
 
@@ -109,32 +115,38 @@ These apply to every agent implementing a task, whatever its model.
    them pass. You may add ordinary tests.
 5. If the spec is ambiguous, contradictory or seems wrong, **stop and report** `BLOCKED: spec`. If an
    acceptance test contradicts the spec, report `BLOCKED: test`. Don't guess, and don't edit specs.
-6. Don't add, remove or upgrade dependencies without asking.
+6. Don't add, remove or upgrade dependencies. If one is missing, report `BLOCKED: spec`; the main session installs it.
 7. If the acceptance tests still fail after **two** fix attempts, stop and report `FAILED`.
 8. Before finishing, run `node scripts/pm4.mjs check <T-####>` and report its real output.
 
 ## 6. Workflow
 
-Prototype (web UI) → spec → acceptance tests → implement → review. Small changes take the **quick lane** (a
-task file, no feature spec, no Opus review). Details: `specs/05-quality/task-routing.md#lanes`.
+The owner works on the prototype, then tests the finished branch. Everything in between runs on its own.
+Small changes take the **quick lane** (a task file, no feature spec, no Opus review). Details:
+`specs/05-quality/task-routing.md#lanes` and `#autonomous-runs`.
 
-| Step | Who | Skill |
+| Phase | Who | Skill |
 | --- | --- | --- |
-| *Web UI only:* build the screen in the UI prototype until the owner confirms it, then **owner commits** | Main session (Opus) with the owner | `prototype` |
-| Write the feature spec (reads code first; no open questions left) | Main session (Opus), owner approves | `write-spec` |
-| Create task files from the spec's task list | Script (`pm4 tasks`) | `write-task` |
-| Write the acceptance tests (+ typed stubs), then **owner commits** | Sonnet test writer, one per app (one per file when an app has 3+); the main session (Opus) checks them against the spec | `write-acceptance-tests` |
-| Implement each task (`pm4 promote` copies confirmed prototype files first) | Tier on the task: Haiku / Sonnet | `implement-task` |
-| Review the whole feature, then **owner commits** | Opus reviewer | `review-feature` |
+| 1. **Prototype** (web UI only): build the screen with the owner until they confirm it. Then commit it on the feature branch and give the owner the kickoff prompt | Main session (Opus) with the owner | `prototype` |
+| 2. **Build**, in a fresh session, with no owner input: the feature spec (approved by the run, unknowns recorded as assumed decisions) → task files → acceptance tests → each task → review and fix rounds → local servers → run report. A commit after each step | Main session (Opus) orchestrates. `pm4 tasks`, Sonnet test writers, Haiku/Sonnet implementers, the Opus reviewer | `build-feature` (runs `write-spec`, `write-task`, `write-acceptance-tests`, `implement-task`, `review-feature`) |
+| 3. **Test**: the owner tests on `localhost` and reads the run report (assumed decisions, dependencies added, what's not done) | Owner | — |
+| 4. **Revise**: the owner's feedback updates the spec, and the affected part of phase 2 runs again | Main session (Opus) | `build-feature --revise` |
+| 5. **Ship**: when the owner says the branch is ready, open the pull request. It auto-merges once CI passes | Main session | §6 *Branches and pull requests* |
+
+API-only features skip phase 1: the owner starts phase 2 with a written description.
 
 **Every step is signed** with the agent that did it, as `<harness>/<model-id>[@effort]` (e.g.
 `claude-code/claude-opus-5-5`, `opencode/opencode/deepseek-v4.1-flash-free`). The session that launched the agent
 writes the signature, never the agent itself: in the spec's *Agents* table, each task's *Attempts* and `implementer:`,
 and each task's *Review*, where the reviewer grades the implementer. → `specs/05-quality/task-routing.md#agent-signatures`
 
-Commit points keep each diff reviewable: each confirmed prototype is its own commit, the working tree is clean before the first task, tasks of
-one feature build up uncommitted (`pm4 check` allows earlier tasks' files), and the owner commits the
-feature after the review.
+**Commit points** (all on the feature branch, by the main session):
+- the confirmed prototype;
+- the test-first commit (spec, tasks, acceptance tests, stubs);
+- one commit per finished task;
+- each review-fix round;
+- the run report;
+- each revision.
 
 ### Branches and pull requests
 
@@ -144,22 +156,21 @@ request that passes the `ci-ok` check, merged with **squash** (one commit on `ma
 
 | Work | Branch (worktree under `.worktrees/`) | Pull request |
 | --- | --- | --- |
-| Confirmed prototypes | `proto/<batch>`: one branch collects several features' prototypes, one commit per confirmed feature | One for the batch, opened when the owner says the batch is done, and merged before `write-spec` for any of its features. Each spec's `prototype:` is the batch's **squash commit's SHA on `master`** |
-| Feature (spec approval, tasks, acceptance tests, implementation) | `task/T-####` (the feature's first task) | One for the feature. The test-first commit is the branch's first commit; the acceptance tests fail until the implementation commit, so it never goes to `master` alone |
-| Quick-lane task | `task/T-####` | Its own |
-| Docs, specs, config, chores | `docs/<slug>`, `chore/<slug>`, `fix/<slug>` | Its own, or ride along with the feature it belongs to |
+| Feature (prototype, spec, tasks, acceptance tests, implementation) | `feat/<slug>`, created when its prototype starts (API-only: when the build starts). The prototype commit is the branch's first commit, and the build continues on it | One for the feature, after the owner has tested it locally |
+| Quick-lane change | `feat/<slug>`, or `fix/<slug>` for a bug fix | Its own, after local testing |
+| Docs, specs, config, chores | `docs/<slug>`, `chore/<slug>` | Its own, or ride along with the feature it belongs to |
 
 1. Branch from an up-to-date `master`: `git worktree add .worktrees/<name> -b <branch> github/master`
    (after `git fetch github`).
-2. Commit on the branch only when the owner says so, after their review (rule above).
+2. Commit on the branch at the commit points above. Other changes are committed only when the owner says so (§3).
 3. When the owner says the branch is ready: `git push -u github <branch>`, then `gh pr create --base master`
    with a conventional-commit **title** (it becomes the squash commit's message, from which the release
    version and changelog are computed, `specs/02-architecture/deployment.md`) and the template filled in.
    Set the tasks to `done` in a commit on the branch before that, so the board lands with the work.
 4. `gh pr merge --squash --auto --delete-branch`: it merges once `ci-ok` passes. A red check is fixed with
    another commit on the branch, never by bypassing protection.
-5. After the merge: in the main checkout `git pull --ff-only github master`, then
-   `git worktree remove .worktrees/<name>` and `git branch -D <branch>` (squashed branches aren't
+5. After the merge: stop the branch's local servers (`fuser -k 3000/tcp 3001/tcp`), in the main checkout
+   `git pull --ff-only github master`, then `git worktree remove .worktrees/<name>` and `git branch -D <branch>` (squashed branches aren't
    "merged" in git's eyes, so `-d` refuses).
 
 ## 7. Commands
